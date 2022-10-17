@@ -103,17 +103,18 @@ inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2> class add_active : public Base {
-    Input1 &m_active1;
-    Input2 &m_active2;
+    Input1 const &m_active1;
+    Input2 const &m_active2;
 
   public:
-    add_active(Input1 &active1, Input2 &active2);
+    add_active(Input1 const &active1, Input2 const &active2);
     template <class Denom>
     [[nodiscard]] auto d(Denom &in) const noexcept -> double;
 };
 
 template <class Input1, class Input2>
-add_active<Input1, Input2>::add_active(Input1 &active1, Input2 &active2)
+add_active<Input1, Input2>::add_active(Input1 const &active1,
+                                       Input2 const &active2)
     : Base(active1.v() + active2.v()), m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
@@ -123,16 +124,17 @@ inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2> class mul_active : public Base {
-    Input1 &m_active1;
-    Input2 &m_active2;
+    Input1 const &m_active1;
+    Input2 const &m_active2;
 
   public:
-    mul_active(Input1 &active1, Input2 &active2);
+    mul_active(Input1 const &active1, Input2 const &active2);
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
 template <class Input1, class Input2>
-mul_active<Input1, Input2>::mul_active(Input1 &active1, Input2 &active2)
+mul_active<Input1, Input2>::mul_active(Input1 const &active1,
+                                       Input2 const &active2)
     : Base(active1.v() * active2.v()), m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
@@ -188,15 +190,15 @@ template <> inline auto adouble::d(adouble &in) const noexcept -> double {
     return static_cast<double>(&in == this);
 }
 
-template <class Input>
-inline mul_scalar<const Input> operator*(double scalar, Input &in) {
-    return in * scalar;
-}
+// template <class Input>
+// inline mul_scalar<const Input> operator*(double scalar, Input &in) {
+//     return in * scalar;
+// }
 
-template <class Input>
-inline add_scalar<Input> operator+(double scalar, Input &in) {
-    return in + scalar;
-}
+// template <class Input>
+// inline add_scalar<Input> operator+(double scalar, Input &in) {
+//     return in + scalar;
+// }
 
 } // namespace adhoc
 

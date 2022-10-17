@@ -58,7 +58,7 @@ TEST(Test, activeadd) {
     EXPECT_EQ(res1, 3.);
     EXPECT_EQ(res2, 1.);
 
-    auto valsum2 = (3.0 * val1) + val1;
+    auto valsum2 = (val1 * 3.0) + val1;
 
     double res1_2 = valsum2.d(val1);
     double res2_2 = valsum2.d(val2);
