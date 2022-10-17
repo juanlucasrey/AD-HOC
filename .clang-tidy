@@ -1,0 +1,13 @@
+Checks: "
+*,\
+-llvmlibc-implementation-in-namespace,\
+-llvmlibc-restrict-system-libc-headers,\
+-llvmlibc-callee-namespace,\
+-fuchsia-trailing-return,\
+-fuchsia-default-arguments-calls,\
+-fuchsia-default-arguments-declarations,\
+-fuchsia-overloaded-operator,\
+-google-readability-todo,\
+-altera-unroll-loops,\
+-altera-struct-pack-align,\
+"
