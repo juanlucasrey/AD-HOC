@@ -66,7 +66,6 @@ class mul_scalar : public Base, public Base2<mul_scalar<Input>> {
   public:
     mul_scalar(double scalar, Input const &active);
 
-    // auto operator+(double rhs) const -> add_scalar<const mul_scalar<Input>>;
     auto operator*(double rhs) const -> mul_scalar<const mul_scalar<Input>>;
     // template <class Arg>
     // auto operator+(Arg &rhs) const -> add_active<const mul_scalar<Input>,
@@ -78,12 +77,6 @@ class mul_scalar : public Base, public Base2<mul_scalar<Input>> {
 template <class Input>
 mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
     : Base(scalar * active.v()), m_scalar(scalar), m_active(active) {}
-
-// template <class Input>
-// auto mul_scalar<Input>::operator+(double rhs) const
-//     -> add_scalar<const mul_scalar<Input>> {
-//     return {rhs, *this};
-// }
 
 template <class Input>
 auto mul_scalar<Input>::operator*(double rhs) const
@@ -104,7 +97,8 @@ inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
     return this->m_scalar * this->m_active.d(in);
 }
 
-template <class Input1, class Input2> class add_active : public Base {
+template <class Input1, class Input2>
+class add_active : public Base, public Base2<add_active<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
@@ -125,7 +119,8 @@ inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     return this->m_active1.d(in) + this->m_active2.d(in);
 }
 
-template <class Input1, class Input2> class mul_active : public Base {
+template <class Input1, class Input2>
+class mul_active : public Base, public Base2<mul_active<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
@@ -146,14 +141,14 @@ inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
            this->m_active2.d(in) * this->m_active1.v();
 }
 
-class adouble : public Base {
+class adouble : public Base, public Base2<adouble> {
   public:
     explicit adouble(double value);
-    auto operator+(double rhs) const -> add_scalar<const adouble>;
+    // auto operator+(double rhs) const -> add_scalar<const adouble>;
     auto operator*(double rhs) const -> mul_scalar<const adouble>;
 
-    template <class Arg>
-    auto operator+(Arg &rhs) const -> add_active<const adouble, Arg>;
+    // template <class Arg>
+    // auto operator+(Arg &rhs) const -> add_active<const adouble, Arg>;
 
     template <class Arg>
     auto operator*(Arg &rhs) const -> mul_active<const adouble, Arg>;
@@ -163,19 +158,20 @@ class adouble : public Base {
 
 inline adouble::adouble(double value) : Base(value) {}
 
-inline auto adouble::operator+(double rhs) const -> add_scalar<const adouble> {
-    return {rhs, *this};
-}
+// inline auto adouble::operator+(double rhs) const -> add_scalar<const adouble>
+// {
+//     return {rhs, *this};
+// }
 
 inline auto adouble::operator*(double rhs) const -> mul_scalar<const adouble> {
     return {rhs, *this};
 }
 
-template <class Arg>
-inline auto adouble::operator+(Arg &rhs) const
-    -> add_active<const adouble, Arg> {
-    return {*this, rhs};
-}
+// template <class Arg>
+// inline auto adouble::operator+(Arg &rhs) const
+//     -> add_active<const adouble, Arg> {
+//     return {*this, rhs};
+// }
 
 template <class Arg>
 inline auto adouble::operator*(Arg &rhs) const
