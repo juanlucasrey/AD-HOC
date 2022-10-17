@@ -8,31 +8,29 @@ template <class Input> class add_scalar;
 template <class Input1, class Input2> class mul_active;
 template <class Input1, class Input2> class add_active;
 
-template <class Derived> class Base2 {
-  public:
-    auto operator+(double rhs) const -> add_scalar<const Derived>;
-};
-
-template <class Derived>
-auto Base2<Derived>::operator+(double rhs) const -> add_scalar<const Derived> {
-    return {rhs, *static_cast<Derived const *>(this)};
-}
-
-class Base {
+template <class Derived> class Base {
   protected:
     double m_value{0};
 
   public:
     explicit Base(double value);
     [[nodiscard]] auto v() const noexcept -> double;
+    auto operator+(double rhs) const -> add_scalar<const Derived>;
 };
 
-Base::Base(double value) : m_value(value) {}
+template <class Derived> Base<Derived>::Base(double value) : m_value(value) {}
 
-inline auto Base::v() const noexcept -> double { return this->m_value; }
+template <class Derived>
+inline auto Base<Derived>::v() const noexcept -> double {
+    return this->m_value;
+}
 
-template <class Input>
-class add_scalar : public Base, public Base2<add_scalar<Input>> {
+template <class Derived>
+auto Base<Derived>::operator+(double rhs) const -> add_scalar<const Derived> {
+    return {rhs, *static_cast<Derived const *>(this)};
+}
+
+template <class Input> class add_scalar : public Base<add_scalar<Input>> {
     double m_scalar{0.};
     Input const &m_active;
 
@@ -44,7 +42,8 @@ class add_scalar : public Base, public Base2<add_scalar<Input>> {
 
 template <class Input>
 add_scalar<Input>::add_scalar(double scalar, Input const &active)
-    : Base(scalar + active.v()), m_scalar(scalar), m_active(active) {}
+    : Base<add_scalar<Input>>(scalar + active.v()), m_scalar(scalar),
+      m_active(active) {}
 
 template <class Input>
 auto add_scalar<Input>::operator*(double rhs) const
@@ -58,8 +57,7 @@ inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
     return this->m_active.d(in);
 }
 
-template <class Input>
-class mul_scalar : public Base, public Base2<mul_scalar<Input>> {
+template <class Input> class mul_scalar : public Base<mul_scalar<Input>> {
     double m_scalar{0.};
     Input const &m_active;
 
@@ -76,7 +74,8 @@ class mul_scalar : public Base, public Base2<mul_scalar<Input>> {
 
 template <class Input>
 mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
-    : Base(scalar * active.v()), m_scalar(scalar), m_active(active) {}
+    : Base<mul_scalar<Input>>(scalar * active.v()), m_scalar(scalar),
+      m_active(active) {}
 
 template <class Input>
 auto mul_scalar<Input>::operator*(double rhs) const
@@ -98,7 +97,7 @@ inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2>
-class add_active : public Base, public Base2<add_active<Input1, Input2>> {
+class add_active : public Base<add_active<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
@@ -111,7 +110,8 @@ class add_active : public Base, public Base2<add_active<Input1, Input2>> {
 template <class Input1, class Input2>
 add_active<Input1, Input2>::add_active(Input1 const &active1,
                                        Input2 const &active2)
-    : Base(active1.v() + active2.v()), m_active1(active1), m_active2(active2) {}
+    : Base<add_active<Input1, Input2>>(active1.v() + active2.v()),
+      m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
@@ -120,7 +120,7 @@ inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2>
-class mul_active : public Base, public Base2<mul_active<Input1, Input2>> {
+class mul_active : public Base<mul_active<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
@@ -132,7 +132,8 @@ class mul_active : public Base, public Base2<mul_active<Input1, Input2>> {
 template <class Input1, class Input2>
 mul_active<Input1, Input2>::mul_active(Input1 const &active1,
                                        Input2 const &active2)
-    : Base(active1.v() * active2.v()), m_active1(active1), m_active2(active2) {}
+    : Base<mul_active<Input1, Input2>>(active1.v() * active2.v()),
+      m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
@@ -141,7 +142,7 @@ inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
            this->m_active2.d(in) * this->m_active1.v();
 }
 
-class adouble : public Base, public Base2<adouble> {
+class adouble : public Base<adouble> {
   public:
     explicit adouble(double value);
     // auto operator+(double rhs) const -> add_scalar<const adouble>;
