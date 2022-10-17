@@ -91,38 +91,25 @@ inline auto mul_scalar<Input>::operator+(Arg &rhs) const
     return {*this, rhs};
 }
 
-// template <class Input>
-// inline auto mul_scalar<Input>::v() const noexcept -> double {
-//     return this->m_value;
-// }
-
 template <class Input>
 template <class Denom>
 inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
     return this->m_scalar * this->m_active.d(in);
 }
 
-template <class Input1, class Input2> class add_active {
+template <class Input1, class Input2> class add_active : public Base {
     Input1 &m_active1;
     Input2 &m_active2;
-    double m_value{0};
 
   public:
     add_active(Input1 &active1, Input2 &active2);
-    [[nodiscard]] auto v() const noexcept -> double;
     template <class Denom>
     [[nodiscard]] auto d(Denom &in) const noexcept -> double;
 };
 
 template <class Input1, class Input2>
 add_active<Input1, Input2>::add_active(Input1 &active1, Input2 &active2)
-    : m_active1(active1), m_active2(active2),
-      m_value(active1.v() + active2.v()) {}
-
-template <class Input1, class Input2>
-inline auto add_active<Input1, Input2>::v() const noexcept -> double {
-    return this->m_value;
-}
+    : Base(active1.v() + active2.v()), m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
