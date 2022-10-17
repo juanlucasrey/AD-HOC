@@ -117,32 +117,24 @@ inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     return this->m_active1.d(in) + this->m_active2.d(in);
 }
 
-template <class Input1, class Input2> class mul_active {
+template <class Input1, class Input2> class mul_active : public Base {
     Input1 &m_active1;
     Input2 &m_active2;
-    double m_value{0};
 
   public:
     mul_active(Input1 &active1, Input2 &active2);
     template <class Denom> auto d(Denom &in) const noexcept -> double;
-    [[nodiscard]] auto v() const noexcept -> double;
 };
 
 template <class Input1, class Input2>
 mul_active<Input1, Input2>::mul_active(Input1 &active1, Input2 &active2)
-    : m_active1(active1), m_active2(active2),
-      m_value(active1.v() * active2.v()) {}
+    : Base(active1.v() * active2.v()), m_active1(active1), m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
 inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     return this->m_active1.d(in) * this->m_active2.v() +
            this->m_active2.d(in) * this->m_active1.v();
-}
-
-template <class Input1, class Input2>
-inline auto mul_active<Input1, Input2>::v() const noexcept -> double {
-    return this->m_value;
 }
 
 class adouble {
