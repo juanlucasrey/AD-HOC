@@ -3,6 +3,21 @@
 
 namespace adhoc {
 
+template <class Input> class mul_scalar;
+template <class Input> class add_scalar;
+template <class Input1, class Input2> class mul_active;
+template <class Input1, class Input2> class add_active;
+
+template <class Derived> class Base2 {
+  public:
+    auto operator+(double rhs) const -> add_scalar<const Derived>;
+};
+
+template <class Derived>
+auto Base2<Derived>::operator+(double rhs) const -> add_scalar<const Derived> {
+    return {rhs, *this};
+}
+
 class Base {
   protected:
     double m_value{0};
@@ -16,18 +31,13 @@ Base::Base(double value) : m_value(value) {}
 
 inline auto Base::v() const noexcept -> double { return this->m_value; }
 
-template <class Input> class mul_scalar;
-template <class Input> class add_scalar;
-template <class Input1, class Input2> class mul_active;
-template <class Input1, class Input2> class add_active;
-
-template <class Input> class add_scalar : public Base {
+template <class Input>
+class add_scalar : public Base, public Base2<add_scalar<Input>> {
     double m_scalar{0.};
     Input &m_active;
 
   public:
     add_scalar(double scalar, Input &active);
-    auto operator+(double rhs) const -> add_scalar<const add_scalar<Input>>;
     auto operator*(double rhs) const -> mul_scalar<const add_scalar<Input>>;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
@@ -36,11 +46,6 @@ template <class Input>
 add_scalar<Input>::add_scalar(double scalar, Input &active)
     : Base(scalar + active.v()), m_scalar(scalar), m_active(active) {}
 
-template <class Input>
-auto add_scalar<Input>::operator+(double rhs) const
-    -> add_scalar<const add_scalar<Input>> {
-    return {rhs, *this};
-}
 template <class Input>
 auto add_scalar<Input>::operator*(double rhs) const
     -> mul_scalar<const add_scalar<Input>> {
