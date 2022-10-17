@@ -15,7 +15,7 @@ template <class Derived> class Base2 {
 
 template <class Derived>
 auto Base2<Derived>::operator+(double rhs) const -> add_scalar<const Derived> {
-    return {rhs, *this};
+    return {rhs, *static_cast<Derived const *>(this)};
 }
 
 class Base {
@@ -58,17 +58,19 @@ inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
     return this->m_active.d(in);
 }
 
-template <class Input> class mul_scalar : public Base {
+template <class Input>
+class mul_scalar : public Base, public Base2<mul_scalar<Input>> {
     double m_scalar{0.};
     Input const &m_active;
 
   public:
     mul_scalar(double scalar, Input const &active);
 
-    auto operator+(double rhs) const -> add_scalar<const mul_scalar<Input>>;
+    // auto operator+(double rhs) const -> add_scalar<const mul_scalar<Input>>;
     auto operator*(double rhs) const -> mul_scalar<const mul_scalar<Input>>;
-    template <class Arg>
-    auto operator+(Arg &rhs) const -> add_active<const mul_scalar<Input>, Arg>;
+    // template <class Arg>
+    // auto operator+(Arg &rhs) const -> add_active<const mul_scalar<Input>,
+    // Arg>;
 
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
@@ -77,11 +79,11 @@ template <class Input>
 mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
     : Base(scalar * active.v()), m_scalar(scalar), m_active(active) {}
 
-template <class Input>
-auto mul_scalar<Input>::operator+(double rhs) const
-    -> add_scalar<const mul_scalar<Input>> {
-    return {rhs, *this};
-}
+// template <class Input>
+// auto mul_scalar<Input>::operator+(double rhs) const
+//     -> add_scalar<const mul_scalar<Input>> {
+//     return {rhs, *this};
+// }
 
 template <class Input>
 auto mul_scalar<Input>::operator*(double rhs) const
@@ -89,12 +91,12 @@ auto mul_scalar<Input>::operator*(double rhs) const
     return {rhs, *this};
 }
 
-template <class Input>
-template <class Arg>
-inline auto mul_scalar<Input>::operator+(Arg &rhs) const
-    -> add_active<const mul_scalar<Input>, Arg> {
-    return {*this, rhs};
-}
+// template <class Input>
+// template <class Arg>
+// inline auto mul_scalar<Input>::operator+(Arg &rhs) const
+//     -> add_active<const mul_scalar<Input>, Arg> {
+//     return {*this, rhs};
+// }
 
 template <class Input>
 template <class Denom>
