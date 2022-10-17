@@ -137,9 +137,7 @@ inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
            this->m_active2.d(in) * this->m_active1.v();
 }
 
-class adouble {
-    double m_value{0};
-
+class adouble : public Base {
   public:
     explicit adouble(double value);
     auto operator+(double rhs) const -> add_scalar<const adouble>;
@@ -151,12 +149,10 @@ class adouble {
     template <class Arg>
     auto operator*(Arg &rhs) const -> mul_active<const adouble, Arg>;
 
-    [[nodiscard]] auto v() const noexcept -> double;
-
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
-inline adouble::adouble(double value) : m_value(value) {}
+inline adouble::adouble(double value) : Base(value) {}
 
 inline auto adouble::operator+(double rhs) const -> add_scalar<const adouble> {
     return {rhs, *this};
@@ -177,8 +173,6 @@ inline auto adouble::operator*(Arg &rhs) const
     -> mul_active<const adouble, Arg> {
     return {*this, rhs};
 }
-
-inline auto adouble::v() const noexcept -> double { return this->m_value; }
 
 template <class Denom>
 inline auto adouble::d(Denom & /* in */) const noexcept -> double {
