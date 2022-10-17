@@ -48,33 +48,33 @@ TEST(Test, doperatormult) {
     EXPECT_EQ(res2, 0.);
 }
 
-// TEST(Test, activeadd) {
-//     adouble val1(1.);
-//     adouble val2(2.);
-//     auto valsum = (val1 * 3.0) + val2;
+TEST(Test, activeadd) {
+    adouble val1(1.);
+    adouble val2(2.);
+    auto valsum = (val1 * 3.0) + val2;
 
-//     double res1 = valsum.d(val1);
-//     double res2 = valsum.d(val2);
-//     EXPECT_EQ(res1, 3.);
-//     EXPECT_EQ(res2, 1.);
+    double res1 = valsum.d(val1);
+    double res2 = valsum.d(val2);
+    EXPECT_EQ(res1, 3.);
+    EXPECT_EQ(res2, 1.);
 
-//     auto valsum2 = (val1 * 3.0) + val1;
+    auto valsum2 = (val1 * 3.0) + val1;
 
-//     double res1_2 = valsum2.d(val1);
-//     double res2_2 = valsum2.d(val2);
-//     EXPECT_EQ(res1_2, 4.);
-//     EXPECT_EQ(res2_2, 0.);
-// }
+    double res1_2 = valsum2.d(val1);
+    double res2_2 = valsum2.d(val2);
+    EXPECT_EQ(res1_2, 4.);
+    EXPECT_EQ(res2_2, 0.);
+}
 
-// TEST(Test, activemul) {
-//     adouble val1(1.);
-//     adouble val2(2.);
-//     auto valsum = val1 * val2;
+TEST(Test, activemul) {
+    adouble val1(1.);
+    adouble val2(2.);
+    auto valsum = val1 * val2;
 
-//     double res1 = valsum.d(val1);
-//     double res2 = valsum.d(val2);
-//     EXPECT_EQ(res1, 2.);
-//     EXPECT_EQ(res2, 1.);
-// }
+    double res1 = valsum.d(val1);
+    double res2 = valsum.d(val2);
+    EXPECT_EQ(res1, 2.);
+    EXPECT_EQ(res2, 1.);
+}
 
 } // namespace adhoc
