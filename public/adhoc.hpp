@@ -34,16 +34,16 @@ inline auto Base::v() const noexcept -> double { return this->m_value; }
 template <class Input>
 class add_scalar : public Base, public Base2<add_scalar<Input>> {
     double m_scalar{0.};
-    Input &m_active;
+    Input const &m_active;
 
   public:
-    add_scalar(double scalar, Input &active);
+    add_scalar(double scalar, Input const &active);
     auto operator*(double rhs) const -> mul_scalar<const add_scalar<Input>>;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
 template <class Input>
-add_scalar<Input>::add_scalar(double scalar, Input &active)
+add_scalar<Input>::add_scalar(double scalar, Input const &active)
     : Base(scalar + active.v()), m_scalar(scalar), m_active(active) {}
 
 template <class Input>
@@ -60,10 +60,10 @@ inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
 
 template <class Input> class mul_scalar : public Base {
     double m_scalar{0.};
-    Input &m_active;
+    Input const &m_active;
 
   public:
-    mul_scalar(double scalar, Input &active);
+    mul_scalar(double scalar, Input const &active);
 
     auto operator+(double rhs) const -> add_scalar<const mul_scalar<Input>>;
     auto operator*(double rhs) const -> mul_scalar<const mul_scalar<Input>>;
@@ -74,7 +74,7 @@ template <class Input> class mul_scalar : public Base {
 };
 
 template <class Input>
-mul_scalar<Input>::mul_scalar(double scalar, Input &active)
+mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
     : Base(scalar * active.v()), m_scalar(scalar), m_active(active) {}
 
 template <class Input>
