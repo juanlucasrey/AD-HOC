@@ -5,6 +5,29 @@
 
 namespace adhoc2 {
 
+template <class Input> class Univariate {
+  public:
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
+};
+
+template <class Input>
+template <class Denom>
+inline constexpr auto Univariate<Input>::depends() noexcept -> bool {
+    return Input::template depends<Denom>();
+}
+
+template <class Input1, class Input2> class Bivariate {
+  public:
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
+};
+
+template <class Input1, class Input2>
+template <class Denom>
+inline constexpr auto Bivariate<Input1, Input2>::depends() noexcept -> bool {
+    return Input1::template depends<Denom>() ||
+           Input2::template depends<Denom>();
+}
+
 template <class Input> class mul_scalar;
 template <class Input> class add_scalar;
 template <class Input1, class Input2> class mul_active;
@@ -60,12 +83,12 @@ inline auto Base<Derived>::operator*(Arg const &rhs) const
     return {*static_cast<Derived const *>(this), rhs};
 }
 
-template <class Input> class add_scalar : public Base<add_scalar<Input>> {
+template <class Input>
+class add_scalar : public Base<add_scalar<Input>>, public Univariate<Input> {
     Input const &m_active;
 
   public:
     add_scalar(double scalar, Input const &active);
-    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -75,27 +98,21 @@ add_scalar<Input>::add_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
-inline constexpr auto add_scalar<Input>::depends() noexcept -> bool {
-    return Input::template depends<Denom>();
-}
-
-template <class Input>
-template <class Denom>
 inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
-    if constexpr (add_scalar<Input>::depends<Denom>()) {
+    if constexpr (Univariate<Input>::template depends<Denom>()) {
         return this->m_active.d(in);
     } else {
         return 0.;
     }
 }
 
-template <class Input> class mul_scalar : public Base<mul_scalar<Input>> {
+template <class Input>
+class mul_scalar : public Base<mul_scalar<Input>>, public Univariate<Input> {
     double m_scalar{0.};
     Input const &m_active;
 
   public:
     mul_scalar(double scalar, Input const &active);
-    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -106,14 +123,8 @@ mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
-inline constexpr auto mul_scalar<Input>::depends() noexcept -> bool {
-    return Input::template depends<Denom>();
-}
-
-template <class Input>
-template <class Denom>
 inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
-    if constexpr (mul_scalar<Input>::depends<Denom>()) {
+    if constexpr (Univariate<Input>::template depends<Denom>()) {
         return this->m_scalar * this->m_active.d(in);
     } else {
         return 0.;
@@ -121,13 +132,13 @@ inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2>
-class add_active : public Base<add_active<Input1, Input2>> {
+class add_active : public Base<add_active<Input1, Input2>>,
+                   public Bivariate<Input1, Input2> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
   public:
     add_active(Input1 const &active1, Input2 const &active2);
-    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom>
     [[nodiscard]] auto d(Denom &in) const noexcept -> double;
 };
@@ -140,18 +151,10 @@ add_active<Input1, Input2>::add_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
-inline constexpr auto add_active<Input1, Input2>::depends() noexcept -> bool {
-    return Input1::template depends<Denom>() ||
-           Input2::template depends<Denom>();
-}
-
-template <class Input1, class Input2>
-template <class Denom>
 inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     if constexpr (Input1::template depends<Denom>()) {
         if constexpr (Input2::template depends<Denom>()) {
             return this->m_active1.d(in) + this->m_active2.d(in);
-
         } else {
             return this->m_active1.d(in);
         }
@@ -165,13 +168,13 @@ inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
 }
 
 template <class Input1, class Input2>
-class mul_active : public Base<mul_active<Input1, Input2>> {
+class mul_active : public Base<mul_active<Input1, Input2>>,
+                   public Bivariate<Input1, Input2> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
   public:
     mul_active(Input1 const &active1, Input2 const &active2);
-    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -183,19 +186,11 @@ mul_active<Input1, Input2>::mul_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
-inline constexpr auto mul_active<Input1, Input2>::depends() noexcept -> bool {
-    return Input1::template depends<Denom>() ||
-           Input2::template depends<Denom>();
-}
-
-template <class Input1, class Input2>
-template <class Denom>
 inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     if constexpr (Input1::template depends<Denom>()) {
         if constexpr (Input2::template depends<Denom>()) {
             return this->m_active1.d(in) * this->m_active2.v() +
                    this->m_active2.d(in) * this->m_active1.v();
-
         } else {
             return this->m_active1.d(in) * this->m_active2.v();
         }
@@ -208,6 +203,7 @@ inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
     }
 }
 
+namespace detail {
 template <int N> class adouble : public Base<adouble<N>> {
   public:
     explicit adouble(double value);
@@ -230,8 +226,9 @@ template <class Denom>
 inline constexpr auto adouble<N>::d(Denom & /* in */) const noexcept -> double {
     return static_cast<double>(this->depends<Denom>());
 }
+} // namespace detail
 
-#define ADOUBLE adouble<__COUNTER__>
+#define adouble detail::adouble<__COUNTER__>
 
 } // namespace adhoc2
 
