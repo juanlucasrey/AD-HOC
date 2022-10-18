@@ -77,4 +77,32 @@ TEST(adhoc, activemul) {
     EXPECT_EQ(res2, 1.);
 }
 
+TEST(adhoc, complex) {
+    adouble val1(1.);
+    adouble val2(2.);
+    auto valsum = val1 + val2;
+    auto valprod = val1 * val2;
+    auto t1 = valsum * valprod;
+    auto t2 = valprod + t1;
+
+    double res1 = t2.d(val1);
+    double res2 = t2.d(val2);
+    EXPECT_EQ(res1, 10.);
+    EXPECT_EQ(res2, 6.);
+}
+
+TEST(adhoc, complex2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    auto valsum = val1 + val2;
+    auto valprod = val1 * val2;
+    auto t1 = valsum * valprod;
+    auto t2 = valprod + t1;
+
+    std::array<double, 2> res = t2.d2(val1, val2);
+    // double res2 = t2.d(val2);
+    EXPECT_EQ(res[0], 10.);
+    EXPECT_EQ(res[1], 6.);
+}
+
 } // namespace adhoc
