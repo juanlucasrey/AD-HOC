@@ -19,8 +19,6 @@ TEST(adhoc2, Initial) {
 TEST(adhoc2, doperator) {
     adouble val1(1.);
     adouble val2(2.);
-    int id1 = val1.id();
-    int id2 = val2.id();
     auto valplus = val1 + 1.0;
     double res1 = val1.d(val1);
     double res2 = val1.d(val2);

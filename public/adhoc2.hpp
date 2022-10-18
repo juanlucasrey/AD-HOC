@@ -209,7 +209,6 @@ template <int N> class adouble : public Base<adouble<N>> {
     explicit adouble(double value);
     template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> constexpr auto d(Denom &in) const noexcept -> double;
-    constexpr auto id() -> int { return N; }
 };
 
 template <int N>
