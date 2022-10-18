@@ -59,7 +59,6 @@ inline auto Base<Derived>::operator*(Arg const &rhs) const
 }
 
 template <class Input> class add_scalar : public Base<add_scalar<Input>> {
-    double m_scalar{0.};
     Input const &m_active;
 
   public:
@@ -69,8 +68,7 @@ template <class Input> class add_scalar : public Base<add_scalar<Input>> {
 
 template <class Input>
 add_scalar<Input>::add_scalar(double scalar, Input const &active)
-    : Base<add_scalar<Input>>(scalar + active.v()), m_scalar(scalar),
-      m_active(active) {}
+    : Base<add_scalar<Input>>(scalar + active.v()), m_active(active) {}
 
 template <class Input>
 template <class Denom>
