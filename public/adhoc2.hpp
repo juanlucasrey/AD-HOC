@@ -65,6 +65,7 @@ template <class Input> class add_scalar : public Base<add_scalar<Input>> {
 
   public:
     add_scalar(double scalar, Input const &active);
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -74,8 +75,18 @@ add_scalar<Input>::add_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
+inline constexpr auto add_scalar<Input>::depends() noexcept -> bool {
+    return Input::template depends<Denom>();
+}
+
+template <class Input>
+template <class Denom>
 inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
-    return this->m_active.d(in);
+    if constexpr (add_scalar<Input>::depends<Denom>()) {
+        return this->m_active.d(in);
+    } else {
+        return 0.;
+    }
 }
 
 template <class Input> class mul_scalar : public Base<mul_scalar<Input>> {
@@ -84,6 +95,7 @@ template <class Input> class mul_scalar : public Base<mul_scalar<Input>> {
 
   public:
     mul_scalar(double scalar, Input const &active);
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -94,8 +106,18 @@ mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
+inline constexpr auto mul_scalar<Input>::depends() noexcept -> bool {
+    return Input::template depends<Denom>();
+}
+
+template <class Input>
+template <class Denom>
 inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
-    return this->m_scalar * this->m_active.d(in);
+    if constexpr (mul_scalar<Input>::depends<Denom>()) {
+        return this->m_scalar * this->m_active.d(in);
+    } else {
+        return 0.;
+    }
 }
 
 template <class Input1, class Input2>
@@ -105,6 +127,7 @@ class add_active : public Base<add_active<Input1, Input2>> {
 
   public:
     add_active(Input1 const &active1, Input2 const &active2);
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom>
     [[nodiscard]] auto d(Denom &in) const noexcept -> double;
 };
@@ -117,8 +140,28 @@ add_active<Input1, Input2>::add_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
+inline constexpr auto add_active<Input1, Input2>::depends() noexcept -> bool {
+    return Input1::template depends<Denom>() ||
+           Input2::template depends<Denom>();
+}
+
+template <class Input1, class Input2>
+template <class Denom>
 inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
-    return this->m_active1.d(in) + this->m_active2.d(in);
+    if constexpr (Input1::template depends<Denom>()) {
+        if constexpr (Input2::template depends<Denom>()) {
+            return this->m_active1.d(in) + this->m_active2.d(in);
+
+        } else {
+            return this->m_active1.d(in);
+        }
+    } else {
+        if constexpr (Input2::template depends<Denom>()) {
+            return this->m_active2.d(in);
+        } else {
+            return 0.;
+        }
+    }
 }
 
 template <class Input1, class Input2>
@@ -128,6 +171,7 @@ class mul_active : public Base<mul_active<Input1, Input2>> {
 
   public:
     mul_active(Input1 const &active1, Input2 const &active2);
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> auto d(Denom &in) const noexcept -> double;
 };
 
@@ -139,14 +183,35 @@ mul_active<Input1, Input2>::mul_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
+inline constexpr auto mul_active<Input1, Input2>::depends() noexcept -> bool {
+    return Input1::template depends<Denom>() ||
+           Input2::template depends<Denom>();
+}
+
+template <class Input1, class Input2>
+template <class Denom>
 inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
-    return this->m_active1.d(in) * this->m_active2.v() +
-           this->m_active2.d(in) * this->m_active1.v();
+    if constexpr (Input1::template depends<Denom>()) {
+        if constexpr (Input2::template depends<Denom>()) {
+            return this->m_active1.d(in) * this->m_active2.v() +
+                   this->m_active2.d(in) * this->m_active1.v();
+
+        } else {
+            return this->m_active1.d(in) * this->m_active2.v();
+        }
+    } else {
+        if constexpr (Input2::template depends<Denom>()) {
+            return this->m_active2.d(in) * this->m_active1.v();
+        } else {
+            return 0.;
+        }
+    }
 }
 
 template <int N> class adouble : public Base<adouble<N>> {
   public:
     explicit adouble(double value);
+    template <class Denom> constexpr static auto depends() noexcept -> bool;
     template <class Denom> constexpr auto d(Denom &in) const noexcept -> double;
     constexpr auto id() -> int { return N; }
 };
@@ -156,9 +221,14 @@ inline adouble<N>::adouble(double value) : Base<adouble<N>>(value) {}
 
 template <int N>
 template <class Denom>
-inline constexpr auto adouble<N>::d(Denom & /* in */) const noexcept -> double {
-    // return 0.;
+inline constexpr auto adouble<N>::depends() noexcept -> bool {
     return std::is_same_v<Denom, adouble<N>>;
+}
+
+template <int N>
+template <class Denom>
+inline constexpr auto adouble<N>::d(Denom & /* in */) const noexcept -> double {
+    return static_cast<double>(this->depends<Denom>());
 }
 
 #define ADOUBLE adouble<__COUNTER__>
