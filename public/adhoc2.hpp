@@ -109,6 +109,10 @@ class add_scalar : public Base<add_scalar<Input>>, public Univariate<Input> {
   public:
     add_scalar(double scalar, Input const &active);
     template <class Denom> auto d(Denom const &in) const noexcept -> double;
+
+    template <class... Denom>
+    auto dmany(Denom const &...in) const noexcept
+        -> std::array<double, add_scalar<Input>::template depends2<Denom...>()>;
 };
 
 template <class Input>
@@ -126,6 +130,13 @@ inline auto add_scalar<Input>::d(Denom const &in) const noexcept -> double {
 }
 
 template <class Input>
+template <class... Denom>
+inline auto add_scalar<Input>::dmany(Denom const &...in) const noexcept
+    -> std::array<double, add_scalar<Input>::template depends2<Denom...>()> {
+    return this->m_active.dmany(in...);
+}
+
+template <class Input>
 class mul_scalar : public Base<mul_scalar<Input>>, public Univariate<Input> {
     double m_scalar{0.};
     Input const &m_active;
@@ -133,6 +144,10 @@ class mul_scalar : public Base<mul_scalar<Input>>, public Univariate<Input> {
   public:
     mul_scalar(double scalar, Input const &active);
     template <class Denom> auto d(Denom const &in) const noexcept -> double;
+
+    template <class... Denom>
+    auto dmany(Denom const &...in) const noexcept
+        -> std::array<double, mul_scalar<Input>::template depends2<Denom...>()>;
 };
 
 template <class Input>
@@ -148,6 +163,28 @@ inline auto mul_scalar<Input>::d(Denom const &in) const noexcept -> double {
     } else {
         return 0.;
     }
+}
+
+namespace detail {
+
+template <unsigned int C, unsigned int N>
+inline void mult(std::array<double, N> &a, double val) {
+    a[C] *= val;
+    if constexpr (C != (N - 1)) {
+        mult<C + 1, N>(a, val);
+    }
+}
+
+} // namespace detail
+
+template <class Input>
+template <class... Denom>
+inline auto mul_scalar<Input>::dmany(Denom const &...in) const noexcept
+    -> std::array<double, mul_scalar<Input>::template depends2<Denom...>()> {
+    constexpr std::size_t M = mul_scalar<Input>::template depends2<Denom...>();
+    auto res = this->m_active.dmany(in...);
+    detail::mult<0, M>(res, this->m_scalar);
+    return res;
 }
 
 template <class Input1, class Input2>

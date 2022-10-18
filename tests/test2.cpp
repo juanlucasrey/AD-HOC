@@ -163,4 +163,16 @@ TEST(adhoc2, InitialManyInterface) {
     EXPECT_EQ(res[2], 0.);
 }
 
+TEST(adhoc2, InitialManymult) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(3.);
+    auto m = val1 * 2.0;
+    auto res = m.dmany(val1, val1, val1);
+    EXPECT_EQ(res.size(), 3);
+    EXPECT_EQ(res[0], 2.);
+    EXPECT_EQ(res[1], 2.);
+    EXPECT_EQ(res[2], 2.);
+}
+
 } // namespace adhoc2
