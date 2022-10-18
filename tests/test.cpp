@@ -4,7 +4,7 @@
 
 namespace adhoc {
 
-TEST(Test, Initial) {
+TEST(adhoc, Initial) {
     adouble val(1.);
     auto valplus = val + 1.0;
     auto const valmult = valplus * 2.0;
@@ -16,7 +16,7 @@ TEST(Test, Initial) {
     // EXPECT_EQ(deriv, 0.);
 }
 
-TEST(Test, doperator) {
+TEST(adhoc, doperator) {
     adouble val1(1.);
     adouble val2(2.);
     auto valplus = val1 + 1.0;
@@ -28,7 +28,7 @@ TEST(Test, doperator) {
     EXPECT_EQ(res3, 0.);
 }
 
-TEST(Test, doperatorplus) {
+TEST(adhoc, doperatorplus) {
     adouble val1(1.);
     adouble val2(2.);
     auto valplus = val1 + 1.0;
@@ -38,7 +38,7 @@ TEST(Test, doperatorplus) {
     EXPECT_EQ(res2, 0.);
 }
 
-TEST(Test, doperatormult) {
+TEST(adhoc, doperatormult) {
     adouble val1(1.);
     adouble val2(2.);
     auto valmul = val1 * 2.0;
@@ -48,7 +48,7 @@ TEST(Test, doperatormult) {
     EXPECT_EQ(res2, 0.);
 }
 
-TEST(Test, activeadd) {
+TEST(adhoc, activeadd) {
     adouble val1(1.);
     adouble val2(2.);
     auto valsum = (val1 * 3.0) + val2;
@@ -66,7 +66,7 @@ TEST(Test, activeadd) {
     EXPECT_EQ(res2_2, 0.);
 }
 
-TEST(Test, activemul) {
+TEST(adhoc, activemul) {
     adouble val1(1.);
     adouble val2(2.);
     auto valsum = val1 * val2;

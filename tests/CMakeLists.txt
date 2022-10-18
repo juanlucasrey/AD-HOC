@@ -3,6 +3,8 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
   adhoc_test
   test.cpp
+  test2.cpp
+  rng.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
