@@ -65,9 +65,10 @@ template <class Input> class add_scalar : public Base<add_scalar<Input>> {
 
   public:
     add_scalar(double scalar, Input const &active);
-    template <class Denom> auto d(Denom &in) const noexcept -> double;
+    template <class Denom> auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
-    auto d2(Denom1 &in1, Denom2 &in2) const noexcept -> std::array<double, 2>;
+    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
+        -> std::array<double, 2>;
 };
 
 template <class Input>
@@ -76,13 +77,14 @@ add_scalar<Input>::add_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
-inline auto add_scalar<Input>::d(Denom &in) const noexcept -> double {
+inline auto add_scalar<Input>::d(Denom const &in) const noexcept -> double {
     return this->m_active.d(in);
 }
 
 template <class Input>
 template <class Denom1, class Denom2>
-inline auto add_scalar<Input>::d2(Denom1 &in1, Denom2 &in2) const noexcept
+inline auto add_scalar<Input>::d2(Denom1 const &in1,
+                                  Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
     return this->m_active.d2(in1, in2);
 }
@@ -93,9 +95,10 @@ template <class Input> class mul_scalar : public Base<mul_scalar<Input>> {
 
   public:
     mul_scalar(double scalar, Input const &active);
-    template <class Denom> auto d(Denom &in) const noexcept -> double;
+    template <class Denom> auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
-    auto d2(Denom1 &in1, Denom2 &in2) const noexcept -> std::array<double, 2>;
+    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
+        -> std::array<double, 2>;
 };
 
 template <class Input>
@@ -105,15 +108,16 @@ mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
 
 template <class Input>
 template <class Denom>
-inline auto mul_scalar<Input>::d(Denom &in) const noexcept -> double {
+inline auto mul_scalar<Input>::d(Denom const &in) const noexcept -> double {
     return this->m_scalar * this->m_active.d(in);
 }
 
 template <class Input>
 template <class Denom1, class Denom2>
-inline auto mul_scalar<Input>::d2(Denom1 &in1, Denom2 &in2) const noexcept
+inline auto mul_scalar<Input>::d2(Denom1 const &in1,
+                                  Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
-    auto res = this->m_active.d2(in1, in2);
+    auto const res = this->m_active.d2(in1, in2);
     for (auto &i : res) {
         i *= this->m_scalar;
     }
@@ -128,9 +132,10 @@ class add_active : public Base<add_active<Input1, Input2>> {
   public:
     add_active(Input1 const &active1, Input2 const &active2);
     template <class Denom>
-    [[nodiscard]] auto d(Denom &in) const noexcept -> double;
+    [[nodiscard]] auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
-    auto d2(Denom1 &in1, Denom2 &in2) const noexcept -> std::array<double, 2>;
+    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
+        -> std::array<double, 2>;
 };
 
 template <class Input1, class Input2>
@@ -141,17 +146,18 @@ add_active<Input1, Input2>::add_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
-inline auto add_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
+inline auto add_active<Input1, Input2>::d(Denom const &in) const noexcept
+    -> double {
     return this->m_active1.d(in) + this->m_active2.d(in);
 }
 
 template <class Input1, class Input2>
 template <class Denom1, class Denom2>
-inline auto add_active<Input1, Input2>::d2(Denom1 &in1,
-                                           Denom2 &in2) const noexcept
+inline auto add_active<Input1, Input2>::d2(Denom1 const &in1,
+                                           Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
-    auto res1 = this->m_active1.d2(in1, in2);
-    auto res2 = this->m_active2.d2(in1, in2);
+    auto const res1 = this->m_active1.d2(in1, in2);
+    auto const res2 = this->m_active2.d2(in1, in2);
     std::array<double, 2> res{};
     for (std::size_t i = 0; i < 2; ++i) {
         res[i] = res1[i] + res2[i];
@@ -166,9 +172,10 @@ class mul_active : public Base<mul_active<Input1, Input2>> {
 
   public:
     mul_active(Input1 const &active1, Input2 const &active2);
-    template <class Denom> auto d(Denom &in) const noexcept -> double;
+    template <class Denom> auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
-    auto d2(Denom1 &in1, Denom2 &in2) const noexcept -> std::array<double, 2>;
+    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
+        -> std::array<double, 2>;
 };
 
 template <class Input1, class Input2>
@@ -179,20 +186,21 @@ mul_active<Input1, Input2>::mul_active(Input1 const &active1,
 
 template <class Input1, class Input2>
 template <class Denom>
-inline auto mul_active<Input1, Input2>::d(Denom &in) const noexcept -> double {
+inline auto mul_active<Input1, Input2>::d(Denom const &in) const noexcept
+    -> double {
     return this->m_active1.d(in) * this->m_active2.v() +
            this->m_active2.d(in) * this->m_active1.v();
 }
 
 template <class Input1, class Input2>
 template <class Denom1, class Denom2>
-inline auto mul_active<Input1, Input2>::d2(Denom1 &in1,
-                                           Denom2 &in2) const noexcept
+inline auto mul_active<Input1, Input2>::d2(Denom1 const &in1,
+                                           Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
-    auto res1 = this->m_active1.d2(in1, in2);
-    auto res2 = this->m_active2.d2(in1, in2);
-    double v1 = this->m_active1.v();
-    double v2 = this->m_active2.v();
+    auto const res1 = this->m_active1.d2(in1, in2);
+    auto const res2 = this->m_active2.d2(in1, in2);
+    double const v1 = this->m_active1.v();
+    double const v2 = this->m_active2.v();
     std::array<double, 2> res{};
     for (std::size_t i = 0; i < 2; ++i) {
         res[i] = res1[i] * v2 + res2[i] * v1;
@@ -203,24 +211,25 @@ inline auto mul_active<Input1, Input2>::d2(Denom1 &in1,
 class adouble : public Base<adouble> {
   public:
     explicit adouble(double value);
-    template <class Denom> auto d(Denom &in) const noexcept -> double;
+    template <class Denom> auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
-    auto d2(Denom1 &in1, Denom2 &in2) const noexcept -> std::array<double, 2>;
+    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
+        -> std::array<double, 2>;
 };
 
 inline adouble::adouble(double value) : Base(value) {}
 
 template <class Denom>
-inline auto adouble::d(Denom & /* in */) const noexcept -> double {
+inline auto adouble::d(Denom const & /* in */) const noexcept -> double {
     return 0.;
 }
 
-template <> inline auto adouble::d(adouble &in) const noexcept -> double {
+template <> inline auto adouble::d(adouble const &in) const noexcept -> double {
     return static_cast<double>(&in == this);
 }
 
 template <class Denom1, class Denom2>
-inline auto adouble::d2(Denom1 &in1, Denom2 &in2) const noexcept
+inline auto adouble::d2(Denom1 const &in1, Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
     return {this->d(in1), this->d(in2)};
 }

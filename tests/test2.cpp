@@ -91,4 +91,76 @@ TEST(adhoc2, complex) {
     EXPECT_EQ(res2, 6.);
 }
 
+TEST(adhoc2, depends2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    constexpr auto res =
+        decltype(val1)::depends2<decltype(val1), decltype(val1),
+                                 decltype(val2)>();
+    EXPECT_EQ(res, 2);
+}
+
+TEST(adhoc2, complexdepends2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(2.);
+    auto valsum = val1 + val2;
+    auto valprod = val1 * val2;
+    auto t1 = valsum * valprod;
+    auto t2 = valprod + t1;
+
+    constexpr auto res = decltype(t2)::depends2<decltype(val1), decltype(val2),
+                                                decltype(val3)>();
+    EXPECT_EQ(res, 2);
+}
+
+template <int N> constexpr std::array<double, N> first_n_fibs() {
+    std::array<double, N> ret{};
+    for (std::size_t i = 0; i < N; i++)
+        ret[i] = 1.0;
+    return ret;
+}
+
+TEST(adhoc2, complexd2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(2.);
+    auto valsum = val1 + val2;
+    auto valprod = val1 * val2;
+    auto t1 = valsum * valprod;
+    auto t2 = valprod + t1;
+
+    constexpr auto a = first_n_fibs<3>();
+    // constexpr auto res = t2.d2(val1, val2);
+    EXPECT_EQ(a.size(), 3);
+}
+
+TEST(adhoc2, Initial2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    constexpr auto res = val1.d2(val1, val2);
+    EXPECT_EQ(res.size(), 1);
+    EXPECT_EQ(res[0], 1.);
+}
+
+TEST(adhoc2, InitialMany) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(3.);
+    constexpr auto res = val1.dmany(val1, val2, val3);
+    EXPECT_EQ(res.size(), 1);
+    EXPECT_EQ(res[0], 1.);
+}
+
+TEST(adhoc2, InitialManyInterface) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(3.);
+    constexpr auto res = val1.dinterface(val1, val2, val3);
+    EXPECT_EQ(res.size(), 3);
+    EXPECT_EQ(res[0], 1.);
+    EXPECT_EQ(res[1], 0.);
+    EXPECT_EQ(res[2], 0.);
+}
+
 } // namespace adhoc2
