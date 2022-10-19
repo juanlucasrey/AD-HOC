@@ -165,25 +165,17 @@ inline auto mul_scalar<Input>::d(Denom const &in) const noexcept -> double {
     }
 }
 
-namespace detail {
-
-template <unsigned int C, unsigned int N>
-inline void mult(std::array<double, N> &a, double val) {
-    a[C] *= val;
-    if constexpr (C != (N - 1)) {
-        mult<C + 1, N>(a, val);
-    }
-}
-
-} // namespace detail
-
 template <class Input>
 template <class... Denom>
 inline auto mul_scalar<Input>::dmany(Denom const &...in) const noexcept
     -> std::array<double, mul_scalar<Input>::template depends2<Denom...>()> {
     constexpr std::size_t M = mul_scalar<Input>::template depends2<Denom...>();
     auto res = this->m_active.dmany(in...);
-    detail::mult<0, M>(res, this->m_scalar);
+
+    // should be vectorised by compiler
+    for (auto &r : res) {
+        r *= this->m_scalar;
+    }
     return res;
 }
 
