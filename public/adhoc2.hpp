@@ -9,8 +9,6 @@ namespace adhoc2 {
 template <class Input> class Univariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
-    template <class... Denom>
-    constexpr static auto depends2() noexcept -> std::size_t;
 };
 
 template <class Input>
@@ -19,18 +17,9 @@ inline constexpr auto Univariate<Input>::depends() noexcept -> bool {
     return Input::template depends<Denom>();
 }
 
-template <class Input>
-template <class... Denom>
-inline constexpr auto Univariate<Input>::depends2() noexcept -> std::size_t {
-    return (Univariate<Input>::depends<Denom>() + ...);
-}
-
 template <class Input1, class Input2> class Bivariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
-
-    template <class... Denom>
-    constexpr static auto depends2() noexcept -> std::size_t;
 };
 
 template <class Input1, class Input2>
@@ -38,13 +27,6 @@ template <class Denom>
 inline constexpr auto Bivariate<Input1, Input2>::depends() noexcept -> bool {
     return Input1::template depends<Denom>() ||
            Input2::template depends<Denom>();
-}
-
-template <class Input1, class Input2>
-template <class... Denom>
-inline constexpr auto Bivariate<Input1, Input2>::depends2() noexcept
-    -> std::size_t {
-    return (Bivariate<Input1, Input2>::depends<Denom>() + ...);
 }
 
 template <class Input> class mul_scalar;
@@ -69,6 +51,13 @@ template <class Derived> class Base {
     template <class Arg>
     auto operator*(Arg const &rhs) const
         -> mul_active<const Derived, const Arg>;
+
+    template <class... Denom>
+    constexpr static auto depends3() noexcept -> std::size_t;
+
+    template <class... Denom>
+    inline auto backward(Denom const &...in) const noexcept
+        -> std::array<double, Base<Derived>::template depends3<Denom...>()>;
 };
 
 template <class Derived> Base<Derived>::Base(double value) : m_value(value) {}
@@ -102,6 +91,31 @@ inline auto Base<Derived>::operator*(Arg const &rhs) const
     return {*static_cast<Derived const *>(this), rhs};
 }
 
+template <class Derived>
+template <class... Denom>
+inline constexpr auto Base<Derived>::depends3() noexcept -> std::size_t {
+    return (Derived::template depends<Denom>() + ...);
+}
+
+namespace detail {
+template <typename T, typename... Types>
+constexpr bool are_types_unique_v =
+    (!std::is_same_v<T, Types> && ...) && are_types_unique_v<Types...>;
+template <typename T> inline constexpr bool are_types_unique_v<T> = true;
+} // namespace detail
+
+template <class Derived>
+template <class... Denom>
+inline auto Base<Derived>::backward(Denom const &.../* in */) const noexcept
+    -> std::array<double, Base<Derived>::template depends3<Denom...>()> {
+
+    // let's avoid multiplying the same thing multiple times
+    static_assert(detail::are_types_unique_v<Denom...>);
+    std::array<double, Base<Derived>::template depends3<Denom...>()> res;
+    res[0] = 1.0;
+    return res;
+}
+
 template <class Input>
 class add_scalar : public Base<add_scalar<Input>>, public Univariate<Input> {
     Input const &m_active;
@@ -112,7 +126,7 @@ class add_scalar : public Base<add_scalar<Input>>, public Univariate<Input> {
 
     template <class... Denom>
     auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, add_scalar<Input>::template depends2<Denom...>()>;
+        -> std::array<double, add_scalar<Input>::template depends3<Denom...>()>;
 };
 
 template <class Input>
@@ -132,7 +146,7 @@ inline auto add_scalar<Input>::d(Denom const &in) const noexcept -> double {
 template <class Input>
 template <class... Denom>
 inline auto add_scalar<Input>::dmany(Denom const &...in) const noexcept
-    -> std::array<double, add_scalar<Input>::template depends2<Denom...>()> {
+    -> std::array<double, add_scalar<Input>::template depends3<Denom...>()> {
     return this->m_active.dmany(in...);
 }
 
@@ -147,7 +161,7 @@ class mul_scalar : public Base<mul_scalar<Input>>, public Univariate<Input> {
 
     template <class... Denom>
     auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, mul_scalar<Input>::template depends2<Denom...>()>;
+        -> std::array<double, mul_scalar<Input>::template depends3<Denom...>()>;
 };
 
 template <class Input>
@@ -168,8 +182,8 @@ inline auto mul_scalar<Input>::d(Denom const &in) const noexcept -> double {
 template <class Input>
 template <class... Denom>
 inline auto mul_scalar<Input>::dmany(Denom const &...in) const noexcept
-    -> std::array<double, mul_scalar<Input>::template depends2<Denom...>()> {
-    constexpr std::size_t M = mul_scalar<Input>::template depends2<Denom...>();
+    -> std::array<double, mul_scalar<Input>::template depends3<Denom...>()> {
+    constexpr std::size_t M = mul_scalar<Input>::template depends3<Denom...>();
     auto res = this->m_active.dmany(in...);
 
     // should be vectorised by compiler
@@ -248,7 +262,7 @@ class mul_active : public Base<mul_active<Input1, Input2>>,
 
     template <class... Denom>
     constexpr auto dmany(Denom const &...in) const noexcept -> std::array<
-        double, mul_active<Input1, Input2>::template depends2<Denom...>()>;
+        double, mul_active<Input1, Input2>::template depends3<Denom...>()>;
 };
 
 template <class Input1, class Input2>
@@ -298,9 +312,9 @@ template <class... Denom>
 inline constexpr auto
 mul_active<Input1, Input2>::dmany(Denom const &.../* in */) const noexcept
     -> std::array<double,
-                  mul_active<Input1, Input2>::template depends2<Denom...>()> {
+                  mul_active<Input1, Input2>::template depends3<Denom...>()> {
     constexpr std::size_t M =
-        mul_active<Input1, Input2>::template depends2<Denom...>();
+        mul_active<Input1, Input2>::template depends3<Denom...>();
     std::array<double, M> ret{};
     for (std::size_t i = 0; i < M; i++) {
         ret[i] = 1.0;
@@ -321,11 +335,11 @@ class adouble : public Base<adouble<N>>, public Univariate<adouble<N>> {
 
     template <class Denom1, class Denom2>
     constexpr auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
-        -> std::array<double, adouble<N>::template depends2<Denom1, Denom2>()>;
+        -> std::array<double, adouble<N>::template depends3<Denom1, Denom2>()>;
 
     template <class... Denom>
     constexpr auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, adouble<N>::template depends2<Denom...>()>;
+        -> std::array<double, adouble<N>::template depends3<Denom...>()>;
 
     template <class... Denom>
     constexpr auto dinterface(Denom const &...in) const noexcept
@@ -352,8 +366,8 @@ template <int N>
 template <class Denom1, class Denom2>
 inline constexpr auto adouble<N>::d2(Denom1 const & /* in1 */,
                                      Denom2 const & /* in2 */) const noexcept
-    -> std::array<double, adouble<N>::template depends2<Denom1, Denom2>()> {
-    constexpr std::size_t M = adouble<N>::template depends2<Denom1, Denom2>();
+    -> std::array<double, adouble<N>::template depends3<Denom1, Denom2>()> {
+    constexpr std::size_t M = adouble<N>::template depends3<Denom1, Denom2>();
     std::array<double, M> ret{};
     for (std::size_t i = 0; i < M; i++) {
         ret[i] = 1.0;
@@ -364,8 +378,8 @@ inline constexpr auto adouble<N>::d2(Denom1 const & /* in1 */,
 template <int N>
 template <class... Denom>
 inline constexpr auto adouble<N>::dmany(Denom const &.../* in */) const noexcept
-    -> std::array<double, adouble<N>::template depends2<Denom...>()> {
-    constexpr std::size_t M = adouble<N>::template depends2<Denom...>();
+    -> std::array<double, adouble<N>::template depends3<Denom...>()> {
+    constexpr std::size_t M = adouble<N>::template depends3<Denom...>();
     std::array<double, M> ret{};
     for (std::size_t i = 0; i < M; i++) {
         ret[i] = 1.0;

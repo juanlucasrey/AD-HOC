@@ -95,7 +95,7 @@ TEST(adhoc2, depends2) {
     adouble val1(1.);
     adouble val2(2.);
     constexpr auto res =
-        decltype(val1)::depends2<decltype(val1), decltype(val1),
+        decltype(val1)::depends3<decltype(val1), decltype(val1),
                                  decltype(val2)>();
     EXPECT_EQ(res, 2);
 }
@@ -109,7 +109,7 @@ TEST(adhoc2, complexdepends2) {
     auto t1 = valsum * valprod;
     auto t2 = valprod + t1;
 
-    constexpr auto res = decltype(t2)::depends2<decltype(val1), decltype(val2),
+    constexpr auto res = decltype(t2)::depends3<decltype(val1), decltype(val2),
                                                 decltype(val3)>();
     EXPECT_EQ(res, 2);
 }
@@ -173,6 +173,16 @@ TEST(adhoc2, InitialManymult) {
     EXPECT_EQ(res[0], 2.);
     EXPECT_EQ(res[1], 2.);
     EXPECT_EQ(res[2], 2.);
+}
+
+TEST(adhoc2, Backwards1) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(3.);
+    auto m = val1 * 2.0;
+    auto res = m.backward(val1, val2, val3);
+    EXPECT_EQ(res.size(), 1);
+    EXPECT_EQ(res[0], 1.);
 }
 
 } // namespace adhoc2
