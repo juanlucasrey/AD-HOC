@@ -58,6 +58,46 @@ skip_type(const args<CurrentType, NextType, TypesAlive...> &,
                      args<LeavesAlive...>{}, args<Leaves...>{});
 }
 
+template <class Input, class this_type, typename... TypesAlive,
+          typename... LeavesAlive, typename... Leaves>
+constexpr static auto
+tape_size_next_univariate(args<this_type, TypesAlive...> const &,
+                          args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+    constexpr bool other_types_depend_on_this =
+        (static_cast<bool>(TypesAlive::template depends3<this_type>()) || ...);
+
+    if constexpr (other_types_depend_on_this) {
+        return skip_type(args<this_type const, TypesAlive...>{},
+                         args<LeavesAlive...>{}, args<Leaves...>{});
+    } else {
+        constexpr bool is_input_leaf = has_type2<Input, Leaves...>();
+        if constexpr (is_input_leaf) {
+            constexpr bool is_input_new_leaf =
+                !has_type2<Input, LeavesAlive...>();
+
+            if constexpr (is_input_new_leaf) {
+                return tape_size_aux(args<TypesAlive...>{},
+                                     args<Input, LeavesAlive...>{},
+                                     args<Leaves...>{});
+            } else {
+                return tape_size_aux(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
+            }
+        } else {
+            constexpr bool is_input_new = !has_type2<Input, TypesAlive...>();
+
+            if constexpr (is_input_new) {
+                return tape_size_aux(args<Input, TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
+            } else {
+                return tape_size_aux(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
+            }
+        }
+    }
+}
+
 template <class Input1, class Input2, class this_type, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves>
 constexpr static auto
@@ -252,6 +292,49 @@ tape_size_bivariate(args<this_type, TypesAlive...> const &,
             args<Leaves...>{});
 
     return std::max(curent_tape_size, next_tape_size);
+}
+
+template <class Input, class this_type, typename... TypesAlive,
+          typename... LeavesAlive, typename... Leaves>
+constexpr static auto
+tape_size_univariate(args<this_type, TypesAlive...> const &,
+                     args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+
+    static_assert(!has_type2<this_type, Leaves...>());
+
+    constexpr std::size_t curent_tape_size =
+        1 + sizeof...(TypesAlive) + sizeof...(LeavesAlive);
+
+    constexpr std::size_t next_tape_size = tape_size_next_univariate<Input>(
+        args<this_type const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Leaves...>{});
+
+    return std::max(curent_tape_size, next_tape_size);
+}
+
+template <class Input, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves>
+constexpr static auto
+tape_size(args<add_scalar<Input> const, TypesAlive...> const &,
+          args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+
+    return tape_size_univariate<Input>(
+        args<add_scalar<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Leaves...>{});
+}
+
+template <class Input, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves>
+constexpr static auto
+tape_size(args<mul_scalar<Input> const, TypesAlive...> const &,
+          args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+
+    return tape_size_univariate<Input>(
+        args<mul_scalar<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Leaves...>{});
 }
 
 template <class Input1, class Input2, typename... TypesAlive,

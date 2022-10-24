@@ -53,13 +53,13 @@ template <class Derived> class Base {
     auto operator+(double rhs) const -> add_scalar<const Derived>;
     auto operator*(double rhs) const -> mul_scalar<const Derived>;
 
-    template <class Arg>
-    auto operator+(Arg const &rhs) const
-        -> add_active<const Derived, const Arg>;
+    template <class Derived2>
+    auto operator+(Base<Derived2> const &rhs) const
+        -> add_active<const Derived, const Derived2>;
 
-    template <class Arg>
-    auto operator*(Arg const &rhs) const
-        -> mul_active<const Derived, const Arg>;
+    template <class Derived2>
+    auto operator*(Base<Derived2> const &rhs) const
+        -> mul_active<const Derived, const Derived2>;
 
     template <class... Denom>
     constexpr static auto depends3() noexcept -> std::size_t;
@@ -87,17 +87,19 @@ auto Base<Derived>::operator*(double rhs) const -> mul_scalar<const Derived> {
 }
 
 template <class Derived>
-template <class Arg>
-inline auto Base<Derived>::operator+(Arg const &rhs) const
-    -> add_active<const Derived, const Arg> {
-    return {*static_cast<Derived const *>(this), rhs};
+template <class Derived2>
+inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
+    -> add_active<const Derived, const Derived2> {
+    return {*static_cast<Derived const *>(this),
+            *static_cast<Derived2 const *>(&rhs)};
 }
 
 template <class Derived>
-template <class Arg>
-inline auto Base<Derived>::operator*(Arg const &rhs) const
-    -> mul_active<const Derived, const Arg> {
-    return {*static_cast<Derived const *>(this), rhs};
+template <class Derived2>
+inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
+    -> mul_active<const Derived, const Derived2> {
+    return {*static_cast<Derived const *>(this),
+            *static_cast<Derived2 const *>(&rhs)};
 }
 
 template <class Derived>

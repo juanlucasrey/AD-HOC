@@ -76,4 +76,26 @@ TEST(adhoc2, tapeskip) {
     static_assert(size == 3);
 }
 
+TEST(adhoc2, tapecomplexd2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(2.);
+    auto valsum = val1 + val2 * 2 + val3;
+    auto valprod = val1 * val2 + 3;
+    auto valprod2 = val2 * val2 * 4;
+    auto valprod3 = valprod * valprod2;
+    auto res = valsum * valprod3;
+
+    constexpr std::size_t size = detail::tape_size(
+        args<decltype(res) const>{}, args<>{},
+        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    static_assert(size == 5);
+
+    auto res2 = valprod3 * valsum;
+    constexpr std::size_t size2 = detail::tape_size(
+        args<decltype(res2) const>{}, args<>{},
+        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    static_assert(size2 == 4);
+}
+
 } // namespace adhoc2
