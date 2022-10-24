@@ -20,7 +20,7 @@ tape_size(const args<adouble_aux<N> const, TypesAlive...> &,
 
     using this_type = adouble_aux<N>;
 
-    // because we are on a leave, thus_type should be included
+    // because we are on a leave, this_type should be included
     static_assert(has_type2<this_type, Leaves...>());
 
     // this_type should only be once in TypesAlive
@@ -248,8 +248,8 @@ tape_size_bivariate(args<this_type, TypesAlive...> const &,
 
     constexpr std::size_t next_tape_size =
         tape_size_next_bivariate<Input1, Input2>(
-            args<mul_active<Input1, Input2> const, TypesAlive...>{},
-            args<LeavesAlive...>{}, args<Leaves...>{});
+            args<this_type const, TypesAlive...>{}, args<LeavesAlive...>{},
+            args<Leaves...>{});
 
     return std::max(curent_tape_size, next_tape_size);
 }
