@@ -1,4 +1,5 @@
 #include <adhoc2.hpp>
+#include <utils.hpp>
 
 #include <gtest/gtest.h>
 
@@ -114,6 +115,19 @@ TEST(adhoc2, complexdepends2) {
     EXPECT_EQ(res, 2);
 }
 
+TEST(adhoc2, complexdepends3) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(2.);
+    auto valsum = val1 + val2;
+    auto valprod = val1 * val2;
+    auto t1 = valsum * valprod;
+    auto t2 = valprod + t1;
+
+    constexpr auto res = decltype(t2)::depends<decltype(t1)>();
+    EXPECT_EQ(res, true);
+}
+
 template <int N> constexpr std::array<double, N> first_n_fibs() {
     std::array<double, N> ret{};
     for (std::size_t i = 0; i < N; i++)
@@ -183,6 +197,21 @@ TEST(adhoc2, Backwards1) {
     auto res = m.backward(val1, val2, val3);
     EXPECT_EQ(res.size(), 1);
     EXPECT_EQ(res[0], 1.);
+}
+
+template <std::size_t N> class sometype {};
+
+TEST(adhoc2, position) {
+    double temp = 0;
+    constexpr auto res1 = has_type<int, float, double, int, unsigned int>(temp);
+    constexpr auto res2 = has_type<int, float, int, unsigned int>(temp);
+    static_assert(res1 == true);
+    static_assert(res2 == false);
+    constexpr auto res3 = idx_type<int, float, double, int, unsigned int>(temp);
+    static_assert(res3 == 2);
+
+    constexpr auto res4 = has_type2<double>();
+    static_assert(res4 == false);
 }
 
 } // namespace adhoc2
