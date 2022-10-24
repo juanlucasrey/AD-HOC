@@ -18,7 +18,9 @@ template <class Input, class Derived> class Univariate {
 template <class Input, class Derived>
 template <class Denom>
 inline constexpr auto Univariate<Input, Derived>::depends() noexcept -> bool {
-    return std::is_same_v<Denom, Derived> || Input::template depends<Denom>();
+    return std::is_same_v<Denom, Derived> ||
+           std::is_same_v<Denom, Derived const> ||
+           Input::template depends<Denom>();
 }
 
 template <class Input1, class Input2, class Derived> class Bivariate {
@@ -31,6 +33,7 @@ template <class Denom>
 inline constexpr auto Bivariate<Input1, Input2, Derived>::depends() noexcept
     -> bool {
     return std::is_same_v<Denom, Derived> ||
+           std::is_same_v<Denom, Derived const> ||
            Input1::template depends<Denom>() ||
            Input2::template depends<Denom>();
 }

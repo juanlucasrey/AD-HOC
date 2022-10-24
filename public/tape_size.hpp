@@ -66,7 +66,7 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
     -> std::size_t {
 
     constexpr bool other_types_depend_on_this =
-        static_cast<bool>(this_type::template depends3<TypesAlive...>());
+        (static_cast<bool>(TypesAlive::template depends3<this_type>()) || ...);
 
     if constexpr (other_types_depend_on_this) {
         return skip_type(args<this_type const, TypesAlive...>{},
