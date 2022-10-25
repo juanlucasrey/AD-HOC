@@ -140,87 +140,20 @@ inline auto Base<Derived>::backward(Denom const &.../* in */) const noexcept
 }
 
 template <class Input>
-class add_scalar : public Base<add_scalar<Input>>,
-                   public Univariate<Input, add_scalar<Input>> {
-    Input const &m_active;
-
+class exp_t : public Base<exp_t<Input>>,
+              public Univariate<Input, exp_t<Input>> {
   public:
-    add_scalar(double scalar, Input const &active);
-    template <class Denom> auto d(Denom const &in) const noexcept -> double;
-
-    template <class... Denom>
-    auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, add_scalar<Input>::template depends3<Denom...>()>;
+    explicit exp_t(Input const &active);
 };
 
 template <class Input>
-add_scalar<Input>::add_scalar(double scalar, Input const &active)
-    : Base<add_scalar<Input>>(scalar + active.v()), m_active(active) {}
+exp_t<Input>::exp_t(Input const &active)
+    : Base<exp_t<Input>>(std::exp(active.v())) {}
 
-template <class Input>
-template <class Denom>
-inline auto add_scalar<Input>::d(Denom const &in) const noexcept -> double {
-    if constexpr (Univariate<Input,
-                             add_scalar<Input>>::template depends<Denom>()) {
-        return this->m_active.d(in);
-    } else {
-        return 0.;
-    }
+template <class Derived>
+auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
+    return exp_t<const Derived>(*static_cast<const Derived *>(&in));
 }
-
-template <class Input>
-template <class... Denom>
-inline auto add_scalar<Input>::dmany(Denom const &...in) const noexcept
-    -> std::array<double, add_scalar<Input>::template depends3<Denom...>()> {
-    return this->m_active.dmany(in...);
-}
-
-template <class Input>
-class mul_scalar : public Base<mul_scalar<Input>>,
-                   public Univariate<Input, mul_scalar<Input>> {
-    double m_scalar{0.};
-    Input const &m_active;
-
-  public:
-    mul_scalar(double scalar, Input const &active);
-    template <class Denom> auto d(Denom const &in) const noexcept -> double;
-
-    template <class... Denom>
-    auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, mul_scalar<Input>::template depends3<Denom...>()>;
-};
-
-template <class Input>
-mul_scalar<Input>::mul_scalar(double scalar, Input const &active)
-    : Base<mul_scalar<Input>>(scalar * active.v()), m_scalar(scalar),
-      m_active(active) {}
-
-template <class Input>
-template <class Denom>
-inline auto mul_scalar<Input>::d(Denom const &in) const noexcept -> double {
-    if constexpr (Univariate<Input,
-                             mul_scalar<Input>>::template depends<Denom>()) {
-        return this->m_scalar * this->m_active.d(in);
-    } else {
-        return 0.;
-    }
-}
-
-template <class Input>
-template <class... Denom>
-inline auto mul_scalar<Input>::dmany(Denom const &...in) const noexcept
-    -> std::array<double, mul_scalar<Input>::template depends3<Denom...>()> {
-    constexpr std::size_t M = mul_scalar<Input>::template depends3<Denom...>();
-    auto res = this->m_active.dmany(in...);
-
-    // should be vectorised by compiler
-    for (auto &r : res) {
-        r *= this->m_scalar;
-    }
-    return res;
-}
-
-template <typename... Types> struct args {};
 
 template <class Input1, class Input2>
 class add_active
@@ -418,6 +351,8 @@ adouble_aux<N>::dinterface(Denom const &.../* in */) const noexcept
 }
 
 } // namespace detail
+
+template <typename... Types> struct args {};
 
 #define adouble detail::adouble_aux<__COUNTER__>
 

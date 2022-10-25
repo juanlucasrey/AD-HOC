@@ -278,25 +278,12 @@ tape_size_univariate(args<this_type, TypesAlive...> const &,
 
 template <class Input, typename... TypesAlive, typename... LeavesAlive,
           typename... Leaves>
-constexpr static auto
-tape_size(args<add_scalar<Input> const, TypesAlive...> const &,
-          args<LeavesAlive...> const &, args<Leaves...> const &)
-    -> std::size_t {
+constexpr static auto tape_size(args<exp_t<Input> const, TypesAlive...> const &,
+                                args<LeavesAlive...> const &,
+                                args<Leaves...> const &) -> std::size_t {
 
     return tape_size_univariate<Input>(
-        args<add_scalar<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
-        args<Leaves...>{});
-}
-
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto
-tape_size(args<mul_scalar<Input> const, TypesAlive...> const &,
-          args<LeavesAlive...> const &, args<Leaves...> const &)
-    -> std::size_t {
-
-    return tape_size_univariate<Input>(
-        args<mul_scalar<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<exp_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
         args<Leaves...>{});
 }
 
