@@ -92,9 +92,8 @@ TEST(adhoc2, tapetrip2) {
     auto m = val1 * val2;
     auto valprod = m * m;
 
-    std::size_t size = tape_size(valprod, val1);
-    // static_assert(size == 2);
-    std::cout << size << std::endl;
+    constexpr std::size_t size = tape_size(valprod, val1, val2);
+    static_assert(size == 3);
 }
 
 } // namespace adhoc2
