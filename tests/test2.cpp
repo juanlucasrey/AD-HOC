@@ -84,4 +84,18 @@ TEST(adhoc2, position) {
     static_assert(!res4);
 }
 
+TEST(adhoc2, derivative) {
+    adouble val1(1.);
+    auto valexp = exp(val1);
+    auto valcos = cos(valexp);
+    double derivative = 0.;
+    valcos.d(derivative);
+    double derivative2 = 0.;
+    valexp.d(derivative2);
+    derivative *= derivative2;
+    // https://www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
+    EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
+    // std::cout << derivative << std::endl;
+}
+
 } // namespace adhoc2
