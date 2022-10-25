@@ -55,10 +55,8 @@ inline constexpr auto Bivariate<Input1, Input2, Derived>::depends_in() noexcept
            Input2::template depends<Denom>();
 }
 
-template <class Input> class mul_scalar;
-template <class Input> class add_scalar;
-template <class Input1, class Input2> class mul_active;
-template <class Input1, class Input2> class add_active;
+template <class Input1, class Input2> class mul;
+template <class Input1, class Input2> class add;
 
 template <class Derived> class Base {
   protected:
@@ -70,11 +68,11 @@ template <class Derived> class Base {
 
     template <class Derived2>
     auto operator+(Base<Derived2> const &rhs) const
-        -> add_active<const Derived, const Derived2>;
+        -> add<const Derived, const Derived2>;
 
     template <class Derived2>
     auto operator*(Base<Derived2> const &rhs) const
-        -> mul_active<const Derived, const Derived2>;
+        -> mul<const Derived, const Derived2>;
 
     template <class... Denom>
     constexpr static auto depends3() noexcept -> std::size_t;
@@ -94,7 +92,7 @@ inline auto Base<Derived>::v() const noexcept -> double {
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
-    -> add_active<const Derived, const Derived2> {
+    -> add<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -102,7 +100,7 @@ inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
-    -> mul_active<const Derived, const Derived2> {
+    -> mul<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -156,14 +154,13 @@ auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
 }
 
 template <class Input1, class Input2>
-class add_active
-    : public Base<add_active<Input1, Input2>>,
-      public Bivariate<Input1, Input2, add_active<Input1, Input2>> {
+class add : public Base<add<Input1, Input2>>,
+            public Bivariate<Input1, Input2, add<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
   public:
-    add_active(Input1 const &active1, Input2 const &active2);
+    add(Input1 const &active1, Input2 const &active2);
     template <class Denom>
     [[nodiscard]] auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
@@ -172,15 +169,13 @@ class add_active
 };
 
 template <class Input1, class Input2>
-add_active<Input1, Input2>::add_active(Input1 const &active1,
-                                       Input2 const &active2)
-    : Base<add_active<Input1, Input2>>(active1.v() + active2.v()),
-      m_active1(active1), m_active2(active2) {}
+add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
+    : Base<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
+      m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
-inline auto add_active<Input1, Input2>::d(Denom const &in) const noexcept
-    -> double {
+inline auto add<Input1, Input2>::d(Denom const &in) const noexcept -> double {
     if constexpr (Input1::template depends<Denom>()) {
         if constexpr (Input2::template depends<Denom>()) {
             return this->m_active1.d(in) + this->m_active2.d(in);
@@ -198,8 +193,8 @@ inline auto add_active<Input1, Input2>::d(Denom const &in) const noexcept
 
 template <class Input1, class Input2>
 template <class Denom1, class Denom2>
-inline auto add_active<Input1, Input2>::d2(Denom1 const &in1,
-                                           Denom2 const &in2) const noexcept
+inline auto add<Input1, Input2>::d2(Denom1 const &in1,
+                                    Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
     auto res1 = this->m_active1.d2(in1, in2);
     auto res2 = this->m_active2.d2(in1, in2);
@@ -211,34 +206,32 @@ inline auto add_active<Input1, Input2>::d2(Denom1 const &in1,
 }
 
 template <class Input1, class Input2>
-class mul_active
-    : public Base<mul_active<Input1, Input2>>,
-      public Bivariate<Input1, Input2, mul_active<Input1, Input2>> {
+class mul : public Base<mul<Input1, Input2>>,
+            public Bivariate<Input1, Input2, mul<Input1, Input2>> {
     Input1 const &m_active1;
     Input2 const &m_active2;
 
   public:
-    mul_active(Input1 const &active1, Input2 const &active2);
+    mul(Input1 const &active1, Input2 const &active2);
     template <class Denom> auto d(Denom const &in) const noexcept -> double;
     template <class Denom1, class Denom2>
     auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
         -> std::array<double, 2>;
 
     template <class... Denom>
-    constexpr auto dmany(Denom const &...in) const noexcept -> std::array<
-        double, mul_active<Input1, Input2>::template depends3<Denom...>()>;
+    constexpr auto dmany(Denom const &...in) const noexcept
+        -> std::array<double,
+                      mul<Input1, Input2>::template depends3<Denom...>()>;
 };
 
 template <class Input1, class Input2>
-mul_active<Input1, Input2>::mul_active(Input1 const &active1,
-                                       Input2 const &active2)
-    : Base<mul_active<Input1, Input2>>(active1.v() * active2.v()),
-      m_active1(active1), m_active2(active2) {}
+mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
+    : Base<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
+      m_active2(active2) {}
 
 template <class Input1, class Input2>
 template <class Denom>
-inline auto mul_active<Input1, Input2>::d(Denom const &in) const noexcept
-    -> double {
+inline auto mul<Input1, Input2>::d(Denom const &in) const noexcept -> double {
     if constexpr (Input1::template depends<Denom>()) {
         if constexpr (Input2::template depends<Denom>()) {
             return this->m_active1.d(in) * this->m_active2.v() +
@@ -257,8 +250,8 @@ inline auto mul_active<Input1, Input2>::d(Denom const &in) const noexcept
 
 template <class Input1, class Input2>
 template <class Denom1, class Denom2>
-inline auto mul_active<Input1, Input2>::d2(Denom1 const &in1,
-                                           Denom2 const &in2) const noexcept
+inline auto mul<Input1, Input2>::d2(Denom1 const &in1,
+                                    Denom2 const &in2) const noexcept
     -> std::array<double, 2> {
     auto res1 = this->m_active1.d2(in1, in2);
     auto res2 = this->m_active2.d2(in1, in2);
