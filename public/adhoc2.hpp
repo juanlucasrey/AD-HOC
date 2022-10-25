@@ -119,14 +119,14 @@ class exp_t : public Base<exp_t<Input>>,
 
   public:
     explicit exp_t(Input const &active);
-    void d(double &in);
+    auto d() -> double;
 };
 
 template <class Input>
 exp_t<Input>::exp_t(Input const &active)
     : Base<exp_t<Input>>(std::exp(active.v())), m_active(active) {}
 
-template <class Input> void exp_t<Input>::d(double &in) { in += this->v(); }
+template <class Input> auto exp_t<Input>::d() -> double { return this->v(); }
 
 template <class Derived>
 auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
@@ -141,15 +141,15 @@ class cos_t : public Base<cos_t<Input>>,
 
   public:
     explicit cos_t(Input const &active);
-    void d(double &in);
+    auto d() -> double;
 };
 
 template <class Input>
 cos_t<Input>::cos_t(Input const &active)
     : Base<cos_t<Input>>(std::cos(active.v())), m_active(active) {}
 
-template <class Input> void cos_t<Input>::d(double &in) {
-    in -= std::sin(this->m_active.v());
+template <class Input> auto cos_t<Input>::d() -> double {
+    return -std::sin(this->m_active.v());
 }
 
 template <class Derived>
@@ -165,8 +165,8 @@ class add : public Base<add<Input1, Input2>>,
 
   public:
     add(Input1 const &active1, Input2 const &active2);
-    void d1(double &in);
-    void d2(double &in);
+    auto d1() -> double;
+    auto d2() -> double;
 };
 
 template <class Input1, class Input2>
@@ -174,12 +174,12 @@ add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
     : Base<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
       m_active2(active2) {}
 
-template <class Input1, class Input2> void add<Input1, Input2>::d1(double &in) {
-    in += 1.0;
+template <class Input1, class Input2> auto add<Input1, Input2>::d1() -> double {
+    return 1.0;
 }
 
-template <class Input1, class Input2> void add<Input1, Input2>::d2(double &in) {
-    in += 1.0;
+template <class Input1, class Input2> auto add<Input1, Input2>::d2() -> double {
+    return 1.0;
 }
 
 template <class Input1, class Input2>
@@ -190,8 +190,8 @@ class mul : public Base<mul<Input1, Input2>>,
 
   public:
     mul(Input1 const &active1, Input2 const &active2);
-    void d1(double &in);
-    void d2(double &in);
+    auto d1() -> double;
+    auto d2() -> double;
 };
 
 template <class Input1, class Input2>
@@ -199,12 +199,12 @@ mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
     : Base<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
       m_active2(active2) {}
 
-template <class Input1, class Input2> void mul<Input1, Input2>::d1(double &in) {
-    in += this->m_active2.v();
+template <class Input1, class Input2> auto mul<Input1, Input2>::d1() -> double {
+    return this->m_active2.v();
 }
 
-template <class Input1, class Input2> void mul<Input1, Input2>::d2(double &in) {
-    in += this->m_active1.v();
+template <class Input1, class Input2> auto mul<Input1, Input2>::d2() -> double {
+    return this->m_active1.v();
 }
 
 namespace detail {
