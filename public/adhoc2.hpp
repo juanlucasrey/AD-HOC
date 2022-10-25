@@ -13,6 +13,7 @@ namespace adhoc2 {
 template <class Input, class Derived> class Univariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
+    template <class Denom> constexpr static auto depends_in() noexcept -> bool;
 };
 
 template <class Input, class Derived>
@@ -23,9 +24,17 @@ inline constexpr auto Univariate<Input, Derived>::depends() noexcept -> bool {
            Input::template depends<Denom>();
 }
 
+template <class Input, class Derived>
+template <class Denom>
+inline constexpr auto Univariate<Input, Derived>::depends_in() noexcept
+    -> bool {
+    return Input::template depends<Denom>();
+}
+
 template <class Input1, class Input2, class Derived> class Bivariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
+    template <class Denom> constexpr static auto depends_in() noexcept -> bool;
 };
 
 template <class Input1, class Input2, class Derived>
@@ -35,6 +44,14 @@ inline constexpr auto Bivariate<Input1, Input2, Derived>::depends() noexcept
     return std::is_same_v<Denom, Derived> ||
            std::is_same_v<Denom, Derived const> ||
            Input1::template depends<Denom>() ||
+           Input2::template depends<Denom>();
+}
+
+template <class Input1, class Input2, class Derived>
+template <class Denom>
+inline constexpr auto Bivariate<Input1, Input2, Derived>::depends_in() noexcept
+    -> bool {
+    return Input1::template depends<Denom>() ||
            Input2::template depends<Denom>();
 }
 
