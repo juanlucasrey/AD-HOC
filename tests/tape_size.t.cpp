@@ -8,8 +8,7 @@ namespace adhoc2 {
 
 TEST(adhoc2, tapesize) {
     adouble val1(1.);
-    constexpr std::size_t size = detail::tape_size(
-        args<decltype(val1) const>{}, args<>{}, args<decltype(val1)>{});
+    constexpr std::size_t size = tape_size(val1, val1);
     static_assert(size == 1);
 }
 
@@ -17,9 +16,7 @@ TEST(adhoc2, tapemult) {
     adouble val1(1.);
     adouble val2(2.);
     auto valprod = val1 * val2;
-    constexpr std::size_t size =
-        detail::tape_size(args<decltype(valprod) const>{}, args<>{},
-                          args<decltype(val1), decltype(val2)>{});
+    constexpr std::size_t size = tape_size(valprod, val1, val2);
     static_assert(size == 2);
 }
 
@@ -27,9 +24,7 @@ TEST(adhoc2, tapeadd) {
     adouble val1(1.);
     adouble val2(2.);
     auto valprod = val1 + val2;
-    constexpr std::size_t size =
-        detail::tape_size(args<decltype(valprod) const>{}, args<>{},
-                          args<decltype(val1), decltype(val2)>{});
+    constexpr std::size_t size = tape_size(valprod, val1, val2);
     static_assert(size == 2);
 }
 
@@ -43,23 +38,12 @@ TEST(adhoc2, tapecomplexd) {
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
-    constexpr std::size_t size = detail::tape_size(
-        args<decltype(res) const>{}, args<>{},
-        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    constexpr std::size_t size = tape_size(res, val1, val2, val3);
     static_assert(size == 5);
 
     auto res2 = valprod3 * valsum;
-    constexpr std::size_t size2 = detail::tape_size(
-        args<decltype(res2) const>{}, args<>{},
-        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    constexpr std::size_t size2 = tape_size(res2, val1, val2, val3);
     static_assert(size2 == 4);
-}
-
-TEST(adhoc2, tape) {
-    adouble val1(1.);
-    constexpr std::size_t size = detail::tape_size(
-        args<decltype(val1) const>{}, args<>{}, args<decltype(val1)>{});
-    static_assert(size == 1);
 }
 
 TEST(adhoc2, tapeskip) {
@@ -70,9 +54,7 @@ TEST(adhoc2, tapeskip) {
     auto valprod = valsum * val3;
     auto res = valsum * valprod;
 
-    constexpr std::size_t size = detail::tape_size(
-        args<decltype(res) const>{}, args<>{},
-        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    constexpr std::size_t size = tape_size(res, val1, val2, val3);
     static_assert(size == 3);
 }
 
@@ -86,15 +68,11 @@ TEST(adhoc2, tapecomplexd2) {
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
-    constexpr std::size_t size = detail::tape_size(
-        args<decltype(res) const>{}, args<>{},
-        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    constexpr std::size_t size = tape_size(res, val1, val2, val3);
     static_assert(size == 5);
 
     auto res2 = valprod3 * valsum;
-    constexpr std::size_t size2 = detail::tape_size(
-        args<decltype(res2) const>{}, args<>{},
-        args<decltype(val1), decltype(val2), decltype(val3)>{});
+    constexpr std::size_t size2 = tape_size(res2, val1, val2, val3);
     static_assert(size2 == 4);
 }
 

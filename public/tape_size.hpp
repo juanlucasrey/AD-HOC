@@ -3,7 +3,8 @@
 
 #include <adhoc2.hpp>
 
-namespace adhoc2::detail {
+namespace adhoc2 {
+namespace detail {
 
 template <typename ThisType, typename... TypesAlive, typename... LeavesAlive,
           typename... Leaves>
@@ -361,6 +362,14 @@ tape_size(args<add_active<Input1, Input2> const, TypesAlive...> const &,
         args<LeavesAlive...>{}, args<Leaves...>{});
 }
 
-} // namespace adhoc2::detail
+} // namespace detail
+
+template <class Output, typename... Leaves>
+constexpr static auto tape_size(Output const &, Leaves const &...)
+    -> std::size_t {
+    return detail::tape_size(args<Output const>{}, args<>{}, args<Leaves...>{});
+}
+
+} // namespace adhoc2
 
 #endif // TAPE_SIZE_HPP
