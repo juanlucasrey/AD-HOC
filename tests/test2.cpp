@@ -95,7 +95,6 @@ TEST(adhoc2, derivative) {
     derivative *= derivative2;
     // https://www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
     EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
-    // std::cout << derivative << std::endl;
 }
 
 } // namespace adhoc2
