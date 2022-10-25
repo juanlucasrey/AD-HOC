@@ -8,8 +8,8 @@ namespace adhoc2 {
 TEST(adhoc2, Initial) {
     adouble val(1.);
     auto valplus = val + 1.0;
-    auto const valmult = valplus * 2.0;
-    auto valmult2 = (valmult + 2.0) * 3.0;
+    auto const valmult = mulscalar(valplus, 2.0);
+    auto valmult2 = mulscalar((valmult + 2.0), 3.0);
     // double result = valmult2;
     // double deriv = d(result) / d(val);
     // double deriv = d(result, val);
@@ -42,7 +42,7 @@ TEST(adhoc2, doperatorplus) {
 TEST(adhoc2, doperatormult) {
     adouble val1(1.);
     adouble val2(2.);
-    auto valmul = val1 * 2.0;
+    auto valmul = mulscalar(val1, 2.0);
     double res1 = valmul.d(val1);
     double res2 = valmul.d(val2);
     EXPECT_EQ(res1, 2.);
@@ -52,14 +52,14 @@ TEST(adhoc2, doperatormult) {
 TEST(adhoc2, activeadd) {
     adouble val1(1.);
     adouble val2(2.);
-    auto valsum = (val1 * 3.0) + val2;
+    auto valsum = mulscalar(val1, 3.0) + val2;
 
     double res1 = valsum.d(val1);
     double res2 = valsum.d(val2);
     EXPECT_EQ(res1, 3.);
     EXPECT_EQ(res2, 1.);
 
-    auto valsum2 = (val1 * 3.0) + val1;
+    auto valsum2 = mulscalar(val1, 3.0) + val1;
 
     double res1_2 = valsum2.d(val1);
     double res2_2 = valsum2.d(val2);
@@ -181,7 +181,7 @@ TEST(adhoc2, InitialManymult) {
     adouble val1(1.);
     adouble val2(2.);
     adouble val3(3.);
-    auto m = val1 * 2.0;
+    auto m = mulscalar(val1, 2.0);
     auto res = m.dmany(val1, val1, val1);
     EXPECT_EQ(res.size(), 3);
     EXPECT_EQ(res[0], 2.);
@@ -193,7 +193,7 @@ TEST(adhoc2, Backwards1) {
     adouble val1(1.);
     adouble val2(2.);
     adouble val3(3.);
-    auto m = val1 * 2.0;
+    auto m = mulscalar(val1, 2.0);
     auto res = m.backward(val1, val2, val3);
     EXPECT_EQ(res.size(), 1);
     EXPECT_EQ(res[0], 1.);
