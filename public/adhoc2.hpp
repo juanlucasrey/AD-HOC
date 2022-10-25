@@ -67,8 +67,6 @@ template <class Derived> class Base {
   public:
     explicit Base(double value);
     [[nodiscard]] auto v() const noexcept -> double;
-    auto operator+(double rhs) const -> add_scalar<const Derived>;
-    auto operator*(double rhs) const -> mul_scalar<const Derived>;
 
     template <class Derived2>
     auto operator+(Base<Derived2> const &rhs) const
@@ -91,16 +89,6 @@ template <class Derived> Base<Derived>::Base(double value) : m_value(value) {}
 template <class Derived>
 inline auto Base<Derived>::v() const noexcept -> double {
     return this->m_value;
-}
-
-template <class Derived>
-auto Base<Derived>::operator+(double rhs) const -> add_scalar<const Derived> {
-    return {rhs, *static_cast<Derived const *>(this)};
-}
-
-template <class Derived>
-auto Base<Derived>::operator*(double rhs) const -> mul_scalar<const Derived> {
-    return {rhs, *static_cast<Derived const *>(this)};
 }
 
 template <class Derived>
