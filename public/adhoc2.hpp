@@ -140,17 +140,47 @@ inline auto Base<Derived>::backward(Denom const &.../* in */) const noexcept
 template <class Input>
 class exp_t : public Base<exp_t<Input>>,
               public Univariate<Input, exp_t<Input>> {
+  private:
+    Input const &m_active;
+
   public:
     explicit exp_t(Input const &active);
+    void d(double &in);
 };
 
 template <class Input>
 exp_t<Input>::exp_t(Input const &active)
-    : Base<exp_t<Input>>(std::exp(active.v())) {}
+    : Base<exp_t<Input>>(std::exp(active.v())), m_active(active) {}
+
+template <class Input> void exp_t<Input>::d(double &in) { in += this->v(); }
 
 template <class Derived>
 auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
     return exp_t<const Derived>(*static_cast<const Derived *>(&in));
+}
+
+template <class Input>
+class cos_t : public Base<exp_t<Input>>,
+              public Univariate<Input, exp_t<Input>> {
+  private:
+    Input const &m_active;
+
+  public:
+    explicit cos_t(Input const &active);
+    void d(double &in);
+};
+
+template <class Input>
+cos_t<Input>::cos_t(Input const &active)
+    : Base<cos_t<Input>>(std::cos(active.v())), m_active(active) {}
+
+template <class Input> void cos_t<Input>::d(double &in) {
+    in -= std::sin(this->m_active.v());
+}
+
+template <class Derived>
+auto cos(Base<Derived> const &in) -> cos_t<const Derived> {
+    return cos_t<const Derived>(*static_cast<const Derived *>(&in));
 }
 
 template <class Input1, class Input2>
@@ -161,49 +191,12 @@ class add : public Base<add<Input1, Input2>>,
 
   public:
     add(Input1 const &active1, Input2 const &active2);
-    template <class Denom>
-    [[nodiscard]] auto d(Denom const &in) const noexcept -> double;
-    template <class Denom1, class Denom2>
-    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
-        -> std::array<double, 2>;
 };
 
 template <class Input1, class Input2>
 add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
     : Base<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
       m_active2(active2) {}
-
-template <class Input1, class Input2>
-template <class Denom>
-inline auto add<Input1, Input2>::d(Denom const &in) const noexcept -> double {
-    if constexpr (Input1::template depends<Denom>()) {
-        if constexpr (Input2::template depends<Denom>()) {
-            return this->m_active1.d(in) + this->m_active2.d(in);
-        } else {
-            return this->m_active1.d(in);
-        }
-    } else {
-        if constexpr (Input2::template depends<Denom>()) {
-            return this->m_active2.d(in);
-        } else {
-            return 0.;
-        }
-    }
-}
-
-template <class Input1, class Input2>
-template <class Denom1, class Denom2>
-inline auto add<Input1, Input2>::d2(Denom1 const &in1,
-                                    Denom2 const &in2) const noexcept
-    -> std::array<double, 2> {
-    auto res1 = this->m_active1.d2(in1, in2);
-    auto res2 = this->m_active2.d2(in1, in2);
-    std::array<double, 2> res{};
-    for (std::size_t i = 0; i < 2; ++i) {
-        res[i] = res1[i] + res2[i];
-    }
-    return res;
-}
 
 template <class Input1, class Input2>
 class mul : public Base<mul<Input1, Input2>>,
@@ -213,56 +206,12 @@ class mul : public Base<mul<Input1, Input2>>,
 
   public:
     mul(Input1 const &active1, Input2 const &active2);
-    template <class Denom> auto d(Denom const &in) const noexcept -> double;
-    template <class Denom1, class Denom2>
-    auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
-        -> std::array<double, 2>;
-
-    template <class... Denom>
-    constexpr auto dmany(Denom const &...in) const noexcept
-        -> std::array<double,
-                      mul<Input1, Input2>::template depends3<Denom...>()>;
 };
 
 template <class Input1, class Input2>
 mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
     : Base<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
       m_active2(active2) {}
-
-template <class Input1, class Input2>
-template <class Denom>
-inline auto mul<Input1, Input2>::d(Denom const &in) const noexcept -> double {
-    if constexpr (Input1::template depends<Denom>()) {
-        if constexpr (Input2::template depends<Denom>()) {
-            return this->m_active1.d(in) * this->m_active2.v() +
-                   this->m_active2.d(in) * this->m_active1.v();
-        } else {
-            return this->m_active1.d(in) * this->m_active2.v();
-        }
-    } else {
-        if constexpr (Input2::template depends<Denom>()) {
-            return this->m_active2.d(in) * this->m_active1.v();
-        } else {
-            return 0.;
-        }
-    }
-}
-
-template <class Input1, class Input2>
-template <class Denom1, class Denom2>
-inline auto mul<Input1, Input2>::d2(Denom1 const &in1,
-                                    Denom2 const &in2) const noexcept
-    -> std::array<double, 2> {
-    auto res1 = this->m_active1.d2(in1, in2);
-    auto res2 = this->m_active2.d2(in1, in2);
-    double v1 = this->m_active1.v();
-    double v2 = this->m_active2.v();
-    std::array<double, 2> res{};
-    for (std::size_t i = 0; i < 2; ++i) {
-        res[i] = res1[i] * v2 + res2[i] * v1;
-    }
-    return res;
-}
 
 namespace detail {
 template <int N>
@@ -272,22 +221,6 @@ class adouble_aux : public Base<adouble_aux<N>>,
     explicit adouble_aux(double value);
 
     template <class Denom> constexpr static auto depends() noexcept -> bool;
-
-    template <class Denom>
-    constexpr auto d(Denom const &in) const noexcept -> double;
-
-    template <class Denom1, class Denom2>
-    constexpr auto d2(Denom1 const &in1, Denom2 const &in2) const noexcept
-        -> std::array<double,
-                      adouble_aux<N>::template depends3<Denom1, Denom2>()>;
-
-    template <class... Denom>
-    constexpr auto dmany(Denom const &...in) const noexcept
-        -> std::array<double, adouble_aux<N>::template depends3<Denom...>()>;
-
-    template <class... Denom>
-    constexpr auto dinterface(Denom const &...in) const noexcept
-        -> std::array<double, sizeof...(Denom)>;
 };
 
 template <int N>
@@ -298,49 +231,6 @@ template <int N>
 template <class Denom>
 inline constexpr auto adouble_aux<N>::depends() noexcept -> bool {
     return std::is_same_v<Denom, adouble_aux<N>>;
-}
-
-template <int N>
-template <class Denom>
-inline constexpr auto adouble_aux<N>::d(Denom const & /* in */) const noexcept
-    -> double {
-    return static_cast<double>(this->depends<Denom>());
-}
-
-template <int N>
-template <class Denom1, class Denom2>
-inline constexpr auto
-adouble_aux<N>::d2(Denom1 const & /* in1 */,
-                   Denom2 const & /* in2 */) const noexcept
-    -> std::array<double, adouble_aux<N>::template depends3<Denom1, Denom2>()> {
-    constexpr std::size_t M =
-        adouble_aux<N>::template depends3<Denom1, Denom2>();
-    std::array<double, M> ret{};
-    for (std::size_t i = 0; i < M; i++) {
-        ret[i] = 1.0;
-    }
-    return ret;
-}
-
-template <int N>
-template <class... Denom>
-inline constexpr auto
-adouble_aux<N>::dmany(Denom const &.../* in */) const noexcept
-    -> std::array<double, adouble_aux<N>::template depends3<Denom...>()> {
-    constexpr std::size_t M = adouble_aux<N>::template depends3<Denom...>();
-    std::array<double, M> ret{};
-    for (std::size_t i = 0; i < M; i++) {
-        ret[i] = 1.0;
-    }
-    return ret;
-}
-
-template <int N>
-template <class... Denom>
-inline constexpr auto
-adouble_aux<N>::dinterface(Denom const &.../* in */) const noexcept
-    -> std::array<double, sizeof...(Denom)> {
-    return {static_cast<double>(adouble_aux<N>::template depends<Denom>())...};
 }
 
 } // namespace detail
