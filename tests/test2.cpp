@@ -128,7 +128,7 @@ TEST(adhoc2, complexdepends3) {
     EXPECT_EQ(res, true);
 }
 
-template <int N> constexpr std::array<double, N> first_n_fibs() {
+template <int N> constexpr auto first_n_fibs() -> std::array<double, N> {
     std::array<double, N> ret{};
     for (std::size_t i = 0; i < N; i++)
         ret[i] = 1.0;
@@ -205,13 +205,13 @@ TEST(adhoc2, position) {
     double temp = 0;
     constexpr auto res1 = has_type<int, float, double, int, unsigned int>(temp);
     constexpr auto res2 = has_type<int, float, int, unsigned int>(temp);
-    static_assert(res1 == true);
-    static_assert(res2 == false);
+    static_assert(res1);
+    static_assert(!res2);
     constexpr auto res3 = idx_type<int, float, double, int, unsigned int>(temp);
     static_assert(res3 == 2);
 
     constexpr auto res4 = has_type2<double>();
-    static_assert(res4 == false);
+    static_assert(!res4);
 }
 
 } // namespace adhoc2
