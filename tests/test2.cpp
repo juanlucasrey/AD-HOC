@@ -69,16 +69,6 @@ TEST(adhoc2, complexd2) {
     EXPECT_EQ(a.size(), 3);
 }
 
-TEST(adhoc2, Backwards1) {
-    adouble val1(1.);
-    adouble val2(2.);
-    adouble val3(3.);
-    auto m = val1 * adouble(2.0);
-    auto res = m.backward(val1, val2, val3);
-    EXPECT_EQ(res.size(), 1);
-    EXPECT_EQ(res[0], 1.);
-}
-
 template <std::size_t N> class sometype {};
 
 TEST(adhoc2, position) {

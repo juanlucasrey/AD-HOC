@@ -76,10 +76,6 @@ template <class Derived> class Base {
 
     template <class... Denom>
     constexpr static auto depends3() noexcept -> std::size_t;
-
-    template <class... Denom>
-    inline auto backward(Denom const &...in) const noexcept
-        -> std::array<double, Base<Derived>::template depends3<Denom...>()>;
 };
 
 template <class Derived> Base<Derived>::Base(double value) : m_value(value) {}
@@ -113,28 +109,6 @@ inline constexpr auto Base<Derived>::depends3() noexcept -> std::size_t {
     } else {
         return (Derived::template depends<Denom>() + ...);
     }
-}
-
-namespace detail {
-
-template <typename T, typename... Types>
-constexpr bool are_types_unique_v =
-    (!std::is_same_v<T, Types> && ...) && are_types_unique_v<Types...>;
-template <typename T> inline constexpr bool are_types_unique_v<T> = true;
-
-} // namespace detail
-
-template <class Derived>
-template <class... Denom>
-inline auto Base<Derived>::backward(Denom const &.../* in */) const noexcept
-    -> std::array<double, Base<Derived>::template depends3<Denom...>()> {
-
-    // let's avoid multiplying the same thing multiple times
-    static_assert(detail::are_types_unique_v<Denom...>);
-    std::array<double, Base<Derived>::template depends3<Denom...>()> res;
-    res[0] = 1.0;
-
-    return res;
 }
 
 template <class Input>
