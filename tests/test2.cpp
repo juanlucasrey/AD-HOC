@@ -86,19 +86,6 @@ TEST(adhoc2, position) {
     static_assert(!res4);
 }
 
-TEST(adhoc2, derivative) {
-    adouble val1(1.);
-    auto valexp = exp(val1);
-    auto valcos = cos(valexp);
-    constexpr std::size_t size = tape_size(valcos, val1);
-    static_assert(size == 1);
-
-    double derivative = valcos.d();
-    derivative *= valexp.d();
-    // https://www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
-    EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
-}
-
 TEST(adhoc2, derivcomplexdexp2) {
     adouble val1(1.);
     adouble val2(2.);
@@ -203,6 +190,30 @@ TEST(adhoc2, derivativemul) {
     auto temp = val1 * val2;
     auto derivatives = evaluate(temp, val1, val2);
     static_assert(derivatives.size() == 2);
+}
+
+TEST(adhoc2, derivative) {
+    adouble val1(1.);
+    auto valexp = exp(val1);
+    auto valcos = cos(valexp);
+    constexpr std::size_t size = tape_size(valcos, val1);
+    static_assert(size == 1);
+
+    double derivative = valcos.d();
+    derivative *= valexp.d();
+    // www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
+    EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
+}
+
+TEST(adhoc2, derivativeuniv) {
+    adouble val1(1.);
+    auto valexp = exp(val1);
+    auto valcos = cos(valexp);
+    auto result = evaluate(valcos, val1);
+
+    static_assert(result.size() == 1);
+    // www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
+    EXPECT_NEAR(result[0], -1.116619317445013, 1e-10);
 }
 
 } // namespace adhoc2

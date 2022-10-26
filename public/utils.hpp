@@ -44,6 +44,13 @@ constexpr auto idx_type2() -> std::size_t {
     return detail::get_index<T, Ts...>::value;
 };
 
+template <std::size_t N, std::size_t Head, std::size_t... Tail>
+struct Get : Get<N - 1, Tail...> {};
+
+template <std::size_t Head, std::size_t... Tail> struct Get<0, Head, Tail...> {
+    static const std::size_t value = Head;
+};
+
 } // namespace adhoc2
 
 #endif // UTILS_HPP

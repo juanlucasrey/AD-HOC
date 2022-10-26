@@ -120,6 +120,7 @@ class exp_t : public Base<exp_t<Input>>,
   public:
     explicit exp_t(Input const &active);
     [[nodiscard]] auto d() const -> double;
+    [[nodiscard]] auto input() const -> Input const &;
 };
 
 template <class Input>
@@ -128,6 +129,10 @@ exp_t<Input>::exp_t(Input const &active)
 
 template <class Input> auto exp_t<Input>::d() const -> double {
     return this->v();
+}
+
+template <class Input> auto exp_t<Input>::input() const -> Input const & {
+    return this->m_active;
 }
 
 template <class Derived>
@@ -144,6 +149,7 @@ class cos_t : public Base<cos_t<Input>>,
   public:
     explicit cos_t(Input const &active);
     [[nodiscard]] auto d() const -> double;
+    [[nodiscard]] auto input() const -> Input const &;
 };
 
 template <class Input>
@@ -152,6 +158,10 @@ cos_t<Input>::cos_t(Input const &active)
 
 template <class Input> auto cos_t<Input>::d() const -> double {
     return -std::sin(this->m_active.v());
+}
+
+template <class Input> auto cos_t<Input>::input() const -> Input const & {
+    return this->m_active;
 }
 
 template <class Derived>
@@ -169,6 +179,8 @@ class add : public Base<add<Input1, Input2>>,
     add(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
+    [[nodiscard]] auto input1() const -> Input1 const &;
+    [[nodiscard]] auto input2() const -> Input2 const &;
 };
 
 template <class Input1, class Input2>
@@ -187,6 +199,16 @@ auto add<Input1, Input2>::d2() const -> double {
 }
 
 template <class Input1, class Input2>
+auto add<Input1, Input2>::input1() const -> Input1 const & {
+    return this->m_active1;
+}
+
+template <class Input1, class Input2>
+auto add<Input1, Input2>::input2() const -> Input2 const & {
+    return this->m_active2;
+}
+
+template <class Input1, class Input2>
 class mul : public Base<mul<Input1, Input2>>,
             public Bivariate<Input1, Input2, mul<Input1, Input2>> {
     Input1 const &m_active1;
@@ -196,6 +218,8 @@ class mul : public Base<mul<Input1, Input2>>,
     mul(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
+    [[nodiscard]] auto input1() const -> Input1 const &;
+    [[nodiscard]] auto input2() const -> Input2 const &;
 };
 
 template <class Input1, class Input2>
@@ -211,6 +235,16 @@ auto mul<Input1, Input2>::d1() const -> double {
 template <class Input1, class Input2>
 auto mul<Input1, Input2>::d2() const -> double {
     return this->m_active1.v();
+}
+
+template <class Input1, class Input2>
+auto mul<Input1, Input2>::input1() const -> Input1 const & {
+    return this->m_active1;
+}
+
+template <class Input1, class Input2>
+auto mul<Input1, Input2>::input2() const -> Input2 const & {
+    return this->m_active2;
 }
 
 namespace detail {
