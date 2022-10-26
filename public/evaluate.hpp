@@ -301,31 +301,6 @@ evaluate(std::array<double, N> &tape, args<LeavesAlive...> const &,
 //     }
 // }
 
-template <class Input1, class Input2, std::size_t N, class this_type,
-          typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
-          std::size_t... IdxAvailable>
-static inline void
-evaluate_bivariate(std::array<double, N> & /* tape */, this_type const &,
-                   TypesAlive const &..., args<LeavesAlive...> const &,
-                   args<Leaves...> const &,
-                   std::index_sequence<IdxTypesAlive...> const &,
-                   std::index_sequence<IdxLeavesAlive...> const &,
-                   std::index_sequence<IdxAvailable...> const &) {
-
-    //     static_assert(!has_type2<this_type, Leaves...>());
-
-    //     constexpr std::size_t curent_tape_size =
-    //         1 + sizeof...(TypesAlive) + sizeof...(LeavesAlive);
-
-    //     constexpr std::size_t next_tape_size =
-    //         tape_size_next_bivariate<Input1, Input2>(
-    //             args<this_type const, TypesAlive...>{},
-    //             args<LeavesAlive...>{}, args<Leaves...>{});
-
-    //     return std::max(curent_tape_size, next_tape_size);
-}
-
 template <std::size_t N, class FirstType, class SecondType,
           typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
           std::size_t IdxTypesAliveFirst, std::size_t IdxTypesAliveSecond,
@@ -347,6 +322,38 @@ evaluate_skip(std::array<double, N> &tape, FirstType const &first,
                  IdxTypesAliveFirst>{} /* we place first at the end */,
              std::index_sequence<IdxLeavesAlive...>{},
              std::index_sequence<IdxAvailable...>{});
+}
+
+template <class Input1, class Input2, std::size_t N, class this_type,
+          typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t... IdxAvailable>
+static inline void
+evaluate_bivariate(std::array<double, N> &tape, this_type const &in,
+                   TypesAlive const &...next, args<LeavesAlive...> const &,
+                   args<Leaves...> const &,
+                   std::index_sequence<IdxTypesAlive...> const &,
+                   std::index_sequence<IdxLeavesAlive...> const &,
+                   std::index_sequence<IdxAvailable...> const &) {
+
+    static_assert(!has_type2<this_type, Leaves...>());
+
+    constexpr bool other_types_depend_on_this =
+        (TypesAlive::template depends_in<this_type>() || ...);
+
+    if constexpr (other_types_depend_on_this) {
+        evaluate_skip(tape, in, next..., args<LeavesAlive...>{},
+                      args<Leaves...>{},
+                      std::index_sequence<IdxTypesAlive...>{},
+                      std::index_sequence<IdxLeavesAlive...>{},
+                      std::index_sequence<IdxAvailable...>{});
+    } else {
+        // evaluate_univariate_noskip<Input>(
+        //     tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
+        //     std::index_sequence<IdxTypesAlive...>{},
+        //     std::index_sequence<IdxLeavesAlive...>{},
+        //     std::index_sequence<IdxAvailable...>{});
+    }
 }
 
 template <class Input, std::size_t N, class this_type, typename... TypesAlive,
@@ -405,14 +412,15 @@ static inline void evaluate_univariate_noskip(
 
 template <class Input, std::size_t N, class this_type, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves,
-          std::size_t IdxTypesAliveCurrent, std::size_t... IdxTypesAlive,
-          std::size_t... IdxLeavesAlive, std::size_t... IdxAvailable>
-static inline void evaluate_univariate(
-    std::array<double, N> &tape, this_type const &in, TypesAlive const &...next,
-    args<LeavesAlive...> const &, args<Leaves...> const &,
-    std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...> const &,
-    std::index_sequence<IdxLeavesAlive...> const &,
-    std::index_sequence<IdxAvailable...> const &) {
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t... IdxAvailable>
+static inline void
+evaluate_univariate(std::array<double, N> &tape, this_type const &in,
+                    TypesAlive const &...next, args<LeavesAlive...> const &,
+                    args<Leaves...> const &,
+                    std::index_sequence<IdxTypesAlive...> const &,
+                    std::index_sequence<IdxLeavesAlive...> const &,
+                    std::index_sequence<IdxAvailable...> const &) {
 
     static_assert(!has_type2<this_type, Leaves...>());
 
@@ -428,23 +436,10 @@ static inline void evaluate_univariate(
     } else {
         evaluate_univariate_noskip<Input>(
             tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
-            std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...>{},
+            std::index_sequence<IdxTypesAlive...>{},
             std::index_sequence<IdxLeavesAlive...>{},
             std::index_sequence<IdxAvailable...>{});
-        // tape_size_next_univariate_noskip<Input>(
-        //     args<this_type, TypesAlive...>{}, args<LeavesAlive...>{},
-        //     args<Leaves...>{});
     }
-
-    //     constexpr std::size_t curent_tape_size =
-    //         1 + sizeof...(TypesAlive) + sizeof...(LeavesAlive);
-
-    //     constexpr std::size_t next_tape_size =
-    //     tape_size_next_univariate<Input>(
-    //         args<this_type const, TypesAlive...>{}, args<LeavesAlive...>{},
-    //         args<Leaves...>{});
-
-    //     return std::max(curent_tape_size, next_tape_size);
 }
 
 template <std::size_t N, class Input, class this_type, typename... TypesAlive,
