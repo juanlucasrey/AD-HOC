@@ -21,14 +21,12 @@ tape_size(const args<adouble_aux<N> const, TypesAlive...> &,
 
     using this_type = adouble_aux<N>;
 
-    // because we are on a leave, this_type should be included
-    static_assert(has_type2<this_type, Leaves...>());
-
     // this_type should only be once in TypesAlive
     static_assert(!has_type2<this_type, TypesAlive...>());
 
-    constexpr std::size_t curent_tape_size =
-        1 + sizeof...(TypesAlive) + sizeof...(LeavesAlive);
+    constexpr std::size_t curent_tape_size = has_type2<this_type, Leaves...>() +
+                                             sizeof...(TypesAlive) +
+                                             sizeof...(LeavesAlive);
     return curent_tape_size;
 }
 

@@ -12,6 +12,13 @@ TEST(adhoc2, tapesize) {
     static_assert(size == 1);
 }
 
+TEST(adhoc2, tapesizezero) {
+    adouble val1(1.);
+    adouble val2(1.);
+    constexpr std::size_t size = tape_size(val1, val2);
+    static_assert(size == 0);
+}
+
 TEST(adhoc2, tapemult) {
     adouble val1(1.);
     adouble val2(2.);
