@@ -98,4 +98,56 @@ TEST(adhoc2, derivative) {
     EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
 }
 
+TEST(adhoc2, derivcomplexdexp2) {
+    adouble val1(1.);
+    adouble val2(2.);
+    adouble val3(2.);
+    auto exp2 = exp(val2);
+    auto tmp1 = val1 + exp2;
+    auto valsum = tmp1 + val3;
+    auto val12 = val1 * val2;
+    auto valprod = val12 + adouble(3);
+    auto val22 = val2 * val2;
+    auto valprod2 = val22 * adouble(4);
+    auto valprod3 = valprod * valprod2;
+    auto res = valsum * valprod3;
+
+    constexpr std::size_t size = tape_size(res, val1, val2, val3);
+    static_assert(size == 5);
+    std::array<double, size> vals = {};
+    vals[0] = res.d1(); // valsum
+    vals[1] = res.d2(); // valprod3
+
+    vals[2] = vals[0];
+    vals[0] *= valsum.d1(); // tmp1
+    vals[2] *= valsum.d2(); // val3
+
+    vals[3] = vals[0];
+    vals[0] *= tmp1.d1(); // val1
+    vals[3] *= tmp1.d2(); // exp2
+
+    vals[3] *= exp2.d(); // val2
+
+    vals[4] = vals[1];
+    vals[1] *= valprod3.d1(); // valprod
+    vals[4] *= valprod3.d2(); // valprod2
+
+    vals[1] *= valprod.d1(); // val12
+
+    vals[0] += vals[1] * val12.d1(); // val1
+    vals[3] += vals[1] * val12.d2(); // val2
+
+    vals[4] *= valprod2.d1(); // val22
+
+    vals[3] += vals[1] * val22.d1(); // val2
+    vals[3] += vals[1] * val22.d2(); // val2
+
+    EXPECT_NEAR(vals[0], 412.449795166, 1e-10);
+
+    std::cout << vals[0] << ", " << vals[3] << ", " << vals[2] << std::endl;
+    auto res2 = valprod3 * valsum;
+    constexpr std::size_t size2 = tape_size(res2, val1, val2, val3);
+    static_assert(size2 == 4);
+}
+
 } // namespace adhoc2
