@@ -249,12 +249,15 @@ static void evaluate(std::array<double, N> & /* tape */,
 
 template <std::size_t N, class Input1, class Input2, class this_type,
           typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t... IdxAvailable>
 static inline void
 evaluate_bivariate(std::array<double, N> & /* tape */, this_type const &,
                    TypesAlive const &..., args<LeavesAlive...> const &,
-                   args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-                   argsidxs<IdxLeavesAlive...> const &) {
+                   args<Leaves...> const &,
+                   std::index_sequence<IdxTypesAlive...> const &,
+                   std::index_sequence<IdxLeavesAlive...> const &,
+                   std::index_sequence<IdxAvailable...> const &) {
 
     //     static_assert(!has_type2<this_type, Leaves...>());
 
@@ -271,12 +274,15 @@ evaluate_bivariate(std::array<double, N> & /* tape */, this_type const &,
 
 template <std::size_t N, class Input, class this_type, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
-static inline void
-evaluate_univariate(std::array<double, N> & /* tape */, this_type const &,
-                    TypesAlive const &..., args<LeavesAlive...> const &,
-                    args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-                    argsidxs<IdxLeavesAlive...> const &) {
+          std::size_t IdxTypesAliveCurrent, std::size_t... IdxTypesAlive,
+          std::size_t... IdxLeavesAlive, std::size_t... IdxAvailable>
+static inline void evaluate_univariate(
+    std::array<double, N> & /* tape */, this_type const &,
+    TypesAlive const &..., args<LeavesAlive...> const &,
+    args<Leaves...> const &,
+    std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...> const &,
+    std::index_sequence<IdxLeavesAlive...> const &,
+    std::index_sequence<IdxAvailable...> const &) {
 
     //     static_assert(!has_type2<this_type, Leaves...>());
 
@@ -291,56 +297,63 @@ evaluate_univariate(std::array<double, N> & /* tape */, this_type const &,
     //     return std::max(curent_tape_size, next_tape_size);
 }
 
-template <std::size_t N, class Input, typename... TypesAlive,
+template <std::size_t N, class Input, class this_type, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t... IdxAvailable>
 static inline void
-evaluate(std::array<double, N> &tape, exp_t<Input> const &in,
+evaluate(std::array<double, N> &tape, Univariate<Input, this_type> const &in,
          TypesAlive const &...next, args<LeavesAlive...> const &,
-         args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-         argsidxs<IdxLeavesAlive...> const &) {
-    evaluate_univariate<N, Input>(
-        tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
-        argsidxs<IdxTypesAlive...>{}, argsidxs<IdxLeavesAlive...>{});
+         args<Leaves...> const &, std::index_sequence<IdxTypesAlive...> const &,
+         std::index_sequence<IdxLeavesAlive...> const &,
+         std::index_sequence<IdxAvailable...> const &) {
+    static_assert((sizeof...(TypesAlive) + 1) == sizeof...(IdxTypesAlive));
+    static_assert(sizeof...(LeavesAlive) == sizeof...(IdxLeavesAlive));
+    static_assert(sizeof...(IdxTypesAlive) + sizeof...(IdxLeavesAlive) +
+                      sizeof...(IdxAvailable) ==
+                  N);
+    evaluate_univariate<N, Input>(tape, *static_cast<this_type const *>(&in),
+                                  next..., args<LeavesAlive...>{},
+                                  args<Leaves...>{},
+                                  std::index_sequence<IdxTypesAlive...>{},
+                                  std::index_sequence<IdxLeavesAlive...>{},
+                                  std::index_sequence<IdxAvailable...>{});
 }
 
-template <std::size_t N, class Input, typename... TypesAlive,
-          typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
+template <std::size_t N, class Input1, class Input2, class this_type,
+          typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t... IdxAvailable>
 static inline void
-evaluate(std::array<double, N> &tape, cos_t<Input> const &in,
+evaluate(std::array<double, N> &tape,
+         Bivariate<Input1, Input2, this_type> const &in,
          TypesAlive const &...next, args<LeavesAlive...> const &,
-         args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-         argsidxs<IdxLeavesAlive...> const &) {
-    evaluate_univariate<N, Input>(
-        tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
-        argsidxs<IdxTypesAlive...>{}, argsidxs<IdxLeavesAlive...>{});
-}
-
-template <std::size_t N, class Input1, class Input2, typename... TypesAlive,
-          typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
-static inline void
-evaluate(std::array<double, N> &tape, mul<Input1, Input2> const &in,
-         TypesAlive const &...next, args<LeavesAlive...> const &,
-         args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-         argsidxs<IdxLeavesAlive...> const &) {
+         args<Leaves...> const &, std::index_sequence<IdxTypesAlive...> const &,
+         std::index_sequence<IdxLeavesAlive...> const &,
+         std::index_sequence<IdxAvailable...> const &) {
+    static_assert((sizeof...(TypesAlive) + 1) == sizeof...(IdxTypesAlive));
+    static_assert(sizeof...(LeavesAlive) == sizeof...(IdxLeavesAlive));
+    static_assert(sizeof...(IdxTypesAlive) + sizeof...(IdxLeavesAlive) +
+                      sizeof...(IdxAvailable) ==
+                  N);
     evaluate_bivariate<N, Input1, Input2>(
-        tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
-        argsidxs<IdxTypesAlive...>{}, argsidxs<IdxLeavesAlive...>{});
+        tape, *static_cast<this_type const *>(&in), next...,
+        args<LeavesAlive...>{}, args<Leaves...>{},
+        std::index_sequence<IdxTypesAlive...>{},
+        std::index_sequence<IdxLeavesAlive...>{},
+        std::index_sequence<IdxAvailable...>{});
 }
 
-template <std::size_t N, class Input1, class Input2, typename... TypesAlive,
-          typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive>
-static inline void
-evaluate(std::array<double, N> &tape, add<Input1, Input2> const &in,
-         TypesAlive const &...next, args<LeavesAlive...> const &,
-         args<Leaves...> const &, argsidxs<IdxTypesAlive...> const &,
-         argsidxs<IdxLeavesAlive...> const &) {
-    evaluate_bivariate<N, Input1, Input2>(
-        tape, in, next..., args<LeavesAlive...>{}, args<Leaves...>{},
-        argsidxs<IdxTypesAlive...>{}, argsidxs<IdxLeavesAlive...>{});
+template <std::size_t N, class this_type, typename... Leaves,
+          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
+          std::size_t FirstIdxAvailable, std::size_t... IdxAvailable>
+static inline void evaluate_first(
+    std::array<double, N> &tape, this_type const &in, args<Leaves...> const &,
+    std::index_sequence<FirstIdxAvailable, IdxAvailable...> const &) {
+    tape[FirstIdxAvailable] = 1.0;
+    evaluate(tape, in, args<>{}, args<Leaves...>{},
+             std::index_sequence<FirstIdxAvailable>{}, std::index_sequence<>{},
+             std::index_sequence<IdxAvailable...>{});
 }
 
 } // namespace detail
@@ -357,10 +370,8 @@ constexpr static inline auto evaluate(Output const &in,
         constexpr std::size_t size = detail::tape_size(
             args<Output const>{}, args<>{}, args<Leaves...>{});
         std::array<double, size> tape;
-        tape[0] = 1.0;
-        detail::evaluate(tape, in, args<>{}, args<Leaves...>{}, argsidxs<0>{},
-                         argsidxs<>{});
-
+        detail::evaluate_first(tape, in, args<Leaves...>{},
+                               std::make_index_sequence<size>{});
         return results;
     }
 }

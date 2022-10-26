@@ -236,7 +236,6 @@ inline constexpr auto adouble_aux<N>::depends() noexcept -> bool {
 } // namespace detail
 
 template <typename... Types> struct args {};
-template <std::size_t... TypesIdx> struct argsidxs {};
 
 #define adouble detail::adouble_aux<__COUNTER__>
 

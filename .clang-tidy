@@ -1,5 +1,6 @@
 Checks: "
 *,\
+-cppcoreguidelines-non-private-member-variables-in-classes,\
 -readability-magic-numbers,\
 -cppcoreguidelines-avoid-magic-numbers,\
 -llvmlibc-implementation-in-namespace,\
