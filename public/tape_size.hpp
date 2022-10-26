@@ -137,9 +137,17 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
                     !has_type2<Input2, LeavesAlive...>();
 
                 if constexpr (is_input1_new_leaf && is_input2_new_leaf) {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<Input1, Input2, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    if constexpr (std::is_same_v<Input1, Input2>) {
+                        return tape_size_aux(args<TypesAlive...>{},
+                                             args<Input1, LeavesAlive...>{},
+                                             args<Leaves...>{});
+
+                    } else {
+                        return tape_size_aux(
+                            args<TypesAlive...>{},
+                            args<Input1, Input2, LeavesAlive...>{},
+                            args<Leaves...>{});
+                    }
                 } else if constexpr (is_input1_new_leaf) {
                     return tape_size_aux(args<TypesAlive...>{},
                                          args<Input1, LeavesAlive...>{},
@@ -206,9 +214,15 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
                     !has_type2<Input2, TypesAlive...>();
 
                 if constexpr (is_input1_new && is_input2_new) {
-                    return tape_size_aux(args<Input1, Input2, TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    if constexpr (std::is_same_v<Input1, Input2>) {
+                        return tape_size_aux(args<Input1, TypesAlive...>{},
+                                             args<LeavesAlive...>{},
+                                             args<Leaves...>{});
+                    } else {
+                        return tape_size_aux(
+                            args<Input1, Input2, TypesAlive...>{},
+                            args<LeavesAlive...>{}, args<Leaves...>{});
+                    }
                 } else if constexpr (is_input1_new) {
                     return tape_size_aux(args<Input1, TypesAlive...>{},
                                          args<LeavesAlive...>{},

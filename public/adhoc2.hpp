@@ -5,6 +5,7 @@
 #include <utils.hpp>
 
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <type_traits>
 

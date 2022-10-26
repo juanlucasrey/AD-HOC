@@ -100,7 +100,7 @@ TEST(adhoc2, tapetrip2) {
     auto valprod = m * m;
 
     constexpr std::size_t size = tape_size(valprod, val1, val2);
-    static_assert(size == 3);
+    static_assert(size == 2);
 }
 
 TEST(adhoc2, tapecomplexdexp) {

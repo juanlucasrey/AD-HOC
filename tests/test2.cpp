@@ -130,9 +130,13 @@ TEST(adhoc2, derivcomplexdexp2) {
     vals[3] += vals[1] * val22.d1(); // val2
     vals[3] += vals[1] * val22.d2(); // val2
 
-    EXPECT_NEAR(vals[0], 412.449795166, 1e-9);
+    EXPECT_NEAR(vals[0], 412.4497951657808, 1e-9);
+    // EXPECT_NEAR(vals[1], 1588.4738734117946, 1e-9);
+    EXPECT_NEAR(vals[2], 80., 1e-9);
 
     std::cout << vals[0] << ", " << vals[3] << ", " << vals[2] << std::endl;
+    std::cout << vals[0] << ", " << vals[1] << ", " << vals[2] << ", "
+              << vals[3] << ", " << vals[4] << std::endl;
     auto res2 = valprod3 * valsum;
     constexpr std::size_t size2 = tape_size(res2, val1, val2, val3);
     static_assert(size2 == 4);
@@ -153,6 +157,26 @@ TEST(adhoc2, derivcomplexdexpevaluate) {
     auto res = valsum * valprod3;
 
     auto derivatives = evaluate(res, val1, val2, val3);
+    static_assert(derivatives.size() == 3);
+    std::cout << derivatives[0] << std::endl;
+    std::cout << derivatives[1] << std::endl;
+    std::cout << derivatives[2] << std::endl;
+}
+
+// TEST(adhoc2, derivcomplexdexpevaluate) {
+//     adouble val1(1.);
+//     adouble val2(2.);
+//     auto valprod3 = (val1 * val2) + (val1 * val1);
+
+//     auto derivatives = evaluate(valprod3, val1, val2);
+// }
+
+TEST(adhoc2, derivcomplexdexpevaluatesimple) {
+    adouble val1(1.);
+    adouble val2(2.);
+    auto valprod3 = (val1 * val2) + (val1);
+
+    auto derivatives = evaluate(valprod3, val1, val2);
 }
 
 TEST(adhoc2, derivativezero) {
@@ -205,15 +229,62 @@ TEST(adhoc2, derivative) {
     EXPECT_NEAR(derivative, -1.116619317445013, 1e-10);
 }
 
-TEST(adhoc2, derivativeuniv) {
-    adouble val1(1.);
-    auto valexp = exp(val1);
-    auto valcos = cos(valexp);
-    auto result = evaluate(valcos, val1);
+TEST(adhoc2, DerivativeUniv) {
+    adouble x(1.);
+    auto result = evaluate(cos(exp(x)), x);
 
     static_assert(result.size() == 1);
-    // www.wolframalpha.com/input?i=d%2Fdx+cos%28exp%28x%29%29+%7C+x%3D1
-    EXPECT_NEAR(result[0], -1.116619317445013, 1e-10);
+    // from sympy import *
+    // x = Symbol('x')
+    // f = cos(exp(x))
+    // dfdx = f.diff(x)
+    // dfdx = lambdify(x, dfdx)
+    // print(dfdx(1))
+    EXPECT_NEAR(result[0], -1.1166193174450132, 1e-10);
+}
+
+TEST(adhoc2, DerivativeMult) {
+    adouble x(1.5);
+    adouble y(2.5);
+    auto result = evaluate(x * y, x, y);
+
+    static_assert(result.size() == 2);
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // f = x * y
+    // dfdx = f.diff(x)
+    // dfdy = f.diff(y)
+    // dfdx = lambdify([x, y], dfdx)
+    // dfdy = lambdify([x, y], dfdy)
+    // print(dfdx(1.5, 2.5))
+    // print(dfdy(1.5, 2.5))
+    EXPECT_NEAR(result[0], 2.5, 1e-10);
+    EXPECT_NEAR(result[1], 1.5, 1e-10);
+    std::cout << result[0] << std::endl;
+    std::cout << result[1] << std::endl;
+}
+
+TEST(adhoc2, DerivativeMultSame) {
+    adouble x(1.5);
+    auto result = evaluate(x * x, x);
+
+    static_assert(result.size() == 1);
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // f = x * y
+    // dfdx = f.diff(x)
+    // dfdy = f.diff(y)
+    // dfdx = lambdify([x, y], dfdx)
+    // dfdy = lambdify([x, y], dfdy)
+    // print(dfdx(1.5, 2.5))
+    // print(dfdy(1.5, 2.5))
+    EXPECT_NEAR(result[0], 3.0, 1e-10);
+
+    auto f = x * x;
+    constexpr std::size_t size = tape_size(f, x);
+    static_assert(size == 1);
 }
 
 } // namespace adhoc2
