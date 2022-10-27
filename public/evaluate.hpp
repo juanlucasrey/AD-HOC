@@ -693,9 +693,8 @@ static inline void evaluate_first(
 
 } // namespace detail
 
-template <class Output, typename... Leaves>
-constexpr static inline auto evaluate(Output const &in,
-                                      Leaves const &.../* leaves */)
+template <typename... Leaves, class Output>
+constexpr static inline auto evaluate(Output const &in)
     -> std::array<double, (Output::template depends<Leaves>() + ...)> {
 
     std::array<double, (Output::template depends<Leaves>() + ...)> results = {};
@@ -714,6 +713,14 @@ constexpr static inline auto evaluate(Output const &in,
         }
         return results;
     }
+}
+
+// in case you have the variable around and you don't want to type decltype
+template <typename... Leaves, class Output>
+constexpr static inline auto evaluate(Output const &in,
+                                      Leaves const &.../* leaves */)
+    -> std::array<double, (Output::template depends<Leaves>() + ...)> {
+    return evaluate<Leaves...>(in);
 }
 
 } // namespace adhoc2

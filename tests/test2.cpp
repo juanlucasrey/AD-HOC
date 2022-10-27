@@ -160,7 +160,8 @@ TEST(adhoc2, derivcomplexdexpevaluate) {
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
-    auto derivatives = evaluate(res, val1, val2, val3);
+    auto derivatives =
+        evaluate<decltype(val1), decltype(val2), decltype(val3)>(res);
     static_assert(derivatives.size() == 3);
     std::cout << derivatives[0] << std::endl;
     std::cout << derivatives[1] << std::endl;
@@ -180,27 +181,27 @@ TEST(adhoc2, derivcomplexdexpevaluatesimple) {
     adouble val2(2.);
     auto valprod3 = (val1 * val2) + (val1);
 
-    auto derivatives = evaluate(valprod3, val1, val2);
+    auto derivatives = evaluate<decltype(val1), decltype(val2)>(valprod3);
 }
 
 TEST(adhoc2, derivativezero) {
     adouble val1(1.);
     adouble val2(1.);
-    auto derivatives = evaluate(val1, val2);
-    static_assert(derivatives.size() == 0);
+    auto derivatives = evaluate<decltype(val2)>(val1);
+    static_assert(derivatives.empty());
 }
 
 TEST(adhoc2, derivativeexp) {
     adouble val1(1.);
     auto temp = exp(val1);
-    auto derivatives = evaluate(temp, val1);
+    auto derivatives = evaluate<decltype(val1)>(temp);
     static_assert(derivatives.size() == 1);
 }
 
 TEST(adhoc2, derivativecos) {
     adouble val1(1.);
     auto temp = cos(val1);
-    auto derivatives = evaluate(temp, val1);
+    auto derivatives = evaluate<decltype(val1)>(temp);
     static_assert(derivatives.size() == 1);
 }
 
