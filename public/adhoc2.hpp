@@ -116,7 +116,7 @@ template <class Input>
 class exp_t : public Base<exp_t<Input>>,
               public Univariate<Input, exp_t<Input>> {
   private:
-    Input const &m_active;
+    Input const m_active;
 
   public:
     explicit exp_t(Input const &active);
@@ -145,7 +145,7 @@ template <class Input>
 class cos_t : public Base<cos_t<Input>>,
               public Univariate<Input, cos_t<Input>> {
   private:
-    Input const &m_active;
+    Input const m_active;
 
   public:
     explicit cos_t(Input const &active);
@@ -173,8 +173,8 @@ auto cos(Base<Derived> const &in) -> cos_t<const Derived> {
 template <class Input1, class Input2>
 class add : public Base<add<Input1, Input2>>,
             public Bivariate<Input1, Input2, add<Input1, Input2>> {
-    Input1 const &m_active1;
-    Input2 const &m_active2;
+    Input1 const m_active1;
+    Input2 const m_active2;
 
   public:
     add(Input1 const &active1, Input2 const &active2);
@@ -212,8 +212,8 @@ auto add<Input1, Input2>::input2() const -> Input2 const & {
 template <class Input1, class Input2>
 class mul : public Base<mul<Input1, Input2>>,
             public Bivariate<Input1, Input2, mul<Input1, Input2>> {
-    Input1 const &m_active1;
-    Input2 const &m_active2;
+    Input1 const m_active1;
+    Input2 const m_active2;
 
   public:
     mul(Input1 const &active1, Input2 const &active2);

@@ -1,0 +1,6 @@
+-correct valuation bugs
+-rvalue references to extend lifetime of temporaries
+-result order to avoid copying
+-high order
+-optimal order of execution for minimal array size
+-vectorisation

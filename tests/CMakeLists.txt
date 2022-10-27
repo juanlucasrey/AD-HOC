@@ -21,6 +21,8 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     FetchContent_MakeAvailable(googletest)
 endif()
 
+# SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+
 target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
 target_link_directories(adhoc_test SYSTEM PUBLIC /usr/local/lib)
 
