@@ -111,7 +111,9 @@ static inline void evaluate_univariate_noskip(
                 std::index_sequence<IdxAvailable...>{}, tape, next...);
         } else {
             constexpr auto position = idx_type2<Input, LeavesAlive...>();
-            tape[position] += tape[IdxTypesAliveCurrent] * in.d();
+            constexpr auto position_on_tape =
+                Get<position, IdxLeavesAlive...>::value;
+            tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d();
             evaluate(
                 args<LeavesAlive...>{}, args<Leaves...>{},
                 std::index_sequence<IdxTypesAlive...>{},
@@ -132,7 +134,9 @@ static inline void evaluate_univariate_noskip(
                 next...);
         } else {
             constexpr auto position = idx_type2<Input, TypesAlive...>();
-            tape[position] += tape[IdxTypesAliveCurrent] * in.d();
+            constexpr auto position_on_tape =
+                Get<position, IdxTypesAlive...>::value;
+            tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d();
             evaluate(
                 args<LeavesAlive...>{}, args<Leaves...>{},
                 std::index_sequence<IdxTypesAlive...>{},
@@ -287,7 +291,9 @@ static inline void evaluate_bivariate_noskip(
                 }
             } else if constexpr (is_input1_new_leaf) {
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 tape[IdxTypesAliveCurrent] *= in.d1();
                 evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
@@ -296,7 +302,9 @@ static inline void evaluate_bivariate_noskip(
                          std::index_sequence<IdxAvailable...>{}, tape, next...);
             } else if constexpr (is_input2_new_leaf) {
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 tape[IdxTypesAliveCurrent] *= in.d2();
                 evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
@@ -304,16 +312,41 @@ static inline void evaluate_bivariate_noskip(
                                              IdxLeavesAlive...>{},
                          std::index_sequence<IdxAvailable...>{}, tape, next...);
             } else {
-                constexpr auto position1 = idx_type2<Input1, LeavesAlive...>();
-                constexpr auto position2 = idx_type2<Input2, LeavesAlive...>();
-                tape[position1] += tape[IdxTypesAliveCurrent] * in.d1();
-                tape[position2] += tape[IdxTypesAliveCurrent] * in.d2();
-                evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
-                         std::index_sequence<IdxTypesAlive...>{},
-                         std::index_sequence<IdxLeavesAlive...>{},
-                         std::index_sequence<IdxTypesAliveCurrent,
-                                             IdxAvailable...>{},
-                         tape, next...);
+                if constexpr (std::is_same_v<Input1, Input2>) {
+                    constexpr auto position =
+                        idx_type2<Input1, LeavesAlive...>();
+                    static_assert(position ==
+                                  idx_type2<Input2, LeavesAlive...>());
+                    constexpr auto position_on_tape =
+                        Get<position, IdxLeavesAlive...>::value;
+                    tape[position_on_tape] +=
+                        2 * tape[IdxTypesAliveCurrent] * in.d1();
+                    evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{},
+                             tape, next...);
+                } else {
+                    constexpr auto position1 =
+                        idx_type2<Input1, LeavesAlive...>();
+                    constexpr auto position2 =
+                        idx_type2<Input2, LeavesAlive...>();
+                    constexpr auto position1_on_tape =
+                        Get<position1, IdxLeavesAlive...>::value;
+                    constexpr auto position2_on_tape =
+                        Get<position2, IdxLeavesAlive...>::value;
+                    tape[position1_on_tape] +=
+                        tape[IdxTypesAliveCurrent] * in.d1();
+                    tape[position2_on_tape] +=
+                        tape[IdxTypesAliveCurrent] * in.d2();
+                    evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{},
+                             tape, next...);
+                }
             }
         } else if constexpr (is_input1_leaf) {
             constexpr bool is_input1_new_leaf =
@@ -330,7 +363,9 @@ static inline void evaluate_bivariate_noskip(
                     std::index_sequence<IdxAvailable...>{}, tape, in, next...);
             } else if constexpr (is_input1_new_leaf) {
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxTypesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 tape[IdxTypesAliveCurrent] *= in.d1();
                 evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
@@ -339,7 +374,9 @@ static inline void evaluate_bivariate_noskip(
                          std::index_sequence<IdxAvailable...>{}, tape, next...);
             } else if constexpr (is_input2_new) {
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 tape[IdxTypesAliveCurrent] *= in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAliveCurrent,
@@ -350,8 +387,12 @@ static inline void evaluate_bivariate_noskip(
             } else {
                 constexpr auto position1 = idx_type2<Input1, LeavesAlive...>();
                 constexpr auto position2 = idx_type2<Input2, TypesAlive...>();
-                tape[position1] += tape[IdxTypesAliveCurrent] * in.d1();
-                tape[position2] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position1_on_tape =
+                    Get<position1, IdxLeavesAlive...>::value;
+                constexpr auto position2_on_tape =
+                    Get<position2, IdxTypesAlive...>::value;
+                tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
+                tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -359,7 +400,6 @@ static inline void evaluate_bivariate_noskip(
                                              IdxAvailable...>{},
                          tape, next...);
             }
-
         } else if constexpr (is_input2_leaf) {
             constexpr bool is_input1_new = !has_type2<Input1, TypesAlive...>();
             constexpr bool is_input2_new_leaf =
@@ -375,7 +415,9 @@ static inline void evaluate_bivariate_noskip(
                     std::index_sequence<IdxAvailable...>{}, tape, in, next...);
             } else if constexpr (is_input1_new) {
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 tape[IdxTypesAliveCurrent] *= in.d1();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAliveCurrent,
@@ -385,7 +427,9 @@ static inline void evaluate_bivariate_noskip(
                          in.input1(), next...);
             } else if constexpr (is_input2_new_leaf) {
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxTypesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 tape[IdxTypesAliveCurrent] *= in.d2();
                 evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
@@ -395,8 +439,12 @@ static inline void evaluate_bivariate_noskip(
             } else {
                 constexpr auto position1 = idx_type2<Input1, TypesAlive...>();
                 constexpr auto position2 = idx_type2<Input2, LeavesAlive...>();
-                tape[position1] += tape[IdxTypesAliveCurrent] * in.d1();
-                tape[position2] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position1_on_tape =
+                    Get<position1, IdxTypesAlive...>::value;
+                constexpr auto position2_on_tape =
+                    Get<position2, IdxLeavesAlive...>::value;
+                tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
+                tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -430,7 +478,9 @@ static inline void evaluate_bivariate_noskip(
 
             } else if constexpr (is_input1_new) {
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 tape[IdxTypesAliveCurrent] *= in.d1();
                 evaluate(args<TypesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAliveCurrent,
@@ -440,7 +490,9 @@ static inline void evaluate_bivariate_noskip(
                          in.input1(), next...);
             } else if constexpr (is_input2_new) {
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxTypesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 tape[IdxTypesAliveCurrent] *= in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAliveCurrent,
@@ -449,16 +501,41 @@ static inline void evaluate_bivariate_noskip(
                          std::index_sequence<IdxAvailable...>{}, tape,
                          in.input2(), next...);
             } else {
-                constexpr auto position1 = idx_type2<Input1, TypesAlive...>();
-                constexpr auto position2 = idx_type2<Input2, TypesAlive...>();
-                tape[position1] += tape[IdxTypesAliveCurrent] * in.d1();
-                tape[position2] += tape[IdxTypesAliveCurrent] * in.d2();
-                evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
-                         std::index_sequence<IdxTypesAlive...>{},
-                         std::index_sequence<IdxLeavesAlive...>{},
-                         std::index_sequence<IdxTypesAliveCurrent,
-                                             IdxAvailable...>{},
-                         tape, next...);
+                if constexpr (std::is_same_v<Input1, Input2>) {
+                    constexpr auto position =
+                        idx_type2<Input1, TypesAlive...>();
+                    static_assert(position ==
+                                  idx_type2<Input2, TypesAlive...>());
+                    constexpr auto position_on_tape =
+                        Get<position, IdxTypesAlive...>::value;
+                    tape[position_on_tape] +=
+                        2 * tape[IdxTypesAliveCurrent] * in.d1();
+                    evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{},
+                             tape, next...);
+                } else {
+                    constexpr auto position1 =
+                        idx_type2<Input1, TypesAlive...>();
+                    constexpr auto position2 =
+                        idx_type2<Input2, TypesAlive...>();
+                    constexpr auto position1_on_tape =
+                        Get<position1, IdxTypesAlive...>::value;
+                    constexpr auto position2_on_tape =
+                        Get<position2, IdxTypesAlive...>::value;
+                    tape[position1_on_tape] +=
+                        tape[IdxTypesAliveCurrent] * in.d1();
+                    tape[position2_on_tape] +=
+                        tape[IdxTypesAliveCurrent] * in.d2();
+                    evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{},
+                             tape, next...);
+                }
             }
         }
     } else if constexpr (input1_has_0_deriv) {
@@ -476,7 +553,9 @@ static inline void evaluate_bivariate_noskip(
                          std::index_sequence<IdxAvailable...>{}, tape, next...);
             } else {
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -497,7 +576,9 @@ static inline void evaluate_bivariate_noskip(
                          in.input2(), next...);
             } else {
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d2();
+                constexpr auto position_on_tape =
+                    Get<position, IdxTypesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -521,7 +602,9 @@ static inline void evaluate_bivariate_noskip(
                          std::index_sequence<IdxAvailable...>{}, tape, next...);
             } else {
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxLeavesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -542,7 +625,9 @@ static inline void evaluate_bivariate_noskip(
                          in.input1(), next...);
             } else {
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
-                tape[position] += tape[IdxTypesAliveCurrent] * in.d1();
+                constexpr auto position_on_tape =
+                    Get<position, IdxTypesAlive...>::value;
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -697,6 +782,8 @@ template <typename... Leaves, class Output>
 constexpr static inline auto evaluate(Output const &in)
     -> std::array<double, (Output::template depends<Leaves>() + ...)> {
 
+    static_assert((Output::template depends<Leaves>() + ...) ==
+                  sizeof...(Leaves));
     std::array<double, (Output::template depends<Leaves>() + ...)> results = {};
     if constexpr (results.empty()) {
         return results;

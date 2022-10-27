@@ -1,4 +1,4 @@
--correct valuation bugs
+-make reference copy when type is already included
 -rvalue references to extend lifetime of temporaries
 -result order to avoid copying
 -high order

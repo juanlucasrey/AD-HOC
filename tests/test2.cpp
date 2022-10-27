@@ -86,66 +86,6 @@ TEST(adhoc2, position) {
     static_assert(!res4);
 }
 
-TEST(adhoc2, derivcomplexdexp2) {
-    adouble x(1.);
-    adouble y(2.);
-    adouble z(2.);
-    auto expy = exp(y);
-    auto s1 = x + expy;
-    auto s2 = s1 + z;
-    auto xy = x * y;
-    auto xyp3 = xy + adouble(3);
-    std::cout << xyp3.input2().v() << std::endl;
-    auto yy = y * y;
-    auto yyt4 = yy + adouble(4);
-    auto p = xyp3 * yyt4;
-    auto res = s2 * p;
-
-    constexpr std::size_t size = tape_size(res, x, y, z);
-    static_assert(size == 5);
-    std::array<double, size> vals = {};
-    std::cout << s2.v() << std::endl;
-    std::cout << yyt4.v() << std::endl;
-
-    vals[0] = res.d1(); // valsum
-    vals[1] = res.d2(); // valprod3
-
-    vals[2] = vals[0];
-    vals[0] *= s2.d1(); // tmp1
-    vals[2] *= s2.d2(); // val3
-
-    vals[3] = vals[0];
-    vals[0] *= s1.d1(); // val1
-    vals[3] *= s1.d2(); // exp2
-
-    vals[3] *= expy.d(); // val2
-
-    vals[4] = vals[1];
-    vals[1] *= p.d1(); // valprod
-    vals[4] *= p.d2(); // valprod2
-
-    vals[1] *= xyp3.d1(); // val12
-
-    vals[0] += vals[1] * xy.d1(); // val1
-    vals[3] += vals[1] * xy.d2(); // val2
-
-    vals[4] *= yyt4.d1(); // val22
-
-    vals[3] += vals[1] * yy.d1(); // val2
-    vals[3] += vals[1] * yy.d2(); // val2
-
-    // EXPECT_NEAR(vals[0], 412.4497951657808, 1e-9);
-    // EXPECT_NEAR(vals[1], 1588.4738734117946, 1e-9);
-    // EXPECT_NEAR(vals[2], 80., 1e-9);
-
-    std::cout << vals[0] << ", " << vals[3] << ", " << vals[2] << std::endl;
-    std::cout << vals[0] << ", " << vals[1] << ", " << vals[2] << ", "
-              << vals[3] << ", " << vals[4] << std::endl;
-    auto res2 = p * s2;
-    constexpr std::size_t size2 = tape_size(res2, x, y, z);
-    static_assert(size2 == 4);
-}
-
 TEST(adhoc2, derivcomplexdexpevaluate) {
     adouble val1(1.);
     adouble val2(2.);
@@ -184,12 +124,12 @@ TEST(adhoc2, derivcomplexdexpevaluatesimple) {
     auto derivatives = evaluate<decltype(val1), decltype(val2)>(valprod3);
 }
 
-TEST(adhoc2, derivativezero) {
-    adouble val1(1.);
-    adouble val2(1.);
-    auto derivatives = evaluate<decltype(val2)>(val1);
-    static_assert(derivatives.empty());
-}
+// TEST(adhoc2, derivativezero) {
+//     adouble val1(1.);
+//     adouble val2(1.);
+//     auto derivatives = evaluate<decltype(val2)>(val1);
+//     static_assert(derivatives.empty());
+// }
 
 TEST(adhoc2, derivativeexp) {
     adouble val1(1.);
@@ -308,6 +248,41 @@ TEST(adhoc2, DerivativeMultSame) {
     static_assert(size == 1);
 }
 
+TEST(adhoc2, derivcomplexdexp2) {
+    adouble x(1.);
+    adouble y(2.);
+    adouble z(2.);
+    auto r1 = ((x + exp(y)) + z);
+    auto r2 = ((x * y + adouble(3)) * (y * y * adouble(4)));
+    auto res = r1 * r2;
+
+    constexpr std::size_t size = tape_size(res, x, y, z);
+    static_assert(size == 5);
+    auto result = evaluate(res, x, y, z);
+    static_assert(result.size() == 3);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // z = Symbol('z')
+    // f = ((x + exp(y)) + z) * ((x * y + 3) * (y * y * 4))
+    // print(lambdify([x, y, z], f.diff(x))(1, 2, 2))
+    // print(lambdify([x, y, z], f.diff(y))(1, 2, 2))
+    // print(lambdify([x, y, z], f.diff(z))(1, 2, 2))
+    EXPECT_NEAR(result[0], 412.4497951657808, 1e-9);
+    EXPECT_NEAR(result[1], 1588.4738734117946, 1e-9);
+    EXPECT_NEAR(result[2], 80., 1e-9);
+
+    auto res2 = r2 * r1;
+    constexpr std::size_t size2 = tape_size(res2, x, y, z);
+    static_assert(size2 == 4);
+    auto result2 = evaluate(res2, x, y, z);
+    static_assert(result2.size() == 3);
+    EXPECT_NEAR(result2[0], 412.4497951657808, 1e-9);
+    EXPECT_NEAR(result2[1], 1588.4738734117946, 1e-9);
+    EXPECT_NEAR(result2[2], 80., 1e-9);
+}
+
 // TEST(adhoc2, Derivative2nd) {
 //     adouble x(2);
 //     adouble y(3);
@@ -335,5 +310,25 @@ TEST(adhoc2, DerivativeMultSame) {
 //     double d2_res_d_z2_2 = 0;
 //     double d2_res_dz2_dtemp = 0;
 // }
+
+// from sympy import *
+// x = Symbol('x')
+// y = Symbol('y')
+// z = Symbol('z')
+// temp = ((x * x) * (y * y))
+// temp2 = temp * (z * z)
+// f = temp * temp2
+// print(f)
+// dfdx = f.diff(x)
+// print(dfdx)
+// d2fdx2 = dfdx.diff(x)
+// print(d2fdx2)
+
+// dfdx = lambdify([x, y, z], dfdx)
+// d2fdx2 = lambdify([x, y, z], d2fdx2)
+// # dfdy = lambdify([x, y], dfdy)
+// # print(dfdx(1.5, 2.5))
+// print(dfdx(2, 3, 5))
+// print(d2fdx2(2, 3, 5))
 
 } // namespace adhoc2
