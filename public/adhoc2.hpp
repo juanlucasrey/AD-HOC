@@ -171,6 +171,64 @@ auto cos(Base<Derived> const &in) -> cos_t<const Derived> {
     return cos_t<const Derived>(*static_cast<const Derived *>(&in));
 }
 
+template <class Input>
+class sqrt_t : public Base<sqrt_t<Input>>,
+               public Univariate<Input, sqrt_t<Input>> {
+  private:
+    Input const m_active;
+
+  public:
+    explicit sqrt_t(Input const &active);
+    [[nodiscard]] auto d() const -> double;
+    [[nodiscard]] auto input() const -> Input const &;
+};
+
+template <class Input>
+sqrt_t<Input>::sqrt_t(Input const &active)
+    : Base<sqrt_t<Input>>(std::sqrt(active.v())), m_active(active) {}
+
+template <class Input> auto sqrt_t<Input>::d() const -> double {
+    return 0.5 * this->v() / m_active.v();
+}
+
+template <class Input> auto sqrt_t<Input>::input() const -> Input const & {
+    return this->m_active;
+}
+
+template <class Derived>
+auto sqrt(Base<Derived> const &in) -> sqrt_t<const Derived> {
+    return sqrt_t<const Derived>(*static_cast<const Derived *>(&in));
+}
+
+template <class Input>
+class log_t : public Base<log_t<Input>>,
+              public Univariate<Input, log_t<Input>> {
+  private:
+    Input const m_active;
+
+  public:
+    explicit log_t(Input const &active);
+    [[nodiscard]] auto d() const -> double;
+    [[nodiscard]] auto input() const -> Input const &;
+};
+
+template <class Input>
+log_t<Input>::log_t(Input const &active)
+    : Base<log_t<Input>>(std::log(active.v())), m_active(active) {}
+
+template <class Input> auto log_t<Input>::d() const -> double {
+    return 1.0 / m_active.v();
+}
+
+template <class Input> auto log_t<Input>::input() const -> Input const & {
+    return this->m_active;
+}
+
+template <class Derived>
+auto log(Base<Derived> const &in) -> log_t<const Derived> {
+    return log_t<const Derived>(*static_cast<const Derived *>(&in));
+}
+
 template <class Input1, class Input2>
 class add : public Base<add<Input1, Input2>>,
             public Bivariate<Input1, Input2, add<Input1, Input2>> {

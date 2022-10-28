@@ -288,6 +288,29 @@ tape_size_univariate(args<this_type, TypesAlive...> const &,
     return std::max(curent_tape_size, next_tape_size);
 }
 
+// template <class Input, class this_type>
+// auto is_my_parent_impl(const Univariate<Input, this_type> *) ->
+// std::true_type;
+
+// auto is_my_parent_impl(const void *) -> std::false_type;
+
+// template <class Input, class this_type>
+// using is_my_parent =
+//     decltype(is_my_parent_impl<Input, this_type>(std::declval<this_type
+//     *>()));
+
+// template <class Input, class this_type, typename... TypesAlive,
+//           typename... LeavesAlive, typename... Leaves>
+// constexpr static auto
+// tape_size(args<this_type const, TypesAlive...> const &,
+//           args<LeavesAlive...> const &, args<Leaves...> const &)
+//     -> std::size_t {
+//     return tape_size_univariate<Input>(args<this_type const,
+//     TypesAlive...>{},
+//                                        args<LeavesAlive...>{},
+//                                        args<Leaves...>{});
+// }
+
 template <class Input, typename... TypesAlive, typename... LeavesAlive,
           typename... Leaves>
 constexpr static auto tape_size(args<exp_t<Input> const, TypesAlive...> const &,
@@ -296,6 +319,29 @@ constexpr static auto tape_size(args<exp_t<Input> const, TypesAlive...> const &,
 
     return tape_size_univariate<Input>(
         args<exp_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Leaves...>{});
+}
+
+template <class Input, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves>
+constexpr static auto
+tape_size(args<sqrt_t<Input> const, TypesAlive...> const &,
+          args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+
+    return tape_size_univariate<Input>(
+        args<sqrt_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Leaves...>{});
+}
+
+template <class Input, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves>
+constexpr static auto tape_size(args<log_t<Input> const, TypesAlive...> const &,
+                                args<LeavesAlive...> const &,
+                                args<Leaves...> const &) -> std::size_t {
+
+    return tape_size_univariate<Input>(
+        args<log_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
         args<Leaves...>{});
 }
 

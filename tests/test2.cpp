@@ -305,10 +305,9 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::exp;
     using std::log;
     using std::sqrt;
-    // auto totalvol = v * sqrt(T);
-    auto totalvol = v * exp(T);
+    auto totalvol = v * sqrt(T);
     // auto d1 = log(S / K) / totalvol + totalvol / 2.0;
-    auto d1 = cos(S * K) * totalvol +
+    auto d1 = log(S * K) * totalvol +
               totalvol * constant<ID, decltype(totalvol)>(0.5);
     auto d2 = d1 + totalvol;
     // return S * cdf<standard_normal>(d1) - K * cdf<standard_normal>(d2);
