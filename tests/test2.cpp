@@ -299,6 +299,12 @@ TEST(adhoc2, derivcomplexdexp2) {
 //            K * exp(-r * T) * norm_cdf(-d_j(2, S, K, r, v, T));
 // }
 
+template <class D> inline auto cdf_n(D const &x) {
+    using std::erfc;
+    constexpr double one_over_root_two = 1.0 / constants::sqrt(2.0);
+    return constant<ID, D>(0.5) * erfc(x * constant<ID, D>(-one_over_root_two));
+}
+
 template <class I1, class I2, class I3, class I4>
 auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::cos;
@@ -306,22 +312,42 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::log;
     using std::sqrt;
     auto totalvol = v * sqrt(T);
-    // auto d1 = log(S / K) / totalvol + totalvol / 2.0;
-    auto d1 = log(S * K) * totalvol +
+    auto d1 = log(S / K) / totalvol +
               totalvol * constant<ID, decltype(totalvol)>(0.5);
     auto d2 = d1 + totalvol;
-    // return S * cdf<standard_normal>(d1) - K * cdf<standard_normal>(d2);
-    return S * d1 + K * d2;
-    // return /* S * cos(S * K) *  */ v * cos(T) * v * cos(T);
+    return S * cdf_n(d1) +
+           constant<ID, decltype(totalvol)>(-1.0) * K * cdf_n(d2);
 }
 
 TEST(adhoc2, BlackScholes) {
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
     double S = 100.0;
     double K = 102.0;
     double v = 0.15;
     double T = 0.5;
-    auto result = call_price(S, K, v, T);
-    std::cout << result << std::endl;
+    double result = call_price(S, K, v, T);
+    double epsilon = 1e-5;
+    // std::cout << result << std::endl;
+    double resultp1 = call_price(S + epsilon, K, v, T);
+    double resultm1 = call_price(S - epsilon, K, v, T);
+    std::array<double, 4> fd{};
+    fd[0] = (resultp1 - resultm1) / (2.0 * epsilon);
+    // std::cout << (resultp1 - resultm1) / (2.0 * epsilon) << std::endl;
+
+    double resultp2 = call_price(S, K + epsilon, v, T);
+    double resultm2 = call_price(S, K - epsilon, v, T);
+    fd[1] = (resultp2 - resultm2) / (2.0 * epsilon);
+    // std::cout << (resultp2 - resultm2) / (2.0 * epsilon) << std::endl;
+
+    double resultp3 = call_price(S, K, v + epsilon, T);
+    double resultm3 = call_price(S, K, v - epsilon, T);
+    fd[2] = (resultp3 - resultm3) / (2.0 * epsilon);
+    // std::cout << (resultp3 - resultm3) / (2.0 * epsilon) << std::endl;
+
+    double resultp4 = call_price(S, K, v, T + epsilon);
+    double resultm4 = call_price(S, K, v, T - epsilon);
+    fd[3] = (resultp4 - resultm4) / (2.0 * epsilon);
+    // std::cout << (resultp4 - resultm4) / (2.0 * epsilon) << std::endl;
 
     adhoc<ID> aS(S);
     adhoc<ID> aK(K);
@@ -329,10 +355,11 @@ TEST(adhoc2, BlackScholes) {
     adhoc<ID> aT(T);
     auto result2 = call_price(aS, aK, av, aT);
     auto derivatives = evaluate(result2, aS, aK, av, aT);
-    std::cout << result2.v() << std::endl;
-    for (std::size_t i = 0; i < derivatives.size(); i++) {
-        std::cout << derivatives[i] << std::endl;
-    }
+    EXPECT_EQ(result, result2.v());
+    // EXPECT_NEAR(fd[0], derivatives[0], 1e-8);
+    // EXPECT_NEAR(fd[1], derivatives[1], 1e-8);
+    EXPECT_NEAR(fd[2], derivatives[2], 1e-8);
+    EXPECT_NEAR(fd[3], derivatives[3], 1e-8);
 }
 
 TEST(adhoc2, hastype) {

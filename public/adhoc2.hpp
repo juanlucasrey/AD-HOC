@@ -2,6 +2,7 @@
 #define ADHOC2_HPP
 
 #include <filter.hpp>
+#include <functions/constants.hpp>
 #include <utils.hpp>
 
 #include <array>
@@ -56,8 +57,9 @@ inline constexpr auto Bivariate<Input1, Input2, Derived>::depends_in() noexcept
            Input2::template depends<Denom>();
 }
 
-template <class Input1, class Input2> class mul;
 template <class Input1, class Input2> class add;
+template <class Input1, class Input2> class mul;
+template <class Input1, class Input2> class div;
 
 template <class Derived> class Base {
   protected:
@@ -75,6 +77,10 @@ template <class Derived> class Base {
     template <class Derived2>
     auto operator*(Base<Derived2> const &rhs) const
         -> mul<const Derived, const Derived2>;
+
+    template <class Derived2>
+    auto operator/(Base<Derived2> const &rhs) const
+        -> div<const Derived, const Derived2>;
 
     template <class... Denom>
     constexpr static auto depends3() noexcept -> std::size_t;
@@ -99,6 +105,14 @@ template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
     -> mul<const Derived, const Derived2> {
+    return {*static_cast<Derived const *>(this),
+            *static_cast<Derived2 const *>(&rhs)};
+}
+
+template <class Derived>
+template <class Derived2>
+inline auto Base<Derived>::operator/(Base<Derived2> const &rhs) const
+    -> div<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -229,6 +243,38 @@ auto log(Base<Derived> const &in) -> log_t<const Derived> {
     return log_t<const Derived>(*static_cast<const Derived *>(&in));
 }
 
+template <class Input>
+class erfc_t : public Base<erfc_t<Input>>,
+               public Univariate<Input, erfc_t<Input>> {
+  private:
+    Input const m_active;
+
+  public:
+    explicit erfc_t(Input const &active);
+    [[nodiscard]] auto d() const -> double;
+    [[nodiscard]] auto input() const -> Input const &;
+};
+
+template <class Input>
+erfc_t<Input>::erfc_t(Input const &active)
+    : Base<erfc_t<Input>>(std::erfc(active.v())), m_active(active) {}
+
+template <class Input> auto erfc_t<Input>::d() const -> double {
+    constexpr double two_over_root_pi =
+        2.0 / constants::sqrt(constants::pi<double>());
+    return -std::exp(-this->m_active.v() * this->m_active.v()) *
+           two_over_root_pi;
+}
+
+template <class Input> auto erfc_t<Input>::input() const -> Input const & {
+    return this->m_active;
+}
+
+template <class Derived>
+auto erfc(Base<Derived> const &in) -> erfc_t<const Derived> {
+    return erfc_t<const Derived>(*static_cast<const Derived *>(&in));
+}
+
 template <class Input1, class Input2>
 class add : public Base<add<Input1, Input2>>,
             public Bivariate<Input1, Input2, add<Input1, Input2>> {
@@ -304,6 +350,53 @@ auto mul<Input1, Input2>::input1() const -> Input1 const & {
 
 template <class Input1, class Input2>
 auto mul<Input1, Input2>::input2() const -> Input2 const & {
+    return this->m_active2;
+}
+
+// NOTE: we could use div = mul<in1, inv<in2>> however this might lead to
+// numerical errors on the valuation because in1 / in2 is not the same as in1 *
+// (1.0/in2)
+template <class Input1, class Input2>
+class div : public Base<div<Input1, Input2>>,
+            public Bivariate<Input1, Input2, div<Input1, Input2>> {
+    Input1 const m_active1;
+    Input2 const m_active2;
+
+  public:
+    div(Input1 const &active1, Input2 const &active2);
+    [[nodiscard]] auto d1() const -> double;
+    [[nodiscard]] auto d2() const -> double;
+    [[nodiscard]] auto input1() const -> Input1 const &;
+    [[nodiscard]] auto input2() const -> Input2 const &;
+};
+
+template <class Input1, class Input2>
+div<Input1, Input2>::div(Input1 const &active1, Input2 const &active2)
+    : Base<div<Input1, Input2>>(active1.v() / active2.v()), m_active1(active1),
+      m_active2(active2) {}
+
+template <class Input1, class Input2>
+auto div<Input1, Input2>::d1() const -> double {
+    // both are valid. first one might be a little more efficient.
+    return this->v() * this->m_active1.v();
+    // return 1.0 / this->m_active2.v();
+}
+
+template <class Input1, class Input2>
+auto div<Input1, Input2>::d2() const -> double {
+    // NOTE: this is when using mul<in1, inv<in2>> might be more efficient than
+    // using div<in1, in2> but we choose this approach to keep evaluation values
+    // the same
+    return -this->v() / this->m_active2.v();
+}
+
+template <class Input1, class Input2>
+auto div<Input1, Input2>::input1() const -> Input1 const & {
+    return this->m_active1;
+}
+
+template <class Input1, class Input2>
+auto div<Input1, Input2>::input2() const -> Input2 const & {
     return this->m_active2;
 }
 
