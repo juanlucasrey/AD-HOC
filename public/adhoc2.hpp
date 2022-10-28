@@ -377,9 +377,7 @@ div<Input1, Input2>::div(Input1 const &active1, Input2 const &active2)
 
 template <class Input1, class Input2>
 auto div<Input1, Input2>::d1() const -> double {
-    // both are valid. first one might be a little more efficient.
-    return this->v() * this->m_active1.v();
-    // return 1.0 / this->m_active2.v();
+    return 1.0 / this->m_active2.v();
 }
 
 template <class Input1, class Input2>

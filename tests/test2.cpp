@@ -227,6 +227,22 @@ TEST(adhoc2, DerivativeMult) {
     std::cout << result[1] << std::endl;
 }
 
+TEST(adhoc2, DerivativeDiv) {
+    adouble x(1.5);
+    adouble y(2.5);
+    auto result = evaluate(x / y, x, y);
+
+    static_assert(result.size() == 2);
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // f = x / y
+    // print(lambdify([x, y], f.diff(x))(1.5, 2.5))
+    // print(lambdify([x, y], f.diff(y))(1.5, 2.5))
+    EXPECT_NEAR(result[0], 0.4, 1e-10);
+    EXPECT_NEAR(result[1], -0.24, 1e-10);
+}
+
 TEST(adhoc2, DerivativeMultSame) {
     adouble x(1.5);
     auto result = evaluate(x * x, x);
@@ -327,27 +343,22 @@ TEST(adhoc2, BlackScholes) {
     double T = 0.5;
     double result = call_price(S, K, v, T);
     double epsilon = 1e-5;
-    // std::cout << result << std::endl;
     double resultp1 = call_price(S + epsilon, K, v, T);
     double resultm1 = call_price(S - epsilon, K, v, T);
     std::array<double, 4> fd{};
     fd[0] = (resultp1 - resultm1) / (2.0 * epsilon);
-    // std::cout << (resultp1 - resultm1) / (2.0 * epsilon) << std::endl;
 
     double resultp2 = call_price(S, K + epsilon, v, T);
     double resultm2 = call_price(S, K - epsilon, v, T);
     fd[1] = (resultp2 - resultm2) / (2.0 * epsilon);
-    // std::cout << (resultp2 - resultm2) / (2.0 * epsilon) << std::endl;
 
     double resultp3 = call_price(S, K, v + epsilon, T);
     double resultm3 = call_price(S, K, v - epsilon, T);
     fd[2] = (resultp3 - resultm3) / (2.0 * epsilon);
-    // std::cout << (resultp3 - resultm3) / (2.0 * epsilon) << std::endl;
 
     double resultp4 = call_price(S, K, v, T + epsilon);
     double resultm4 = call_price(S, K, v, T - epsilon);
     fd[3] = (resultp4 - resultm4) / (2.0 * epsilon);
-    // std::cout << (resultp4 - resultm4) / (2.0 * epsilon) << std::endl;
 
     adhoc<ID> aS(S);
     adhoc<ID> aK(K);
@@ -356,8 +367,8 @@ TEST(adhoc2, BlackScholes) {
     auto result2 = call_price(aS, aK, av, aT);
     auto derivatives = evaluate(result2, aS, aK, av, aT);
     EXPECT_EQ(result, result2.v());
-    // EXPECT_NEAR(fd[0], derivatives[0], 1e-8);
-    // EXPECT_NEAR(fd[1], derivatives[1], 1e-8);
+    EXPECT_NEAR(fd[0], derivatives[0], 1e-8);
+    EXPECT_NEAR(fd[1], derivatives[1], 1e-8);
     EXPECT_NEAR(fd[2], derivatives[2], 1e-8);
     EXPECT_NEAR(fd[3], derivatives[3], 1e-8);
 }
