@@ -299,6 +299,24 @@ TEST(adhoc2, derivcomplexdexp2) {
 //            K * exp(-r * T) * norm_cdf(-d_j(2, S, K, r, v, T));
 // }
 
+template <class T, class R = void> struct enable_if_type { using type = R; };
+
+template <class T, class Enable = void> struct test : std::false_type {};
+
+template <class T>
+struct test<T, typename enable_if_type<typename T::is_adhoc_tag>::type>
+    : std::true_type {};
+
+template <bool T> struct optix_traits2;
+
+template <> struct optix_traits2<true> {
+    template <int N> using dim2 = adhoc<N>;
+};
+
+template <> struct optix_traits2<false> {
+    template <int N> using dim2 = double;
+};
+
 template <class I1, class I2, class I3, class I4>
 auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::cos;
@@ -325,6 +343,12 @@ TEST(adhoc2, BlackScholes) {
 
     adouble aS(S);
     adhoc<ID> aK(K);
+    static_assert(test<decltype(aK)>());
+    static_assert(!test<decltype(K)>());
+    optix_traits2<test<decltype(aK)>::type::value>::template dim2<ID> temp(3);
+    std::cout << temp.v() << std::endl;
+    optix_traits2<test<decltype(K)>::type::value>::template dim2<ID> temp2(3);
+    std::cout << temp2 << std::endl;
     adouble av(v);
     adouble aT(T);
     auto result2 = call_price(aS, aK, av, aT);

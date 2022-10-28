@@ -64,6 +64,7 @@ template <class Derived> class Base {
     double m_value{0};
 
   public:
+    using is_adhoc_tag = void;
     explicit Base(double value);
     [[nodiscard]] auto v() const noexcept -> double;
 
