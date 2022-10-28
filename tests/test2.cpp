@@ -299,24 +299,6 @@ TEST(adhoc2, derivcomplexdexp2) {
 //            K * exp(-r * T) * norm_cdf(-d_j(2, S, K, r, v, T));
 // }
 
-template <class T, class R = void> struct enable_if_type { using type = R; };
-
-template <class T, class Enable = void> struct test : std::false_type {};
-
-template <class T>
-struct test<T, typename enable_if_type<typename T::is_adhoc_tag>::type>
-    : std::true_type {};
-
-template <bool T> struct optix_traits2;
-
-template <> struct optix_traits2<true> {
-    template <int N> using dim2 = adhoc<N>;
-};
-
-template <> struct optix_traits2<false> {
-    template <int N> using dim2 = double;
-};
-
 template <class I1, class I2, class I3, class I4>
 auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::cos;
@@ -333,6 +315,29 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     // return /* S * cos(S * K) *  */ v * cos(T) * v * cos(T);
 }
 
+template <class T, class R = void> struct enable_if_type { using type = R; };
+
+template <class T, class Enable = void> struct is_adhoc : std::false_type {};
+
+template <class T>
+struct is_adhoc<T, typename enable_if_type<typename T::is_adhoc_tag>::type>
+    : std::true_type {};
+
+template <bool T> struct constant_type;
+
+template <> struct constant_type<true> {
+    template <int N> using type = adhoc<N>;
+};
+
+template <> struct constant_type<false> {
+    template <int N> using type = double;
+};
+
+template <class T> using gen_constant = constant_type<is_adhoc<T>::type::value>;
+
+template <int N, class T>
+using constant = typename gen_constant<T>::template type<N>;
+
 TEST(adhoc2, BlackScholes) {
     double S = 100.0;
     double K = 102.0;
@@ -343,12 +348,22 @@ TEST(adhoc2, BlackScholes) {
 
     adouble aS(S);
     adhoc<ID> aK(K);
-    static_assert(test<decltype(aK)>());
-    static_assert(!test<decltype(K)>());
-    optix_traits2<test<decltype(aK)>::type::value>::template dim2<ID> temp(3);
-    std::cout << temp.v() << std::endl;
-    optix_traits2<test<decltype(K)>::type::value>::template dim2<ID> temp2(3);
-    std::cout << temp2 << std::endl;
+    // static_assert(is_adhoc<decltype(aK)>());
+    // static_assert(!is_adhoc<decltype(K)>());
+    // constant<is_adhoc<decltype(aK)>::type::value>::template type<ID> temp(3);
+    // std::cout << temp.v() << std::endl;
+    // constant<is_adhoc<decltype(K)>::type::value>::template type<ID> temp2(3);
+    // std::cout << temp2 << std::endl;
+
+    // gen_constant<decltype(aK)>::type<ID> temp3(3);
+    // std::cout << temp3.v() << std::endl;
+
+    constant<ID, decltype(aK)> temp4(3);
+    std::cout << temp4.v() << std::endl;
+
+    constant<ID, decltype(K)> temp5(3);
+    std::cout << temp5 << std::endl;
+
     adouble av(v);
     adouble aT(T);
     auto result2 = call_price(aS, aK, av, aT);
