@@ -336,7 +336,6 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 }
 
 TEST(adhoc2, BlackScholes) {
-    std::cout.precision(std::numeric_limits<double>::max_digits10);
     double S = 100.0;
     double K = 102.0;
     double v = 0.15;
