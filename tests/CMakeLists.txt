@@ -22,6 +22,12 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wconversion -Wdouble-promotion -Wundef -Wdelete-non-virtual-dtor -Wnon-virtual-dtor -Wparentheses -Wcast-align -Wwrite-strings -Wredundant-decls -Wunused-parameter")
+
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unsafe-loop-optimizations -Wuseless-cast -Wlogical-op")
+endif()
+
 
 target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
 target_link_directories(adhoc_test SYSTEM PUBLIC /usr/local/lib)

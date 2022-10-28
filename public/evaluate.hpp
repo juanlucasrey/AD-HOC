@@ -10,7 +10,8 @@ namespace detail {
 template <std::size_t I, std::size_t M, std::size_t N, typename... LeavesAlive,
           std::size_t... IdxLeavesAlive>
 static inline void
-evaluate_final(std::array<double, M> &temp, std::array<double, N> const &tape,
+evaluate_final(std::array<double, M> & /* temp */,
+               std::array<double, N> const & /* tape */,
                args<LeavesAlive...> const &, args<> const &,
                std::index_sequence<IdxLeavesAlive...> const &) {}
 
