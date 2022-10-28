@@ -273,6 +273,8 @@ inline constexpr auto adouble_aux<N>::depends() noexcept -> bool {
 template <typename... Types> struct args {};
 
 #define adouble detail::adouble_aux<__COUNTER__>
+template <int N> using adhoc = detail::adouble_aux<N>;
+#define ID __COUNTER__
 
 } // namespace adhoc2
 

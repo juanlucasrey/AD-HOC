@@ -1,5 +1,6 @@
 #include <adhoc2.hpp>
 #include <evaluate.hpp>
+#include <functions/distribution.hpp>
 #include <tape_size.hpp>
 #include <utils.hpp>
 
@@ -281,6 +282,58 @@ TEST(adhoc2, derivcomplexdexp2) {
     EXPECT_NEAR(result2[0], 412.4497951657808, 1e-9);
     EXPECT_NEAR(result2[1], 1588.4738734117946, 1e-9);
     EXPECT_NEAR(result2[2], 80., 1e-9);
+}
+
+// double call_price(const double &S, const double &K, const double &r,
+//                   const double &v, const double &T) {
+//     return S * norm_cdf(d_j(1, S, K, r, v, T)) -
+//            K * exp(-r * T) * norm_cdf(d_j(2, S, K, r, v, T));
+// }
+
+// Calculate the European vanilla put price based on
+// underlying S, strike K, risk-free rate r, volatility of
+// underlying sigma and time to maturity T
+// double put_price(const double &S, const double &K, const double &r,
+//                  const double &v, const double &T) {
+//     return -S * norm_cdf(-d_j(1, S, K, r, v, T)) +
+//            K * exp(-r * T) * norm_cdf(-d_j(2, S, K, r, v, T));
+// }
+
+template <class I1, class I2, class I3, class I4>
+auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
+    using std::cos;
+    using std::exp;
+    using std::log;
+    using std::sqrt;
+    // auto totalvol = v * sqrt(T);
+    auto totalvol = v * exp(T);
+    // auto d1 = log(S / K) / totalvol + totalvol / 2.0;
+    auto d1 = cos(S * K) * totalvol + totalvol;
+    auto d2 = d1 + totalvol;
+    // return S * cdf<standard_normal>(d1) - K * cdf<standard_normal>(d2);
+    return S * d1 + K * d2;
+    // return /* S * cos(S * K) *  */ v * cos(T) * v * cos(T);
+}
+
+TEST(adhoc2, BlackScholes) {
+    double S = 100.0;
+    double K = 102.0;
+    double v = 0.15;
+    double T = 0.5;
+    auto result = call_price(S, K, v, T);
+    std::cout << result << std::endl;
+
+    adouble aS(S);
+    adhoc<ID> aK(K);
+    adouble av(v);
+    adouble aT(T);
+    auto result2 = call_price(aS, aK, av, aT);
+    auto derivatives = evaluate(result2, aS, aK, av, aT);
+}
+
+TEST(adhoc2, hastype) {
+    constexpr auto position = idx_type2<const double, double>();
+    std::cout << position << std::endl;
 }
 
 // TEST(adhoc2, Derivative2nd) {

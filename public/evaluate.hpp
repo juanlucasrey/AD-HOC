@@ -477,12 +477,12 @@ static inline void evaluate_bivariate_noskip(
                 }
 
             } else if constexpr (is_input1_new) {
-                constexpr auto position = idx_type2<Input2, LeavesAlive...>();
+                constexpr auto position = idx_type2<Input2, TypesAlive...>();
                 constexpr auto position_on_tape =
-                    Get<position, IdxLeavesAlive...>::value;
+                    Get<position, IdxTypesAlive...>::value;
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
                 tape[IdxTypesAliveCurrent] *= in.d1();
-                evaluate(args<TypesAlive...>{}, args<Leaves...>{},
+                evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
                          std::index_sequence<IdxTypesAliveCurrent,
                                              IdxTypesAlive...>{},
                          std::index_sequence<IdxLeavesAlive...>{},
@@ -771,9 +771,13 @@ static inline void evaluate_first(
     std::array<double, N> &tape, this_type const &in, args<Leaves...> const &,
     std::index_sequence<FirstIdxAvailable, IdxAvailable...> const &) {
     tape[FirstIdxAvailable] = 1.0;
-    evaluate(args<>{}, args<Leaves...>{},
-             std::index_sequence<FirstIdxAvailable>{}, std::index_sequence<>{},
-             std::index_sequence<IdxAvailable...>{}, tape, in);
+    constexpr bool is_input_leaf = has_type2<this_type, Leaves...>();
+    if constexpr (!is_input_leaf) {
+        evaluate(args<>{}, args<Leaves...>{},
+                 std::index_sequence<FirstIdxAvailable>{},
+                 std::index_sequence<>{},
+                 std::index_sequence<IdxAvailable...>{}, tape, in);
+    }
 }
 
 } // namespace detail
