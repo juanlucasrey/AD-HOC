@@ -308,35 +308,13 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     // auto totalvol = v * sqrt(T);
     auto totalvol = v * exp(T);
     // auto d1 = log(S / K) / totalvol + totalvol / 2.0;
-    auto d1 = cos(S * K) * totalvol + totalvol;
+    auto d1 = cos(S * K) * totalvol +
+              totalvol * constant<ID, decltype(totalvol)>(0.5);
     auto d2 = d1 + totalvol;
     // return S * cdf<standard_normal>(d1) - K * cdf<standard_normal>(d2);
     return S * d1 + K * d2;
     // return /* S * cos(S * K) *  */ v * cos(T) * v * cos(T);
 }
-
-template <class T, class R = void> struct enable_if_type { using type = R; };
-
-template <class T, class Enable = void> struct is_adhoc : std::false_type {};
-
-template <class T>
-struct is_adhoc<T, typename enable_if_type<typename T::is_adhoc_tag>::type>
-    : std::true_type {};
-
-template <bool T> struct constant_type;
-
-template <> struct constant_type<true> {
-    template <int N> using type = adhoc<N>;
-};
-
-template <> struct constant_type<false> {
-    template <int N> using type = double;
-};
-
-template <class T> using gen_constant = constant_type<is_adhoc<T>::type::value>;
-
-template <int N, class T>
-using constant = typename gen_constant<T>::template type<N>;
 
 TEST(adhoc2, BlackScholes) {
     double S = 100.0;
@@ -346,28 +324,16 @@ TEST(adhoc2, BlackScholes) {
     auto result = call_price(S, K, v, T);
     std::cout << result << std::endl;
 
-    adouble aS(S);
+    adhoc<ID> aS(S);
     adhoc<ID> aK(K);
-    // static_assert(is_adhoc<decltype(aK)>());
-    // static_assert(!is_adhoc<decltype(K)>());
-    // constant<is_adhoc<decltype(aK)>::type::value>::template type<ID> temp(3);
-    // std::cout << temp.v() << std::endl;
-    // constant<is_adhoc<decltype(K)>::type::value>::template type<ID> temp2(3);
-    // std::cout << temp2 << std::endl;
-
-    // gen_constant<decltype(aK)>::type<ID> temp3(3);
-    // std::cout << temp3.v() << std::endl;
-
-    constant<ID, decltype(aK)> temp4(3);
-    std::cout << temp4.v() << std::endl;
-
-    constant<ID, decltype(K)> temp5(3);
-    std::cout << temp5 << std::endl;
-
-    adouble av(v);
-    adouble aT(T);
+    adhoc<ID> av(v);
+    adhoc<ID> aT(T);
     auto result2 = call_price(aS, aK, av, aT);
     auto derivatives = evaluate(result2, aS, aK, av, aT);
+    std::cout << result2.v() << std::endl;
+    for (std::size_t i = 0; i < derivatives.size(); i++) {
+        std::cout << derivatives[i] << std::endl;
+    }
 }
 
 TEST(adhoc2, hastype) {
