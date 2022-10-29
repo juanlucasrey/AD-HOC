@@ -18,10 +18,12 @@ TEST(adhoc2, Initial) {
 TEST(adhoc2, depends2) {
     adouble val1(1.);
     adouble val2(2.);
+
+    // add const!! we only check against const version
     constexpr auto res =
-        decltype(val1)::depends3<decltype(val1), decltype(val1),
-                                 decltype(val2)>();
-    EXPECT_EQ(res, 2);
+        decltype(val1)::depends3<decltype(val1) const, decltype(val1) const,
+                                 decltype(val2) const>();
+    static_assert(res == 2);
 }
 
 TEST(adhoc2, complexdepends2) {
@@ -33,9 +35,11 @@ TEST(adhoc2, complexdepends2) {
     auto t1 = valsum * valprod;
     auto t2 = valprod + t1;
 
-    constexpr auto res = decltype(t2)::depends3<decltype(val1), decltype(val2),
-                                                decltype(val3)>();
-    EXPECT_EQ(res, 2);
+    // add const!! we only check against const version
+    constexpr auto res =
+        decltype(t2)::depends3<decltype(val1) const, decltype(val2) const,
+                               decltype(val3) const>();
+    static_assert(res == 2);
 }
 
 TEST(adhoc2, complexdepends3) {
