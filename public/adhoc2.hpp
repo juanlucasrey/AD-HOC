@@ -415,7 +415,7 @@ inline adouble_aux<N>::adouble_aux(double value)
 template <int N>
 template <class Denom>
 inline constexpr auto adouble_aux<N>::depends() noexcept -> bool {
-    return std::is_same_v<Denom, adouble_aux<N>>;
+    return std::is_same_v<Denom, adouble_aux<N> const>;
 }
 
 } // namespace detail

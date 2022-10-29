@@ -19,7 +19,7 @@ tape_size(const args<adouble_aux<N> const, TypesAlive...> &,
           const args<LeavesAlive...> &, const args<Leaves...> &)
     -> std::size_t {
 
-    using this_type = adouble_aux<N>;
+    using this_type = adouble_aux<N> const;
 
     // this_type should only be once in TypesAlive
     static_assert(!has_type2<this_type, TypesAlive...>());
@@ -409,7 +409,8 @@ tape_size(args<div<Input1, Input2> const, TypesAlive...> const &,
 template <class Output, typename... Leaves>
 constexpr static auto tape_size(Output const &, Leaves const &...)
     -> std::size_t {
-    return detail::tape_size(args<Output const>{}, args<>{}, args<Leaves...>{});
+    return detail::tape_size(args<Output const>{}, args<>{},
+                             args<Leaves const...>{});
 }
 
 } // namespace adhoc2

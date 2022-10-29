@@ -809,22 +809,24 @@ static inline void evaluate_first(
 
 template <typename... Leaves, class Output>
 constexpr static inline auto evaluate(Output const &in, double init = 1.0)
-    -> std::array<double, (Output::template depends<Leaves>() + ...)> {
+    -> std::array<double, (Output::template depends<Leaves const>() + ...)> {
 
-    static_assert((Output::template depends<Leaves>() + ...) ==
+    static_assert((Output::template depends<Leaves const>() + ...) ==
                   sizeof...(Leaves));
-    std::array<double, (Output::template depends<Leaves>() + ...)> results = {};
+    std::array<double, (Output::template depends<Leaves const>() + ...)>
+        results = {};
     if constexpr (results.empty()) {
         return results;
     } else {
         constexpr std::size_t size = detail::tape_size(
-            args<Output const>{}, args<>{}, args<Leaves...>{});
+            args<Output const>{}, args<>{}, args<Leaves const...>{});
         std::array<double, size> tape{};
-        detail::evaluate_first(tape, in, init, args<Leaves...>{},
+        detail::evaluate_first(tape, in, init, args<Leaves const...>{},
                                std::make_index_sequence<size>{});
 
         for (std::size_t index = 0;
-             index < (Output::template depends<Leaves>() + ...); ++index) {
+             index < (Output::template depends<Leaves const>() + ...);
+             ++index) {
             results[index] = tape[index];
         }
         return results;
