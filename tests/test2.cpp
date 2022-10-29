@@ -150,7 +150,7 @@ TEST(adhoc2, derivativeadd) {
     adouble val1(1.);
     adouble val2(1.);
     auto temp = val1 + val2;
-    auto derivatives = evaluate(temp, val1, val2);
+    auto derivatives = evaluate<decltype(val1), decltype(val2)>(temp);
     static_assert(derivatives.size() == 2);
 }
 
@@ -158,7 +158,7 @@ TEST(adhoc2, derivativemul) {
     adouble val1(1.);
     adouble val2(1.);
     auto temp = val1 * val2;
-    auto derivatives = evaluate(temp, val1, val2);
+    auto derivatives = evaluate<decltype(val1), decltype(val2)>(temp);
     static_assert(derivatives.size() == 2);
 }
 
@@ -177,7 +177,7 @@ TEST(adhoc2, derivative) {
 
 TEST(adhoc2, DerivativeUniv) {
     adouble x(1.);
-    auto result = evaluate(cos(exp(x)), x);
+    auto result = evaluate<decltype(x)>(cos(exp(x)));
 
     static_assert(result.size() == 1);
     // from sympy import *
@@ -200,7 +200,9 @@ TEST(adhoc2, DerivativeUnivScope) {
     // this shows why we need deep copies. thisexample would not work on release
     // if we would use references
     auto temp = makeTemp();
-    auto result = evaluate(std::get<0>(temp), std::get<1>(temp));
+    auto result = evaluate<std::tuple_element<1, decltype(temp)>::type>(
+        std::get<0>(temp));
+
     static_assert(result.size() == 1);
     EXPECT_NEAR(result[0], -1.1166193174450132, 1e-10);
 }
@@ -208,7 +210,7 @@ TEST(adhoc2, DerivativeUnivScope) {
 TEST(adhoc2, DerivativeMult) {
     adouble x(1.5);
     adouble y(2.5);
-    auto result = evaluate(x * y, x, y);
+    auto result = evaluate<decltype(x), decltype(y)>(x * y);
 
     static_assert(result.size() == 2);
     // from sympy import *
@@ -230,7 +232,7 @@ TEST(adhoc2, DerivativeMult) {
 TEST(adhoc2, DerivativeDiv) {
     adouble x(1.5);
     adouble y(2.5);
-    auto result = evaluate(x / y, x, y);
+    auto result = evaluate<decltype(x), decltype(y)>(x / y);
 
     static_assert(result.size() == 2);
     // from sympy import *
@@ -245,7 +247,7 @@ TEST(adhoc2, DerivativeDiv) {
 
 TEST(adhoc2, DerivativeMultSame) {
     adouble x(1.5);
-    auto result = evaluate(x * x, x);
+    auto result = evaluate<decltype(x)>(x * x);
 
     static_assert(result.size() == 1);
     // from sympy import *
@@ -275,7 +277,7 @@ TEST(adhoc2, derivcomplexdexp2) {
 
     constexpr std::size_t size = tape_size(res, x, y, z);
     static_assert(size == 5);
-    auto result = evaluate(res, x, y, z);
+    auto result = evaluate<decltype(x), decltype(y), decltype(z)>(res);
     static_assert(result.size() == 3);
 
     // from sympy import *
@@ -293,7 +295,7 @@ TEST(adhoc2, derivcomplexdexp2) {
     auto res2 = r2 * r1;
     constexpr std::size_t size2 = tape_size(res2, x, y, z);
     static_assert(size2 == 4);
-    auto result2 = evaluate(res2, x, y, z);
+    auto result2 = evaluate<decltype(x), decltype(y), decltype(z)>(res2, 1.0);
     static_assert(result2.size() == 3);
     EXPECT_NEAR(result2[0], 412.4497951657808, 1e-9);
     EXPECT_NEAR(result2[1], 1588.4738734117946, 1e-9);
@@ -364,7 +366,9 @@ TEST(adhoc2, BlackScholes) {
     adhoc<ID> av(v);
     adhoc<ID> aT(T);
     auto result2 = call_price(aS, aK, av, aT);
-    auto derivatives = evaluate(result2, aS, aK, av, aT);
+    auto derivatives =
+        evaluate<decltype(aS), decltype(aK), decltype(av), decltype(aT)>(
+            result2);
     EXPECT_EQ(result, result2.v());
     EXPECT_NEAR(fd[0], derivatives[0], 1e-8);
     EXPECT_NEAR(fd[1], derivatives[1], 1e-8);

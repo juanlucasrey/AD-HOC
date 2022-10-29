@@ -792,9 +792,10 @@ template <std::size_t N, class this_type, typename... Leaves,
           std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
           std::size_t FirstIdxAvailable, std::size_t... IdxAvailable>
 static inline void evaluate_first(
-    std::array<double, N> &tape, this_type const &in, args<Leaves...> const &,
+    std::array<double, N> &tape, this_type const &in, double init,
+    args<Leaves...> const &,
     std::index_sequence<FirstIdxAvailable, IdxAvailable...> const &) {
-    tape[FirstIdxAvailable] = 1.0;
+    tape[FirstIdxAvailable] = init;
     constexpr bool is_input_leaf = has_type2<this_type, Leaves...>();
     if constexpr (!is_input_leaf) {
         evaluate(args<>{}, args<Leaves...>{},
@@ -807,7 +808,7 @@ static inline void evaluate_first(
 } // namespace detail
 
 template <typename... Leaves, class Output>
-constexpr static inline auto evaluate(Output const &in)
+constexpr static inline auto evaluate(Output const &in, double init = 1.0)
     -> std::array<double, (Output::template depends<Leaves>() + ...)> {
 
     static_assert((Output::template depends<Leaves>() + ...) ==
@@ -819,7 +820,7 @@ constexpr static inline auto evaluate(Output const &in)
         constexpr std::size_t size = detail::tape_size(
             args<Output const>{}, args<>{}, args<Leaves...>{});
         std::array<double, size> tape{};
-        detail::evaluate_first(tape, in, args<Leaves...>{},
+        detail::evaluate_first(tape, in, init, args<Leaves...>{},
                                std::make_index_sequence<size>{});
 
         for (std::size_t index = 0;
@@ -832,10 +833,10 @@ constexpr static inline auto evaluate(Output const &in)
 
 // in case you have the variable around and you don't want to type decltype
 template <typename... Leaves, class Output>
-constexpr static inline auto evaluate(Output const &in,
+constexpr static inline auto evaluate(Output const &in, double init,
                                       Leaves const &.../* leaves */)
     -> std::array<double, (Output::template depends<Leaves>() + ...)> {
-    return evaluate<Leaves...>(in);
+    return evaluate<Leaves...>(in, init);
 }
 
 } // namespace adhoc2
