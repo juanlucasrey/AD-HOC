@@ -370,6 +370,7 @@ TEST(adhoc2, BlackScholes) {
     adhoc<ID> av(v);
     adhoc<ID> aT(T);
     auto result2 = call_price(aS, aK, av, aT);
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
     auto derivatives =
         evaluate<decltype(aS), decltype(aK), decltype(av), decltype(aT)>(
             result2);
@@ -378,6 +379,37 @@ TEST(adhoc2, BlackScholes) {
     EXPECT_NEAR(fd[1], derivatives[1], 1e-8);
     EXPECT_NEAR(fd[2], derivatives[2], 1e-8);
     EXPECT_NEAR(fd[3], derivatives[3], 1e-8);
+    std::array<double, 5> tape{};
+    tape[0] = 1;
+    tape[1] = tape[0] * 1.0;
+    tape[0] *= 1.0;
+    tape[2] = tape[0] * 0.44683257413550148;
+    tape[0] *= 100;
+    tape[0] *= 0.5;
+    tape[0] *= (-std::exp(-0.094517515307865022 * 0.094517515307865022) *
+                1.1283791670955126);
+    tape[0] *= -0.70710678118654757;
+    tape[3] = tape[1] * -102;
+    tape[1] *= 0.48898981923286255;
+    tape[1] *= -1;
+    tape[3] *= 0.5;
+    tape[3] *= (-std::exp(-0.019517515307865021 * 0.019517515307865021) *
+                1.1283791670955126);
+    tape[3] *= -0.70710678118654757;
+    tape[0] += tape[3] * 1.0;
+    tape[3] *= 1.0;
+    tape[4] = tape[0] * 1.0;
+    tape[0] *= 1.0;
+    tape[3] += tape[0] * (0.1867009606191804 / 0.10606601717798213);
+    tape[0] *= (1.0 / 0.10606601717798213);
+    tape[0] *= (1.0 / 0.98039215686274506);
+    tape[2] += tape[0] * (1.0 / 102);
+    tape[1] += tape[0] * (-0.98039215686274506 / 102);
+    tape[3] += tape[4] * 0.5;
+    tape[4] = tape[3] * 0.70710678118654757;
+    tape[3] *= 0.14999999999999999;
+    tape[3] *= (0.5 * 0.70710678118654757 / 0.5);
+    std::cout << "done" << std::endl;
 }
 
 TEST(adhoc2, hastype) {
