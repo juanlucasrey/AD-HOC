@@ -294,6 +294,52 @@ auto add<Input1, Input2>::input2() const -> Input2 const & {
 }
 
 template <class Input1, class Input2>
+class subs : public Base<subs<Input1, Input2>>,
+             public Val<subs<Input1, Input2>>,
+             public Bivariate<Input1, Input2, subs<Input1, Input2>> {
+    Input1 const m_active1;
+    Input2 const m_active2;
+
+  public:
+    subs(Input1 const &active1, Input2 const &active2);
+    [[nodiscard]] auto d1() const -> double;
+    [[nodiscard]] auto d2() const -> double;
+    [[nodiscard]] auto input1() const -> Input1 const &;
+    [[nodiscard]] auto input2() const -> Input2 const &;
+};
+
+template <class Input1, class Input2>
+subs<Input1, Input2>::subs(Input1 const &active1, Input2 const &active2)
+    : Val<subs<Input1, Input2>>(active1.v() - active2.v()), m_active1(active1),
+      m_active2(active2) {}
+
+template <class Input1, class Input2>
+auto subs<Input1, Input2>::d1() const -> double {
+#ifndef NDEBUG
+    std::cout << "1.0";
+#endif
+    return 1.0;
+}
+
+template <class Input1, class Input2>
+auto subs<Input1, Input2>::d2() const -> double {
+#ifndef NDEBUG
+    std::cout << "(-1.0)";
+#endif
+    return -1.0;
+}
+
+template <class Input1, class Input2>
+auto subs<Input1, Input2>::input1() const -> Input1 const & {
+    return this->m_active1;
+}
+
+template <class Input1, class Input2>
+auto subs<Input1, Input2>::input2() const -> Input2 const & {
+    return this->m_active2;
+}
+
+template <class Input1, class Input2>
 class mul : public Base<mul<Input1, Input2>>,
             public Val<mul<Input1, Input2>>,
             public Bivariate<Input1, Input2, mul<Input1, Input2>> {

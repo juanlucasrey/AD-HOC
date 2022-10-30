@@ -339,8 +339,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     auto totalvol = v * sqrt(T);
     auto d1 = log(S / K) / totalvol + totalvol * Frac<Const<1>, Const<2>>();
     auto d2 = d1 + totalvol;
-    return S * cdf_n(d1) +
-           constant<ID, decltype(totalvol)>(-1.0) * K * cdf_n(d2);
+    return S * cdf_n(d1) - K * cdf_n(d2);
 }
 
 TEST(adhoc2, BlackScholes) {

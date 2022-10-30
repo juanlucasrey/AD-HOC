@@ -383,6 +383,18 @@ tape_size(args<add<Input1, Input2> const, TypesAlive...> const &,
 template <class Input1, class Input2, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves>
 constexpr static auto
+tape_size(args<subs<Input1, Input2> const, TypesAlive...> const &,
+          args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+
+    return tape_size_bivariate<Input1, Input2>(
+        args<subs<Input1, Input2> const, TypesAlive...>{},
+        args<LeavesAlive...>{}, args<Leaves...>{});
+}
+
+template <class Input1, class Input2, typename... TypesAlive,
+          typename... LeavesAlive, typename... Leaves>
+constexpr static auto
 tape_size(args<mul<Input1, Input2> const, TypesAlive...> const &,
           args<LeavesAlive...> const &, args<Leaves...> const &)
     -> std::size_t {

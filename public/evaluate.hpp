@@ -1040,6 +1040,29 @@ evaluate(args<LeavesAlive...> const &, args<Leaves...> const &,
          std::index_sequence<IdxTypesAlive...> const &,
          std::index_sequence<IdxLeavesAlive...> const &,
          std::index_sequence<IdxAvailable...> const &,
+         std::array<double, N> &tape, subs<Input1, Input2> const &in,
+         TypesAlive const &...next) {
+    static_assert((sizeof...(TypesAlive) + 1) == sizeof...(IdxTypesAlive));
+    static_assert(sizeof...(LeavesAlive) == sizeof...(IdxLeavesAlive));
+    static_assert(sizeof...(IdxTypesAlive) + sizeof...(IdxLeavesAlive) +
+                      sizeof...(IdxAvailable) ==
+                  N);
+    evaluate_bivariate<Input1, Input2>(
+        args<LeavesAlive...>{}, args<Leaves...>{},
+        std::index_sequence<IdxTypesAlive...>{},
+        std::index_sequence<IdxLeavesAlive...>{},
+        std::index_sequence<IdxAvailable...>{}, tape, in, next...);
+}
+
+template <std::size_t N, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves, std::size_t... IdxTypesAlive,
+          std::size_t... IdxLeavesAlive, std::size_t... IdxAvailable,
+          class Input1, class Input2>
+static inline void
+evaluate(args<LeavesAlive...> const &, args<Leaves...> const &,
+         std::index_sequence<IdxTypesAlive...> const &,
+         std::index_sequence<IdxLeavesAlive...> const &,
+         std::index_sequence<IdxAvailable...> const &,
          std::array<double, N> &tape, mul<Input1, Input2> const &in,
          TypesAlive const &...next) {
     static_assert((sizeof...(TypesAlive) + 1) == sizeof...(IdxTypesAlive));
