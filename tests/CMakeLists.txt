@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
   adhoc_test
   tape_size.t.cpp
+  constants.t.cpp
   test.cpp
   test2.cpp
   rng.cpp

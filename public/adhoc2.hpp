@@ -1,6 +1,7 @@
 #ifndef ADHOC2_HPP
 #define ADHOC2_HPP
 
+#include <base.hpp>
 #include <filter.hpp>
 #include <functions/constants.hpp>
 #include <utils.hpp>
@@ -61,78 +62,25 @@ inline constexpr auto Bivariate<Input1, Input2, Derived>::depends_in() noexcept
            Input2::template depends<Denom>();
 }
 
-template <class Input1, class Input2> class add;
-template <class Input1, class Input2> class mul;
-template <class Input1, class Input2> class div;
-
-template <class Derived> class Base {
+template <class Derived> class Val {
   protected:
     double m_value{0};
 
   public:
-    using is_adhoc_tag = void;
-    explicit Base(double value);
+    explicit Val(double value);
     [[nodiscard]] auto v() const noexcept -> double;
-
-    template <class Derived2>
-    auto operator+(Base<Derived2> const &rhs) const
-        -> add<const Derived, const Derived2>;
-
-    template <class Derived2>
-    auto operator*(Base<Derived2> const &rhs) const
-        -> mul<const Derived, const Derived2>;
-
-    template <class Derived2>
-    auto operator/(Base<Derived2> const &rhs) const
-        -> div<const Derived, const Derived2>;
-
-    template <class... Denom>
-    constexpr static auto depends3() noexcept -> std::size_t;
 };
 
-template <class Derived> Base<Derived>::Base(double value) : m_value(value) {}
+template <class Derived> Val<Derived>::Val(double value) : m_value(value) {}
 
 template <class Derived>
-inline auto Base<Derived>::v() const noexcept -> double {
+inline auto Val<Derived>::v() const noexcept -> double {
     return this->m_value;
-}
-
-template <class Derived>
-template <class Derived2>
-inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
-    -> add<const Derived, const Derived2> {
-    return {*static_cast<Derived const *>(this),
-            *static_cast<Derived2 const *>(&rhs)};
-}
-
-template <class Derived>
-template <class Derived2>
-inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
-    -> mul<const Derived, const Derived2> {
-    return {*static_cast<Derived const *>(this),
-            *static_cast<Derived2 const *>(&rhs)};
-}
-
-template <class Derived>
-template <class Derived2>
-inline auto Base<Derived>::operator/(Base<Derived2> const &rhs) const
-    -> div<const Derived, const Derived2> {
-    return {*static_cast<Derived const *>(this),
-            *static_cast<Derived2 const *>(&rhs)};
-}
-
-template <class Derived>
-template <class... Denom>
-inline constexpr auto Base<Derived>::depends3() noexcept -> std::size_t {
-    if constexpr (sizeof...(Denom) == 0) {
-        return 0UL;
-    } else {
-        return (Derived::template depends<Denom>() + ...);
-    }
 }
 
 template <class Input>
 class exp_t : public Base<exp_t<Input>>,
+              public Val<exp_t<Input>>,
               public Univariate<Input, exp_t<Input>> {
   private:
     Input const m_active;
@@ -145,7 +93,7 @@ class exp_t : public Base<exp_t<Input>>,
 
 template <class Input>
 exp_t<Input>::exp_t(Input const &active)
-    : Base<exp_t<Input>>(std::exp(active.v())), m_active(active) {}
+    : Val<exp_t<Input>>(std::exp(active.v())), m_active(active) {}
 
 template <class Input> auto exp_t<Input>::d() const -> double {
 #ifndef NDEBUG
@@ -165,6 +113,7 @@ auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
 
 template <class Input>
 class cos_t : public Base<cos_t<Input>>,
+              public Val<cos_t<Input>>,
               public Univariate<Input, cos_t<Input>> {
   private:
     Input const m_active;
@@ -177,7 +126,7 @@ class cos_t : public Base<cos_t<Input>>,
 
 template <class Input>
 cos_t<Input>::cos_t(Input const &active)
-    : Base<cos_t<Input>>(std::cos(active.v())), m_active(active) {}
+    : Val<cos_t<Input>>(std::cos(active.v())), m_active(active) {}
 
 template <class Input> auto cos_t<Input>::d() const -> double {
 #ifndef NDEBUG
@@ -197,6 +146,7 @@ auto cos(Base<Derived> const &in) -> cos_t<const Derived> {
 
 template <class Input>
 class sqrt_t : public Base<sqrt_t<Input>>,
+               public Val<sqrt_t<Input>>,
                public Univariate<Input, sqrt_t<Input>> {
   private:
     Input const m_active;
@@ -209,7 +159,7 @@ class sqrt_t : public Base<sqrt_t<Input>>,
 
 template <class Input>
 sqrt_t<Input>::sqrt_t(Input const &active)
-    : Base<sqrt_t<Input>>(std::sqrt(active.v())), m_active(active) {}
+    : Val<sqrt_t<Input>>(std::sqrt(active.v())), m_active(active) {}
 
 template <class Input> auto sqrt_t<Input>::d() const -> double {
 #ifndef NDEBUG
@@ -229,6 +179,7 @@ auto sqrt(Base<Derived> const &in) -> sqrt_t<const Derived> {
 
 template <class Input>
 class log_t : public Base<log_t<Input>>,
+              public Val<log_t<Input>>,
               public Univariate<Input, log_t<Input>> {
   private:
     Input const m_active;
@@ -241,7 +192,7 @@ class log_t : public Base<log_t<Input>>,
 
 template <class Input>
 log_t<Input>::log_t(Input const &active)
-    : Base<log_t<Input>>(std::log(active.v())), m_active(active) {}
+    : Val<log_t<Input>>(std::log(active.v())), m_active(active) {}
 
 template <class Input> auto log_t<Input>::d() const -> double {
 #ifndef NDEBUG
@@ -261,6 +212,7 @@ auto log(Base<Derived> const &in) -> log_t<const Derived> {
 
 template <class Input>
 class erfc_t : public Base<erfc_t<Input>>,
+               public Val<erfc_t<Input>>,
                public Univariate<Input, erfc_t<Input>> {
   private:
     Input const m_active;
@@ -273,7 +225,7 @@ class erfc_t : public Base<erfc_t<Input>>,
 
 template <class Input>
 erfc_t<Input>::erfc_t(Input const &active)
-    : Base<erfc_t<Input>>(std::erfc(active.v())), m_active(active) {}
+    : Val<erfc_t<Input>>(std::erfc(active.v())), m_active(active) {}
 
 template <class Input> auto erfc_t<Input>::d() const -> double {
     constexpr double two_over_root_pi =
@@ -297,6 +249,7 @@ auto erfc(Base<Derived> const &in) -> erfc_t<const Derived> {
 
 template <class Input1, class Input2>
 class add : public Base<add<Input1, Input2>>,
+            public Val<add<Input1, Input2>>,
             public Bivariate<Input1, Input2, add<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
@@ -311,7 +264,7 @@ class add : public Base<add<Input1, Input2>>,
 
 template <class Input1, class Input2>
 add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
-    : Base<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
+    : Val<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
@@ -342,6 +295,7 @@ auto add<Input1, Input2>::input2() const -> Input2 const & {
 
 template <class Input1, class Input2>
 class mul : public Base<mul<Input1, Input2>>,
+            public Val<mul<Input1, Input2>>,
             public Bivariate<Input1, Input2, mul<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
@@ -356,7 +310,7 @@ class mul : public Base<mul<Input1, Input2>>,
 
 template <class Input1, class Input2>
 mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
-    : Base<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
+    : Val<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
@@ -390,6 +344,7 @@ auto mul<Input1, Input2>::input2() const -> Input2 const & {
 // (1.0/in2)
 template <class Input1, class Input2>
 class div : public Base<div<Input1, Input2>>,
+            public Val<div<Input1, Input2>>,
             public Bivariate<Input1, Input2, div<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
@@ -404,7 +359,7 @@ class div : public Base<div<Input1, Input2>>,
 
 template <class Input1, class Input2>
 div<Input1, Input2>::div(Input1 const &active1, Input2 const &active2)
-    : Base<div<Input1, Input2>>(active1.v() / active2.v()), m_active1(active1),
+    : Val<div<Input1, Input2>>(active1.v() / active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
@@ -439,6 +394,7 @@ auto div<Input1, Input2>::input2() const -> Input2 const & {
 namespace detail {
 template <int N>
 class adouble_aux : public Base<adouble_aux<N>>,
+                    public Val<adouble_aux<N>>,
                     public Univariate<adouble_aux<N>, adouble_aux<N>> {
   public:
     explicit adouble_aux(double value);
@@ -447,8 +403,7 @@ class adouble_aux : public Base<adouble_aux<N>>,
 };
 
 template <int N>
-inline adouble_aux<N>::adouble_aux(double value)
-    : Base<adouble_aux<N>>(value) {}
+inline adouble_aux<N>::adouble_aux(double value) : Val<adouble_aux<N>>(value) {}
 
 template <int N>
 template <class Denom>

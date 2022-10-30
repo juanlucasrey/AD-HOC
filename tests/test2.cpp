@@ -1,4 +1,5 @@
 #include <adhoc2.hpp>
+#include <constants.hpp>
 #include <evaluate.hpp>
 #include <functions/distribution.hpp>
 #include <tape_size.hpp>
@@ -323,8 +324,9 @@ TEST(adhoc2, derivcomplexdexp2) {
 
 template <class D> inline auto cdf_n(D const &x) {
     using std::erfc;
-    constexpr double one_over_root_two = 1.0 / constants::sqrt(2.0);
-    return constant<ID, D>(0.5) * erfc(x * constant<ID, D>(-one_over_root_two));
+    using namespace constants2;
+    return Frac<Const<1>, Const<2>>() *
+           erfc(x * Minus<Frac<Const<1>, Sqrt<Const<2>>>>());
 }
 
 template <class I1, class I2, class I3, class I4>
@@ -333,9 +335,9 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::exp;
     using std::log;
     using std::sqrt;
+    using namespace constants2;
     auto totalvol = v * sqrt(T);
-    auto d1 = log(S / K) / totalvol +
-              totalvol * constant<ID, decltype(totalvol)>(0.5);
+    auto d1 = log(S / K) / totalvol + totalvol * Frac<Const<1>, Const<2>>();
     auto d2 = d1 + totalvol;
     return S * cdf_n(d1) +
            constant<ID, decltype(totalvol)>(-1.0) * K * cdf_n(d2);
