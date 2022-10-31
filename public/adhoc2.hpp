@@ -465,29 +465,6 @@ template <typename... Types> struct args {};
 template <int N> using adhoc = detail::adouble_aux<N>;
 #define ID __COUNTER__
 
-template <class T, class R = void> struct enable_if_type { using type = R; };
-
-template <class T, class Enable = void> struct is_adhoc : std::false_type {};
-
-// constant is a template useful for templetisation of functions
-template <class T>
-struct is_adhoc<T, typename enable_if_type<typename T::is_adhoc_tag>::type>
-    : std::true_type {};
-
-template <bool T> struct constant_type;
-
-template <> struct constant_type<true> {
-    template <int N> using type = adhoc<N>;
-};
-
-template <> struct constant_type<false> {
-    template <int N> using type = double;
-};
-
-template <int N, class T>
-using constant =
-    typename constant_type<is_adhoc<T>::type::value>::template type<N>;
-
 } // namespace adhoc2
 
 #endif // ADHOC2_HPP
