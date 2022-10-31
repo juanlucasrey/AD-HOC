@@ -1,10 +1,10 @@
-#include <constants.hpp>
+#include <constants_type.hpp>
 
 #include <adhoc2.hpp>
 
 #include <gtest/gtest.h>
 
-namespace adhoc2::constants2 {
+namespace adhoc2::constants {
 
 TEST(constants, frac) {
     std::cout.precision(std::numeric_limits<double>::max_digits10);
@@ -31,4 +31,4 @@ TEST(constants, muldouble) {
     double result = S * Frac<Const<1>, Sqrt<Const<2>>>();
 }
 
-} // namespace adhoc2::constants2
+} // namespace adhoc2::constants

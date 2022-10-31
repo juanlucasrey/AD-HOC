@@ -1,5 +1,5 @@
-#ifndef FUNCTIONS_CONSTANTS_HPP
-#define FUNCTIONS_CONSTANTS_HPP
+#ifndef CONSTANTS_CONSTEXPR_HPP
+#define CONSTANTS_CONSTEXPR_HPP
 
 #include <limits>
 
@@ -37,4 +37,4 @@ template <class T> auto constexpr sqrt(T x) -> T {
 
 } // namespace adhoc2::constants
 
-#endif // FUNCTIONS_CONSTANTS_HPP
+#endif // CONSTANTS_CONSTEXPR_HPP

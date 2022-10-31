@@ -2,8 +2,8 @@
 #define ADHOC2_HPP
 
 #include <base.hpp>
+#include <constants_constexpr.hpp>
 #include <filter.hpp>
-#include <functions/constants.hpp>
 #include <utils.hpp>
 
 #include <array>
