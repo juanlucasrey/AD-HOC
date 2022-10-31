@@ -11,7 +11,7 @@
 #include <iostream>
 #include <type_traits>
 
-#ifndef NDEBUG
+#ifdef CODELOGGER
 #include <iostream>
 #endif
 
@@ -96,7 +96,7 @@ exp_t<Input>::exp_t(Input const &active)
     : Val<exp_t<Input>>(std::exp(active.v())), m_active(active) {}
 
 template <class Input> auto exp_t<Input>::d() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << this->v();
 #endif
     return this->v();
@@ -129,7 +129,7 @@ cos_t<Input>::cos_t(Input const &active)
     : Val<cos_t<Input>>(std::cos(active.v())), m_active(active) {}
 
 template <class Input> auto cos_t<Input>::d() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(-std::sin(" << this->m_active.v() << "))";
 #endif
     return -std::sin(this->m_active.v());
@@ -162,7 +162,7 @@ sqrt_t<Input>::sqrt_t(Input const &active)
     : Val<sqrt_t<Input>>(std::sqrt(active.v())), m_active(active) {}
 
 template <class Input> auto sqrt_t<Input>::d() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(0.5 * " << this->v() << " / " << this->m_active.v() << " )";
 #endif
     return 0.5 * this->v() / this->m_active.v();
@@ -195,7 +195,7 @@ log_t<Input>::log_t(Input const &active)
     : Val<log_t<Input>>(std::log(active.v())), m_active(active) {}
 
 template <class Input> auto log_t<Input>::d() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(1.0 / " << this->m_active.v() << ")";
 #endif
     return 1.0 / this->m_active.v();
@@ -230,7 +230,7 @@ erfc_t<Input>::erfc_t(Input const &active)
 template <class Input> auto erfc_t<Input>::d() const -> double {
     constexpr double two_over_root_pi =
         2.0 / constants::sqrt(constants::pi<double>());
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(-std::exp(" << -this->m_active.v() << " * "
               << this->m_active.v() << ") * " << two_over_root_pi << ")";
 #endif
@@ -269,7 +269,7 @@ add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
 
 template <class Input1, class Input2>
 auto add<Input1, Input2>::d1() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "1.0";
 #endif
     return 1.0;
@@ -277,7 +277,7 @@ auto add<Input1, Input2>::d1() const -> double {
 
 template <class Input1, class Input2>
 auto add<Input1, Input2>::d2() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "1.0";
 #endif
     return 1.0;
@@ -315,7 +315,7 @@ subs<Input1, Input2>::subs(Input1 const &active1, Input2 const &active2)
 
 template <class Input1, class Input2>
 auto subs<Input1, Input2>::d1() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "1.0";
 #endif
     return 1.0;
@@ -323,7 +323,7 @@ auto subs<Input1, Input2>::d1() const -> double {
 
 template <class Input1, class Input2>
 auto subs<Input1, Input2>::d2() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(-1.0)";
 #endif
     return -1.0;
@@ -361,7 +361,7 @@ mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
 
 template <class Input1, class Input2>
 auto mul<Input1, Input2>::d1() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << this->m_active2.v();
 #endif
     return this->m_active2.v();
@@ -369,7 +369,7 @@ auto mul<Input1, Input2>::d1() const -> double {
 
 template <class Input1, class Input2>
 auto mul<Input1, Input2>::d2() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << this->m_active1.v();
 #endif
     return this->m_active1.v();
@@ -410,7 +410,7 @@ div<Input1, Input2>::div(Input1 const &active1, Input2 const &active2)
 
 template <class Input1, class Input2>
 auto div<Input1, Input2>::d1() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(1.0 / " << this->m_active2.v() << ")";
 #endif
     return 1.0 / this->m_active2.v();
@@ -418,7 +418,7 @@ auto div<Input1, Input2>::d1() const -> double {
 
 template <class Input1, class Input2>
 auto div<Input1, Input2>::d2() const -> double {
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "(" << -this->v() << " / " << this->m_active2.v() << ")";
 #endif
     // NOTE: this is when using mul<in1, inv<in2>> might be more efficient than

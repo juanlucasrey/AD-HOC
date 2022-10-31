@@ -1,4 +1,5 @@
 set(CMAKE_CXX_STANDARD 17)
+# add_definitions(-DCODELOGGER)
 
 add_executable(
   adhoc_test

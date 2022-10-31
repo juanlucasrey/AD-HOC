@@ -4,7 +4,7 @@
 #include <adhoc2.hpp>
 #include <tape_size.hpp>
 
-#ifndef NDEBUG
+#ifdef CODELOGGER
 #include <iostream>
 #endif
 
@@ -108,11 +108,11 @@ static inline void evaluate_univariate_noskip(
         constexpr bool is_input_new_leaf = !has_type2<Input, LeavesAlive...>();
 
         if constexpr (is_input_new_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
             tape[IdxTypesAliveCurrent] *= in.d();
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << ";" << std::endl;
 #endif
             evaluate(
@@ -124,12 +124,12 @@ static inline void evaluate_univariate_noskip(
             constexpr auto position = idx_type2<Input, LeavesAlive...>();
             constexpr auto position_on_tape =
                 Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << "tape[" << position_on_tape << "] += tape["
                       << IdxTypesAliveCurrent << "] * ";
 #endif
             tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d();
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << ";" << std::endl;
 #endif
             evaluate(
@@ -143,11 +143,11 @@ static inline void evaluate_univariate_noskip(
         constexpr bool is_input_new = !has_type2<Input, TypesAlive...>();
 
         if constexpr (is_input_new) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
             tape[IdxTypesAliveCurrent] *= in.d();
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << ";" << std::endl;
 #endif
             evaluate(
@@ -160,12 +160,12 @@ static inline void evaluate_univariate_noskip(
             constexpr auto position = idx_type2<Input, TypesAlive...>();
             constexpr auto position_on_tape =
                 Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << "tape[" << position_on_tape << "] += tape["
                       << IdxTypesAliveCurrent << "] * ";
 #endif
             tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d();
-#ifndef NDEBUG
+#ifdef CODELOGGER
             std::cout << ";" << std::endl;
 #endif
             evaluate(
@@ -240,17 +240,17 @@ static inline void evaluate_bivariate_noskip_newloc(
     constexpr bool is_input2_leaf = has_type2<Input2, Leaves...>();
 
     if constexpr (is_input1_leaf && is_input2_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << "tape[" << IdxAvailableCurrent << "] = tape["
                   << IdxTypesAliveCurrent << "] * ";
 #endif
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
         std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
         tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
 #endif
         evaluate(args<Input1, Input2, LeavesAlive...>{}, args<Leaves...>{},
@@ -259,17 +259,17 @@ static inline void evaluate_bivariate_noskip_newloc(
                                      IdxLeavesAlive...>{},
                  std::index_sequence<IdxAvailable...>{}, tape, next...);
     } else if constexpr (is_input1_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << "tape[" << IdxAvailableCurrent << "] = tape["
                   << IdxTypesAliveCurrent << "] * ";
 #endif
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
         std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
         tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
 #endif
         evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
@@ -278,17 +278,17 @@ static inline void evaluate_bivariate_noskip_newloc(
                  std::index_sequence<IdxAvailable...>{}, tape, in.input2(),
                  next...);
     } else if constexpr (is_input2_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << "tape[" << IdxAvailableCurrent << "] = tape["
                   << IdxTypesAliveCurrent << "] * ";
 #endif
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
         std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
         tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
 #endif
         evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
@@ -297,17 +297,17 @@ static inline void evaluate_bivariate_noskip_newloc(
                  std::index_sequence<IdxAvailable...>{}, tape, in.input1(),
                  next...);
     } else {
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << "tape[" << IdxAvailableCurrent << "] = tape["
                   << IdxTypesAliveCurrent << "] * ";
 #endif
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
         std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
         tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << ";" << std::endl;
 #endif
         evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -347,11 +347,11 @@ static inline void evaluate_bivariate_noskip(
 
             if constexpr (is_input1_new_leaf && is_input2_new_leaf) {
                 if constexpr (std::is_same_v<Input1, Input2>) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << IdxTypesAliveCurrent << "] *= 2 * ";
 #endif
                     tape[IdxTypesAliveCurrent] *= 2 * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
@@ -374,17 +374,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
@@ -396,17 +396,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
@@ -422,13 +422,13 @@ static inline void evaluate_bivariate_noskip(
                                   idx_type2<Input2, LeavesAlive...>());
                     constexpr auto position_on_tape =
                         Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << position_on_tape << "] += 2 * tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position_on_tape] +=
                         2 * tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -446,20 +446,20 @@ static inline void evaluate_bivariate_noskip(
                         Get<position1, IdxLeavesAlive...>::value;
                     constexpr auto position2_on_tape =
                         Get<position2, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << position1_on_tape << "] += tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position1_on_tape] +=
                         tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
                     std::cout << "tape[" << position2_on_tape << "] += tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position2_on_tape] +=
                         tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -487,19 +487,19 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= in.d1();"
                           << std::endl;
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
@@ -511,17 +511,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -537,18 +537,18 @@ static inline void evaluate_bivariate_noskip(
                     Get<position1, IdxLeavesAlive...>::value;
                 constexpr auto position2_on_tape =
                     Get<position2, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position1_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << position2_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -575,17 +575,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -598,17 +598,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
@@ -623,18 +623,18 @@ static inline void evaluate_bivariate_noskip(
                     Get<position1, IdxTypesAlive...>::value;
                 constexpr auto position2_on_tape =
                     Get<position2, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position1_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << position2_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -650,11 +650,11 @@ static inline void evaluate_bivariate_noskip(
 
             if constexpr (is_input1_new && is_input2_new) {
                 if constexpr (std::is_same_v<Input1, Input2>) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << IdxTypesAliveCurrent << "] *= 2 * ";
 #endif
                     tape[IdxTypesAliveCurrent] *= 2 * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -678,17 +678,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -701,17 +701,17 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -728,13 +728,13 @@ static inline void evaluate_bivariate_noskip(
                                   idx_type2<Input2, TypesAlive...>());
                     constexpr auto position_on_tape =
                         Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << position_on_tape << "] += 2 * tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position_on_tape] +=
                         2 * tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -752,20 +752,20 @@ static inline void evaluate_bivariate_noskip(
                         Get<position1, IdxTypesAlive...>::value;
                     constexpr auto position2_on_tape =
                         Get<position2, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << "tape[" << position1_on_tape << "] += tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position1_on_tape] +=
                         tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
                     std::cout << "tape[" << position2_on_tape << "] += tape["
                               << IdxTypesAliveCurrent << "] * ";
 #endif
                     tape[position2_on_tape] +=
                         tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                     std::cout << ";" << std::endl;
 #endif
                     evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -784,11 +784,11 @@ static inline void evaluate_bivariate_noskip(
                 !has_type2<Input2, LeavesAlive...>();
 
             if constexpr (is_input_new_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
@@ -800,12 +800,12 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -819,11 +819,11 @@ static inline void evaluate_bivariate_noskip(
             constexpr bool is_input_new = !has_type2<Input2, TypesAlive...>();
 
             if constexpr (is_input_new) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -836,11 +836,11 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] *= ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d2();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -858,11 +858,11 @@ static inline void evaluate_bivariate_noskip(
                 !has_type2<Input1, LeavesAlive...>();
 
             if constexpr (is_input_new_leaf) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
@@ -874,12 +874,12 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -893,11 +893,11 @@ static inline void evaluate_bivariate_noskip(
             constexpr bool is_input_new = !has_type2<Input1, TypesAlive...>();
 
             if constexpr (is_input_new) {
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << IdxTypesAliveCurrent << "] *= ";
 #endif
                 tape[IdxTypesAliveCurrent] *= in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -910,12 +910,12 @@ static inline void evaluate_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, TypesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxTypesAlive...>::value;
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << "tape[" << position_on_tape << "] += tape["
                           << IdxTypesAliveCurrent << "] * ";
 #endif
                 tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-#ifndef NDEBUG
+#ifdef CODELOGGER
                 std::cout << ";" << std::endl;
 #endif
                 evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -1108,7 +1108,7 @@ static inline void evaluate_first(
     args<Leaves...> const &,
     std::index_sequence<FirstIdxAvailable, IdxAvailable...> const &) {
     tape[FirstIdxAvailable] = init;
-#ifndef NDEBUG
+#ifdef CODELOGGER
     std::cout << "tape[" << FirstIdxAvailable << "] = " << init << ";"
               << std::endl;
 #endif
@@ -1137,7 +1137,7 @@ constexpr static inline auto evaluate(Output const &in, double init = 1.0)
         constexpr std::size_t size = detail::tape_size(
             args<Output const>{}, args<>{}, args<Leaves const...>{});
         std::array<double, size> tape{};
-#ifndef NDEBUG
+#ifdef CODELOGGER
         std::cout << "std::array<double, " << size << "> tape{};" << std::endl;
 #endif
         detail::evaluate_first(tape, in, init, args<Leaves const...>{},
