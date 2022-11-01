@@ -14,7 +14,7 @@ template <class Derived> struct ConstBase {
 };
 
 struct Pi : public Base<Pi>, public ConstBase<Pi> {
-    constexpr auto static v() -> double { return pi<double>(); }
+    constexpr auto static v() -> double { return detail::pi<double>(); }
 };
 
 template <std::size_t N>
@@ -29,7 +29,7 @@ struct Frac : public Base<Frac<N, D>>, public ConstBase<Frac<N, D>> {
 
 template <class V>
 struct Sqrt : public Base<Sqrt<V>>, public ConstBase<Sqrt<V>> {
-    constexpr auto static v() -> double { return sqrt(V::v()); }
+    constexpr auto static v() -> double { return detail::sqrt(V::v()); }
 };
 
 template <class V>

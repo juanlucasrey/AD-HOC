@@ -23,8 +23,6 @@ template <class T> auto constexpr sqrtNewtonRaphson(T x, T curr, T prev) -> T {
                         : sqrtNewtonRaphson(x, 0.5 * (curr + x / curr), curr);
 }
 
-} // namespace detail
-
 template <class T> auto constexpr pi() -> T {
     return detail::bailey_borwein_plouffe<T>(0., 1., 0., 1.);
 }
@@ -34,6 +32,8 @@ template <class T> auto constexpr sqrt(T x) -> T {
                ? detail::sqrtNewtonRaphson<T>(x, x, 0)
                : std::numeric_limits<T>::quiet_NaN();
 }
+
+} // namespace detail
 
 } // namespace adhoc2::constants
 
