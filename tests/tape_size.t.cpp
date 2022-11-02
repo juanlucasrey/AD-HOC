@@ -129,4 +129,71 @@ TEST(adhoc2, tapecomplexdexp2) {
     static_assert(size2 == 4);
 }
 
+// inline auto tuple_new() {
+//     return std::make_tuple(adhoc<ID>(1.0), adhoc<ID>(2.0));
+// }
+
+// inline auto tuple_new2() {
+//     return std::make_tuple(adhoc<ID>(1.0), adhoc<ID>(2.0));
+// }
+
+// void f(double) { std::cout << "1 arg" << std::endl; }
+// void f(double, double) { std::cout << "2 arg" << std::endl; }
+// void f(double, double, double) { std::cout << "3 arg" << std::endl; }
+// void f(double, double, double, double) { std::cout << "4 arg" << std::endl; }
+// void f(double, double, double, double, double) {
+//     std::cout << "5 arg" << std::endl;
+// }
+// void f(double, double, double, double, double, double) {
+//     std::cout << "6 arg" << std::endl;
+// }
+
+// #define DEBUG(...) __VA_OPT__(, ) __VA_ARGS__
+
+// #define OP (
+// #define CP )
+
+// #define F(...) f OP 0 __VA_OPT__(, ) __VA_ARGS__ CP
+// // #define F2(...) \
+// //     std::make_tuple(adhoc<ID>(1.0 __VA_OPT__(CP, adhoc<ID> OP) __VA_ARGS__
+// )) #define F2(A, B) std::make_tuple(adhoc<ID>(A CP, adhoc<ID> OP B))
+
+// // ), adhoc<ID>(
+// // CP, adhoc<ID>OP
+// // std::make_tuple(adhoc<ID>(
+// // std::make_tuple OP adhoc<ID> OP
+// TEST(adhoc2, manyID) {
+//     // constexpr std::size_t N = 10;
+//     // std::array<double, N> in{};
+//     // in[0] = 1.;
+//     // in[1] = 2.;
+//     // in[2] = 3.;
+//     // in[3] = 4.;
+//     // in[4] = 5.;
+//     // in[5] = 6.;
+//     // in[6] = 7.;
+//     // in[7] = 8.;
+//     // in[8] = 9.;
+//     // in[9] = 10.;
+//     // std::string test = "DEBUG(foo, bar, baz)";
+//     // std::cout << test << std::endl;
+//     // auto vars = tuple_new();
+//     // std::cout << std::get<0>(vars).v() << std::endl;
+//     // std::cout << std::get<1>(vars).v() << std::endl;
+//     std::vector<double> v(10);
+//     F();
+//     F(v[0]);
+//     F(v[0], v[1]);
+//     F(v[0], v[1], v[2]);
+//     F(v[0], v[1], v[3], v[4]);
+//     F(v[0], v[1], v[3], v[4], v[5]);
+
+//     auto tempvar = F2(1.0, 2.0);
+//     std::cout << std::get<0>(tempvar).v();
+//     std::cout << std::get<1>(tempvar).v();
+//     auto tempvar2 = std::make_tuple(adhoc<ID>(), adhoc<ID>());
+//     // F(v[0], v[1], v[3], v[4], v[5], v[6]);
+//     // F(v[0], v[1], v[3], v[4], v[5], v[6], v[7]);
+// }
+
 } // namespace adhoc2
