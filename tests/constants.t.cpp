@@ -298,11 +298,12 @@ TEST(constants, check_double_to_uint64) {
     };
 
     check(1.);
+
+    // constexpr works for normal values
     std::uint64_t constexpr oneeq = 4607182418800017408;
     double constexpr back = detail::uint64_to_double(oneeq);
     static_assert(back == 1.0);
     static_assert(Double<4607182418800017408>::v() == 1.0);
-    // constexpr works for normal values
 
     check(2.);
     check(4.);
@@ -324,11 +325,12 @@ TEST(constants, check_double_to_uint64) {
     check(-2.2250738585072009e-308); // max subnormal negative
     check(-4.9406564584124654e-324); // min subnormal negative
     check(4.9406564584124654e-314);  // some subnormal
+
+    // constexpr works for subnormal values
     std::uint64_t constexpr subnormaleq = 10000000000;
     double constexpr backsub = detail::uint64_to_double(subnormaleq);
     static_assert(backsub == 4.9406564584124654e-314);
     static_assert(Double<10000000000>::v() == 4.9406564584124654e-314);
-    // constexpr works for subnormal values
 
     check(0);
     check(-0);

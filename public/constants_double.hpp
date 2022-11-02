@@ -5,6 +5,7 @@
 #include <constants_constexpr.hpp>
 #include <constants_type.hpp>
 
+#include <array>
 #include <cstdint>
 
 namespace adhoc2::constants {
@@ -12,26 +13,31 @@ namespace adhoc2::constants {
 namespace detail {
 
 template <bool positive, unsigned int End, unsigned int Count = 1>
-auto constexpr uint64_to_double_aux2(double x, std::uint32_t e,
-                                     double multiplier = 2.0) -> double {
+auto constexpr uint64_to_double_aux2(double x, std::uint32_t e) -> double {
+
+    constexpr std::array<double, 10> pow2{
+        2.,                     // 2^0b1
+        4.,                     // 2^0b10
+        16.,                    // 2^0b100
+        256.,                   // 2^0b1000
+        65536.,                 // 2^0b10000
+        4294967296.,            // 2^0b100000
+        1.8446744073709552e+19, // 2^0b1000000
+        3.4028236692093846e+38, // 2^0b10000000
+        1.157920892373162e+77,  // 2^0b10000000
+        1.3407807929942597e+154 // 2^0b100000000
+    };
+
     if constexpr (Count == End) {
         return x;
     } else {
-
-        // why do we guard this multiplication? if we do this multiplication on
-        // the last step multiplier will be infinity, ad GCC complains when
-        // constexpr'ing it!
-        if constexpr (Count != 1) {
-            multiplier *= multiplier;
-        }
-
         bool apply = (e >> (Count - 1)) & 1U;
         if constexpr (positive) {
             return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x * multiplier : x, e, multiplier);
+                apply ? x * pow2[Count - 1] : x, e);
         } else {
             return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x / multiplier : x, e, multiplier);
+                apply ? x / pow2[Count - 1] : x, e);
         }
     }
 }
