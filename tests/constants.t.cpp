@@ -37,8 +37,8 @@ TEST(constants, double) {
     // Double<half> temp;
     // std::cout << temp << std::endl;
 
-    constexpr std::size_t N = convert_to_type(0.1);
-    constexpr std::size_t M = convert_to_type(0.8);
+    constexpr std::size_t N = detail::double_to_uint64(0.1);
+    constexpr std::size_t M = detail::double_to_uint64(0.8);
 
     static_assert(N == 2);
     static_assert(M == 1);
@@ -190,79 +190,6 @@ TEST(constants, double3) {
     std::cout << valuint << std::endl;
 }
 
-template <bool positive, unsigned int End, unsigned int Count = 1>
-auto constexpr uint64_to_double_aux2(double x, std::uint32_t e,
-                                     double multiplier = 2.0) -> double {
-    if constexpr (Count == End) {
-        return x;
-    } else {
-        if constexpr (positive) {
-            bool apply = (e >> (Count - 1)) & 1U;
-            return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x * multiplier : x, e, multiplier * multiplier);
-        } else {
-            bool apply = (e >> (Count - 1)) & 1U;
-            return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x / multiplier : x, e, multiplier * multiplier);
-        }
-    }
-}
-
-auto constexpr uint64_to_double_aux(double x, std::int32_t e) -> double {
-    // std::abs breaks constexpr!!
-    // auto eu = static_cast<std::uint32_t>(std::abs(e));
-    std::uint32_t eu =
-        e < 0 ? static_cast<std::uint32_t>(-e) : static_cast<std::uint32_t>(e);
-
-    if (e == 0U) {
-        return x;
-    } else if (e < 0) {
-        // 11 is the size of the exponent. with this configuration we
-        // are guaranteed 11 recursions only
-        return uint64_to_double_aux2<false, 11U>(x, eu);
-    } else {
-        return uint64_to_double_aux2<true, 11U>(x, eu);
-    }
-}
-
-auto constexpr uint64_to_double(std::uint64_t x) -> double {
-    // based on
-    // https://en.wikipedia.org/wiki/Double-precision_floating-point_format#Exponent_encoding
-
-    bool sign = static_cast<bool>(x & 0x8000000000000000);
-    std::uint64_t exp = (x >> 52U) & 0x7ffU;
-    std::uint64_t val = (x & 0xfffffffffffffU);
-
-    // exceptions inf and nan
-    if (exp == 2047) {
-        if (val == 0) {
-            return sign ? -std::numeric_limits<double>::infinity()
-                        : std::numeric_limits<double>::infinity();
-        }
-        return sign ? -std::numeric_limits<double>::quiet_NaN()
-                    : std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // subnormal case
-    if (exp == 0) {
-        if (val == 0) {
-            return sign ? -0 : 0;
-        }
-        auto vald = static_cast<double>(val);
-        double unsigned_result = vald * 4.9406564584124654e-324;
-        return sign ? -unsigned_result : unsigned_result;
-    }
-
-    val |= 0x10000000000000U;
-
-    auto exp_trunc = static_cast<std::int32_t>(exp) - 0x3ff;
-    auto denom = static_cast<double>(0x10000000000000U);
-    auto vald = static_cast<double>(val);
-
-    double unsigned_result = uint64_to_double_aux(vald / denom, exp_trunc);
-    return sign ? -unsigned_result : unsigned_result;
-}
-
 template <std::uint64_t N> class Double64 {};
 
 TEST(constants, exp_and_val_to_uint64) {
@@ -319,7 +246,7 @@ TEST(constants, exp_and_val_to_uint64) {
     std::cout << std::bitset<64>(valbin2) << std::endl;
     std::cout << std::bitset<64>(valbin2 >> 52U) << std::endl;
     std::cout << std::bitset<64>((valbin2 >> 52U) & 0x7ffU) << std::endl;
-    double back = uint64_to_double(valbin2);
+    double back = detail::uint64_to_double(valbin2);
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     std::cout << "original double" << std::endl;
@@ -356,7 +283,7 @@ TEST(constants, check_double_to_uint64) {
 
         std::uint64_t valbin2 =
             val | (exp << 52U) | (static_cast<std::uint64_t>(sign) << 63U);
-        double back = uint64_to_double(valbin2);
+        double back = detail::uint64_to_double(valbin2);
         if (value != value) {
             // we treat nan separately
             converter conv2;
@@ -370,8 +297,9 @@ TEST(constants, check_double_to_uint64) {
 
     check(1.);
     std::uint64_t constexpr oneeq = 4607182418800017408;
-    double constexpr back = uint64_to_double(oneeq);
+    double constexpr back = detail::uint64_to_double(oneeq);
     static_assert(back == 1.0);
+    static_assert(Double<4607182418800017408>::v() == 1.0);
     // constexpr works for normal values
 
     check(2.);
@@ -395,8 +323,9 @@ TEST(constants, check_double_to_uint64) {
     check(-4.9406564584124654e-324); // min subnormal negative
     check(4.9406564584124654e-314);  // some subnormal
     std::uint64_t constexpr subnormaleq = 10000000000;
-    double constexpr backsub = uint64_to_double(subnormaleq);
+    double constexpr backsub = detail::uint64_to_double(subnormaleq);
     static_assert(backsub == 4.9406564584124654e-314);
+    static_assert(Double<10000000000>::v() == 4.9406564584124654e-314);
     // constexpr works for subnormal values
 
     check(0);
@@ -412,12 +341,17 @@ TEST(constants, check_double_to_uint64) {
     check(std::numeric_limits<double>::max()); // 9218868437227405311
     check(std::numeric_limits<double>::min()); // 4503599627370496
     std::uint64_t constexpr max = 9218868437227405311;
-    double constexpr backmax = uint64_to_double(max);
+    double constexpr backmax = detail::uint64_to_double(max);
     static_assert(backmax == std::numeric_limits<double>::max());
+    static_assert(Double<9218868437227405311>::v() ==
+                  std::numeric_limits<double>::max());
 
     std::uint64_t constexpr min = 4503599627370496;
-    double constexpr backmin = uint64_to_double(min);
+    double constexpr backmin = detail::uint64_to_double(min);
     static_assert(backmin == std::numeric_limits<double>::min());
+
+    static_assert(Double<4503599627370496>::v() ==
+                  std::numeric_limits<double>::min());
 }
 
 } // namespace adhoc2::constants
