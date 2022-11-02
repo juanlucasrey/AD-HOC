@@ -3,6 +3,8 @@
 
 #include <adhoc2.hpp>
 
+#include <bitset>
+
 #include <gtest/gtest.h>
 
 namespace adhoc2::constants {

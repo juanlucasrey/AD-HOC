@@ -5,6 +5,8 @@
 #include <constants_constexpr.hpp>
 #include <constants_type.hpp>
 
+#include <cstdint>
+
 namespace adhoc2::constants {
 
 namespace detail {
@@ -15,14 +17,21 @@ auto constexpr uint64_to_double_aux2(double x, std::uint32_t e,
     if constexpr (Count == End) {
         return x;
     } else {
+
+        // why do we guard this multiplication? if we do this multiplication on
+        // the last step multiplier will be infinity, ad GCC complains when
+        // constexpr'ing it!
+        if constexpr (Count != 1) {
+            multiplier *= multiplier;
+        }
+
+        bool apply = (e >> (Count - 1)) & 1U;
         if constexpr (positive) {
-            bool apply = (e >> (Count - 1)) & 1U;
             return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x * multiplier : x, e, multiplier * multiplier);
+                apply ? x * multiplier : x, e, multiplier);
         } else {
-            bool apply = (e >> (Count - 1)) & 1U;
             return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x / multiplier : x, e, multiplier * multiplier);
+                apply ? x / multiplier : x, e, multiplier);
         }
     }
 }
