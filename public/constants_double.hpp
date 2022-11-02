@@ -14,31 +14,31 @@ namespace detail {
 
 template <bool positive, unsigned int End, unsigned int Count = 1>
 auto constexpr uint64_to_double_aux2(double x, std::uint32_t e) -> double {
-
-    constexpr std::array<double, 10> pow2{
-        2.,                     // 2^0b1
-        4.,                     // 2^0b10
-        16.,                    // 2^0b100
-        256.,                   // 2^0b1000
-        65536.,                 // 2^0b10000
-        4294967296.,            // 2^0b100000
-        1.8446744073709552e+19, // 2^0b1000000
-        3.4028236692093846e+38, // 2^0b10000000
-        1.157920892373162e+77,  // 2^0b10000000
-        1.3407807929942597e+154 // 2^0b100000000
-    };
-
     if constexpr (Count == End) {
         return x;
     } else {
         bool apply = (e >> (Count - 1)) & 1U;
+
+        constexpr std::array<double, 10> pow2{
+            2.,                     // 2^0b1
+            4.,                     // 2^0b10
+            16.,                    // 2^0b100
+            256.,                   // 2^0b1000
+            65536.,                 // 2^0b10000
+            4294967296.,            // 2^0b100000
+            1.8446744073709552e+19, // 2^0b1000000
+            3.4028236692093846e+38, // 2^0b10000000
+            1.157920892373162e+77,  // 2^0b10000000
+            1.3407807929942597e+154 // 2^0b100000000
+        };
+
         if constexpr (positive) {
-            return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x * pow2[Count - 1] : x, e);
+            x = apply ? x * pow2[Count - 1] : x;
         } else {
-            return uint64_to_double_aux2<positive, End, Count + 1>(
-                apply ? x / pow2[Count - 1] : x, e);
+            x = apply ? x / pow2[Count - 1] : x;
         }
+
+        return uint64_to_double_aux2<positive, End, Count + 1>(x, e);
     }
 }
 
@@ -50,13 +50,15 @@ auto constexpr uint64_to_double_aux(double x, std::int32_t e) -> double {
 
     if (e == 0U) {
         return x;
-    } else if (e < 0) {
+    }
+
+    if (e < 0) {
         // 11 is the size of the exponent. with this configuration we
         // are guaranteed 11 recursions only
         return uint64_to_double_aux2<false, 11U>(x, eu);
-    } else {
-        return uint64_to_double_aux2<true, 11U>(x, eu);
     }
+
+    return uint64_to_double_aux2<true, 11U>(x, eu);
 }
 
 auto constexpr uint64_to_double(std::uint64_t x) -> double {
@@ -97,7 +99,7 @@ auto constexpr uint64_to_double(std::uint64_t x) -> double {
     return sign ? -unsigned_result : unsigned_result;
 }
 
-constexpr std::uint64_t double_to_uint64(double half) {
+constexpr auto double_to_uint64(double half) -> std::uint64_t {
     if (half > 0.5) {
         return 1;
     } else {
