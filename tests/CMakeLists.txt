@@ -1,3 +1,4 @@
+# set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 # add_definitions(-DCODELOGGER)
 
@@ -10,6 +11,7 @@ add_executable(
   rng.cpp
   mcsim.cpp
   nttp.cpp
+  nttp_final.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
