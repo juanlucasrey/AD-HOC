@@ -28,7 +28,6 @@ template <typename T> void Ref(T &&);
 
 typedef std::array<char, sizeof(float)> float_buf;
 
-//////////////// ignore this boilerplate ////////////////
 namespace std {
 
 // In June 16, 2019 gcc, header <bit> exists but does not have bit_cast in it.
@@ -65,13 +64,12 @@ constexpr float_buf bit_cast<float_buf, float>(const float &src) noexcept {
         exponent == 255 ? 0 : 0x00800000 * static_cast<std::uint32_t>(f);
     uint32_t rep = (sign ? 0x80000000 : 0U) +
                    static_cast<std::uint32_t>(exponent << 23U) +
-                   static_cast<std::uint32_t>(mantissa & 0x7FFFFFU);
+                   (mantissa & 0x7FFFFFU);
     return {(char)(rep), (char)(rep >> 8), (char)(rep >> 16),
             (char)(rep >> 24)};
 }
 
 } // namespace std
-//////////////// end of boilerplate ////////////////
 
 template <typename T> struct AsTemplateArg {
     std::array<char, sizeof(T)> buffer = {};
@@ -82,70 +80,12 @@ template <typename T> struct AsTemplateArg {
     constexpr operator T() const { return std::bit_cast<T>(this->buffer); }
 };
 
-template <AsTemplateArg<float> F> float float_doubler() { return float{F} * 2; }
-
-template <AsTemplateArg<float> exponent> constexpr float pow(float base) {
-    return exp(log(base) * float{exponent});
-}
-
-template <> constexpr float pow<AsTemplateArg<float>{1.0}>(float base) {
-    return base;
-}
-
-template <> constexpr float pow<AsTemplateArg<float>{2.0}>(float base) {
-    return base * base;
-}
-
-template <AsTemplateArg<float> exponent> constexpr auto type(float base) {
-    return AsTemplateArg<float>{base};
-}
-
-template <class In1, AsTemplateArg<float> F> class Sum {};
-
-template <class Derived> struct Base {
-    using is_adhoc_tag = void;
-
-    template <AsTemplateArg<float> exponent>
-    constexpr auto operator+(float in) const -> auto;
-};
-
-template <class Derived>
-template <AsTemplateArg<float> exponent>
-constexpr auto Base<Derived>::operator+(float /* in */) const -> auto {
-    return Sum<Derived, AsTemplateArg<float>{1.0}>();
-}
-
-class TreeCalc : public Base<TreeCalc> {};
-
 constexpr auto double_to_uint64(double half) -> std::uint64_t {
     if (half > 0.5) {
         return 1;
     } else {
         return 2;
     }
-}
-
-struct Double {
-    std::array<char, sizeof(double)> buffer = {};
-    constexpr Double(const std::array<char, sizeof(double)> buf)
-        : buffer(buf) {}
-    constexpr Double(double t)
-        : Double(std::bit_cast<std::array<char, sizeof(double)>>(t)) {}
-    constexpr operator double() const {
-        return std::bit_cast<double>(this->buffer);
-    }
-};
-
-// template <std::uint64_t D> struct Double {
-//     // std::uint64_t buffer = {};
-//     std::array<char, sizeof(float)> buffer = {};
-//     constexpr Double(const std::array<char, sizeof(float)> buf) : buffer(buf)
-//     {} constexpr Double(float t)
-//         : AsTemplateArg(std::bit_cast<std::array<char, sizeof(float)>>(t)) {}
-// };
-
-template <Double exponent> constexpr auto C(double base) {
-    return Double{base};
 }
 
 template <typename T> struct AsTemplateArg3 {
@@ -157,42 +97,6 @@ template <AsTemplateArg<double> F, std::uint64_t Rep = double_to_uint64(F)>
 struct C2 {};
 
 TEST(adhoc2, nttp) {
-    // #define demo(f)                                                                \
-//     std::cout << "Twice " << (f) << " is " << float_doubler<f>() << '\n'
-    //     demo(1.0);
-    //     demo(2.37);
-    //     demo(0.0);
-    //     demo(-0.0);
-    //     demo(INFINITY);
-    //     demo(-INFINITY);
-    //     demo(1e-37);
-    //     demo(1.17549435E-38);
-    //     demo(1.1754942E-38);
-    //     demo(1.17E-38);
-    //     demo(1e-39);
-    //     demo(1e-44);
-
-#define demo2(f) std::cout << (f) << " squared is " << pow<2.0f>(f) << '\n'
-    demo2(7);
-    demo2(0.0); // can't take the log of zero... but our pow works fine!
-    std::cout << pow<2.0f>(7.0) << std::endl;
-    std::cout << pow<1.0f>(7.0) << std::endl;
-    std::cout << pow<2.1f>(7.0) << std::endl;
-
-    auto constexpr temptype = type<2.0f>(3.0f);
-    auto constexpr temp1 = pow<2.0f>(7.0);
-    auto constexpr temp2 = pow<1.0f>(7.0);
-    // auto constexpr temp3 = pow<1.1f>(7.0);
-
-    std::cout << type_name<decltype(temptype)>() << std::endl;
-
-    // TreeCalc some_calc;
-    auto temp = C<2.0>;
-    std::cout << type_name<decltype(temp)>() << std::endl;
-    std::cout << sizeof(temp) << std::endl;
-    // auto tempb = temp.buffer;
-    // std::cout << temp.buffer[0] << std::endl;
-
     C2<0.4> tests;
     C2<0.6> tests2;
     std::cout << type_name<decltype(tests)>() << std::endl;
