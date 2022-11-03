@@ -9,6 +9,7 @@ add_executable(
   test2.cpp
   rng.cpp
   mcsim.cpp
+  nttp.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
