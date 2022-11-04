@@ -12,6 +12,7 @@ add_executable(
   mcsim.cpp
   nttp.cpp
   nttp_final.cpp
+  singleton.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
