@@ -289,60 +289,15 @@ tape_size_univariate(args<this_type, TypesAlive...> const &,
     return std::max(curent_tape_size, next_tape_size);
 }
 
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto tape_size(args<exp_t<Input> const, TypesAlive...> const &,
-                                args<LeavesAlive...> const &,
-                                args<Leaves...> const &) -> std::size_t {
-
-    return tape_size_univariate<Input>(
-        args<exp_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
-        args<Leaves...>{});
-}
-
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
+template <template <class> class Univariate, class Input,
+          typename... TypesAlive, typename... LeavesAlive, typename... Leaves>
 constexpr static auto
-tape_size(args<sqrt_t<Input> const, TypesAlive...> const &,
+tape_size(args<Univariate<Input> const, TypesAlive...> const &,
           args<LeavesAlive...> const &, args<Leaves...> const &)
     -> std::size_t {
 
     return tape_size_univariate<Input>(
-        args<sqrt_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
-        args<Leaves...>{});
-}
-
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto tape_size(args<log_t<Input> const, TypesAlive...> const &,
-                                args<LeavesAlive...> const &,
-                                args<Leaves...> const &) -> std::size_t {
-
-    return tape_size_univariate<Input>(
-        args<log_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
-        args<Leaves...>{});
-}
-
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto tape_size(args<cos_t<Input> const, TypesAlive...> const &,
-                                args<LeavesAlive...> const &,
-                                args<Leaves...> const &) -> std::size_t {
-
-    return tape_size_univariate<Input>(
-        args<cos_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
-        args<Leaves...>{});
-}
-
-template <class Input, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto
-tape_size(args<erfc_t<Input> const, TypesAlive...> const &,
-          args<LeavesAlive...> const &, args<Leaves...> const &)
-    -> std::size_t {
-
-    return tape_size_univariate<Input>(
-        args<erfc_t<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
+        args<Univariate<Input> const, TypesAlive...>{}, args<LeavesAlive...>{},
         args<Leaves...>{});
 }
 
