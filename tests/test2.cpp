@@ -1,4 +1,5 @@
 #include <adhoc2.hpp>
+#include <constants_double.hpp>
 #include <constants_type.hpp>
 #include <evaluate.hpp>
 #include <tape_size.hpp>
@@ -13,33 +14,6 @@ TEST(adhoc2, Initial) {
     auto valplus = val + adouble(1.0);
     auto const valmult = valplus * adouble(2.0);
     auto valmult2 = (valmult + adouble(2.0)) * adouble(3.0);
-}
-
-TEST(adhoc2, depends2) {
-    adouble val1(1.);
-    adouble val2(2.);
-
-    // add const!! we only check against const version
-    constexpr auto res =
-        decltype(val1)::depends3<decltype(val1) const, decltype(val1) const,
-                                 decltype(val2) const>();
-    static_assert(res == 2);
-}
-
-TEST(adhoc2, complexdepends2) {
-    adouble val1(1.);
-    adouble val2(2.);
-    adouble val3(2.);
-    auto valsum = val1 + val2;
-    auto valprod = val1 * val2;
-    auto t1 = valsum * valprod;
-    auto t2 = valprod + t1;
-
-    // add const!! we only check against const version
-    constexpr auto res =
-        decltype(t2)::depends3<decltype(val1) const, decltype(val2) const,
-                               decltype(val3) const>();
-    static_assert(res == 2);
 }
 
 TEST(adhoc2, complexdepends3) {
@@ -128,6 +102,12 @@ TEST(adhoc2, derivcomplexdexpevaluatesimple) {
 
     auto derivatives = evaluate<decltype(val1), decltype(val2)>(valprod3);
 }
+
+// TEST(adhoc2, derivativeone) {
+//     adouble val1(1.);
+//     auto derivatives = evaluate<decltype(val1)>(val1);
+//     // static_assert(derivatives.empty());
+// }
 
 // TEST(adhoc2, derivativezero) {
 //     adouble val1(1.);
