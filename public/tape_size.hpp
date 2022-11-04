@@ -96,7 +96,7 @@ tape_size_next_univariate(args<this_type, TypesAlive...> const &,
                           args<LeavesAlive...> const &, args<Leaves...> const &)
     -> std::size_t {
     constexpr bool other_types_depend_on_this =
-        (TypesAlive::template depends_in<this_type>() || ...);
+        (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
         return skip_type(args<this_type const, TypesAlive...>{},
@@ -116,7 +116,7 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
     -> std::size_t {
 
     constexpr bool other_types_depend_on_this =
-        (TypesAlive::template depends_in<this_type>() || ...);
+        (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
         return skip_type(args<this_type const, TypesAlive...>{},
