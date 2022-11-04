@@ -17,8 +17,6 @@
 
 namespace adhoc2 {
 
-template <class Input, class Derived> class Univariate {};
-
 template <class Derived> class Val {
   protected:
     double m_value{0};
@@ -36,9 +34,7 @@ inline auto Val<Derived>::v() const noexcept -> double {
 }
 
 template <class Input>
-class exp_t : public Base<exp_t<Input>>,
-              public Val<exp_t<Input>>,
-              public Univariate<Input, exp_t<Input>> {
+class exp_t : public Base<exp_t<Input>>, public Val<exp_t<Input>> {
   private:
     Input const m_active;
 
@@ -69,9 +65,7 @@ auto exp(Base<Derived> const &in) -> exp_t<const Derived> {
 }
 
 template <class Input>
-class cos_t : public Base<cos_t<Input>>,
-              public Val<cos_t<Input>>,
-              public Univariate<Input, cos_t<Input>> {
+class cos_t : public Base<cos_t<Input>>, public Val<cos_t<Input>> {
   private:
     Input const m_active;
 
@@ -102,9 +96,7 @@ auto cos(Base<Derived> const &in) -> cos_t<const Derived> {
 }
 
 template <class Input>
-class sqrt_t : public Base<sqrt_t<Input>>,
-               public Val<sqrt_t<Input>>,
-               public Univariate<Input, sqrt_t<Input>> {
+class sqrt_t : public Base<sqrt_t<Input>>, public Val<sqrt_t<Input>> {
   private:
     Input const m_active;
 
@@ -135,9 +127,7 @@ auto sqrt(Base<Derived> const &in) -> sqrt_t<const Derived> {
 }
 
 template <class Input>
-class log_t : public Base<log_t<Input>>,
-              public Val<log_t<Input>>,
-              public Univariate<Input, log_t<Input>> {
+class log_t : public Base<log_t<Input>>, public Val<log_t<Input>> {
   private:
     Input const m_active;
 
@@ -168,9 +158,7 @@ auto log(Base<Derived> const &in) -> log_t<const Derived> {
 }
 
 template <class Input>
-class erfc_t : public Base<erfc_t<Input>>,
-               public Val<erfc_t<Input>>,
-               public Univariate<Input, erfc_t<Input>> {
+class erfc_t : public Base<erfc_t<Input>>, public Val<erfc_t<Input>> {
   private:
     Input const m_active;
 
@@ -389,9 +377,7 @@ auto div<Input1, Input2>::input2() const -> Input2 const & {
 
 namespace detail {
 template <int N>
-class adouble_aux : public Base<adouble_aux<N>>,
-                    public Val<adouble_aux<N>>,
-                    public Univariate<adouble_aux<N>, adouble_aux<N>> {
+class adouble_aux : public Base<adouble_aux<N>>, public Val<adouble_aux<N>> {
   public:
     explicit adouble_aux(double value);
 };
