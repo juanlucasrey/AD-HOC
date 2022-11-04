@@ -1,5 +1,5 @@
-# set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 20)
 # add_definitions(-DCODELOGGER)
 
 add_executable(
@@ -13,6 +13,7 @@ add_executable(
   nttp.cpp
   nttp_final.cpp
   singleton.cpp
+  tape_input.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
