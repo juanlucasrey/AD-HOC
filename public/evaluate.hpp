@@ -962,7 +962,7 @@ evaluate_bivariate(args<LeavesAlive...> const &, args<Leaves...> const &,
     }
 }
 
-template <std::size_t N, template <class> class AnyUnivariate,
+template <std::size_t N, template <class> class Univariate,
           typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
           std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
           std::size_t... IdxAvailable, class Input>
@@ -971,7 +971,7 @@ evaluate(args<LeavesAlive...> const &, args<Leaves...> const &,
          std::index_sequence<IdxTypesAlive...> const &,
          std::index_sequence<IdxLeavesAlive...> const &,
          std::index_sequence<IdxAvailable...> const &,
-         std::array<double, N> &tape, AnyUnivariate<Input> const &in,
+         std::array<double, N> &tape, Univariate<Input> const &in,
          TypesAlive const &...next) {
     static_assert((sizeof...(TypesAlive) + 1) == sizeof...(IdxTypesAlive));
     static_assert(sizeof...(LeavesAlive) == sizeof...(IdxLeavesAlive));

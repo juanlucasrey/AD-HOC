@@ -64,24 +64,24 @@ struct equal_or_depends<detail::adouble_aux<N>, Second> {
     }
 };
 
-template <template <class> class AnyUnivariate, class Input, class Second>
-struct equal_or_depends<AnyUnivariate<Input>, Second> {
+template <template <class> class Univariate, class Input, class Second>
+struct equal_or_depends<Univariate<Input>, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(std::is_convertible_v<AnyUnivariate<Input>,
-                                            Base<AnyUnivariate<Input>>>);
-        return std::is_same_v<AnyUnivariate<Input>, Second> ||
-               std::is_same_v<AnyUnivariate<Input> const, Second> ||
+        static_assert(
+            std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
+        return std::is_same_v<Univariate<Input>, Second> ||
+               std::is_same_v<Univariate<Input> const, Second> ||
                equal_or_depends<Input, Second>::call();
     }
 };
 
-template <template <class> class AnyUnivariate, class Input, class Second>
-struct equal_or_depends<AnyUnivariate<Input> const, Second> {
+template <template <class> class Univariate, class Input, class Second>
+struct equal_or_depends<Univariate<Input> const, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(std::is_convertible_v<AnyUnivariate<Input>,
-                                            Base<AnyUnivariate<Input>>>);
-        return std::is_same_v<AnyUnivariate<Input>, Second> ||
-               std::is_same_v<AnyUnivariate<Input> const, Second> ||
+        static_assert(
+            std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
+        return std::is_same_v<Univariate<Input>, Second> ||
+               std::is_same_v<Univariate<Input> const, Second> ||
                equal_or_depends<Input, Second>::call();
     }
 };
@@ -123,20 +123,20 @@ template <int N, class Second> struct depends<detail::adouble_aux<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
 };
 
-template <template <class> class AnyUnivariate, class Input, class Second>
-struct depends<AnyUnivariate<Input>, Second> {
+template <template <class> class Univariate, class Input, class Second>
+struct depends<Univariate<Input>, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(std::is_convertible_v<AnyUnivariate<Input>,
-                                            Base<AnyUnivariate<Input>>>);
+        static_assert(
+            std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
         return equal_or_depends<Input, Second>::call();
     }
 };
 
-template <template <class> class AnyUnivariate, class Input, class Second>
-struct depends<AnyUnivariate<Input> const, Second> {
+template <template <class> class Univariate, class Input, class Second>
+struct depends<Univariate<Input> const, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(std::is_convertible_v<AnyUnivariate<Input>,
-                                            Base<AnyUnivariate<Input>>>);
+        static_assert(
+            std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
         return equal_or_depends<Input, Second>::call();
     }
 };
