@@ -27,6 +27,17 @@ TEST(adhoc2, tapemult) {
     static_assert(size == 2);
 }
 
+TEST(adhoc2, tapediv) {
+    adouble val1(2.0);
+    adouble val2(3.0);
+    auto result = val1 / val2;
+    constexpr std::size_t size = tape_size(result, val2);
+    static_assert(size == 1);
+
+    constexpr std::size_t size2 = tape_size(result, val1, val2);
+    static_assert(size2 == 2);
+}
+
 TEST(adhoc2, tapeadd) {
     adouble val1(1.);
     adouble val2(2.);

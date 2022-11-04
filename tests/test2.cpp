@@ -16,19 +16,6 @@ TEST(adhoc2, Initial) {
     auto valmult2 = (valmult + adouble(2.0)) * adouble(3.0);
 }
 
-TEST(adhoc2, complexdepends3) {
-    adouble val1(1.);
-    adouble val2(2.);
-    adouble val3(2.);
-    auto valsum = val1 + val2;
-    auto valprod = val1 * val2;
-    auto t1 = valsum * valprod;
-    auto t2 = valprod + t1;
-
-    constexpr auto res = decltype(t2)::depends<decltype(t1)>();
-    EXPECT_EQ(res, true);
-}
-
 template <int N> constexpr auto first_n_fibs() -> std::array<double, N> {
     std::array<double, N> ret{};
     for (std::size_t i = 0; i < N; i++)
