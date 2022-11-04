@@ -225,9 +225,9 @@ static inline void evaluate_bivariate_noskip_newloc(
     TypesAlive const &...next) {
 
     constexpr bool input1_has_0_deriv =
-        !static_cast<bool>(Input1::template depends3<Leaves...>());
+        !equal_or_depends_many<Input1, Leaves...>();
     constexpr bool input2_has_0_deriv =
-        !static_cast<bool>(Input2::template depends3<Leaves...>());
+        !equal_or_depends_many<Input2, Leaves...>();
     static_assert(!input1_has_0_deriv);
     static_assert(!input2_has_0_deriv);
     constexpr bool is_input1_new =
@@ -332,9 +332,9 @@ static inline void evaluate_bivariate_noskip(
     this_type const &in, TypesAlive const &...next) {
 
     constexpr bool input1_has_0_deriv =
-        !static_cast<bool>(Input1::template depends3<Leaves...>());
+        !equal_or_depends_many<Input1, Leaves...>();
     constexpr bool input2_has_0_deriv =
-        !static_cast<bool>(Input2::template depends3<Leaves...>());
+        !equal_or_depends_many<Input2, Leaves...>();
     static_assert(!input1_has_0_deriv || !input2_has_0_deriv);
 
     if constexpr (!input1_has_0_deriv && !input2_has_0_deriv) {
@@ -1128,8 +1128,7 @@ template <typename... Leaves, class Output>
 constexpr static inline auto evaluate(Output const &in, double init = 1.0)
     -> std::array<double, sizeof...(Leaves)> {
     static_assert((depends<Output, Leaves const>::call() && ...));
-    std::array<double, (Output::template depends<Leaves const>() + ...)>
-        results = {};
+    std::array<double, sizeof...(Leaves)> results = {};
     if constexpr (results.empty()) {
         return results;
     } else {
@@ -1142,9 +1141,7 @@ constexpr static inline auto evaluate(Output const &in, double init = 1.0)
         detail::evaluate_first(tape, in, init, args<Leaves const...>{},
                                std::make_index_sequence<size>{});
 
-        for (std::size_t index = 0;
-             index < (Output::template depends<Leaves const>() + ...);
-             ++index) {
+        for (std::size_t index = 0; index < sizeof...(Leaves); ++index) {
             results[index] = tape[index];
         }
         return results;
