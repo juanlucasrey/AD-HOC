@@ -358,4 +358,113 @@ TEST(constants, check_double_to_uint64) {
                   std::numeric_limits<double>::min());
 }
 
+TEST(constants, float_info) {
+    std::cout << "float" << std::endl;
+    std::cout << "min() = " << std::numeric_limits<float>::min() << std::endl;
+    std::cout << "max() = " << std::numeric_limits<float>::max() << std::endl;
+    std::cout << "digits() = " << std::numeric_limits<float>::digits
+              << std::endl;
+
+    int minf = std::numeric_limits<float>::min_exponent;
+    int maxf = std::numeric_limits<float>::max_exponent;
+
+    std::cout << "Exponents range from " << minf << " to " << maxf << ".\n";
+    std::cout << "So there must be " << std::ceil(std::log2(maxf - minf + 1))
+              << " bits in the exponent field.\n";
+    std::cout << "Total size = "
+              << std::numeric_limits<float>::digits +
+                     std::ceil(std::log2(maxf - minf + 1))
+              << std::endl;
+
+    std::cout << std::endl;
+
+    std::cout << "double" << std::endl;
+    std::cout << "min() = " << std::numeric_limits<double>::min() << std::endl;
+    std::cout << "max() = " << std::numeric_limits<double>::max() << std::endl;
+    std::cout << "digits() = " << std::numeric_limits<double>::digits
+              << std::endl;
+
+    int mind = std::numeric_limits<double>::min_exponent;
+    int maxd = std::numeric_limits<double>::max_exponent;
+
+    std::cout << "Exponents range from " << mind << " to " << maxd << ".\n";
+    std::cout << "So there must be " << std::ceil(std::log2(maxd - mind + 1))
+              << " bits in the exponent field.\n";
+
+    std::cout << "Total size = "
+              << std::numeric_limits<double>::digits +
+                     std::ceil(std::log2(maxd - mind + 1))
+              << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "long double" << std::endl;
+    std::cout << "min() = " << std::numeric_limits<long double>::min()
+              << std::endl;
+    std::cout << "max() = " << std::numeric_limits<long double>::max()
+              << std::endl;
+    std::cout << "digits() = " << std::numeric_limits<long double>::digits
+              << std::endl;
+
+    int minld = std::numeric_limits<long double>::min_exponent;
+    int maxld = std::numeric_limits<long double>::max_exponent;
+
+    std::cout << "Exponents range from " << minld << " to " << maxld << ".\n";
+    std::cout << "So there must be " << std::ceil(std::log2(maxld - minld + 1))
+              << " bits in the exponent field.\n";
+
+    std::cout << "Total size = "
+              << 1 + std::numeric_limits<long double>::digits +
+                     std::ceil(std::log2(maxld - minld + 1))
+              << std::endl;
+
+    std::cout << std::endl;
+}
+
+template <class T> constexpr std::string_view type_name() {
+    using namespace std;
+#ifdef __clang__
+    string_view p = __PRETTY_FUNCTION__;
+    return string_view(p.data() + 34, p.size() - 34 - 1);
+#elif defined(__GNUC__)
+    string_view p = __PRETTY_FUNCTION__;
+#if __cplusplus < 201402
+    return string_view(p.data() + 36, p.size() - 36 - 1);
+#else
+    return string_view(p.data() + 49, p.find(';', 49) - 49);
+#endif
+#elif defined(_MSC_VER)
+    string_view p = __FUNCSIG__;
+    return string_view(p.data() + 84, p.size() - 84 - 7);
+#endif
+}
+
+template <size_t n>
+using type_from_size = typename std::conditional<
+    (n <= 0xff), uint8_t,
+    typename std::conditional<
+        (n <= 0xffff), uint16_t,
+        typename std::conditional<(n <= 0xffffffff), uint32_t,
+                                  uint64_t>::type>::type>::type;
+
+// TEST(constants, double_const_operations) {
+
+//     Double<4503599627370496> variableconst;
+//     adhoc<ID> S(1.0);
+//     auto res = S * variableconst;
+//     auto res2 = S + 1.0;
+//     std::cout << type_name<decltype(res2)>() << std::endl;
+// }
+
+TEST(constants, double_const_operations) {
+
+    double half = 1.5; // 4602678819172646912
+    auto halfui = static_cast<std::uint64_t>(half);
+    std::cout << halfui << std::endl;
+
+    // adhoc<ID> S(1.0);
+    // auto res = S * variableconst;
+    // auto res2 = S + 1.0;
+    // std::cout << type_name<decltype(res2)>() << std::endl;
+}
+
 } // namespace adhoc2::constants
