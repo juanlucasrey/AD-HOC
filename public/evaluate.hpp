@@ -194,7 +194,7 @@ evaluate_univariate(args<LeavesAlive...> const &, args<Leaves...> const &,
     static_assert(!has_type2<this_type, Leaves...>());
 
     constexpr bool other_types_depend_on_this =
-        (TypesAlive::template depends_in<this_type>() || ...);
+        (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
         evaluate_skip(args<LeavesAlive...>{}, args<Leaves...>{},
@@ -945,7 +945,7 @@ evaluate_bivariate(args<LeavesAlive...> const &, args<Leaves...> const &,
     static_assert(!has_type2<this_type, Leaves...>());
 
     constexpr bool other_types_depend_on_this =
-        (TypesAlive::template depends_in<this_type>() || ...);
+        (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
         evaluate_skip(args<LeavesAlive...>{}, args<Leaves...>{},
