@@ -8,9 +8,6 @@ namespace adhoc2::constants {
 
 template <class Derived> struct ConstBase {
     operator double() const { return Derived::v(); }
-    template <class Denom> constexpr static auto depends() noexcept -> bool {
-        return false;
-    }
 };
 
 struct Pi : public Base<Pi>, public ConstBase<Pi> {
