@@ -20,7 +20,7 @@ namespace adhoc2 {
 template <class Input, class Derived> class Univariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
-    template <class Denom> constexpr static auto depends_in() noexcept -> bool;
+    template <class Denom> static auto depends_run() noexcept -> bool;
 };
 
 template <class Input, class Derived>
@@ -33,15 +33,17 @@ inline constexpr auto Univariate<Input, Derived>::depends() noexcept -> bool {
 
 template <class Input, class Derived>
 template <class Denom>
-inline constexpr auto Univariate<Input, Derived>::depends_in() noexcept
-    -> bool {
-    return Input::template depends<Denom>();
+inline auto Univariate<Input, Derived>::depends_run() noexcept -> bool {
+    bool d1 = std::is_same_v<Denom, Derived>;
+    bool d2 = std::is_same_v<Denom, Derived const>;
+    bool d3 = Input::template depends_run<Denom>();
+    return d1 || d2 || d3;
 }
 
 template <class Input1, class Input2, class Derived> class Bivariate {
   public:
     template <class Denom> constexpr static auto depends() noexcept -> bool;
-    template <class Denom> constexpr static auto depends_in() noexcept -> bool;
+    template <class Denom> static auto depends_run() noexcept -> bool;
 };
 
 template <class Input1, class Input2, class Derived>
@@ -56,10 +58,12 @@ inline constexpr auto Bivariate<Input1, Input2, Derived>::depends() noexcept
 
 template <class Input1, class Input2, class Derived>
 template <class Denom>
-inline constexpr auto Bivariate<Input1, Input2, Derived>::depends_in() noexcept
-    -> bool {
-    return Input1::template depends<Denom>() ||
-           Input2::template depends<Denom>();
+inline auto Bivariate<Input1, Input2, Derived>::depends_run() noexcept -> bool {
+    bool d1 = std::is_same_v<Denom, Derived>;
+    bool d2 = std::is_same_v<Denom, Derived const>;
+    bool d3 = Input1::template depends_run<Denom>();
+    bool d4 = Input2::template depends_run<Denom>();
+    return d1 || d2 || d3 || d4;
 }
 
 template <class Derived> class Val {
@@ -446,6 +450,8 @@ class adouble_aux : public Base<adouble_aux<N>>,
     explicit adouble_aux(double value);
 
     template <class Denom> constexpr static auto depends() noexcept -> bool;
+
+    template <class Denom> static auto depends_run() noexcept -> bool;
 };
 
 template <int N>
@@ -454,7 +460,16 @@ inline adouble_aux<N>::adouble_aux(double value) : Val<adouble_aux<N>>(value) {}
 template <int N>
 template <class Denom>
 inline constexpr auto adouble_aux<N>::depends() noexcept -> bool {
-    return std::is_same_v<Denom, adouble_aux<N> const>;
+    return std::is_same_v<Denom, adouble_aux<N> const> ||
+           std::is_same_v<Denom, adouble_aux<N>>;
+}
+
+template <int N>
+template <class Denom>
+inline auto adouble_aux<N>::depends_run() noexcept -> bool {
+    bool d1 = std::is_same_v<Denom, adouble_aux<N> const>;
+    bool d2 = std::is_same_v<Denom, adouble_aux<N>>;
+    return d1 || d2;
 }
 
 } // namespace detail
