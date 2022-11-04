@@ -10,6 +10,10 @@ template <class Input1, class Input2> class subs;
 template <class Input1, class Input2> class mul;
 template <class Input1, class Input2> class div;
 
+// it would be nice to add operator to constexpr float types in this class
+// however this proposal would have to pass
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1045r1.html
+// https://github.com/cplusplus/papers/issues/603
 template <class Derived> struct Base {
     using is_adhoc_tag = void;
 
