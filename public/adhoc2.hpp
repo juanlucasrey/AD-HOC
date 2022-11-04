@@ -19,8 +19,6 @@ namespace adhoc2 {
 
 template <class Input, class Derived> class Univariate {};
 
-template <class Input1, class Input2, class Derived> class Bivariate {};
-
 template <class Derived> class Val {
   protected:
     double m_value{0};
@@ -207,9 +205,7 @@ auto erfc(Base<Derived> const &in) -> erfc_t<const Derived> {
 }
 
 template <class Input1, class Input2>
-class add : public Base<add<Input1, Input2>>,
-            public Val<add<Input1, Input2>>,
-            public Bivariate<Input1, Input2, add<Input1, Input2>> {
+class add : public Base<add<Input1, Input2>>, public Val<add<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
@@ -254,8 +250,7 @@ auto add<Input1, Input2>::input2() const -> Input2 const & {
 
 template <class Input1, class Input2>
 class subs : public Base<subs<Input1, Input2>>,
-             public Val<subs<Input1, Input2>>,
-             public Bivariate<Input1, Input2, subs<Input1, Input2>> {
+             public Val<subs<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
@@ -299,9 +294,7 @@ auto subs<Input1, Input2>::input2() const -> Input2 const & {
 }
 
 template <class Input1, class Input2>
-class mul : public Base<mul<Input1, Input2>>,
-            public Val<mul<Input1, Input2>>,
-            public Bivariate<Input1, Input2, mul<Input1, Input2>> {
+class mul : public Base<mul<Input1, Input2>>, public Val<mul<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
@@ -348,9 +341,7 @@ auto mul<Input1, Input2>::input2() const -> Input2 const & {
 // numerical errors on the valuation because in1 / in2 is not the same as in1 *
 // (1.0/in2)
 template <class Input1, class Input2>
-class div : public Base<div<Input1, Input2>>,
-            public Val<div<Input1, Input2>>,
-            public Bivariate<Input1, Input2, div<Input1, Input2>> {
+class div : public Base<div<Input1, Input2>>, public Val<div<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
