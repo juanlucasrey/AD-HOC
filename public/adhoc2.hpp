@@ -193,12 +193,13 @@ auto erfc(Base<Derived> const &in) -> erfc_t<const Derived> {
 }
 
 template <class Input1, class Input2>
-class add : public Base<add<Input1, Input2>>, public Val<add<Input1, Input2>> {
+class add_t : public Base<add_t<Input1, Input2>>,
+              public Val<add_t<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
   public:
-    add(Input1 const &active1, Input2 const &active2);
+    add_t(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
     [[nodiscard]] auto input1() const -> Input1 const &;
@@ -206,12 +207,12 @@ class add : public Base<add<Input1, Input2>>, public Val<add<Input1, Input2>> {
 };
 
 template <class Input1, class Input2>
-add<Input1, Input2>::add(Input1 const &active1, Input2 const &active2)
-    : Val<add<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
+add_t<Input1, Input2>::add_t(Input1 const &active1, Input2 const &active2)
+    : Val<add_t<Input1, Input2>>(active1.v() + active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
-auto add<Input1, Input2>::d1() const -> double {
+auto add_t<Input1, Input2>::d1() const -> double {
 #ifdef CODELOGGER
     std::cout << "1.0";
 #endif
@@ -219,7 +220,7 @@ auto add<Input1, Input2>::d1() const -> double {
 }
 
 template <class Input1, class Input2>
-auto add<Input1, Input2>::d2() const -> double {
+auto add_t<Input1, Input2>::d2() const -> double {
 #ifdef CODELOGGER
     std::cout << "1.0";
 #endif
@@ -227,23 +228,23 @@ auto add<Input1, Input2>::d2() const -> double {
 }
 
 template <class Input1, class Input2>
-auto add<Input1, Input2>::input1() const -> Input1 const & {
+auto add_t<Input1, Input2>::input1() const -> Input1 const & {
     return this->m_active1;
 }
 
 template <class Input1, class Input2>
-auto add<Input1, Input2>::input2() const -> Input2 const & {
+auto add_t<Input1, Input2>::input2() const -> Input2 const & {
     return this->m_active2;
 }
 
 template <class Input1, class Input2>
-class subs : public Base<subs<Input1, Input2>>,
-             public Val<subs<Input1, Input2>> {
+class sub_t : public Base<sub_t<Input1, Input2>>,
+              public Val<sub_t<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
   public:
-    subs(Input1 const &active1, Input2 const &active2);
+    sub_t(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
     [[nodiscard]] auto input1() const -> Input1 const &;
@@ -251,12 +252,12 @@ class subs : public Base<subs<Input1, Input2>>,
 };
 
 template <class Input1, class Input2>
-subs<Input1, Input2>::subs(Input1 const &active1, Input2 const &active2)
-    : Val<subs<Input1, Input2>>(active1.v() - active2.v()), m_active1(active1),
+sub_t<Input1, Input2>::sub_t(Input1 const &active1, Input2 const &active2)
+    : Val<sub_t<Input1, Input2>>(active1.v() - active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
-auto subs<Input1, Input2>::d1() const -> double {
+auto sub_t<Input1, Input2>::d1() const -> double {
 #ifdef CODELOGGER
     std::cout << "1.0";
 #endif
@@ -264,7 +265,7 @@ auto subs<Input1, Input2>::d1() const -> double {
 }
 
 template <class Input1, class Input2>
-auto subs<Input1, Input2>::d2() const -> double {
+auto sub_t<Input1, Input2>::d2() const -> double {
 #ifdef CODELOGGER
     std::cout << "(-1.0)";
 #endif
@@ -272,22 +273,23 @@ auto subs<Input1, Input2>::d2() const -> double {
 }
 
 template <class Input1, class Input2>
-auto subs<Input1, Input2>::input1() const -> Input1 const & {
+auto sub_t<Input1, Input2>::input1() const -> Input1 const & {
     return this->m_active1;
 }
 
 template <class Input1, class Input2>
-auto subs<Input1, Input2>::input2() const -> Input2 const & {
+auto sub_t<Input1, Input2>::input2() const -> Input2 const & {
     return this->m_active2;
 }
 
 template <class Input1, class Input2>
-class mul : public Base<mul<Input1, Input2>>, public Val<mul<Input1, Input2>> {
+class mul_t : public Base<mul_t<Input1, Input2>>,
+              public Val<mul_t<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
   public:
-    mul(Input1 const &active1, Input2 const &active2);
+    mul_t(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
     [[nodiscard]] auto input1() const -> Input1 const &;
@@ -295,12 +297,12 @@ class mul : public Base<mul<Input1, Input2>>, public Val<mul<Input1, Input2>> {
 };
 
 template <class Input1, class Input2>
-mul<Input1, Input2>::mul(Input1 const &active1, Input2 const &active2)
-    : Val<mul<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
+mul_t<Input1, Input2>::mul_t(Input1 const &active1, Input2 const &active2)
+    : Val<mul_t<Input1, Input2>>(active1.v() * active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
-auto mul<Input1, Input2>::d1() const -> double {
+auto mul_t<Input1, Input2>::d1() const -> double {
 #ifdef CODELOGGER
     std::cout << this->m_active2.v();
 #endif
@@ -308,7 +310,7 @@ auto mul<Input1, Input2>::d1() const -> double {
 }
 
 template <class Input1, class Input2>
-auto mul<Input1, Input2>::d2() const -> double {
+auto mul_t<Input1, Input2>::d2() const -> double {
 #ifdef CODELOGGER
     std::cout << this->m_active1.v();
 #endif
@@ -316,25 +318,26 @@ auto mul<Input1, Input2>::d2() const -> double {
 }
 
 template <class Input1, class Input2>
-auto mul<Input1, Input2>::input1() const -> Input1 const & {
+auto mul_t<Input1, Input2>::input1() const -> Input1 const & {
     return this->m_active1;
 }
 
 template <class Input1, class Input2>
-auto mul<Input1, Input2>::input2() const -> Input2 const & {
+auto mul_t<Input1, Input2>::input2() const -> Input2 const & {
     return this->m_active2;
 }
 
-// NOTE: we could use div = mul<in1, inv<in2>> however this might lead to
+// NOTE: we could use div_t = mul_t<in1, inv<in2>> however this might lead to
 // numerical errors on the valuation because in1 / in2 is not the same as in1 *
 // (1.0/in2)
 template <class Input1, class Input2>
-class div : public Base<div<Input1, Input2>>, public Val<div<Input1, Input2>> {
+class div_t : public Base<div_t<Input1, Input2>>,
+              public Val<div_t<Input1, Input2>> {
     Input1 const m_active1;
     Input2 const m_active2;
 
   public:
-    div(Input1 const &active1, Input2 const &active2);
+    div_t(Input1 const &active1, Input2 const &active2);
     [[nodiscard]] auto d1() const -> double;
     [[nodiscard]] auto d2() const -> double;
     [[nodiscard]] auto input1() const -> Input1 const &;
@@ -342,12 +345,12 @@ class div : public Base<div<Input1, Input2>>, public Val<div<Input1, Input2>> {
 };
 
 template <class Input1, class Input2>
-div<Input1, Input2>::div(Input1 const &active1, Input2 const &active2)
-    : Val<div<Input1, Input2>>(active1.v() / active2.v()), m_active1(active1),
+div_t<Input1, Input2>::div_t(Input1 const &active1, Input2 const &active2)
+    : Val<div_t<Input1, Input2>>(active1.v() / active2.v()), m_active1(active1),
       m_active2(active2) {}
 
 template <class Input1, class Input2>
-auto div<Input1, Input2>::d1() const -> double {
+auto div_t<Input1, Input2>::d1() const -> double {
 #ifdef CODELOGGER
     std::cout << "(1.0 / " << this->m_active2.v() << ")";
 #endif
@@ -355,23 +358,23 @@ auto div<Input1, Input2>::d1() const -> double {
 }
 
 template <class Input1, class Input2>
-auto div<Input1, Input2>::d2() const -> double {
+auto div_t<Input1, Input2>::d2() const -> double {
 #ifdef CODELOGGER
     std::cout << "(" << -this->v() << " / " << this->m_active2.v() << ")";
 #endif
-    // NOTE: this is when using mul<in1, inv<in2>> might be more efficient than
-    // using div<in1, in2> but we choose this approach to keep evaluation values
-    // the same
+    // NOTE: this is when using mul_t<in1, inv<in2>> might be more efficient
+    // than using div_t<in1, in2> but we choose this approach to keep evaluation
+    // values the same
     return -this->v() / this->m_active2.v();
 }
 
 template <class Input1, class Input2>
-auto div<Input1, Input2>::input1() const -> Input1 const & {
+auto div_t<Input1, Input2>::input1() const -> Input1 const & {
     return this->m_active1;
 }
 
 template <class Input1, class Input2>
-auto div<Input1, Input2>::input2() const -> Input2 const & {
+auto div_t<Input1, Input2>::input2() const -> Input2 const & {
     return this->m_active2;
 }
 

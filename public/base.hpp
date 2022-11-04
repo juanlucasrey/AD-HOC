@@ -5,10 +5,10 @@
 
 namespace adhoc2 {
 
-template <class Input1, class Input2> class add;
-template <class Input1, class Input2> class subs;
-template <class Input1, class Input2> class mul;
-template <class Input1, class Input2> class div;
+template <class Input1, class Input2> class add_t;
+template <class Input1, class Input2> class sub_t;
+template <class Input1, class Input2> class mul_t;
+template <class Input1, class Input2> class div_t;
 
 // it would be nice to add operator to constexpr float types in this class
 // however this proposal would have to pass
@@ -19,25 +19,25 @@ template <class Derived> struct Base {
 
     template <class Derived2>
     auto operator+(Base<Derived2> const &rhs) const
-        -> add<const Derived, const Derived2>;
+        -> add_t<const Derived, const Derived2>;
 
     template <class Derived2>
     auto operator-(Base<Derived2> const &rhs) const
-        -> subs<const Derived, const Derived2>;
+        -> sub_t<const Derived, const Derived2>;
 
     template <class Derived2>
     auto operator*(Base<Derived2> const &rhs) const
-        -> mul<const Derived, const Derived2>;
+        -> mul_t<const Derived, const Derived2>;
 
     template <class Derived2>
     auto operator/(Base<Derived2> const &rhs) const
-        -> div<const Derived, const Derived2>;
+        -> div_t<const Derived, const Derived2>;
 };
 
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
-    -> add<const Derived, const Derived2> {
+    -> add_t<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -45,7 +45,7 @@ inline auto Base<Derived>::operator+(Base<Derived2> const &rhs) const
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator-(Base<Derived2> const &rhs) const
-    -> subs<const Derived, const Derived2> {
+    -> sub_t<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -53,7 +53,7 @@ inline auto Base<Derived>::operator-(Base<Derived2> const &rhs) const
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
-    -> mul<const Derived, const Derived2> {
+    -> mul_t<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
@@ -61,7 +61,7 @@ inline auto Base<Derived>::operator*(Base<Derived2> const &rhs) const
 template <class Derived>
 template <class Derived2>
 inline auto Base<Derived>::operator/(Base<Derived2> const &rhs) const
-    -> div<const Derived, const Derived2> {
+    -> div_t<const Derived, const Derived2> {
     return {*static_cast<Derived const *>(this),
             *static_cast<Derived2 const *>(&rhs)};
 }
