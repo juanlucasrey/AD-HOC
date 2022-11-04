@@ -2,6 +2,7 @@
 #define TAPE_SIZE_HPP
 
 #include <adhoc2.hpp>
+#include <dependency.hpp>
 
 namespace adhoc2 {
 namespace detail {
@@ -122,9 +123,9 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
                          args<LeavesAlive...>{}, args<Leaves...>{});
     } else {
         constexpr bool input1_has_0_deriv =
-            !static_cast<bool>(Input1::template depends3<Leaves...>());
+            !equal_or_depends_many<Input1, Leaves...>();
         constexpr bool input2_has_0_deriv =
-            !static_cast<bool>(Input2::template depends3<Leaves...>());
+            !equal_or_depends_many<Input2, Leaves...>();
         static_assert(!input1_has_0_deriv || !input2_has_0_deriv);
 
         constexpr bool is_input1_leaf = has_type2<Input1, Leaves...>();

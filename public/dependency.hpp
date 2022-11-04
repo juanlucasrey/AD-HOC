@@ -160,12 +160,21 @@ template <template <class, class> class AnyBivariate, class Input1,
 struct depends<AnyBivariate<Input1, Input2> const, Second> {
     constexpr static auto call() noexcept -> bool {
         static_assert(
-            std::is_convertible_v<AnyBivariate<Input1, Input2> const,
-                                  Base<AnyBivariate<Input1, Input2> const>>);
+            std::is_convertible_v<AnyBivariate<Input1, Input2>,
+                                  Base<AnyBivariate<Input1, Input2>>>);
         return equal_or_depends<Input1, Second>::call() ||
                equal_or_depends<Input2, Second>::call();
     }
 };
+
+template <class First, class... Others>
+inline constexpr auto equal_or_depends_many() noexcept -> bool {
+    if constexpr (sizeof...(Others) == 0) {
+        return false;
+    } else {
+        return (equal_or_depends<First, Others>::call() || ...);
+    }
+}
 
 } // namespace adhoc2
 
