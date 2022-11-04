@@ -89,6 +89,7 @@ auto accumulate(begin_t<vector<N>> /* first */, end_t<vector<N>> /* last */,
     return accumulate_t<vector<N>, T, decltype(op(init, adhoc<N>(1.0)))>();
 }
 
+#if __cplusplus >= 202002L
 TEST(AD, BlackScholesSimulationadhoc) {
     using namespace constants;
 
@@ -233,6 +234,7 @@ TEST(AD, BlackScholesSimulation) {
     std::cout << type_name<decltype(lambda)>() << std::endl;
     // std::cout << decltype(lambda) << std::endl;
 }
+#endif
 
 TEST(AD, accumulate) {
     std::vector<double> test{0.1, 0.2, 0.3};
