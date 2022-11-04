@@ -2,6 +2,7 @@
 #define EVALUATE_HPP
 
 #include <adhoc2.hpp>
+#include <dependency.hpp>
 #include <tape_size.hpp>
 
 #ifdef CODELOGGER
@@ -1125,10 +1126,8 @@ static inline void evaluate_first(
 
 template <typename... Leaves, class Output>
 constexpr static inline auto evaluate(Output const &in, double init = 1.0)
-    -> std::array<double, (Output::template depends<Leaves const>() + ...)> {
-
-    static_assert((Output::template depends<Leaves const>() + ...) ==
-                  sizeof...(Leaves));
+    -> std::array<double, sizeof...(Leaves)> {
+    static_assert((depends<Output, Leaves const>::call() && ...));
     std::array<double, (Output::template depends<Leaves const>() + ...)>
         results = {};
     if constexpr (results.empty()) {
@@ -1156,7 +1155,7 @@ constexpr static inline auto evaluate(Output const &in, double init = 1.0)
 template <typename... Leaves, class Output>
 constexpr static inline auto evaluate(Output const &in, double init,
                                       Leaves const &.../* leaves */)
-    -> std::array<double, (Output::template depends<Leaves>() + ...)> {
+    -> std::array<double, sizeof...(Leaves)> {
     return evaluate<Leaves...>(in, init);
 }
 
