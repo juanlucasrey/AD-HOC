@@ -86,29 +86,27 @@ struct equal_or_depends<AnyUnivariate<Input> const, Second> {
     }
 };
 
-template <template <class, class> class AnyBivariate, class Input1,
-          class Input2, class Second>
-struct equal_or_depends<AnyBivariate<Input1, Input2>, Second> {
+template <template <class, class> class Bivariate, class Input1, class Input2,
+          class Second>
+struct equal_or_depends<Bivariate<Input1, Input2>, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(
-            std::is_convertible_v<AnyBivariate<Input1, Input2>,
-                                  Base<AnyBivariate<Input1, Input2>>>);
-        return std::is_same_v<AnyBivariate<Input1, Input2>, Second> ||
-               std::is_same_v<AnyBivariate<Input1, Input2> const, Second> ||
+        static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
+                                            Base<Bivariate<Input1, Input2>>>);
+        return std::is_same_v<Bivariate<Input1, Input2>, Second> ||
+               std::is_same_v<Bivariate<Input1, Input2> const, Second> ||
                equal_or_depends<Input1, Second>::call() ||
                equal_or_depends<Input2, Second>::call();
     }
 };
 
-template <template <class, class> class AnyBivariate, class Input1,
-          class Input2, class Second>
-struct equal_or_depends<AnyBivariate<Input1, Input2> const, Second> {
+template <template <class, class> class Bivariate, class Input1, class Input2,
+          class Second>
+struct equal_or_depends<Bivariate<Input1, Input2> const, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(
-            std::is_convertible_v<AnyBivariate<Input1, Input2>,
-                                  Base<AnyBivariate<Input1, Input2>>>);
-        return std::is_same_v<AnyBivariate<Input1, Input2>, Second> ||
-               std::is_same_v<AnyBivariate<Input1, Input2> const, Second> ||
+        static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
+                                            Base<Bivariate<Input1, Input2>>>);
+        return std::is_same_v<Bivariate<Input1, Input2>, Second> ||
+               std::is_same_v<Bivariate<Input1, Input2> const, Second> ||
                equal_or_depends<Input1, Second>::call() ||
                equal_or_depends<Input2, Second>::call();
     }
@@ -143,25 +141,23 @@ struct depends<AnyUnivariate<Input> const, Second> {
     }
 };
 
-template <template <class, class> class AnyBivariate, class Input1,
-          class Input2, class Second>
-struct depends<AnyBivariate<Input1, Input2>, Second> {
+template <template <class, class> class Bivariate, class Input1, class Input2,
+          class Second>
+struct depends<Bivariate<Input1, Input2>, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(
-            std::is_convertible_v<AnyBivariate<Input1, Input2>,
-                                  Base<AnyBivariate<Input1, Input2>>>);
+        static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
+                                            Base<Bivariate<Input1, Input2>>>);
         return equal_or_depends<Input1, Second>::call() ||
                equal_or_depends<Input2, Second>::call();
     }
 };
 
-template <template <class, class> class AnyBivariate, class Input1,
-          class Input2, class Second>
-struct depends<AnyBivariate<Input1, Input2> const, Second> {
+template <template <class, class> class Bivariate, class Input1, class Input2,
+          class Second>
+struct depends<Bivariate<Input1, Input2> const, Second> {
     constexpr static auto call() noexcept -> bool {
-        static_assert(
-            std::is_convertible_v<AnyBivariate<Input1, Input2>,
-                                  Base<AnyBivariate<Input1, Input2>>>);
+        static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
+                                            Base<Bivariate<Input1, Input2>>>);
         return equal_or_depends<Input1, Second>::call() ||
                equal_or_depends<Input2, Second>::call();
     }
