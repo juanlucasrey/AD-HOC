@@ -4,7 +4,7 @@
 
 namespace adhoc2 {
 
-TEST(adhoc2, tapestatic2) {
+TEST(adhoc2, TapeInputStatic) {
     adhoc<ID> v1(1);
     adhoc<ID> v2(2);
     adhoc<ID> v3(3);
