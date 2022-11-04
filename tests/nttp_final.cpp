@@ -26,6 +26,7 @@ template <class T> constexpr std::string_view type_name() {
 #endif
 }
 
+#if __cplusplus >= 202002L
 namespace detail {
 template <typename T> struct AsTemplateArg {
     T buffer{};
@@ -82,3 +83,4 @@ TEST(adhoc2, nttp_final) {
     static_assert(!std::is_same_v<decltype(one_type), decltype(oneeps_type)>);
     static_assert(oneeps == oneeps_type);
 }
+#endif

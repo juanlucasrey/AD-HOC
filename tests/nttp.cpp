@@ -88,6 +88,8 @@ constexpr auto double_to_uint64(double half) -> std::uint64_t {
     }
 }
 
+#if __cplusplus >= 202002L
+
 template <typename T> struct AsTemplateArg3 {
     constexpr AsTemplateArg3(double) {}
     constexpr operator double() const { return 0.; }
@@ -104,3 +106,4 @@ TEST(adhoc2, nttp) {
     std::cout << sizeof(tests) << std::endl;
     std::cout << sizeof(tests2) << std::endl;
 }
+#endif
