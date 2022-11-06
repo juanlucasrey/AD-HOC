@@ -14,6 +14,7 @@ add_executable(
   nttp_final.cpp
   singleton.cpp
   tape_input.t.cpp
+  constants_double_to_uint.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

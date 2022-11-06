@@ -332,8 +332,8 @@ TEST(constants, check_double_to_uint64) {
     static_assert(backsub == 4.9406564584124654e-314);
     static_assert(Double<10000000000>::v() == 4.9406564584124654e-314);
 
-    check(0);
-    check(-0);
+    check(0.);
+    check(-0.);
     check(std::numeric_limits<double>::infinity());
     check(-std::numeric_limits<double>::infinity());
     check(std::numeric_limits<double>::quiet_NaN());
