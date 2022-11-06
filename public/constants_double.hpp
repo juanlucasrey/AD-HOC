@@ -203,8 +203,12 @@ constexpr auto double_to_uint64(double x) -> std::uint64_t {
 
 } // namespace detail
 
+constexpr auto encode(double x) -> std::uint64_t {
+    return detail::double_to_uint64(x);
+}
+
 template <std::uint64_t D>
-struct Double : public Base<Double<D>>, public ConstBase<Double<D>> {
+struct CD : public Base<CD<D>>, public ConstBase<CD<D>> {
     constexpr auto static v() -> double { return detail::uint64_to_double(D); }
 };
 

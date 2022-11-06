@@ -84,7 +84,7 @@ TEST(constants, uint_to_double) {
     std::uint64_t constexpr oneeq = 4607182418800017408;
     double constexpr back = detail::uint64_to_double(oneeq);
     static_assert(back == 1.0);
-    static_assert(Double<4607182418800017408>::v() == 1.0);
+    static_assert(CD<4607182418800017408>::v() == 1.0);
 
     check(2.);
     check(4.);
@@ -111,7 +111,7 @@ TEST(constants, uint_to_double) {
     std::uint64_t constexpr subnormaleq = 10000000000;
     double constexpr backsub = detail::uint64_to_double(subnormaleq);
     static_assert(backsub == 4.9406564584124654e-314);
-    static_assert(Double<10000000000>::v() == 4.9406564584124654e-314);
+    static_assert(CD<10000000000>::v() == 4.9406564584124654e-314);
 
     check(0.);
     check(-0.);
@@ -130,14 +130,14 @@ TEST(constants, uint_to_double) {
     std::uint64_t constexpr max = 9218868437227405311;
     double constexpr backmax = detail::uint64_to_double(max);
     static_assert(backmax == std::numeric_limits<double>::max());
-    static_assert(Double<9218868437227405311>::v() ==
+    static_assert(CD<9218868437227405311>::v() ==
                   std::numeric_limits<double>::max());
 
     std::uint64_t constexpr min = 4503599627370496;
     double constexpr backmin = detail::uint64_to_double(min);
     static_assert(backmin == std::numeric_limits<double>::min());
 
-    static_assert(Double<4503599627370496>::v() ==
+    static_assert(CD<4503599627370496>::v() ==
                   std::numeric_limits<double>::min());
 }
 
@@ -376,6 +376,182 @@ TEST(constants, random_uint64) {
             std::cout << "error on path: " << i << std::endl;
         }
     }
+}
+
+TEST(constants, static_constants) {
+    // this is what we care about:
+    // constexpr conversion of all kinds of doubles to and from uint64
+    constexpr double one =
+        detail::uint64_to_double(detail::double_to_uint64(1.0));
+    static_assert(one == 1.0);
+
+    constexpr double nan = detail::uint64_to_double(
+        detail::double_to_uint64(std::numeric_limits<double>::quiet_NaN()));
+    static_assert(nan != std::numeric_limits<double>::quiet_NaN());
+
+    constexpr double zero =
+        detail::uint64_to_double(detail::double_to_uint64(0.));
+    static_assert(zero == 0.);
+
+    constexpr double mzero =
+        detail::uint64_to_double(detail::double_to_uint64(-0.));
+    static_assert(mzero == -0.);
+
+    constexpr double pinf = detail::uint64_to_double(
+        detail::double_to_uint64(std::numeric_limits<double>::infinity()));
+    static_assert(pinf == std::numeric_limits<double>::infinity());
+
+    constexpr double minf = detail::uint64_to_double(
+        detail::double_to_uint64(-std::numeric_limits<double>::infinity()));
+    static_assert(minf == -std::numeric_limits<double>::infinity());
+
+    constexpr double max = detail::uint64_to_double(
+        detail::double_to_uint64(std::numeric_limits<double>::max()));
+    static_assert(max == std::numeric_limits<double>::max());
+
+    constexpr double min = detail::uint64_to_double(
+        detail::double_to_uint64(std::numeric_limits<double>::min()));
+    static_assert(min == std::numeric_limits<double>::min());
+
+    constexpr double epsilon = detail::uint64_to_double(
+        detail::double_to_uint64(std::numeric_limits<double>::epsilon()));
+    static_assert(epsilon == std::numeric_limits<double>::epsilon());
+
+    constexpr double maxsubnormal = detail::uint64_to_double(
+        detail::double_to_uint64(2.2250738585072009e-308));
+    static_assert(maxsubnormal == 2.2250738585072009e-308);
+
+    constexpr double minsubnormal = detail::uint64_to_double(
+        detail::double_to_uint64(4.9406564584124654e-324));
+    static_assert(minsubnormal == 4.9406564584124654e-324);
+
+    constexpr double maxsubnormaln = detail::uint64_to_double(
+        detail::double_to_uint64(-2.2250738585072009e-308));
+    static_assert(maxsubnormaln == -2.2250738585072009e-308);
+
+    constexpr double minsubnormaln = detail::uint64_to_double(
+        detail::double_to_uint64(-4.9406564584124654e-324));
+    static_assert(minsubnormaln == -4.9406564584124654e-324);
+
+    constexpr double somesubnormal = detail::uint64_to_double(
+        detail::double_to_uint64(4.9406564584124654e-314));
+    static_assert(somesubnormal == 4.9406564584124654e-314);
+
+    constexpr double somesubnormaln = detail::uint64_to_double(
+        detail::double_to_uint64(-4.9406564584124654e-314));
+    static_assert(somesubnormaln == -4.9406564584124654e-314);
+
+    constexpr double two =
+        detail::uint64_to_double(detail::double_to_uint64(2.0));
+    static_assert(two == 2.0);
+
+    constexpr double four =
+        detail::uint64_to_double(detail::double_to_uint64(4.0));
+    static_assert(four == 4.0);
+
+    constexpr double eight =
+        detail::uint64_to_double(detail::double_to_uint64(8.0));
+    static_assert(eight == 8.0);
+
+    constexpr double sixteen =
+        detail::uint64_to_double(detail::double_to_uint64(16.0));
+    static_assert(sixteen == 16.0);
+
+    constexpr double half =
+        detail::uint64_to_double(detail::double_to_uint64(0.5));
+    static_assert(half == 0.5);
+
+    constexpr double v1 =
+        detail::uint64_to_double(detail::double_to_uint64(0.46293));
+    static_assert(v1 == 0.46293);
+
+    constexpr double v2 =
+        detail::uint64_to_double(detail::double_to_uint64(0.46293e3));
+    static_assert(v2 == 0.46293e3);
+
+    constexpr double v3 =
+        detail::uint64_to_double(detail::double_to_uint64(0.4629334e300));
+    static_assert(v3 == 0.4629334e300);
+
+    constexpr double minusone =
+        detail::uint64_to_double(detail::double_to_uint64(-1.0));
+    static_assert(minusone == -1.0);
+
+    constexpr double minustwo =
+        detail::uint64_to_double(detail::double_to_uint64(-2.0));
+    static_assert(minustwo == -2.0);
+
+    constexpr double minushalf =
+        detail::uint64_to_double(detail::double_to_uint64(-0.5));
+    static_assert(minushalf == -0.5);
+
+    constexpr double v1n =
+        detail::uint64_to_double(detail::double_to_uint64(-0.46293));
+    static_assert(v1n == -0.46293);
+
+    constexpr double v2n =
+        detail::uint64_to_double(detail::double_to_uint64(-0.46293e3));
+    static_assert(v2n == -0.46293e3);
+
+    constexpr double v3n =
+        detail::uint64_to_double(detail::double_to_uint64(-0.4629334e300));
+    static_assert(v3n == -0.4629334e300);
+}
+
+TEST(constants, type_value_static_check) {
+    // this is what we care about:
+    // constexpr conversion of all kinds of doubles to and from uint64
+
+    static_assert(1.0 == CD<encode(1.0)>::v());
+
+    static_assert(std::numeric_limits<double>::quiet_NaN() !=
+                  CD<encode(std::numeric_limits<double>::quiet_NaN())>::v());
+
+    static_assert(0. == CD<encode(0.)>::v());
+    static_assert(-0. == CD<encode(-0.)>::v());
+    static_assert(std::numeric_limits<double>::infinity() ==
+                  CD<encode(std::numeric_limits<double>::infinity())>::v());
+
+    static_assert(-std::numeric_limits<double>::infinity() ==
+                  CD<encode(-std::numeric_limits<double>::infinity())>::v());
+
+    static_assert(std::numeric_limits<double>::max() ==
+                  CD<encode(std::numeric_limits<double>::max())>::v());
+
+    static_assert(std::numeric_limits<double>::min() ==
+                  CD<encode(std::numeric_limits<double>::min())>::v());
+
+    static_assert(std::numeric_limits<double>::epsilon() ==
+                  CD<encode(std::numeric_limits<double>::epsilon())>::v());
+
+    static_assert(2.2250738585072009e-308 ==
+                  CD<encode(2.2250738585072009e-308)>::v());
+    static_assert(4.9406564584124654e-324 ==
+                  CD<encode(4.9406564584124654e-324)>::v());
+    static_assert(-2.2250738585072009e-308 ==
+                  CD<encode(-2.2250738585072009e-308)>::v());
+    static_assert(-4.9406564584124654e-324 ==
+                  CD<encode(-4.9406564584124654e-324)>::v());
+    static_assert(4.9406564584124654e-314 ==
+                  CD<encode(4.9406564584124654e-314)>::v());
+    static_assert(-4.9406564584124654e-314 ==
+                  CD<encode(-4.9406564584124654e-314)>::v());
+
+    static_assert(2.0 == CD<encode(2.0)>::v());
+    static_assert(4.0 == CD<encode(4.0)>::v());
+    static_assert(8.0 == CD<encode(8.0)>::v());
+    static_assert(16.0 == CD<encode(16.0)>::v());
+    static_assert(0.5 == CD<encode(0.5)>::v());
+    static_assert(0.46293 == CD<encode(0.46293)>::v());
+    static_assert(0.46293e3 == CD<encode(0.46293e3)>::v());
+    static_assert(0.4629334e300 == CD<encode(0.4629334e300)>::v());
+    static_assert(-1.0 == CD<encode(-1.0)>::v());
+    static_assert(1 == CD<encode(1)>::v());
+    static_assert(-2.0 == CD<encode(-2.0)>::v());
+    static_assert(-0.5 == CD<encode(-0.5)>::v());
+    static_assert(-0.46293 == CD<encode(-0.46293)>::v());
+    static_assert(-0.46293e3 == CD<encode(-0.46293e3)>::v());
+    static_assert(-0.4629334e300 == CD<encode(-0.4629334e300)>::v());
 }
 
 } // namespace adhoc2::constants
