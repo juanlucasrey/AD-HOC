@@ -109,6 +109,42 @@ auto constexpr uint64_to_double(std::uint64_t x) -> double {
     return sign ? -unsigned_result : unsigned_result;
 }
 
+template <bool positive, unsigned int End, unsigned int Count = End>
+void constexpr double_to_uint64_aux(double &x, std::uint64_t &exp) {
+    if constexpr (Count == 0) {
+        return;
+    } else {
+        // bool apply = (e >> (Count - 1)) & 1U;
+
+        constexpr std::array<double, 10> pow2{
+            2.,                     // 2^0b1
+            4.,                     // 2^0b10
+            16.,                    // 2^0b100
+            256.,                   // 2^0b1000
+            65536.,                 // 2^0b10000
+            4294967296.,            // 2^0b100000
+            1.8446744073709552e+19, // 2^0b1000000
+            3.4028236692093846e+38, // 2^0b10000000
+            1.157920892373162e+77,  // 2^0b10000000
+            1.3407807929942597e+154 // 2^0b100000000
+        };
+
+        if constexpr (positive) {
+            if (x >= pow2[Count - 1]) {
+                exp |= 0x1UL << (Count - 1);
+                x /= pow2[Count - 1];
+            }
+        } else {
+            if (x < (2. / pow2[Count - 1])) {
+                exp |= 0x1UL << (Count - 1);
+                x *= pow2[Count - 1];
+            }
+        }
+
+        double_to_uint64_aux<positive, End, Count - 1>(x, exp);
+    }
+}
+
 constexpr auto double_to_uint64(double x) -> std::uint64_t {
     // we treat 0. and -0. the same. we could have tried to treat separately
     // with
@@ -149,138 +185,17 @@ constexpr auto double_to_uint64(double x) -> std::uint64_t {
         return sign | val;
     }
 
-    std::uint64_t exp = 0x3ff;
-
-    if (x < 2. && x >= 1.) {
-        auto val =
-            static_cast<uint64_t>(x * static_cast<double>(0x10000000000000U));
-        return sign | (exp << 52U) | (val & 0xfffffffffffffU);
-    }
-
-    exp = 0;
-    constexpr std::array<double, 10> pow2{
-        2.,                     // 2^0b1
-        4.,                     // 2^0b10
-        16.,                    // 2^0b100
-        256.,                   // 2^0b1000
-        65536.,                 // 2^0b10000
-        4294967296.,            // 2^0b100000
-        1.8446744073709552e+19, // 2^0b1000000
-        3.4028236692093846e+38, // 2^0b10000000
-        1.157920892373162e+77,  // 2^0b10000000
-        1.3407807929942597e+154 // 2^0b100000000
-    };
-    if (x >= 2.) {
-        if (x >= pow2[9]) {
-            exp |= 0x1UL << 9U;
-            x /= pow2[9];
-        }
-
-        if (x >= pow2[8]) {
-            exp |= 0x1UL << 8U;
-            x /= pow2[8];
-        }
-
-        if (x >= pow2[7]) {
-            exp |= 0x1UL << 7U;
-            x /= pow2[7];
-        }
-
-        if (x >= pow2[6]) {
-            exp |= 0x1UL << 6U;
-            x /= pow2[6];
-        }
-
-        if (x >= pow2[5]) {
-            exp |= 0x1UL << 5U;
-            x /= pow2[5];
-        }
-
-        if (x >= pow2[4]) {
-            exp |= 0x1UL << 4U;
-            x /= pow2[4];
-        }
-
-        if (x >= pow2[3]) {
-            exp |= 0x1UL << 3U;
-            x /= pow2[3];
-        }
-
-        if (x >= pow2[2]) {
-            exp |= 0x1UL << 2U;
-            x /= pow2[2];
-        }
-
-        if (x >= pow2[1]) {
-            exp |= 0x1UL << 1U;
-            x /= pow2[1];
-        }
-
-        if (x >= pow2[0]) {
-            exp |= 0x1UL << 0U;
-            x /= pow2[0];
-        }
-
+    std::uint64_t exp = 0;
+    if (x >= 1.) {
+        double_to_uint64_aux<true, 10>(x, exp);
         exp += 0x3ff;
-        auto val =
-            static_cast<uint64_t>(x * static_cast<double>(0x10000000000000U));
-        return sign | (exp << 52U) | (val & 0xfffffffffffffU);
+    } else {
+        double_to_uint64_aux<false, 10>(x, exp);
+        auto exps = static_cast<std::int64_t>(exp);
+        exps = 0x3ff - exps;
+        exp = static_cast<std::uint64_t>(exps);
     }
 
-    // if (x < 1.) {
-    if (x < (2. / pow2[9])) {
-        exp |= 0x1UL << 9U;
-        x *= pow2[9];
-    }
-
-    if (x < (2. / pow2[8])) {
-        exp |= 0x1UL << 8U;
-        x *= pow2[8];
-    }
-
-    if (x < (2. / pow2[7])) {
-        exp |= 0x1UL << 7U;
-        x *= pow2[7];
-    }
-
-    if (x < (2. / pow2[6])) {
-        exp |= 0x1UL << 6U;
-        x *= pow2[6];
-    }
-
-    if (x < (2. / pow2[5])) {
-        exp |= 0x1UL << 5U;
-        x *= pow2[5];
-    }
-
-    if (x < (2. / pow2[4])) {
-        exp |= 0x1UL << 4U;
-        x *= pow2[4];
-    }
-
-    if (x < (2. / pow2[3])) {
-        exp |= 0x1UL << 3U;
-        x *= pow2[3];
-    }
-
-    if (x < (2. / pow2[2])) {
-        exp |= 0x1UL << 2U;
-        x *= pow2[2];
-    }
-
-    if (x < (2. / pow2[1])) {
-        exp |= 0x1UL << 1U;
-        x *= pow2[1];
-    }
-
-    if (x < (2. / pow2[0])) {
-        exp |= 0x1UL << 0U;
-        x *= pow2[0];
-    }
-
-    auto exps = static_cast<std::int64_t>(exp);
-    exps = 0x3ff - exps;
-    exp = static_cast<std::uint64_t>(exps);
     auto val =
         static_cast<uint64_t>(x * static_cast<double>(0x10000000000000U));
     return sign | (exp << 52U) | (val & 0xfffffffffffffU);
