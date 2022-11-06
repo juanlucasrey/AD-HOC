@@ -82,7 +82,7 @@ auto constexpr uint64_to_double(std::uint64_t x) -> double {
     // subnormal case
     if (exp == 0) {
         if (val == 0) {
-            return sign ? -0 : 0;
+            return sign ? -0. : 0.;
         }
         auto vald = static_cast<double>(val);
         double unsigned_result = vald * 4.9406564584124654e-324;

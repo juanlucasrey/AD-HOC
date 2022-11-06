@@ -408,39 +408,6 @@ auto uint64_to_double(std::uint64_t x) -> double {
 } // namespace nonc
 
 TEST(constants, double_to_uint_internet) {
-    // auto check = [](double temp) {
-    //     auto tempui = double_to_uint64_runtime(temp);
-    //     auto tempui_mine = double_to_uint64(temp);
-
-    //     auto tempuibitcheck = tempui & 0x8000000000000000;
-    //     auto tempui_minebitcheck = tempui & 0x8000000000000000;
-    //     EXPECT_EQ(tempuibitcheck, tempui_minebitcheck);
-
-    //     auto bitset1 = std::bitset<64>(tempui);
-    //     std::cout << bitset1 << std::endl;
-
-    //     std::array<char, sizeof(double)> tempui2 =
-    //         std::bit_cast<std::array<char, sizeof(double)>>(temp);
-
-    //     auto print =
-    //         concat(std::bitset<8>(static_cast<unsigned char>(tempui2[7])),
-    //                std::bitset<8>(static_cast<unsigned char>(tempui2[6])));
-    //     auto print2 = concat(
-    //         print, std::bitset<8>(static_cast<unsigned char>(tempui2[5])));
-    //     auto print3 = concat(
-    //         print2, std::bitset<8>(static_cast<unsigned char>(tempui2[4])));
-    //     auto print4 = concat(
-    //         print3, std::bitset<8>(static_cast<unsigned char>(tempui2[3])));
-    //     auto print5 = concat(
-    //         print4, std::bitset<8>(static_cast<unsigned char>(tempui2[2])));
-    //     auto print6 = concat(
-    //         print5, std::bitset<8>(static_cast<unsigned char>(tempui2[1])));
-    //     auto print7 = concat(
-    //         print6, std::bitset<8>(static_cast<unsigned char>(tempui2[0])));
-
-    //     EXPECT_EQ(bitset1, print7);
-    // };
-
     auto check = [](double temp) {
         auto tempui = double_to_uint64_runtime(temp);
         auto tempui_mine = double_to_uint64(temp);
@@ -523,61 +490,6 @@ TEST(constants, double_to_uint_internet) {
     // check(-std::numeric_limits<double>::quiet_NaN());
     // check(std::numeric_limits<double>::max()); // 9218868437227405311
     // check(std::numeric_limits<double>::min()); // 4503599627370496
-}
-
-TEST(constants, float_to_uint_internet) {
-    auto check = [](float temp) {
-        auto tempui = float_to_uint32_runtime(temp);
-        auto bitset1 = std::bitset<32>(tempui);
-        std::cout << bitset1 << std::endl;
-
-        auto tempui2 = std::bit_cast<std::array<char, sizeof(float)>>(temp);
-        // std::cout << tempui2.size() << std::endl;
-
-        auto print =
-            concat(std::bitset<8>(static_cast<unsigned char>(tempui2[3])),
-                   std::bitset<8>(static_cast<unsigned char>(tempui2[2])));
-        // auto print2 = concat(
-        //     print, std::bitset<8>(static_cast<unsigned char>(tempui2[5])));
-        // auto print3 = concat(
-        //     print2, std::bitset<8>(static_cast<unsigned char>(tempui2[4])));
-        // auto print4 = concat(
-        //     print3, std::bitset<8>(static_cast<unsigned char>(tempui2[3])));
-        // auto print5 = concat(
-        //     print, std::bitset<8>(static_cast<unsigned char>(tempui2[2])));
-        auto print6 = concat(
-            print, std::bitset<8>(static_cast<unsigned char>(tempui2[1])));
-        auto print7 = concat(
-            print6, std::bitset<8>(static_cast<unsigned char>(tempui2[0])));
-
-        std::cout << print7 << std::endl;
-
-        EXPECT_EQ(bitset1, print7);
-    };
-
-    // check(1.f);
-    // check(2.f);
-    // check(4.f);
-    // check(8.f);
-    // check(16.f);
-    // check(0.5f);
-
-    check(0.46293f);
-    // check(0.46293e3f);
-    // check(-1.f);
-    // check(-2.f);
-    // check(-0.5f);
-    // check(-0.46293f);
-    // check(-0.46293e3f);
-    // check(std::numeric_limits<float>::epsilon());
-    // check(0.f);
-    // check(-0.f);
-    // check(std::numeric_limits<float>::infinity());
-    // check(-std::numeric_limits<float>::infinity());
-    // check(std::numeric_limits<float>::quiet_NaN());
-    // check(-std::numeric_limits<float>::quiet_NaN());
-    // check(std::numeric_limits<float>::max()); // 9218868437227405311
-    // check(std::numeric_limits<float>::min()); // 4503599627370496
 }
 
 } // namespace adhoc2::constants
