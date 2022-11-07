@@ -2,7 +2,8 @@
 #define CONSTANTS_TYPE_HPP
 
 #include <base.hpp>
-#include <constants_constexpr.hpp>
+
+#include <limits>
 
 #if __cplusplus >= 202002L
 #else
