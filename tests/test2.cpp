@@ -298,8 +298,6 @@ template <class D> inline auto cdf_n(D const &x) {
 
 template <class I1, class I2, class I3, class I4>
 auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using std::cos;
-    using std::exp;
     using std::log;
     using std::sqrt;
     using namespace constants;
