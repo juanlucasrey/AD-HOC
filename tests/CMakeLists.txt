@@ -10,8 +10,6 @@ add_executable(
   test2.cpp
   rng.cpp
   mcsim.cpp
-  nttp.cpp
-  nttp_final.cpp
   singleton.cpp
   tape_input.t.cpp
 )

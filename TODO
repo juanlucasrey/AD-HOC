@@ -1,5 +1,4 @@
--make reference copy when type is already included
--rvalue references to extend lifetime of temporaries
+-replace int with unsigned int on adhoc_aux class
 -result order to avoid copying
 -high order
 -optimal order of execution for minimal array size

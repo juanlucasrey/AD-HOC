@@ -104,14 +104,15 @@ TEST(AD, BlackScholesSimulationadhoc) {
 
     auto adjvol = v * sqrt(dt);
 
-    auto add = Minus<Frac<Const<1>, Const<2>>>() * adjvol * adjvol;
+    // auto add = Minus<Frac<Const<1>, Const<2>>>() * adjvol * adjvol;
+    auto add = CD<encode(-0.5)>() * adjvol * adjvol;
 
     auto lambdafunc = [adjvol, add]<typename T1, typename T2>(T1 const &lhs,
                                                               T2 const &rhs) {
         return lhs + (rhs * adjvol + add);
     };
 
-    Const<0> init;
+    CD<encode(0)> init;
     auto result =
         accumulate(rndnmbrs.begin(), rndnmbrs.end(), init, lambdafunc);
 
@@ -142,7 +143,7 @@ TEST(AD, BlackScholesSimulationdouble) {
 
     auto adjvol = v * sqrt(dt);
 
-    auto add = Minus<Frac<Const<1>, Const<2>>>() * adjvol * adjvol;
+    auto add = CD<encode(-0.5)>() * adjvol * adjvol;
 
     auto lambdafunc = [adjvol, add]<typename T1, typename T2>(T1 const &lhs,
                                                               T2 const &rhs) {

@@ -1,70 +1,50 @@
 #ifndef CONSTANTS_TAPE_INPUT_HPP
 #define CONSTANTS_TAPE_INPUT_HPP
 
-#include <dependency.hpp>
+#include <adhoc2.hpp>
 
 #include <array>
 #include <type_traits>
 
 namespace adhoc2 {
 
-template <class... Inputs> class TapeInput {
-    std::array<double, sizeof...(Inputs)> buff{};
+namespace detail {
 
-    template <class FirstInput, class... InputsIn>
-    constexpr static auto check_all_different() -> bool {
-        if constexpr (sizeof...(InputsIn) == 0) {
-            return true;
-        } else {
-            return (!std::is_same_v<FirstInput, InputsIn> && ...) &&
-                   (!std::is_same_v<FirstInput, InputsIn const> && ...) &&
-                   check_all_different<InputsIn...>();
-        }
+template <int N, class... Vars> struct get_alias {
+    constexpr static auto call() noexcept -> auto {
+        return get_alias<N - 1, detail::adouble_aux<N - 1>, Vars...>::call();
     }
-
-    template <class FirstInput, class... InputsIn>
-    constexpr static auto check_all_independent() -> bool {
-        if constexpr (sizeof...(InputsIn) == 0) {
-            return (!depends<FirstInput, Inputs>::call() && ...);
-        } else {
-            return (!depends<FirstInput, Inputs>::call() && ...) &&
-                   check_all_independent<InputsIn...>();
-        }
-    }
-
-    TapeInput() = default;
-
-  public:
-    explicit TapeInput(Inputs... /* in */) {
-        static_assert(check_all_different<Inputs...>(),
-                      "you have redundant inputs on the tape");
-        static_assert(check_all_independent<Inputs...>(),
-                      "you have dependent inputs on the tape");
-    }
-
-    template <class ThisInput> void set(ThisInput, double in) {
-        static_assert((std::is_same_v<ThisInput, Inputs> || ...),
-                      "you are trying to set a variable that is not registered "
-                      "on the tape");
-
-        constexpr auto position_on_buff = idx_type2<ThisInput, Inputs...>();
-        this->buff[position_on_buff] = in;
-    }
-
-    template <class... InputPrev, class... InputNew>
-    friend auto addvar(TapeInput<InputPrev...>, InputNew...)
-        -> TapeInput<InputPrev..., InputNew...>;
 };
 
-template <class... InputPrev, class... InputNew>
-[[nodiscard]] auto addvar(TapeInput<InputPrev...> prevtape, InputNew...)
-    -> TapeInput<InputPrev..., InputNew...> {
-    auto res = TapeInput<InputPrev..., InputNew...>();
-
-    for (std::size_t i = 0; i < prevtape.buff.size(); ++i) {
-        res.buff[i] = prevtape.buff[i];
+template <class... Vars> struct get_alias<0, Vars...> {
+    constexpr static auto call() noexcept -> auto {
+        return std::tuple<Vars...>{};
     }
-    return res;
+};
+
+} // namespace detail
+
+template <int N> class TapeInput {
+    std::array<double, N> buff{};
+
+  public:
+    constexpr static auto getalias() -> auto;
+
+    template <int M> void set(detail::adouble_aux<M> var, double val);
+};
+
+template <int N> constexpr auto TapeInput<N>::getalias() -> auto {
+    return detail::get_alias<N>::call();
+}
+
+template <int N>
+template <int M>
+void TapeInput<N>::set(detail::adouble_aux<M> var, double val) {
+    static_assert(M < N);
+    this->buff[M] = val;
+
+    // to be removed
+    var = detail::adouble_aux<M>(val);
 }
 
 } // namespace adhoc2

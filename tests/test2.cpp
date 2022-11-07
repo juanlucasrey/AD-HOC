@@ -1,7 +1,7 @@
 #include <adhoc2.hpp>
-#include <constants_double.hpp>
 #include <constants_type.hpp>
 #include <evaluate.hpp>
+#include <tape_input.hpp>
 #include <tape_size.hpp>
 #include <utils.hpp>
 
@@ -291,8 +291,9 @@ TEST(adhoc2, derivcomplexdexp2) {
 template <class D> inline auto cdf_n(D const &x) {
     using std::erfc;
     using namespace constants;
-    return Frac<Const<1>, Const<2>>() *
-           erfc(x * Minus<Frac<Const<1>, Sqrt<Const<2>>>>());
+    constexpr double minus_one_over_root_two = -1.0 / constants::sqrt(2.0);
+    return CD<encode(0.5)>() * erfc(x * CD<encode(minus_one_over_root_two)>());
+    // return CD<0.5>() * erfc(x * CD<minus_one_over_root_two>());
 }
 
 template <class I1, class I2, class I3, class I4>
@@ -303,7 +304,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::sqrt;
     using namespace constants;
     auto totalvol = v * sqrt(T);
-    auto d1 = log(S / K) / totalvol + totalvol * Frac<Const<1>, Const<2>>();
+    auto d1 = log(S / K) / totalvol + totalvol * CD<encode(0.5)>();
     auto d2 = d1 + totalvol;
     return S * cdf_n(d1) - K * cdf_n(d2);
 }
@@ -377,6 +378,44 @@ TEST(adhoc2, BlackScholes) {
     tape[3] *= 0.14999999999999999;
     tape[3] *= (0.5 * 0.70710678118654757 / 0.5);
     std::cout << "done" << std::endl;
+}
+
+TEST(adhoc2, BlackScholes2) {
+    TapeInput<4> tape;
+    auto [S, K, v, T] = tape.getalias();
+    tape.set(S, 100.0);
+    tape.set(K, 102.0);
+    tape.set(v, 0.15);
+    tape.set(T, 0.5);
+    auto result = call_price(S, K, v, T);
+    auto derivatives =
+        evaluate<decltype(S), decltype(K), decltype(v), decltype(T)>(result);
+}
+
+template <typename... Types> struct Output { explicit Output(Types...){}; };
+template <typename... Types> struct Active { explicit Active(Types...){}; };
+
+template <int N, typename... Out, typename... In>
+auto evaluate2(TapeInput<N> /* inputvals */, Output<Out...> const & /* in */,
+               Active<In...> const & /* in */) -> bool {
+    return true;
+}
+
+TEST(adhoc2, BlackScholes3) {
+    TapeInput<4> inputs;
+    auto [S, K, v, T] = inputs.getalias();
+    inputs.set(S, 100.0);
+    inputs.set(K, 102.0);
+    inputs.set(v, 0.15);
+    inputs.set(T, 0.5);
+    auto result = call_price(S, K, v, T);
+    auto someotherval = S * K / v;
+    auto dresults =
+        evaluate2(inputs, Output(result, someotherval), Active(S, K, v));
+
+    inputs.set(K, 103.0);
+    auto dresults2 =
+        evaluate2(inputs, Output(result, someotherval), Active(S, K, v));
 }
 
 TEST(adhoc2, hastype) {

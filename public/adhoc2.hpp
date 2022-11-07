@@ -174,7 +174,7 @@ erfc_t<Input>::erfc_t(Input const &active)
 
 template <class Input> auto erfc_t<Input>::d() const -> double {
     constexpr double two_over_root_pi =
-        2.0 / constants::detail::sqrt(constants::detail::pi<double>());
+        2.0 / constants::sqrt(constants::pi<double>());
 #ifdef CODELOGGER
     std::cout << "(-std::exp(" << -this->m_active.v() << " * "
               << this->m_active.v() << ") * " << two_over_root_pi << ")";
@@ -382,7 +382,7 @@ namespace detail {
 template <int N>
 class adouble_aux : public Base<adouble_aux<N>>, public Val<adouble_aux<N>> {
   public:
-    explicit adouble_aux(double value);
+    explicit adouble_aux(double value = 0.);
 };
 
 template <int N>
