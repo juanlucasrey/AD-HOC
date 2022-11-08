@@ -174,7 +174,7 @@ erfc_t<Input>::erfc_t(Input const &active)
 
 template <class Input> auto erfc_t<Input>::d() const -> double {
     constexpr double two_over_root_pi =
-        2.0 / constants::sqrt(constants::pi<double>());
+        2.0 / constexpression::sqrt(constexpression::pi<double>());
 #ifdef CODELOGGER
     std::cout << "(-std::exp(" << -this->m_active.v() << " * "
               << this->m_active.v() << ") * " << two_over_root_pi << ")";

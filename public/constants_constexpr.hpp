@@ -3,7 +3,7 @@
 
 #include <limits>
 
-namespace adhoc2::constants {
+namespace adhoc2::constexpression {
 
 namespace detail {
 
@@ -35,6 +35,6 @@ template <class T> auto constexpr sqrt(T x) -> T {
                : std::numeric_limits<T>::quiet_NaN();
 }
 
-} // namespace adhoc2::constants
+} // namespace adhoc2::constexpression
 
 #endif // CONSTANTS_CONSTEXPR_HPP

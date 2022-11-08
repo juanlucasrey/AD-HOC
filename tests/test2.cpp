@@ -291,7 +291,8 @@ TEST(adhoc2, derivcomplexdexp2) {
 template <class D> inline auto cdf_n(D const &x) {
     using std::erfc;
     using namespace constants;
-    constexpr double minus_one_over_root_two = -1.0 / constants::sqrt(2.0);
+    constexpr double minus_one_over_root_two =
+        -1.0 / constexpression::sqrt(2.0);
     return CD<encode(0.5)>() * erfc(x * CD<encode(minus_one_over_root_two)>());
     // return CD<0.5>() * erfc(x * CD<minus_one_over_root_two>());
 }
