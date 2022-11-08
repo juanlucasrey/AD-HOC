@@ -13,40 +13,6 @@ constexpr static auto tape_size(const args<ThisType, TypesAlive...> &,
                                 const args<LeavesAlive...> &,
                                 const args<Leaves...> &) -> std::size_t;
 
-template <int N, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto
-tape_size(const args<adouble_aux<N> const, TypesAlive...> &,
-          const args<LeavesAlive...> &, const args<Leaves...> &)
-    -> std::size_t {
-
-    using this_type = adouble_aux<N> const;
-
-    // this_type should only be once in TypesAlive
-    static_assert(!has_type2<this_type, TypesAlive...>());
-
-    constexpr std::size_t curent_tape_size = has_type2<this_type, Leaves...>() +
-                                             sizeof...(TypesAlive) +
-                                             sizeof...(LeavesAlive);
-    return curent_tape_size;
-}
-
-template <typename NextType, typename... TypesAlive, typename... LeavesAlive,
-          typename... Leaves>
-constexpr static auto tape_size_aux(const args<NextType, TypesAlive...> &,
-                                    const args<LeavesAlive...> &,
-                                    const args<Leaves...> &) -> std::size_t {
-    return tape_size(args<NextType, TypesAlive...>{}, args<LeavesAlive...>{},
-                     args<Leaves...>{});
-}
-
-template <typename... LeavesAlive, typename... Leaves>
-constexpr static auto tape_size_aux(const args<> &,
-                                    const args<LeavesAlive...> &,
-                                    const args<Leaves...> &) -> std::size_t {
-    return sizeof...(LeavesAlive);
-}
-
 template <typename CurrentType, typename NextType, typename... TypesAlive,
           typename... LeavesAlive, typename... Leaves>
 constexpr static auto
@@ -69,22 +35,21 @@ tape_size_next_univariate_noskip(args<this_type, TypesAlive...> const &,
         constexpr bool is_input_new_leaf = !has_type2<Input, LeavesAlive...>();
 
         if constexpr (is_input_new_leaf) {
-            return tape_size_aux(args<TypesAlive...>{},
-                                 args<Input, LeavesAlive...>{},
-                                 args<Leaves...>{});
+            return tape_size(args<TypesAlive...>{},
+                             args<Input, LeavesAlive...>{}, args<Leaves...>{});
         } else {
-            return tape_size_aux(args<TypesAlive...>{}, args<LeavesAlive...>{},
-                                 args<Leaves...>{});
+            return tape_size(args<TypesAlive...>{}, args<LeavesAlive...>{},
+                             args<Leaves...>{});
         }
     } else {
         constexpr bool is_input_new = !has_type2<Input, TypesAlive...>();
 
         if constexpr (is_input_new) {
-            return tape_size_aux(args<Input, TypesAlive...>{},
-                                 args<LeavesAlive...>{}, args<Leaves...>{});
+            return tape_size(args<Input, TypesAlive...>{},
+                             args<LeavesAlive...>{}, args<Leaves...>{});
         } else {
-            return tape_size_aux(args<TypesAlive...>{}, args<LeavesAlive...>{},
-                                 args<Leaves...>{});
+            return tape_size(args<TypesAlive...>{}, args<LeavesAlive...>{},
+                             args<Leaves...>{});
         }
     }
 }
@@ -99,7 +64,7 @@ tape_size_next_univariate(args<this_type, TypesAlive...> const &,
         (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
-        return skip_type(args<this_type const, TypesAlive...>{},
+        return skip_type(args<this_type, TypesAlive...>{},
                          args<LeavesAlive...>{}, args<Leaves...>{});
     } else {
         return tape_size_next_univariate_noskip<Input>(
@@ -119,7 +84,7 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
         (depends<TypesAlive, this_type>::call() || ...);
 
     if constexpr (other_types_depend_on_this) {
-        return skip_type(args<this_type const, TypesAlive...>{},
+        return skip_type(args<this_type, TypesAlive...>{},
                          args<LeavesAlive...>{}, args<Leaves...>{});
     } else {
         constexpr bool input1_has_0_deriv =
@@ -139,28 +104,26 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
 
                 if constexpr (is_input1_new_leaf && is_input2_new_leaf) {
                     if constexpr (std::is_same_v<Input1, Input2>) {
-                        return tape_size_aux(args<TypesAlive...>{},
-                                             args<Input1, LeavesAlive...>{},
-                                             args<Leaves...>{});
-
-                    } else {
-                        return tape_size_aux(
-                            args<TypesAlive...>{},
-                            args<Input1, Input2, LeavesAlive...>{},
-                            args<Leaves...>{});
-                    }
-                } else if constexpr (is_input1_new_leaf) {
-                    return tape_size_aux(args<TypesAlive...>{},
+                        return tape_size(args<TypesAlive...>{},
                                          args<Input1, LeavesAlive...>{},
                                          args<Leaves...>{});
+
+                    } else {
+                        return tape_size(args<TypesAlive...>{},
+                                         args<Input1, Input2, LeavesAlive...>{},
+                                         args<Leaves...>{});
+                    }
+                } else if constexpr (is_input1_new_leaf) {
+                    return tape_size(args<TypesAlive...>{},
+                                     args<Input1, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else if constexpr (is_input2_new_leaf) {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<Input2, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<Input2, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 }
             } else if constexpr (is_input1_leaf) {
                 constexpr bool is_input1_new_leaf =
@@ -169,21 +132,19 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
                     !has_type2<Input2, TypesAlive...>();
 
                 if constexpr (is_input1_new_leaf && is_input2_new) {
-                    return tape_size_aux(args<Input2, TypesAlive...>{},
-                                         args<Input1, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input2, TypesAlive...>{},
+                                     args<Input1, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else if constexpr (is_input1_new_leaf) {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<Input1, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<Input1, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else if constexpr (is_input2_new) {
-                    return tape_size_aux(args<Input2, TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input2, TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 } else {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 }
             } else if constexpr (is_input2_leaf) {
                 constexpr bool is_input1_new =
@@ -192,21 +153,19 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
                     !has_type2<Input2, LeavesAlive...>();
 
                 if constexpr (is_input1_new && is_input2_new_leaf) {
-                    return tape_size_aux(args<Input1, TypesAlive...>{},
-                                         args<Input2, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input1, TypesAlive...>{},
+                                     args<Input2, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else if constexpr (is_input1_new) {
-                    return tape_size_aux(args<Input1, TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input1, TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 } else if constexpr (is_input2_new_leaf) {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<Input2, LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<Input2, LeavesAlive...>{},
+                                     args<Leaves...>{});
                 } else {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 }
             } else {
                 constexpr bool is_input1_new =
@@ -216,26 +175,23 @@ tape_size_next_bivariate(args<this_type, TypesAlive...> const &,
 
                 if constexpr (is_input1_new && is_input2_new) {
                     if constexpr (std::is_same_v<Input1, Input2>) {
-                        return tape_size_aux(args<Input1, TypesAlive...>{},
-                                             args<LeavesAlive...>{},
-                                             args<Leaves...>{});
+                        return tape_size(args<Input1, TypesAlive...>{},
+                                         args<LeavesAlive...>{},
+                                         args<Leaves...>{});
                     } else {
-                        return tape_size_aux(
-                            args<Input1, Input2, TypesAlive...>{},
-                            args<LeavesAlive...>{}, args<Leaves...>{});
+                        return tape_size(args<Input1, Input2, TypesAlive...>{},
+                                         args<LeavesAlive...>{},
+                                         args<Leaves...>{});
                     }
                 } else if constexpr (is_input1_new) {
-                    return tape_size_aux(args<Input1, TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input1, TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 } else if constexpr (is_input2_new) {
-                    return tape_size_aux(args<Input2, TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<Input2, TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 } else {
-                    return tape_size_aux(args<TypesAlive...>{},
-                                         args<LeavesAlive...>{},
-                                         args<Leaves...>{});
+                    return tape_size(args<TypesAlive...>{},
+                                     args<LeavesAlive...>{}, args<Leaves...>{});
                 }
             }
         } else if constexpr (input1_has_0_deriv) {
@@ -287,6 +243,30 @@ tape_size_univariate(args<this_type, TypesAlive...> const &,
         args<Leaves...>{});
 
     return std::max(curent_tape_size, next_tape_size);
+}
+
+template <typename... LeavesAlive, typename... Leaves>
+constexpr static auto tape_size(const args<> &, const args<LeavesAlive...> &,
+                                const args<Leaves...> &) -> std::size_t {
+    return sizeof...(LeavesAlive);
+}
+
+template <int N, typename... TypesAlive, typename... LeavesAlive,
+          typename... Leaves>
+constexpr static auto
+tape_size(const args<adouble_aux<N> const, TypesAlive...> &,
+          const args<LeavesAlive...> &, const args<Leaves...> &)
+    -> std::size_t {
+
+    using this_type = adouble_aux<N> const;
+
+    // this_type should only be once in TypesAlive
+    static_assert(!has_type2<this_type, TypesAlive...>());
+
+    constexpr std::size_t curent_tape_size = has_type2<this_type, Leaves...>() +
+                                             sizeof...(TypesAlive) +
+                                             sizeof...(LeavesAlive);
+    return curent_tape_size;
 }
 
 template <template <class> class Univariate, class Input,
