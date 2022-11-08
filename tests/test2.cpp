@@ -39,19 +39,6 @@ TEST(adhoc2, complexd2) {
 
 template <std::size_t N> class sometype {};
 
-TEST(adhoc2, position) {
-    double temp = 0;
-    constexpr auto res1 = has_type<int, float, double, int, unsigned int>(temp);
-    constexpr auto res2 = has_type<int, float, int, unsigned int>(temp);
-    static_assert(res1);
-    static_assert(!res2);
-    constexpr auto res3 = idx_type<int, float, double, int, unsigned int>(temp);
-    static_assert(res3 == 2);
-
-    constexpr auto res4 = has_type2<double>();
-    static_assert(!res4);
-}
-
 TEST(adhoc2, derivcomplexdexpevaluate) {
     adouble val1(1.);
     adouble val2(2.);

@@ -23,11 +23,6 @@ struct get_index<T, Tail, Ts...>
 } // namespace detail
 
 template <typename... Ts, typename T>
-constexpr auto has_type(T const & /* in */) -> bool {
-    return (std::is_same_v<T, Ts> || ...);
-};
-
-template <typename... Ts, typename T>
 constexpr auto idx_type(T const & /* in */) -> std::size_t {
     static_assert((std::is_same_v<T, Ts> || ...));
     return detail::get_index<T, Ts...>::value;
