@@ -227,6 +227,58 @@ constexpr static auto tape_size_fwd(Output const &, Leaves const &...)
                                  args<Leaves const...>{});
 }
 
+namespace detail {
+
+template <typename... TypesAlive>
+constexpr auto tape_size_fwd2(const args<TypesAlive...> &) -> std::size_t;
+
+template <> constexpr auto tape_size_fwd2(const args<> &) -> std::size_t {
+    return 0;
+}
+
+template <int N, typename... TypesAlive>
+constexpr auto tape_size_fwd2(const args<adouble_aux<N> const, TypesAlive...> &)
+    -> std::size_t {
+    return tape_size_fwd2(
+        args<TypesAlive...>{}); // we don't add anything because it's on the
+                                // input tape
+}
+
+template <typename CurrentType, typename NextType, typename... TypesAlive>
+constexpr auto skip_type2(const args<CurrentType, NextType, TypesAlive...> &)
+    -> std::size_t {
+
+    return tape_size_fwd2(
+        args<NextType,
+             TypesAlive...>{}); // current type will come up again because it is
+                                // included on one of the other types
+}
+
+template <template <class...> class Xvariate, class... Input,
+          typename... TypesAlive>
+constexpr auto
+tape_size_fwd2(const args<Xvariate<Input...> const, TypesAlive...> &)
+    -> std::size_t {
+    using this_type = Xvariate<Input...>;
+    static_assert(!has_type2<this_type, TypesAlive...>());
+
+    constexpr bool other_types_depend_on_this =
+        (depends<TypesAlive, this_type>::call() || ...);
+
+    if constexpr (other_types_depend_on_this) {
+        return skip_type2(args<this_type const, TypesAlive...>{});
+    } else {
+        return tape_size_fwd2(args<Input..., TypesAlive...>{}) + 1;
+    }
+}
+
+} // namespace detail
+
+template <class Output>
+constexpr auto tape_size_fwd2(Output const &) -> std::size_t {
+    return detail::tape_size_fwd2(args<Output const>{});
+}
+
 } // namespace adhoc2
 
 #endif // TAPE_SIZE_FWD_HPP
