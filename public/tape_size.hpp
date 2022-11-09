@@ -35,12 +35,25 @@ tape_size_univariate(args<this_type, TypesAlive...> const &,
     }
 }
 
-template <class Input1, class Input2, class this_type, typename... TypesAlive,
-          typename... LeavesAlive, typename... Leaves>
+template <class Input, template <class> class Univariate,
+          typename... TypesAlive, typename... LeavesAlive, typename... Leaves>
 constexpr static auto
-tape_size_bivariate(args<this_type, TypesAlive...> const &,
-                    args<LeavesAlive...> const &, args<Leaves...> const &)
+tape_size_xvariate(args<Univariate<Input>, TypesAlive...> const &,
+                   args<LeavesAlive...> const &, args<Leaves...> const &)
     -> std::size_t {
+    using this_type = Univariate<Input>;
+    return tape_size_univariate<Input>(args<this_type, TypesAlive...>{},
+                                       args<LeavesAlive...>{},
+                                       args<Leaves...>{});
+}
+
+template <class Input1, class Input2, template <class, class> class Bivariate,
+          typename... TypesAlive, typename... LeavesAlive, typename... Leaves>
+constexpr static auto
+tape_size_xvariate(args<Bivariate<Input1, Input2>, TypesAlive...> const &,
+                   args<LeavesAlive...> const &, args<Leaves...> const &)
+    -> std::size_t {
+    using this_type = Bivariate<Input1, Input2>;
     constexpr bool input1_has_0_deriv =
         !equal_or_depends_many<Input1, Leaves...>();
     constexpr bool input2_has_0_deriv =
@@ -192,20 +205,10 @@ tape_size(args<Xvariate<Input...> const, TypesAlive...> const &,
                       args<LeavesAlive...>{}, args<Leaves...>{});
         return std::max(curent_tape_size, next_tape_size);
     } else {
-        static_assert(sizeof...(Input) == 1 || sizeof...(Input) == 2);
-        if constexpr (sizeof...(Input) == 1) {
-            constexpr std::size_t next_tape_size =
-                tape_size_univariate<Input...>(args<this_type, TypesAlive...>{},
-                                               args<LeavesAlive...>{},
-                                               args<Leaves...>{});
-            return std::max(curent_tape_size, next_tape_size);
-        } else {
-            constexpr std::size_t next_tape_size =
-                tape_size_bivariate<Input...>(args<this_type, TypesAlive...>{},
-                                              args<LeavesAlive...>{},
-                                              args<Leaves...>{});
-            return std::max(curent_tape_size, next_tape_size);
-        }
+        constexpr std::size_t next_tape_size =
+            tape_size_xvariate(args<this_type, TypesAlive...>{},
+                               args<LeavesAlive...>{}, args<Leaves...>{});
+        return std::max(curent_tape_size, next_tape_size);
     }
 }
 
