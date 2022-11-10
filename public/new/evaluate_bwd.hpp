@@ -321,13 +321,13 @@ inline void evaluate_bwd_bivariate_noskip(
 
             if constexpr (is_input1_new_leaf && is_input2_new) {
                 static_assert(sizeof...(IdxAvailable) > 0);
-                // evaluate_bivariate_noskip_newloc<Input1, Input2>(
-                //     args<LeavesAlive...>{}, args<Leaves...>{},
-                //     std::index_sequence<IdxTypesAliveCurrent,
-                //                         IdxTypesAlive...>{},
-                //     std::index_sequence<IdxLeavesAlive...>{},
-                //     std::index_sequence<IdxAvailable...>{}, tape, in,
-                //     next...);
+                evaluate_bwd_bivariate_noskip_new_loc(
+                    tape, in, intermediate, args<this_type, TypesAlive...>{},
+                    args<LeavesAlive...>{}, args<Leaves...>{},
+                    std::index_sequence<IdxTypesAliveCurrent,
+                                        IdxTypesAlive...>{},
+                    std::index_sequence<IdxLeavesAlive...>{},
+                    std::index_sequence<IdxAvailable...>{});
             } else if constexpr (is_input1_new_leaf) {
                 constexpr auto position = idx_type2<Input2, TypesAlive...>();
                 constexpr auto position_on_tape =
@@ -399,13 +399,13 @@ inline void evaluate_bwd_bivariate_noskip(
 
             if constexpr (is_input1_new && is_input2_new_leaf) {
                 static_assert(sizeof...(IdxAvailable) > 0);
-                // evaluate_bivariate_noskip_newloc<Input1, Input2>(
-                //     args<LeavesAlive...>{}, args<Leaves...>{},
-                //     std::index_sequence<IdxTypesAliveCurrent,
-                //                         IdxTypesAlive...>{},
-                //     std::index_sequence<IdxLeavesAlive...>{},
-                //     std::index_sequence<IdxAvailable...>{}, tape, in,
-                //     next...);
+                evaluate_bwd_bivariate_noskip_new_loc(
+                    tape, in, intermediate, args<this_type, TypesAlive...>{},
+                    args<LeavesAlive...>{}, args<Leaves...>{},
+                    std::index_sequence<IdxTypesAliveCurrent,
+                                        IdxTypesAlive...>{},
+                    std::index_sequence<IdxLeavesAlive...>{},
+                    std::index_sequence<IdxAvailable...>{});
             } else if constexpr (is_input1_new) {
                 constexpr auto position = idx_type2<Input2, LeavesAlive...>();
                 constexpr auto position_on_tape =
@@ -489,13 +489,14 @@ inline void evaluate_bwd_bivariate_noskip(
                     //          in.input1(), next...);
                 } else {
                     static_assert(sizeof...(IdxAvailable) > 0);
-                    // evaluate_bivariate_noskip_newloc<Input1, Input2>(
-                    //     args<LeavesAlive...>{}, args<Leaves...>{},
-                    //     std::index_sequence<IdxTypesAliveCurrent,
-                    //                         IdxTypesAlive...>{},
-                    //     std::index_sequence<IdxLeavesAlive...>{},
-                    //     std::index_sequence<IdxAvailable...>{}, tape, in,
-                    //     next...);
+                    evaluate_bwd_bivariate_noskip_new_loc(
+                        tape, in, intermediate,
+                        args<this_type, TypesAlive...>{},
+                        args<LeavesAlive...>{}, args<Leaves...>{},
+                        std::index_sequence<IdxTypesAliveCurrent,
+                                            IdxTypesAlive...>{},
+                        std::index_sequence<IdxLeavesAlive...>{},
+                        std::index_sequence<IdxAvailable...>{});
                 }
 
             } else if constexpr (is_input1_new) {
