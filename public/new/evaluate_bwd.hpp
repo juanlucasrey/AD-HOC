@@ -281,12 +281,6 @@ inline void evaluate_bwd_bivariate_noskip(
                                       get2(in, intermediate, Input2{}));
                     tape[position_on_tape] +=
                         2 * tape[IdxTypesAliveCurrent] * d1;
-                    evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
-                                 args<LeavesAlive...>{}, args<Leaves...>{},
-                                 std::index_sequence<IdxTypesAlive...>{},
-                                 std::index_sequence<IdxLeavesAlive...>{},
-                                 std::index_sequence<IdxTypesAliveCurrent,
-                                                     IdxAvailable...>{});
                 } else {
                     constexpr auto position1 =
                         idx_type2<Input1, LeavesAlive...>();
@@ -306,14 +300,13 @@ inline void evaluate_bwd_bivariate_noskip(
                                       get2(in, intermediate, Input2{}));
                     tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * d1;
                     tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * d2;
-                    // TODO same as before, refactor
-                    evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
-                                 args<LeavesAlive...>{}, args<Leaves...>{},
-                                 std::index_sequence<IdxTypesAlive...>{},
-                                 std::index_sequence<IdxLeavesAlive...>{},
-                                 std::index_sequence<IdxTypesAliveCurrent,
-                                                     IdxAvailable...>{});
                 }
+                evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
+                             args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{});
             }
         } else if constexpr (is_input1_leaf) {
             constexpr bool is_input1_new_leaf =
@@ -559,12 +552,6 @@ inline void evaluate_bwd_bivariate_noskip(
                                       get2(in, intermediate, Input2{}));
                     tape[position_on_tape] +=
                         2 * tape[IdxTypesAliveCurrent] * d1;
-                    evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
-                                 args<LeavesAlive...>{}, args<Leaves...>{},
-                                 std::index_sequence<IdxTypesAlive...>{},
-                                 std::index_sequence<IdxLeavesAlive...>{},
-                                 std::index_sequence<IdxTypesAliveCurrent,
-                                                     IdxAvailable...>{});
                 } else {
                     constexpr auto position1 =
                         idx_type2<Input1, TypesAlive...>();
@@ -584,14 +571,13 @@ inline void evaluate_bwd_bivariate_noskip(
                                       get2(in, intermediate, Input2{}));
                     tape[position1_on_tape] += tape[IdxTypesAliveCurrent] * d1;
                     tape[position2_on_tape] += tape[IdxTypesAliveCurrent] * d2;
-                    // TODO same as before
-                    evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
-                                 args<LeavesAlive...>{}, args<Leaves...>{},
-                                 std::index_sequence<IdxTypesAlive...>{},
-                                 std::index_sequence<IdxLeavesAlive...>{},
-                                 std::index_sequence<IdxTypesAliveCurrent,
-                                                     IdxAvailable...>{});
                 }
+                evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
+                             args<LeavesAlive...>{}, args<Leaves...>{},
+                             std::index_sequence<IdxTypesAlive...>{},
+                             std::index_sequence<IdxLeavesAlive...>{},
+                             std::index_sequence<IdxTypesAliveCurrent,
+                                                 IdxAvailable...>{});
             }
         }
     } else if constexpr (input1_has_0_deriv) {
