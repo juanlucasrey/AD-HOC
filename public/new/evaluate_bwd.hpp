@@ -152,33 +152,31 @@ inline void evaluate_bwd_bivariate_noskip_new_loc(
     } else if constexpr (is_input1_leaf) {
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * d1;
         tape[IdxTypesAliveCurrent] *= d2;
-        // evaluate(args<Input1, LeavesAlive...>{}, args<Leaves...>{},
-        //          std::index_sequence<IdxTypesAliveCurrent,
-        //          IdxTypesAlive...>{},
-        //          std::index_sequence<IdxAvailableCurrent,
-        //          IdxLeavesAlive...>{},
-        //          std::index_sequence<IdxAvailable...>{}, tape, in.input2(),
-        //          next...);
+        evaluate_bwd(
+            tape, in, intermediate, args<Input2, TypesAlive...>{},
+            args<Input1, LeavesAlive...>{}, args<Leaves...>{},
+            std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...>{},
+            std::index_sequence<IdxAvailableCurrent, IdxLeavesAlive...>{},
+            std::index_sequence<IdxAvailable...>{});
     } else if constexpr (is_input2_leaf) {
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * d2;
         tape[IdxTypesAliveCurrent] *= d1;
-        // evaluate(args<Input2, LeavesAlive...>{}, args<Leaves...>{},
-        //          std::index_sequence<IdxTypesAliveCurrent,
-        //          IdxTypesAlive...>{},
-        //          std::index_sequence<IdxAvailableCurrent,
-        //          IdxLeavesAlive...>{},
-        //          std::index_sequence<IdxAvailable...>{}, tape, in.input1(),
-        //          next...);
+        evaluate_bwd(
+            tape, in, intermediate, args<Input1, TypesAlive...>{},
+            args<Input2, LeavesAlive...>{}, args<Leaves...>{},
+            std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...>{},
+            std::index_sequence<IdxAvailableCurrent, IdxLeavesAlive...>{},
+            std::index_sequence<IdxAvailable...>{});
     } else {
         tape[IdxAvailableCurrent] = tape[IdxTypesAliveCurrent] * d2;
         tape[IdxTypesAliveCurrent] *= d1;
-        // evaluate(args<LeavesAlive...>{}, args<Leaves...>{},
-        //          std::index_sequence<IdxTypesAliveCurrent,
-        //          IdxAvailableCurrent,
-        //                              IdxTypesAlive...>{},
-        //          std::index_sequence<IdxLeavesAlive...>{},
-        //          std::index_sequence<IdxAvailable...>{}, tape, in.input1(),
-        //          in.input2(), next...);
+        evaluate_bwd(
+            tape, in, intermediate, args<Input1, Input2, TypesAlive...>{},
+            args<LeavesAlive...>{}, args<Leaves...>{},
+            std::index_sequence<IdxTypesAliveCurrent, IdxAvailableCurrent,
+                                IdxTypesAlive...>{},
+            std::index_sequence<IdxLeavesAlive...>{},
+            std::index_sequence<IdxAvailable...>{});
     }
 }
 
