@@ -66,17 +66,36 @@ TEST(NewAdhoc, BSAdhoc) {
     // auto derivatives = evaluate_bwd(tape, intermediate_tape, result2);
 }
 
-TEST(NewAdhoc, Univariate) {
+TEST(NewAdhoc, UnivariateExp) {
 
     auto tape = CreateTapeInitial<1>();
     auto [S] = tape.getalias();
     tape.set(S, 100.0);
-    // tape.set(K, 102.0);
-    // tape.set(v, 0.15);
-    // tape.set(T, 0.5);
+
     auto result_adhoc = exp(S);
-    constexpr auto f = fwd_calc_order_t(result_adhoc);
-    std::cout << type_name<decltype(f)>() << std::endl;
+    // constexpr auto f = fwd_calc_order_t(result_adhoc);
+    // std::cout << type_name<decltype(f)>() << std::endl;
+
+    auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
+    evaluate_fwd(tape, intermediate_tape);
+
+    double result2 = intermediate_tape.get(result_adhoc);
+    EXPECT_EQ(result2, std::exp(100.0));
+
+    auto derivatives =
+        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, S);
+}
+
+TEST(NewAdhoc, BivariateMult) {
+
+    auto tape = CreateTapeInitial<2>();
+    auto [v1, v2] = tape.getalias();
+    tape.set(v1, 100.0);
+    tape.set(v2, 10.0);
+
+    auto result_adhoc = v1 * v2;
+    // constexpr auto f = fwd_calc_order_t(result_adhoc);
+    // std::cout << type_name<decltype(f)>() << std::endl;
 
     auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
     evaluate_fwd(tape, intermediate_tape);
@@ -84,10 +103,10 @@ TEST(NewAdhoc, Univariate) {
     // auto final_tape = CreateTapeFinal(S, K, v, T);
 
     double result2 = intermediate_tape.get(result_adhoc);
-    EXPECT_EQ(result2, std::exp(100.0));
+    EXPECT_EQ(result2, 1000.0);
 
     auto derivatives =
-        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, S);
+        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, v1, v2);
 }
 
 } // namespace adhoc
