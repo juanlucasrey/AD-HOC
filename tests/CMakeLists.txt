@@ -13,6 +13,7 @@ add_executable(
   mcsim.cpp
   singleton.cpp
   tape_input.t.cpp
+  new/BS.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

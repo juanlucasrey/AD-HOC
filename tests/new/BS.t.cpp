@@ -49,8 +49,6 @@ TEST(NewAdhoc, BSAdhoc) {
     tape.set(v, 0.15);
     tape.set(T, 0.5);
     auto result_adhoc = call_price(S, K, v, T);
-    constexpr auto f = fwd_calc_order_t(result_adhoc);
-    std::cout << type_name<decltype(f)>() << std::endl;
 
     auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
     evaluate_fwd(tape, intermediate_tape);
@@ -60,10 +58,8 @@ TEST(NewAdhoc, BSAdhoc) {
     double result2 = intermediate_tape.get(result_adhoc);
     EXPECT_EQ(result2, result);
 
-    // auto derivatives =
-    //     evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, S, K, v, T);
-
-    // auto derivatives = evaluate_bwd(tape, intermediate_tape, result2);
+    auto derivatives =
+        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, S, K, v, T);
 }
 
 TEST(NewAdhoc, UnivariateExp) {
@@ -73,8 +69,6 @@ TEST(NewAdhoc, UnivariateExp) {
     tape.set(S, 100.0);
 
     auto result_adhoc = exp(S);
-    // constexpr auto f = fwd_calc_order_t(result_adhoc);
-    // std::cout << type_name<decltype(f)>() << std::endl;
 
     auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
     evaluate_fwd(tape, intermediate_tape);
