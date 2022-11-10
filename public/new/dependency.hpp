@@ -1,5 +1,5 @@
-#ifndef NEW_DEPENDENCY3_HPP
-#define NEW_DEPENDENCY3_HPP
+#ifndef NEW_DEPENDENCY_HPP
+#define NEW_DEPENDENCY_HPP
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
@@ -226,4 +226,4 @@ inline constexpr auto equal_or_depends_many() noexcept -> bool {
 
 } // namespace adhoc
 
-#endif // NEW_DEPENDENCY3_HPP
+#endif // NEW_DEPENDENCY_HPP

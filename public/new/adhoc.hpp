@@ -15,6 +15,9 @@ namespace adhoc {
 
 template <class Input> struct exp_t : public Base<exp_t<Input>> {
     static inline auto v(double in) -> double { return std::exp(in); }
+    static inline auto d(double thisv, double /* inputv */) -> double {
+        return thisv;
+    }
 };
 
 template <class Derived>

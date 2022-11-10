@@ -1,5 +1,5 @@
-#ifndef NEW_CONSTANTS_TYPE3_HPP
-#define NEW_CONSTANTS_TYPE3_HPP
+#ifndef NEW_CONSTANTS_TYPE_HPP
+#define NEW_CONSTANTS_TYPE_HPP
 
 #include "base.hpp"
 
@@ -248,4 +248,4 @@ struct CD : public Base<CD<D>>, public ConstBase<CD<D>> {
 
 } // namespace adhoc::constants
 
-#endif // NEW_CONSTANTS_TYPE3_HPP
+#endif // NEW_CONSTANTS_TYPE_HPP

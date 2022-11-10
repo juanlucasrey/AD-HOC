@@ -12,26 +12,27 @@ namespace detail {
 
 template <class Val, class... InputTypes, class... IntermediateTypes>
 inline auto get(TapeIntermediate<InputTypes...> const &in,
-                TapeIntermediate<IntermediateTypes...> &intermediate) -> double;
+                TapeIntermediate<IntermediateTypes...> const &intermediate)
+    -> double;
 
 template <std::uint64_t D, class... InputTypes, class... IntermediateTypes>
 inline auto get(TapeIntermediate<InputTypes...> const &,
-                TapeIntermediate<IntermediateTypes...> &, constants::CD<D> &)
-    -> double {
+                TapeIntermediate<IntermediateTypes...> const &,
+                constants::CD<D> &) -> double {
     return constants::CD<D>::v();
 }
 
 template <std::uint64_t D, class... InputTypes, class... IntermediateTypes>
 inline auto get(TapeIntermediate<InputTypes...> const &,
-                TapeIntermediate<IntermediateTypes...> &,
+                TapeIntermediate<IntermediateTypes...> const &,
                 constants::CD<D> const &) -> double {
     return constants::CD<D>::v();
 }
 
 template <class Input, class... InputTypes, class... IntermediateTypes>
 inline auto get(TapeIntermediate<InputTypes...> const &in,
-                TapeIntermediate<IntermediateTypes...> &intermediate, Input &)
-    -> double {
+                TapeIntermediate<IntermediateTypes...> const &intermediate,
+                Input &) -> double {
     constexpr bool is_input = has_type2<Input, InputTypes...>();
     if constexpr (is_input) {
         return in.get(Input{});

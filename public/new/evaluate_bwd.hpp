@@ -9,6 +9,37 @@
 namespace adhoc {
 namespace detail {
 
+template <class Val, class... InputTypes, class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &in,
+                 TapeIntermediate<IntermediateTypes...> const &intermediate)
+    -> double;
+
+template <std::uint64_t D, class... InputTypes, class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &,
+                 TapeIntermediate<IntermediateTypes...> const &,
+                 constants::CD<D> &) -> double {
+    return constants::CD<D>::v();
+}
+
+template <std::uint64_t D, class... InputTypes, class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &,
+                 TapeIntermediate<IntermediateTypes...> const &,
+                 constants::CD<D> const &) -> double {
+    return constants::CD<D>::v();
+}
+
+template <class Input, class... InputTypes, class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &in,
+                 TapeIntermediate<IntermediateTypes...> const &intermediate,
+                 Input &) -> double {
+    constexpr bool is_input = has_type2<Input, InputTypes...>();
+    if constexpr (is_input) {
+        return in.get(Input{});
+    } else {
+        return intermediate.get(Input{});
+    }
+}
+
 // template <std::size_t I, std::size_t M, std::size_t N, typename...
 // LeavesAlive,
 //           std::size_t... IdxLeavesAlive>
@@ -1048,16 +1079,72 @@ namespace detail {
 template <class... InputTypes, class... IntermediateTypes, std::size_t N,
           template <class> class Univariate, class Input,
           typename... TypesAlive, typename... LeavesAlive, typename... Leaves,
-          std::size_t... IdxTypesAlive, std::size_t... IdxLeavesAlive,
-          std::size_t... IdxAvailable>
+          std::size_t IdxTypesAliveCurrent, std::size_t... IdxTypesAlive,
+          std::size_t... IdxLeavesAlive, std::size_t... IdxAvailable>
 inline void evaluate_bwd_univariate_noskip(
     std::array<double, N> &tape, TapeIntermediate<InputTypes...> const &in,
     TapeIntermediate<IntermediateTypes...> const &intermediate,
     args<Univariate<Input> const, TypesAlive...> const &,
     args<LeavesAlive...> const &, args<Leaves...> const &,
-    std::index_sequence<IdxTypesAlive...> const &,
+    std::index_sequence<IdxTypesAliveCurrent, IdxTypesAlive...> const &,
     std::index_sequence<IdxLeavesAlive...> const &,
-    std::index_sequence<IdxAvailable...> const &) {}
+    std::index_sequence<IdxAvailable...> const &) {
+
+    using this_type = Univariate<Input> const;
+
+    double const d = this_type::d(get2(in, intermediate, this_type{}),
+                                  get2(in, intermediate, Input{}));
+
+    constexpr bool is_input_leaf = has_type2<Input, Leaves...>();
+    if constexpr (is_input_leaf) {
+        constexpr bool is_input_new_leaf = !has_type2<Input, LeavesAlive...>();
+
+        if constexpr (is_input_new_leaf) {
+            tape[IdxTypesAliveCurrent] *= d;
+            // evaluate(
+            //     args<Input, LeavesAlive...>{}, args<Leaves...>{},
+            //     std::index_sequence<IdxTypesAlive...>{},
+            //     std::index_sequence<IdxTypesAliveCurrent,
+            //     IdxLeavesAlive...>{}, std::index_sequence<IdxAvailable...>{},
+            //     tape, next...);
+        } else {
+            constexpr auto position = idx_type2<Input, LeavesAlive...>();
+            constexpr auto position_on_tape =
+                Get<position, IdxLeavesAlive...>::value;
+            tape[position_on_tape] += tape[IdxTypesAliveCurrent] * d;
+            // evaluate(
+            //     args<LeavesAlive...>{}, args<Leaves...>{},
+            //     std::index_sequence<IdxTypesAlive...>{},
+            //     std::index_sequence<IdxLeavesAlive...>{},
+            //     std::index_sequence<IdxTypesAliveCurrent, IdxAvailable...>{},
+            //     tape, next...);
+        }
+    } else {
+        constexpr bool is_input_new = !has_type2<Input, TypesAlive...>();
+
+        if constexpr (is_input_new) {
+            tape[IdxTypesAliveCurrent] *= d;
+            // evaluate(
+            //     args<LeavesAlive...>{}, args<Leaves...>{},
+            //     std::index_sequence<IdxTypesAliveCurrent,
+            //     IdxTypesAlive...>{},
+            //     std::index_sequence<IdxLeavesAlive...>{},
+            //     std::index_sequence<IdxAvailable...>{}, tape, in.input(),
+            //     next...);
+        } else {
+            constexpr auto position = idx_type2<Input, TypesAlive...>();
+            constexpr auto position_on_tape =
+                Get<position, IdxTypesAlive...>::value;
+            tape[position_on_tape] += tape[IdxTypesAliveCurrent] * d;
+            // evaluate(
+            //     args<LeavesAlive...>{}, args<Leaves...>{},
+            //     std::index_sequence<IdxTypesAlive...>{},
+            //     std::index_sequence<IdxLeavesAlive...>{},
+            //     std::index_sequence<IdxTypesAliveCurrent, IdxAvailable...>{},
+            //     tape, next...);
+        }
+    }
+}
 
 template <class... InputTypes, class... IntermediateTypes, std::size_t N,
           template <class> class Univariate, class Input,
