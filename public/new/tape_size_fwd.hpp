@@ -19,6 +19,26 @@ template <> constexpr auto fwd_calc_order_t(const std::tuple<> &) {
     return std::tuple<>{};
 }
 
+#if __cplusplus >= 202002L
+
+template <constants::detail::AsTemplateArg<double> D, typename... TypesAlive>
+constexpr auto
+fwd_calc_order_t(const std::tuple<constants::CD<D> const, TypesAlive...> &) {
+    return fwd_calc_order_t(
+        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
+                                      // the input tape
+}
+
+template <constants::detail::AsTemplateArg<double> D, typename... TypesAlive>
+constexpr auto
+fwd_calc_order_t(const std::tuple<constants::CD<D>, TypesAlive...> &) {
+    return fwd_calc_order_t(
+        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
+                                      // the input tape
+}
+
+#else
+
 template <std::uint64_t D, typename... TypesAlive>
 constexpr auto
 fwd_calc_order_t(const std::tuple<constants::CD<D> const, TypesAlive...> &) {
@@ -34,6 +54,8 @@ fwd_calc_order_t(const std::tuple<constants::CD<D>, TypesAlive...> &) {
         std::tuple<TypesAlive...>{}); // we don't add anything because it's on
                                       // the input tape
 }
+
+#endif
 
 template <std::size_t N, typename... TypesAlive>
 constexpr auto

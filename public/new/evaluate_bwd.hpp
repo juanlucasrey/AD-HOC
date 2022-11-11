@@ -13,6 +13,26 @@ inline auto get2(TapeIntermediate<InputTypes...> const &in,
                  TapeIntermediate<IntermediateTypes...> const &intermediate)
     -> double;
 
+#if __cplusplus >= 202002L
+
+template <constants::detail::AsTemplateArg<double> D, class... InputTypes,
+          class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &,
+                 TapeIntermediate<IntermediateTypes...> const &,
+                 constants::CD<D> &) -> double {
+    return constants::CD<D>::v();
+}
+
+template <constants::detail::AsTemplateArg<double> D, class... InputTypes,
+          class... IntermediateTypes>
+inline auto get2(TapeIntermediate<InputTypes...> const &,
+                 TapeIntermediate<IntermediateTypes...> const &,
+                 constants::CD<D> const &) -> double {
+    return constants::CD<D>::v();
+}
+
+#else
+
 template <std::uint64_t D, class... InputTypes, class... IntermediateTypes>
 inline auto get2(TapeIntermediate<InputTypes...> const &,
                  TapeIntermediate<IntermediateTypes...> const &,
@@ -26,6 +46,8 @@ inline auto get2(TapeIntermediate<InputTypes...> const &,
                  constants::CD<D> const &) -> double {
     return constants::CD<D>::v();
 }
+
+#endif
 
 template <class Input, class... InputTypes, class... IntermediateTypes>
 inline auto get2(TapeIntermediate<InputTypes...> const &in,

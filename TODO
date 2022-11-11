@@ -1,3 +1,4 @@
+-bivariate with 2 times same arg becomes univariate
 -replace int with unsigned int on adhoc_aux class
 -result order to avoid copying
 -high order
