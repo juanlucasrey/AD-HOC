@@ -5,8 +5,7 @@
 
 #include <limits>
 
-#if __cplusplus >= 202002L
-#else
+#if !(__cplusplus >= 202002L)
 #include <array>
 #include <cstdint>
 #endif

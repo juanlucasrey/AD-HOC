@@ -5,10 +5,10 @@
 
 namespace adhoc {
 
-template <class Input1, class Input2> class add_t;
-template <class Input1, class Input2> class sub_t;
-template <class Input1, class Input2> class mul_t;
-template <class Input1, class Input2> class div_t;
+template <class Input1, class Input2> struct add_t;
+template <class Input1, class Input2> struct sub_t;
+template <class Input1, class Input2> struct mul_t;
+template <class Input1, class Input2> struct div_t;
 
 // it would be nice to add operator to constexpr float types in this class
 // however this proposal would have to pass
