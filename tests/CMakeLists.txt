@@ -12,6 +12,7 @@ add_executable(
   new/adhoc.t.cpp
   new/constants.t.cpp
   new/static_tape.t.cpp
+  new/opencl.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -38,10 +39,12 @@ endif()
 target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
 target_link_directories(adhoc_test SYSTEM PUBLIC /usr/local/lib)
 
+find_package(OpenCL REQUIRED)
 target_link_libraries(
   adhoc_test
   gtest
   gtest_main
+  "-framework OpenCL"
 )
 
 include(GoogleTest)
