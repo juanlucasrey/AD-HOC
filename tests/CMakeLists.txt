@@ -4,12 +4,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(
   adhoc_test
-  tape_size_fwd.t.cpp
   new/BS.t.cpp
   new/adhoc.t.cpp
   new/constants.t.cpp
   new/static_tape.t.cpp
   new/tape_size_bwd.t.cpp
+  new/tape_size_fwd.t.cpp
+  new/evaluate_fwd.t.cpp
   new/mcsim.t.cpp
   new/opencl.t.cpp
 )
