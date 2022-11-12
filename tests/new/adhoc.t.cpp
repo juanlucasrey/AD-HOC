@@ -11,6 +11,51 @@
 
 namespace adhoc {
 
+TEST(AdHoc, UnivariateExp) {
+
+    auto tape = CreateTapeInitial<1>();
+    auto [S] = tape.getalias();
+    tape.set(S, 100.0);
+
+    auto result_adhoc = exp(S);
+
+    auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
+    evaluate_fwd(tape, intermediate_tape);
+
+    double result2 = intermediate_tape.get(result_adhoc);
+    const double exp100 = std::exp(100.0);
+    EXPECT_EQ(result2, exp100);
+
+    auto derivatives =
+        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, S);
+
+    static_assert(derivatives.size() == 1);
+    EXPECT_EQ(derivatives[0], exp100);
+}
+
+TEST(AdHoc, BivariateMult) {
+
+    auto tape = CreateTapeInitial<2>();
+    auto [v1, v2] = tape.getalias();
+    tape.set(v1, 100.0);
+    tape.set(v2, 10.0);
+
+    auto result_adhoc = v1 * v2;
+
+    auto intermediate_tape = CreateTapeIntermediate(result_adhoc);
+    evaluate_fwd(tape, intermediate_tape);
+
+    double result2 = intermediate_tape.get(result_adhoc);
+    EXPECT_EQ(result2, 1000.0);
+
+    auto derivatives =
+        evaluate_bwd(tape, intermediate_tape, result_adhoc, 1.0, v1, v2);
+
+    static_assert(derivatives.size() == 2);
+    EXPECT_EQ(derivatives[0], 10.0);
+    EXPECT_EQ(derivatives[1], 100.0);
+}
+
 TEST(AdHoc, ComplexEvaluate) {
     auto tape = CreateTapeInitial<5>();
     auto [val1, val2, val3, val4, val5] = tape.getalias();
@@ -35,8 +80,6 @@ TEST(AdHoc, ComplexEvaluate) {
     auto derivatives =
         evaluate_bwd(tape, intermediate_tape, res, 1.0, val1, val2, val3);
 
-    // auto derivatives =
-    //     evaluate<decltype(val1), decltype(val2), decltype(val3)>(res);
     static_assert(derivatives.size() == 3);
     EXPECT_NEAR(derivatives[0], 412.44979516578081, 1e-13);
     EXPECT_NEAR(derivatives[1], 1588.4738734117946, 1e-13);
