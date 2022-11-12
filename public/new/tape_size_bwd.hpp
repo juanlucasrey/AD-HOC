@@ -219,7 +219,7 @@ tape_size(args<Xvariate<Input...> const, TypesAlive...> const &,
 // simple variable output because all other cases are xvariate functions,
 // and, if an adhoc type is to be found, it's either an active leaf or
 // passive leaf (which are never treated on their own)
-template <int N, typename... Leaves>
+template <std::size_t N, typename... Leaves>
 constexpr static auto tape_size(const args<adouble_aux<N> const> &,
                                 const args<> &, const args<Leaves...> &)
     -> std::size_t {
