@@ -1,4 +1,4 @@
-#include <new/tape_size_fwd.hpp>
+#include <tape_size_fwd.hpp>
 
 #include <gtest/gtest.h>
 

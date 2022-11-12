@@ -1,9 +1,9 @@
-#include <new/adhoc.hpp>
-#include <new/constants_constexpr.hpp>
-#include <new/constants_type.hpp>
-#include <new/evaluate_bwd.hpp>
-#include <new/evaluate_fwd.hpp>
-#include <new/tape_static.hpp>
+#include <adhoc.hpp>
+#include <constants_constexpr.hpp>
+#include <constants_type.hpp>
+#include <evaluate_bwd.hpp>
+#include <evaluate_fwd.hpp>
+#include <tape_static.hpp>
 
 #include "../type_name.hpp"
 

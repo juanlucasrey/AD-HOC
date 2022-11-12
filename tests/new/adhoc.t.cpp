@@ -1,11 +1,11 @@
-#include <new/adhoc.hpp>
-#include <new/constants_type.hpp>
-#include <new/evaluate_bwd.hpp>
-#include <new/evaluate_fwd.hpp>
-#include <new/tape_size_bwd.hpp>
-#include <new/tape_size_fwd.hpp>
-#include <new/tape_static.hpp>
-#include <new/utils.hpp>
+#include <adhoc.hpp>
+#include <constants_type.hpp>
+#include <evaluate_bwd.hpp>
+#include <evaluate_fwd.hpp>
+#include <tape_size_bwd.hpp>
+#include <tape_size_fwd.hpp>
+#include <tape_static.hpp>
+#include <utils.hpp>
 
 #include <gtest/gtest.h>
 

@@ -1,7 +1,7 @@
-#include <new/adhoc.hpp>
-#include <new/tape_size_bwd.hpp>
-#include <new/tape_static.hpp>
-#include <new/utils.hpp>
+#include <adhoc.hpp>
+#include <tape_size_bwd.hpp>
+#include <tape_static.hpp>
+#include <utils.hpp>
 
 #include <gtest/gtest.h>
 
