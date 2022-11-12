@@ -1,33 +1,13 @@
-#include <adhoc2.hpp>
-#include <constants_type.hpp>
-#include <evaluate.hpp>
-#include <tape_size.hpp>
-#include <type_traits>
-#include <utils.hpp>
+#include <new/adhoc.hpp>
+#include <new/constants_type.hpp>
+
+#include "../type_name.hpp"
 
 #include <gtest/gtest.h>
 
 #include <random>
 
-namespace adhoc2 {
-
-template <class T> constexpr std::string_view type_name() {
-    using namespace std;
-#ifdef __clang__
-    string_view p = __PRETTY_FUNCTION__;
-    return string_view(p.data() + 34, p.size() - 34 - 1);
-#elif defined(__GNUC__)
-    string_view p = __PRETTY_FUNCTION__;
-#if __cplusplus < 201402
-    return string_view(p.data() + 36, p.size() - 36 - 1);
-#else
-    return string_view(p.data() + 49, p.find(';', 49) - 49);
-#endif
-#elif defined(_MSC_VER)
-    string_view p = __FUNCSIG__;
-    return string_view(p.data() + 84, p.size() - 84 - 7);
-#endif
-}
+namespace adhoc {
 
 auto transform_in_place_m(std::vector<double> &in, double val)
     -> std::vector<double> & {
@@ -53,7 +33,7 @@ auto transform_in_place_a(std::vector<double> &in, double val)
 template <class V> class begin_t {};
 template <class V> class end_t {};
 
-template <int N> class vector {
+template <std::size_t N> class vector {
   public:
     explicit vector();
     [[nodiscard]] auto begin() const -> begin_t<vector<N>> {
@@ -64,7 +44,7 @@ template <int N> class vector {
     }
 };
 
-template <int N> vector<N>::vector() {}
+template <std::size_t N> vector<N>::vector() {}
 
 template <class V, class Init, class Lambda>
 class accumulate_t : public Base<accumulate_t<V, Init, Lambda>> {
@@ -83,28 +63,28 @@ void accumulate_t<V, Init, Lambda>::print() {
 }
 
 // we only support begin() and end() as idiom
-template <int N, class T, class BinaryOperation>
+template <std::size_t N, class T, class BinaryOperation>
 auto accumulate(begin_t<vector<N>> /* first */, end_t<vector<N>> /* last */,
                 T init, BinaryOperation op) {
-    return accumulate_t<vector<N>, T, decltype(op(init, adhoc<N>(1.0)))>();
+    return accumulate_t<vector<N>, T,
+                        decltype(op(init, detail::adouble_aux<N>{}))>();
 }
 
 #if __cplusplus >= 202002L
 TEST(AD, BlackScholesSimulationadhoc) {
-    using namespace constants;
-
-    adhoc<ID> S(0);
-    adhoc<ID> K(0);
-    adhoc<ID> v(0);
-    adhoc<ID> T(0);
+    detail::adouble_aux<0> S;
+    detail::adouble_aux<1> K;
+    detail::adouble_aux<2> v;
+    detail::adouble_aux<3> T;
     vector<4> rndnmbrs;
 
-    adhoc<ID> n_times(20);
+    detail::adouble_aux<5> n_times;
     auto dt = T / n_times;
 
     auto adjvol = v * sqrt(dt);
 
-    // auto add = Minus<Frac<Const<1>, Const<2>>>() * adjvol * adjvol;
+    using constants::CD;
+    using constants::encode;
     auto add = CD<encode(-0.5)>() * adjvol * adjvol;
 
     auto lambdafunc = [adjvol, add]<typename T1, typename T2>(T1 const &lhs,
@@ -243,4 +223,4 @@ TEST(AD, accumulate) {
     std::cout << result << std::endl;
 }
 
-} // namespace adhoc2
+} // namespace adhoc
