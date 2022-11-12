@@ -281,8 +281,16 @@ inline void evaluate_bwd_bivariate_noskip(
                 constexpr auto position = idx_type2<Input1, LeavesAlive...>();
                 constexpr auto position_on_tape =
                     Get<position, IdxLeavesAlive...>::value;
-                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * in.d1();
-                tape[IdxTypesAliveCurrent] *= in.d2();
+                double const d1 =
+                    this_type::d1(get2(in, intermediate, this_type{}),
+                                  get2(in, intermediate, Input1{}),
+                                  get2(in, intermediate, Input2{}));
+                double const d2 =
+                    this_type::d2(get2(in, intermediate, this_type{}),
+                                  get2(in, intermediate, Input1{}),
+                                  get2(in, intermediate, Input2{}));
+                tape[position_on_tape] += tape[IdxTypesAliveCurrent] * d1;
+                tape[IdxTypesAliveCurrent] *= d2;
                 evaluate_bwd(tape, in, intermediate, args<TypesAlive...>{},
                              args<Input2, LeavesAlive...>{}, args<Leaves...>{},
                              std::index_sequence<IdxTypesAlive...>{},

@@ -86,13 +86,23 @@ TEST(AdHoc, ComplexEvaluate) {
     EXPECT_EQ(derivatives[2], 80);
 }
 
-// TEST(adhoc2, derivcomplexdexpevaluatesimple) {
-//     adouble val1(1.);
-//     adouble val2(2.);
-//     auto valprod3 = (val1 * val2) + (val1);
+TEST(AdHoc, SimpleEvaluate) {
+    auto tape = CreateTapeInitial<2>();
+    auto [val1, val2] = tape.getalias();
+    tape.set(val1, 1.0);
+    tape.set(val2, 2.0);
+    auto valprod3 = (val1 * val2) + (val1);
 
-//     auto derivatives = evaluate<decltype(val1), decltype(val2)>(valprod3);
-// }
+    auto intermediate_tape = CreateTapeIntermediate(valprod3);
+    evaluate_fwd(tape, intermediate_tape);
+
+    auto derivatives =
+        evaluate_bwd(tape, intermediate_tape, valprod3, 1.0, val1, val2);
+
+    static_assert(derivatives.size() == 2);
+    EXPECT_NEAR(derivatives[0], 3.0, 1e-15);
+    EXPECT_NEAR(derivatives[1], 1.0, 1e-15);
+}
 
 // TEST(adhoc2, derivativeone) {
 //     adouble val1(1.);
