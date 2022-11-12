@@ -9,7 +9,6 @@ add_executable(
   constants.t.cpp
   test.cpp
   test2.cpp
-  rng.cpp
   mcsim.cpp
   singleton.cpp
   tape_input.t.cpp
