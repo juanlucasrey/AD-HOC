@@ -4,15 +4,15 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(
   adhoc_test
-  new/BS.t.cpp
-  new/adhoc.t.cpp
-  new/constants.t.cpp
-  new/static_tape.t.cpp
-  new/tape_size_bwd.t.cpp
-  new/tape_size_fwd.t.cpp
-  new/evaluate_fwd.t.cpp
-  new/mcsim.t.cpp
-  new/opencl.t.cpp
+  BS.t.cpp
+  adhoc.t.cpp
+  constants.t.cpp
+  static_tape.t.cpp
+  tape_size_bwd.t.cpp
+  tape_size_fwd.t.cpp
+  evaluate_fwd.t.cpp
+  mcsim.t.cpp
+  opencl.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

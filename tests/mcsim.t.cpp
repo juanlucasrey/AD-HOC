@@ -1,7 +1,7 @@
 #include <adhoc.hpp>
 #include <constants_type.hpp>
 
-#include "../type_name.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 

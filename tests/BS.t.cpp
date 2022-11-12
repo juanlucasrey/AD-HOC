@@ -5,7 +5,7 @@
 #include <evaluate_fwd.hpp>
 #include <tape_static.hpp>
 
-#include "../type_name.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
