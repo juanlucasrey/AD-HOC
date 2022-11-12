@@ -31,7 +31,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     return S * cdf_n(d1) - K * cdf_n(d2);
 }
 
-TEST(NewAdhoc, BSAdhoc) {
+TEST(BlackScholes, SinglePrice) {
     double result;
 
     {

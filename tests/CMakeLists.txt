@@ -6,13 +6,12 @@ add_executable(
   adhoc_test
   tape_size.t.cpp
   tape_size_fwd.t.cpp
-  constants.t.cpp
-  test.cpp
   test2.cpp
   mcsim.cpp
-  singleton.cpp
-  tape_input.t.cpp
   new/BS.t.cpp
+  new/adhoc.t.cpp
+  new/constants.t.cpp
+  new/static_tape.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

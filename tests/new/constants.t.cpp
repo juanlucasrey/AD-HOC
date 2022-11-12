@@ -1,13 +1,11 @@
-#include <constants_type.hpp>
-
-#include <adhoc2.hpp>
+#include <new/constants_type.hpp>
 
 #include <bitset>
 #include <random>
 
 #include <gtest/gtest.h>
 
-namespace adhoc2::constants {
+namespace adhoc::constants {
 
 auto double_to_uint64_runtime(double x) -> uint64_t {
     union {
@@ -27,7 +25,7 @@ auto uint64_to_double_runtime(uint64_t x) -> double {
 
 #if __cplusplus >= 202002L
 #else
-TEST(constants, uint_to_double) {
+TEST(Constants, uint_to_double) {
 
     auto check = [](double value) {
         union converter {
@@ -117,7 +115,7 @@ TEST(constants, uint_to_double) {
                   std::numeric_limits<double>::min());
 }
 
-TEST(constants, double_to_uint) {
+TEST(Constants, double_to_uint) {
     auto check = [](double temp) {
         auto tempui = double_to_uint64_runtime(temp);
         auto tempui_mine = detail::double_to_uint64(temp);
@@ -250,7 +248,7 @@ void check_encode_and_decode(double in) {
     }
 }
 
-TEST(constants, check_encode_and_decode) {
+TEST(Constants, check_encode_and_decode) {
     check_encode_and_decode(0.);
     check_encode_and_decode(-0.);
     check_encode_and_decode(std::numeric_limits<double>::quiet_NaN());
@@ -324,7 +322,7 @@ auto check_decode_and_encode(std::uint64_t in) -> bool {
     return true;
 }
 
-TEST(constants, check_decode_and_encode) {
+TEST(Constants, check_decode_and_encode) {
     check_decode_and_encode(0U);                   // 0.
     check_decode_and_encode(9223372036854775808U); // -0.
     check_decode_and_encode(
@@ -337,7 +335,7 @@ TEST(constants, check_decode_and_encode) {
         18443366373989023744U); // -std::numeric_limits<double>::signaling_NaN()
 }
 
-TEST(constants, random_uint64) {
+TEST(Constants, random_uint64) {
     unsigned int seed = 213;
     std::mt19937 gen(seed);
     std::uniform_int_distribution<std::uint64_t> dis(
@@ -354,7 +352,7 @@ TEST(constants, random_uint64) {
     }
 }
 
-TEST(constants, static_constants) {
+TEST(Constants, static_constants) {
     // this is what we care about:
     // constexpr conversion of all kinds of doubles to and from uint64
     constexpr double one =
@@ -475,7 +473,7 @@ TEST(constants, static_constants) {
 }
 #endif
 
-TEST(constants, type_value_static_check) {
+TEST(Constants, type_value_static_check) {
     // this is what we care about:
     // constexpr conversion of all kinds of doubles to and from uint64
 
@@ -532,7 +530,7 @@ TEST(constants, type_value_static_check) {
 }
 
 #if __cplusplus >= 202002L
-TEST(adhoc2, sizes) {
+TEST(Constants, sizes) {
     float constexpr onef = 1.0f;
     C<float, 1.0f> onef_type;
     // different sizes, type is empty
@@ -573,7 +571,7 @@ TEST(adhoc2, sizes) {
     static_assert(oneeps == oneeps_type);
 }
 #else
-TEST(adhoc2, sizes) {
+TEST(Constants, sizes) {
     double constexpr oned = 1.0;
     CD<encode(1.0)> oned_type;
     // different sizes, type is empty
@@ -599,4 +597,4 @@ TEST(adhoc2, sizes) {
 }
 #endif
 
-} // namespace adhoc2::constants
+} // namespace adhoc::constants
