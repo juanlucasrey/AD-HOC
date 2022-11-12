@@ -5,6 +5,8 @@
 #include "dependency.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
+
 namespace adhoc {
 
 template <typename... Types> struct args {};
