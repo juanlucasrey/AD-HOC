@@ -59,7 +59,7 @@ fwd_calc_order_t(const std::tuple<constants::CD<D>, TypesAlive...> &) {
 
 template <std::size_t N, typename... TypesAlive>
 constexpr auto
-fwd_calc_order_t(const std::tuple<adouble_aux<N> const, TypesAlive...> &) {
+fwd_calc_order_t(const std::tuple<double_t<N> const, TypesAlive...> &) {
     return fwd_calc_order_t(
         std::tuple<TypesAlive...>{}); // we don't add anything because it's on
                                       // the input tape
@@ -67,7 +67,7 @@ fwd_calc_order_t(const std::tuple<adouble_aux<N> const, TypesAlive...> &) {
 
 template <std::size_t N, typename... TypesAlive>
 constexpr auto
-fwd_calc_order_t(const std::tuple<adouble_aux<N>, TypesAlive...> &) {
+fwd_calc_order_t(const std::tuple<double_t<N>, TypesAlive...> &) {
     return fwd_calc_order_t(
         std::tuple<TypesAlive...>{}); // we don't add anything because it's on
                                       // the input tape

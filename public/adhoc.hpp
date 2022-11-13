@@ -137,7 +137,7 @@ struct div_t : public Base<div_t<Input1, Input2>> {
 };
 
 namespace detail {
-template <std::size_t N> struct adouble_aux : public Base<adouble_aux<N>> {};
+template <std::size_t N> struct double_t : public Base<double_t<N>> {};
 
 } // namespace detail
 

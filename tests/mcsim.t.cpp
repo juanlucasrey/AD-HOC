@@ -67,18 +67,18 @@ template <std::size_t N, class T, class BinaryOperation>
 auto accumulate(begin_t<vector<N>> /* first */, end_t<vector<N>> /* last */,
                 T init, BinaryOperation op) {
     return accumulate_t<vector<N>, T,
-                        decltype(op(init, detail::adouble_aux<N>{}))>();
+                        decltype(op(init, detail::double_t<N>{}))>();
 }
 
 #if __cplusplus >= 202002L
 TEST(AD, BlackScholesSimulationadhoc) {
-    detail::adouble_aux<0> S;
-    detail::adouble_aux<1> K;
-    detail::adouble_aux<2> v;
-    detail::adouble_aux<3> T;
+    detail::double_t<0> S;
+    detail::double_t<1> K;
+    detail::double_t<2> v;
+    detail::double_t<3> T;
     vector<4> rndnmbrs;
 
-    detail::adouble_aux<5> n_times;
+    detail::double_t<5> n_times;
     auto dt = T / n_times;
 
     auto adjvol = v * sqrt(dt);

@@ -13,7 +13,7 @@ TEST(StaticTape, Input) {
     tape.set(v2, 3.0);
     tape.set(v3, 4.0);
 
-    detail::adouble_aux<3> temp;
+    detail::double_t<3> temp;
     tape.set(temp, 5.0);
 }
 

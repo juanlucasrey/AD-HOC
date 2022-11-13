@@ -62,28 +62,27 @@ constexpr auto equal_or_depends<constants::CD<N>, Second>::call() noexcept
 #endif
 
 template <std::size_t N, class Second>
-struct equal_or_depends<detail::adouble_aux<N> const, Second> {
+struct equal_or_depends<detail::double_t<N> const, Second> {
     constexpr static auto call() noexcept -> bool;
 };
 
 template <std::size_t N, class Second>
 constexpr auto
-equal_or_depends<detail::adouble_aux<N> const, Second>::call() noexcept
-    -> bool {
-    return std::is_same_v<detail::adouble_aux<N>, Second> ||
-           std::is_same_v<detail::adouble_aux<N> const, Second>;
+equal_or_depends<detail::double_t<N> const, Second>::call() noexcept -> bool {
+    return std::is_same_v<detail::double_t<N>, Second> ||
+           std::is_same_v<detail::double_t<N> const, Second>;
 }
 
 template <std::size_t N, class Second>
-struct equal_or_depends<detail::adouble_aux<N>, Second> {
+struct equal_or_depends<detail::double_t<N>, Second> {
     constexpr static auto call() noexcept -> bool;
 };
 
 template <std::size_t N, class Second>
-constexpr auto equal_or_depends<detail::adouble_aux<N>, Second>::call() noexcept
+constexpr auto equal_or_depends<detail::double_t<N>, Second>::call() noexcept
     -> bool {
-    return std::is_same_v<detail::adouble_aux<N>, Second> ||
-           std::is_same_v<detail::adouble_aux<N> const, Second>;
+    return std::is_same_v<detail::double_t<N>, Second> ||
+           std::is_same_v<detail::double_t<N> const, Second>;
 }
 
 template <template <class> class Univariate, class Input, class Second>
@@ -182,12 +181,12 @@ struct depends<constants::CD<N>, Second> {
 #endif
 
 template <std::size_t N, class Second>
-struct depends<detail::adouble_aux<N> const, Second> {
+struct depends<detail::double_t<N> const, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
 };
 
 template <std::size_t N, class Second>
-struct depends<detail::adouble_aux<N>, Second> {
+struct depends<detail::double_t<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
 };
 

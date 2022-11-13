@@ -60,9 +60,9 @@ TEST(TapeSizeBwd, TapeAdd) {
 }
 
 TEST(TapeSizeBwd, Complex) {
-    detail::adouble_aux<0> val1;
-    detail::adouble_aux<1> val2;
-    detail::adouble_aux<2> val3;
+    detail::double_t<0> val1;
+    detail::double_t<1> val2;
+    detail::double_t<2> val3;
     // auto tape = CreateTapeInitial<3>();
     // auto [val1, val2, val3] = tape.getalias();
 
@@ -88,9 +88,9 @@ TEST(TapeSizeBwd, Complex) {
 }
 
 TEST(TapeSizeBwd, Skip) {
-    detail::adouble_aux<0> val1;
-    detail::adouble_aux<1> val2;
-    detail::adouble_aux<2> val3;
+    detail::double_t<0> val1;
+    detail::double_t<1> val2;
+    detail::double_t<2> val3;
     auto valsum = val1 + val2;
     auto valprod = valsum * val3;
     auto res = valsum * valprod;
@@ -100,12 +100,12 @@ TEST(TapeSizeBwd, Skip) {
 }
 
 TEST(TapeSizeBwd, ComplexTempVar) {
-    detail::adouble_aux<0> val1;
-    detail::adouble_aux<1> val2;
-    detail::adouble_aux<2> val3;
-    auto valsum = val1 + val2 * detail::adouble_aux<3>{} + val3;
-    auto valprod = val1 * val2 + detail::adouble_aux<4>{};
-    auto valprod2 = val2 * val2 * detail::adouble_aux<5>{};
+    detail::double_t<0> val1;
+    detail::double_t<1> val2;
+    detail::double_t<2> val3;
+    auto valsum = val1 + val2 * detail::double_t<3>{} + val3;
+    auto valprod = val1 * val2 + detail::double_t<4>{};
+    auto valprod2 = val2 * val2 * detail::double_t<5>{};
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
@@ -118,9 +118,9 @@ TEST(TapeSizeBwd, ComplexTempVar) {
 }
 
 TEST(TapeSizeBwd, MulTemp) {
-    detail::adouble_aux<0> val1;
-    auto m1 = val1 * detail::adouble_aux<1>{};
-    auto m2 = val1 * detail::adouble_aux<2>{};
+    detail::double_t<0> val1;
+    auto m1 = val1 * detail::double_t<1>{};
+    auto m2 = val1 * detail::double_t<2>{};
     auto valprod = m1 * m2;
 
     constexpr std::size_t size = tape_size(valprod, val1);
@@ -128,8 +128,8 @@ TEST(TapeSizeBwd, MulTemp) {
 }
 
 TEST(TapeSizeBwd, MulMul) {
-    detail::adouble_aux<0> val1;
-    detail::adouble_aux<1> val2;
+    detail::double_t<0> val1;
+    detail::double_t<1> val2;
     auto m = val1 * val2;
     auto valprod = m * m;
 

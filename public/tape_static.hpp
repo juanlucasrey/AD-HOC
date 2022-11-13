@@ -49,7 +49,7 @@ auto inline CreateTapeIntermediate_aux(std::tuple<IntermediateTypes...>) {
 
 template <std::size_t... Idxs>
 auto inline CreateTapeInitial_aux(std::index_sequence<Idxs...> const &) {
-    return detail::TapeIntermediate<detail::adouble_aux<Idxs>...>{};
+    return detail::TapeIntermediate<detail::double_t<Idxs>...>{};
 }
 
 } // namespace detail
