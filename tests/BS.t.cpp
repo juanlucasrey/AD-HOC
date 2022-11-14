@@ -90,11 +90,9 @@ TEST(BlackScholes, Inverse) {
 
     constexpr double minus_root_two = -constexpression::sqrt(2.0);
     double cdfd1_2_inv = cdfd1_inv * 2.;
-    // double cdfd1_3_inv =
-    //     quantile</* standard_normal, */ false,
-    //     algorithm::acklam>(cdfd1_2_inv);
-    // double cdfd1_3_inv = erf_inv(cdfd1_2_inv);
-    // double d1_inv = cdfd1_3_inv * minus_root_two;
+    double cdfd1_3_inv = erfc_inv<true, algorithm::acklam>(cdfd1_2_inv);
+    double d1_inv = cdfd1_3_inv * minus_root_two;
+    EXPECT_NEAR(d1, d1_inv, 1e-12);
 
     constexpr double minus_one_over_root_two =
         -1.0 / constexpression::sqrt(2.0);
@@ -103,10 +101,9 @@ TEST(BlackScholes, Inverse) {
     double cdfd1_2 = 0.5 * d1_3;
 
     double cdfd2_2_inv = cdfd2_inv * 2.;
-    // double cdfd2_3_inv =
-    //     quantile</* standard_normal, */ false,
-    //     algorithm::acklam>(cdfd2_2_inv);
-    // double d2_inv = cdfd2_3_inv * minus_root_two;
+    double cdfd2_3_inv = erfc_inv<true, algorithm::acklam>(cdfd2_2_inv);
+    double d2_inv = cdfd2_3_inv * minus_root_two;
+    EXPECT_NEAR(d2, d2_inv, 1e-12);
 }
 
 TEST(BlackScholes, SinglePrice) {
