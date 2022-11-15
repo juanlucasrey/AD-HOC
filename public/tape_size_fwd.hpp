@@ -12,110 +12,129 @@ namespace adhoc {
 
 namespace detail {
 
-template <typename... TypesAlive>
-constexpr auto fwd_calc_order_t(const std::tuple<TypesAlive...> &);
+template <typename... TypesAlive> struct fwd_calc_order_aux_t3 {
+    template <typename... Operations> constexpr static auto call() noexcept;
+};
 
-template <> constexpr auto fwd_calc_order_t(const std::tuple<> &) {
-    return std::tuple<>{};
-}
+template <> struct fwd_calc_order_aux_t3<> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        return std::tuple<Operations...>{};
+    }
+};
 
 #if __cplusplus >= 202002L
 
 template <constants::detail::AsTemplateArg<double> D, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<constants::CD<D> const, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<constants::CD<D>, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's a constant
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 template <constants::detail::AsTemplateArg<double> D, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<constants::CD<D>, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<constants::CD<D> const, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's a constant
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 #else
 
 template <std::uint64_t D, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<constants::CD<D> const, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<constants::CD<D>, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's a constant
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 template <std::uint64_t D, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<constants::CD<D>, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<constants::CD<D> const, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's a constant
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 #endif
 
 template <std::size_t N, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<double_t<N> const, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<double_t<N>, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's an input
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 template <std::size_t N, typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<double_t<N>, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<TypesAlive...>{}); // we don't add anything because it's on
-                                      // the input tape
-}
+struct fwd_calc_order_aux_t3<double_t<N> const, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // we don't add anything to operations because it's an input
+        return fwd_calc_order_aux_t3<TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 template <typename CurrentType, typename NextType, typename... TypesAlive>
-constexpr auto
-skip_type(const std::tuple<CurrentType, NextType, TypesAlive...> &) {
-    return fwd_calc_order_t(
-        std::tuple<NextType, TypesAlive...>{}); // current type will come up
-                                                // again because it is included
-                                                // on one of the other types
-}
+struct skip_operation {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        // current type will come up again because it is included on TypesAlive
+        return fwd_calc_order_aux_t3<NextType, TypesAlive...>::template call<
+            Operations...>();
+    }
+};
 
 template <template <class...> class Xvariate, class... Input,
           typename... TypesAlive>
-constexpr auto
-fwd_calc_order_t(const std::tuple<Xvariate<Input...> const, TypesAlive...> &) {
-    using this_type = Xvariate<Input...>;
-    static_assert(!has_type2<this_type, TypesAlive...>());
+struct fwd_calc_order_aux_t3<Xvariate<Input...>, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        using this_type = Xvariate<Input...>;
+        static_assert(!has_type2<this_type, TypesAlive...>());
 
-    constexpr bool other_types_depend_on_this =
-        (depends<TypesAlive, this_type>::call() || ...);
+        constexpr bool other_types_depend_on_this =
+            (depends<TypesAlive, this_type>::call() || ...);
 
-    if constexpr (other_types_depend_on_this) {
-        return std::tuple<decltype(skip_type(
-            std::tuple<this_type const, TypesAlive...>{}))>{};
-    } else {
-        return std::tuple<decltype(fwd_calc_order_t(
-                              std::tuple<Input..., TypesAlive...>{})),
-                          this_type>{};
+        if constexpr (other_types_depend_on_this) {
+            return skip_operation<this_type, TypesAlive...>::template call<
+                Operations...>();
+        } else {
+            return fwd_calc_order_aux_t3<Input..., TypesAlive...>::
+                template call<this_type, Operations...>();
+        }
     }
-}
+};
 
-template <typename T> struct flatten_tuple { using type = std::tuple<T>; };
+template <template <class...> class Xvariate, class... Input,
+          typename... TypesAlive>
+struct fwd_calc_order_aux_t3<Xvariate<Input...> const, TypesAlive...> {
+    template <typename... Operations> constexpr static auto call() noexcept {
+        using this_type = Xvariate<Input...>;
+        static_assert(!has_type2<this_type, TypesAlive...>());
 
-template <typename T> using flatten_tuple_t = typename flatten_tuple<T>::type;
+        constexpr bool other_types_depend_on_this =
+            (depends<TypesAlive, this_type>::call() || ...);
 
-template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
-    using type =
-        decltype(std::tuple_cat(std::declval<flatten_tuple_t<Ts>>()...));
+        if constexpr (other_types_depend_on_this) {
+            return skip_operation<this_type, TypesAlive...>::template call<
+                Operations...>();
+        } else {
+            return fwd_calc_order_aux_t3<Input..., TypesAlive...>::
+                template call<this_type, Operations...>();
+        }
+    }
 };
 
 } // namespace detail
 
 template <class Output> constexpr auto fwd_calc_order_t(Output const &) {
-    return detail::flatten_tuple_t<decltype(detail::fwd_calc_order_t(
-        std::tuple<Output const>{}))>{};
+    return detail::fwd_calc_order_aux_t3<Output>::template call();
 }
 
 } // namespace adhoc
