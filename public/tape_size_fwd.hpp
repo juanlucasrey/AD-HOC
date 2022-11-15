@@ -133,8 +133,9 @@ struct fwd_calc_order_aux_t3<Xvariate<Input...> const, TypesAlive...> {
 
 } // namespace detail
 
-template <class Output> constexpr auto fwd_calc_order_t(Output const &) {
-    return detail::fwd_calc_order_aux_t3<Output>::template call();
+template <class... Outputs>
+constexpr auto fwd_calc_order_t(Outputs const &.../* o */) {
+    return detail::fwd_calc_order_aux_t3<Outputs...>::template call();
 }
 
 } // namespace adhoc
