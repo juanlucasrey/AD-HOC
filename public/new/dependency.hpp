@@ -11,19 +11,6 @@ namespace adhoc2 {
 template <class First, class Second> struct equal_or_depends;
 
 #if __cplusplus >= 202002L
-// template <constants::detail::AsTemplateArg<double> F, class Second>
-// struct equal_or_depends<constants::CD<F> const, Second> {
-//     constexpr static auto call() noexcept -> bool;
-// };
-
-// template <constants::detail::AsTemplateArg<double> F, class Second>
-// constexpr auto equal_or_depends<constants::CD<F> const, Second>::call()
-// noexcept
-//     -> bool {
-//     return std::is_same_v<constants::CD<F>, Second> ||
-//            std::is_same_v<constants::CD<F> const, Second>;
-// }
-
 template <constants::detail::AsTemplateArg<double> F, class Second>
 struct equal_or_depends<constants::CD<F>, Second> {
     constexpr static auto call() noexcept -> bool;
@@ -37,19 +24,6 @@ constexpr auto equal_or_depends<constants::CD<F>, Second>::call() noexcept
 }
 #else
 
-// template <std::uint64_t N, class Second>
-// struct equal_or_depends<constants::CD<N> const, Second> {
-//     constexpr static auto call() noexcept -> bool;
-// };
-
-// template <std::uint64_t N, class Second>
-// constexpr auto equal_or_depends<constants::CD<N> const, Second>::call()
-// noexcept
-//     -> bool {
-//     return std::is_same_v<constants::CD<N>, Second> ||
-//            std::is_same_v<constants::CD<N> const, Second>;
-// }
-
 template <std::uint64_t N, class Second>
 struct equal_or_depends<constants::CD<N>, Second> {
     constexpr static auto call() noexcept -> bool;
@@ -58,23 +32,9 @@ struct equal_or_depends<constants::CD<N>, Second> {
 template <std::uint64_t N, class Second>
 constexpr auto equal_or_depends<constants::CD<N>, Second>::call() noexcept
     -> bool {
-    return std::is_same_v<constants::CD<N>, Second> /* ||
-           std::is_same_v<constants::CD<N> const, Second> */
-        ;
+    return std::is_same_v<constants::CD<N>, Second>;
 }
 #endif
-
-// template <std::size_t N, class Second>
-// struct equal_or_depends<double_t<N> const, Second> {
-//     constexpr static auto call() noexcept -> bool;
-// };
-
-// template <std::size_t N, class Second>
-// constexpr auto equal_or_depends<double_t<N> const, Second>::call() noexcept
-//     -> bool {
-//     return std::is_same_v<double_t<N>, Second> ||
-//            std::is_same_v<double_t<N> const, Second>;
-// }
 
 template <std::size_t N, class Second>
 struct equal_or_depends<double_t<N>, Second> {
@@ -83,9 +43,7 @@ struct equal_or_depends<double_t<N>, Second> {
 
 template <std::size_t N, class Second>
 constexpr auto equal_or_depends<double_t<N>, Second>::call() noexcept -> bool {
-    return std::is_same_v<double_t<N>, Second> /* ||
-           std::is_same_v<double_t<N> const, Second> */
-        ;
+    return std::is_same_v<double_t<N>, Second>;
 }
 
 template <template <class> class Univariate, class Input, class Second>
@@ -99,24 +57,8 @@ constexpr auto equal_or_depends<Univariate<Input>, Second>::call() noexcept
     static_assert(
         std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
     return std::is_same_v<Univariate<Input>, Second> ||
-           /* std::is_same_v<Univariate<Input> const, Second> || */
            equal_or_depends<Input, Second>::call();
 }
-
-// template <template <class> class Univariate, class Input, class Second>
-// struct equal_or_depends<Univariate<Input> const, Second> {
-//     constexpr static auto call() noexcept -> bool;
-// };
-
-// template <template <class> class Univariate, class Input, class Second>
-// constexpr auto
-// equal_or_depends<Univariate<Input> const, Second>::call() noexcept -> bool {
-//     static_assert(
-//         std::is_convertible_v<Univariate<Input>, Base<Univariate<Input>>>);
-//     return std::is_same_v<Univariate<Input>, Second> ||
-//            std::is_same_v<Univariate<Input> const, Second> ||
-//            equal_or_depends<Input, Second>::call();
-// }
 
 template <template <class, class> class Bivariate, class Input1, class Input2,
           class Second>
@@ -131,31 +73,9 @@ equal_or_depends<Bivariate<Input1, Input2>, Second>::call() noexcept -> bool {
     static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
                                         Base<Bivariate<Input1, Input2>>>);
     return std::is_same_v<Bivariate<Input1, Input2>, Second> ||
-           /* std::is_same_v<Bivariate<Input1, Input2> const, Second> || */
            equal_or_depends<Input1, Second>::call() ||
            equal_or_depends<Input2, Second>::call();
 }
-
-// template <template <class, class> class Bivariate, class Input1, class
-// Input2,
-//           class Second>
-// struct equal_or_depends<Bivariate<Input1, Input2> const, Second> {
-//     constexpr static auto call() noexcept -> bool;
-// };
-
-// template <template <class, class> class Bivariate, class Input1, class
-// Input2,
-//           class Second>
-// constexpr auto
-// equal_or_depends<Bivariate<Input1, Input2> const, Second>::call() noexcept
-//     -> bool {
-//     static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
-//                                         Base<Bivariate<Input1, Input2>>>);
-//     return std::is_same_v<Bivariate<Input1, Input2>, Second> ||
-//            std::is_same_v<Bivariate<Input1, Input2> const, Second> ||
-//            equal_or_depends<Input1, Second>::call() ||
-//            equal_or_depends<Input2, Second>::call();
-// }
 
 template <class First, class Second> struct depends;
 
@@ -173,22 +93,12 @@ struct depends<constants::CD<N>, Second> {
 
 #else
 
-// template <std::uint64_t N, class Second>
-// struct depends<constants::CD<N> const, Second> {
-//     constexpr static auto call() noexcept -> bool { return false; }
-// };
-
 template <std::uint64_t N, class Second>
 struct depends<constants::CD<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
 };
 
 #endif
-
-// template <std::size_t N, class Second>
-// struct depends<double_t<N> const, Second> {
-//     constexpr static auto call() noexcept -> bool { return false; }
-// };
 
 template <std::size_t N, class Second> struct depends<double_t<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
@@ -203,16 +113,6 @@ struct depends<Univariate<Input>, Second> {
     }
 };
 
-// template <template <class> class Univariate, class Input, class Second>
-// struct depends<Univariate<Input> const, Second> {
-//     constexpr static auto call() noexcept -> bool {
-//         static_assert(
-//             std::is_convertible_v<Univariate<Input>,
-//             Base<Univariate<Input>>>);
-//         return equal_or_depends<Input, Second>::call();
-//     }
-// };
-
 template <template <class, class> class Bivariate, class Input1, class Input2,
           class Second>
 struct depends<Bivariate<Input1, Input2>, Second> {
@@ -223,19 +123,6 @@ struct depends<Bivariate<Input1, Input2>, Second> {
                equal_or_depends<Input2, Second>::call();
     }
 };
-
-// template <template <class, class> class Bivariate, class Input1, class
-// Input2,
-//           class Second>
-// struct depends<Bivariate<Input1, Input2> const, Second> {
-//     constexpr static auto call() noexcept -> bool {
-//         static_assert(std::is_convertible_v<Bivariate<Input1, Input2>,
-//                                             Base<Bivariate<Input1,
-//                                             Input2>>>);
-//         return equal_or_depends<Input1, Second>::call() ||
-//                equal_or_depends<Input2, Second>::call();
-//     }
-// };
 
 template <class First, class... Others>
 inline constexpr auto equal_or_depends_many() noexcept -> bool {
