@@ -4,6 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(
   adhoc_test
+  new/leafs.t.cpp
+  new/static_tape.t.cpp
+  new/tape_size_fwd.t.cpp
   BS.t.cpp
   adhoc.t.cpp
   constants.t.cpp
