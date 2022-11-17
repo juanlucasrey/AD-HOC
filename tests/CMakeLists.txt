@@ -15,7 +15,8 @@ add_executable(
   tape_size_fwd.t.cpp
   evaluate_fwd.t.cpp
   mcsim.t.cpp
-  opencl.t.cpp
+  # opencl only for clang at the moment
+  # opencl.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
