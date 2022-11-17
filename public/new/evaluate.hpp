@@ -23,9 +23,9 @@ inline auto get(Tape<InputTypes...> const & /* in */,
 #else
 
 template <std::uint64_t D, class... RootsAndLeafs, class... IntermediateNodes>
-inline auto get(Tape<RootsAndLeafs...> const &,
-                Tape<IntermediateNodes...> const &, constants::CD<D>)
-    -> double {
+inline auto get(Tape<RootsAndLeafs...> const & /* in */,
+                Tape<IntermediateNodes...> const & /* intermediate */,
+                constants::CD<D> /* node */) -> double {
     return constants::CD<D>::v();
 }
 
@@ -33,7 +33,7 @@ inline auto get(Tape<RootsAndLeafs...> const &,
 
 template <class Node, class... RootsAndLeafs, class... IntermediateNodes>
 inline auto get(Tape<RootsAndLeafs...> const &in,
-                Tape<IntermediateNodes...> const &intermediate, Node)
+                Tape<IntermediateNodes...> const &intermediate, Node /* node */)
     -> double {
     constexpr bool is_root_or_leaf = has_type2<Node, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
@@ -46,22 +46,22 @@ inline auto get(Tape<RootsAndLeafs...> const &in,
 template <class... RootsAndLeafs, class... IntermediateNodes>
 inline void evaluate_fwd(Tape<RootsAndLeafs...> & /* in */,
                          Tape<IntermediateNodes...> & /* intermediate */,
-                         std::tuple<>) {}
+                         std::tuple<> /* nodes */) {}
 
 template <class... RootsAndLeafs, class... IntermediateNodes,
           template <class, class> class Bivariate, class Node1, class Node2,
           class... NodesToCalc>
-inline void evaluate_fwd(Tape<RootsAndLeafs...> &in,
-                         Tape<IntermediateNodes...> &intermediate,
-                         std::tuple<Bivariate<Node1, Node2>, NodesToCalc...>);
+inline void
+evaluate_fwd(Tape<RootsAndLeafs...> &in,
+             Tape<IntermediateNodes...> &intermediate,
+             std::tuple<Bivariate<Node1, Node2>, NodesToCalc...> nodes);
 
 template <class... RootsAndLeafs, class... IntermediateNodes,
           template <class> class Univariate, class Node,
           class... IntermediateTypesToCalc>
-inline void
-evaluate_fwd(Tape<RootsAndLeafs...> &in,
-             Tape<IntermediateNodes...> &intermediate,
-             std::tuple<Univariate<Node>, IntermediateTypesToCalc...>) {
+inline void evaluate_fwd(
+    Tape<RootsAndLeafs...> &in, Tape<IntermediateNodes...> &intermediate,
+    std::tuple<Univariate<Node>, IntermediateTypesToCalc...> /* nodes */) {
     using this_type = Univariate<Node>;
     constexpr bool is_root_or_leaf = has_type2<this_type, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
@@ -78,9 +78,10 @@ evaluate_fwd(Tape<RootsAndLeafs...> &in,
 template <class... RootsAndLeafs, class... IntermediateNodes,
           template <class, class> class Bivariate, class Node1, class Node2,
           class... NodesToCalc>
-inline void evaluate_fwd(Tape<RootsAndLeafs...> &in,
-                         Tape<IntermediateNodes...> &intermediate,
-                         std::tuple<Bivariate<Node1, Node2>, NodesToCalc...>) {
+inline void
+evaluate_fwd(Tape<RootsAndLeafs...> &in,
+             Tape<IntermediateNodes...> &intermediate,
+             std::tuple<Bivariate<Node1, Node2>, NodesToCalc...> /* nodes */) {
     using this_type = Bivariate<Node1, Node2>;
     constexpr bool is_root_or_leaf = has_type2<this_type, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
