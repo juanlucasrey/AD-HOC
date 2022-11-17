@@ -33,13 +33,12 @@ struct leafs_t<constants::CD<D>, NodesAlive...> {
 template <std::size_t N, typename... NodesAlive>
 struct leafs_t<double_t<N>, NodesAlive...> {
     template <typename... Leafs> constexpr static auto call() noexcept {
-        // we add the leaf
         using this_type = double_t<N>;
 
         constexpr bool already_included = has_type2<this_type, Leafs...>();
 
         if constexpr (already_included) {
-            // Its' already been added
+            // It's already been added, so we don't add the leaf
             return leafs_t<NodesAlive...>::template call<Leafs...>();
         } else {
             // we add the leaf
