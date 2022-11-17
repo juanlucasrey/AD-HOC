@@ -22,27 +22,13 @@ template <> struct calc_order_aux_t<> {
     }
 };
 
-#if __cplusplus >= 202002L
-
-template <constants::detail::AsTemplateArg<double> D, typename... NodesAlive>
+template <constants::ArgType D, typename... NodesAlive>
 struct calc_order_aux_t<constants::CD<D>, NodesAlive...> {
     template <typename... Operations> constexpr static auto call() noexcept {
         // we don't add anything to operations because it's a constant
         return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
     }
 };
-
-#else
-
-template <std::uint64_t D, typename... NodesAlive>
-struct calc_order_aux_t<constants::CD<D>, NodesAlive...> {
-    template <typename... Operations> constexpr static auto call() noexcept {
-        // we don't add anything to operations because it's a constant
-        return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
-    }
-};
-
-#endif
 
 template <std::size_t N, typename... NodesAlive>
 struct calc_order_aux_t<double_t<N>, NodesAlive...> {
@@ -51,15 +37,6 @@ struct calc_order_aux_t<double_t<N>, NodesAlive...> {
         return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
     }
 };
-
-// template <std::size_t N, typename... NodesAlive>
-// struct calc_order_aux_t<double_t<N> const, NodesAlive...> {
-//     template <typename... Operations> constexpr static auto call() noexcept {
-//         // we don't add anything to operations because it's an input
-//         return calc_order_aux_t<NodesAlive...>::template
-//         call<Operations...>();
-//     }
-// };
 
 template <template <class...> class Xvariate, class... Node,
           typename... NodesAlive>
@@ -82,27 +59,6 @@ struct calc_order_aux_t<Xvariate<Node...>, NodesAlive...> {
         }
     }
 };
-
-// template <template <class...> class Xvariate, class... Node,
-//           typename... NodesAlive>
-// struct calc_order_aux_t<Xvariate<Node...> const, NodesAlive...> {
-//     template <typename... Operations> constexpr static auto call() noexcept {
-//         using this_type = Xvariate<Node...>;
-//         static_assert(!has_type2<this_type, NodesAlive...>());
-
-//         constexpr bool other_types_depend_on_this =
-//             (depends<NodesAlive, this_type>::call() || ...);
-
-//         if constexpr (other_types_depend_on_this) {
-//             // this_type will come up again because it is included on
-//             NodesAlive return calc_order_aux_t<NodesAlive...>::template call<
-//                 Operations...>();
-//         } else {
-//             return calc_order_aux_t<Node..., NodesAlive...>::template call<
-//                 this_type, Operations...>();
-//         }
-//     }
-// };
 
 } // namespace detail
 
