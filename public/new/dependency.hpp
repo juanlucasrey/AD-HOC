@@ -79,26 +79,10 @@ equal_or_depends<Bivariate<Input1, Input2>, Second>::call() noexcept -> bool {
 
 template <class First, class Second> struct depends;
 
-#if __cplusplus >= 202002L
-
-// template <constants::detail::AsTemplateArg<double> N, class Second>
-// struct depends<constants::CD<N> const, Second> {
-//     constexpr static auto call() noexcept -> bool { return false; }
-// };
-
-template <constants::detail::AsTemplateArg<double> N, class Second>
+template <constants::ArgType N, class Second>
 struct depends<constants::CD<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
 };
-
-#else
-
-template <std::uint64_t N, class Second>
-struct depends<constants::CD<N>, Second> {
-    constexpr static auto call() noexcept -> bool { return false; }
-};
-
-#endif
 
 template <std::size_t N, class Second> struct depends<double_t<N>, Second> {
     constexpr static auto call() noexcept -> bool { return false; }
