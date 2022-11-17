@@ -22,11 +22,7 @@ template <> struct leafs_t<> {
     }
 };
 
-#if __cplusplus >= 202002L
-template <constants::detail::AsTemplateArg<double> D, typename... NodesAlive>
-#else
-template <std::uint64_t D, typename... NodesAlive>
-#endif
+template <constants::ArgType D, typename... NodesAlive>
 struct leafs_t<constants::CD<D>, NodesAlive...> {
     template <typename... Leafs> constexpr static auto call() noexcept {
         // we don't add anything because a constant is not a leaf
