@@ -10,12 +10,8 @@ namespace adhoc2 {
 
 namespace detail {
 
-#if __cplusplus >= 202002L
-template <constants::detail::AsTemplateArg<double> D, class... RootsAndLeafs,
+template <constants::ArgType D, class... RootsAndLeafs,
           class... IntermediateNodes>
-#else
-template <std::uint64_t D, class... RootsAndLeafs, class... IntermediateNodes>
-#endif
 inline auto get(Tape<RootsAndLeafs...> const & /* in */,
                 Tape<IntermediateNodes...> const & /* intermediate */,
                 constants::CD<D> /* node */) -> double {

@@ -40,6 +40,8 @@ constexpr auto encode(double x) -> double {
     return x;
 }
 
+using ArgType = constants::detail::AsTemplateArg<double>;
+
 #else
 
 namespace detail {
@@ -243,6 +245,7 @@ struct CD : public Base<CD<D>>, public ConstBase<CD<D>> {
     constexpr auto static v() -> double { return detail::uint64_to_double(D); }
 };
 
+using ArgType = std::uint64_t;
 #endif
 
 } // namespace adhoc2::constants
