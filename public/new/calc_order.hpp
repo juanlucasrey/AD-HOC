@@ -32,15 +32,6 @@ struct calc_order_aux_t<constants::CD<D>, NodesAlive...> {
     }
 };
 
-// template <constants::detail::AsTemplateArg<double> D, typename... NodesAlive>
-// struct calc_order_aux_t<constants::CD<D> const, NodesAlive...> {
-//     template <typename... Operations> constexpr static auto call() noexcept {
-//         // we don't add anything to operations because it's a constant
-//         return calc_order_aux_t<NodesAlive...>::template
-//         call<Operations...>();
-//     }
-// };
-
 #else
 
 template <std::uint64_t D, typename... NodesAlive>
@@ -50,15 +41,6 @@ struct calc_order_aux_t<constants::CD<D>, NodesAlive...> {
         return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
     }
 };
-
-// template <std::uint64_t D, typename... NodesAlive>
-// struct calc_order_aux_t<constants::CD<D> const, NodesAlive...> {
-//     template <typename... Operations> constexpr static auto call() noexcept {
-//         // we don't add anything to operations because it's a constant
-//         return calc_order_aux_t<NodesAlive...>::template
-//         call<Operations...>();
-//     }
-// };
 
 #endif
 
