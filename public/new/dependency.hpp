@@ -10,25 +10,12 @@ namespace adhoc2 {
 
 template <class First, class Second> struct equal_or_depends;
 
-#if __cplusplus >= 202002L
-template <constants::detail::AsTemplateArg<double> F, class Second>
-struct equal_or_depends<constants::CD<F>, Second> {
-    constexpr static auto call() noexcept -> bool {
-        return std::is_same_v<constants::CD<F>, Second> ||
-               std::is_same_v<constants::CD<F> const, Second>;
-    }
-};
-
-#else
-
-template <std::uint64_t N, class Second>
+template <constants::ArgType N, class Second>
 struct equal_or_depends<constants::CD<N>, Second> {
     constexpr static auto call() noexcept -> bool {
         return std::is_same_v<constants::CD<N>, Second>;
     }
 };
-
-#endif
 
 template <std::size_t N, class Second>
 struct equal_or_depends<double_t<N>, Second> {
