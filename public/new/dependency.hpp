@@ -86,6 +86,15 @@ inline constexpr auto equal_or_depends_many() noexcept -> bool {
     }
 }
 
+template <class First, class... Others>
+inline constexpr auto depends_many() noexcept -> bool {
+    if constexpr (sizeof...(Others) == 0) {
+        return false;
+    } else {
+        return (depends<First, Others>::call() || ...);
+    }
+}
+
 } // namespace adhoc2
 
 #endif // ADHOC_DEPENDENCY_HPP

@@ -2,6 +2,7 @@
 #include <new/evaluate.hpp>
 #include <new/init.hpp>
 #include <new/tape_nodes.hpp>
+#include <new/tape_size_bwd.hpp>
 #include <new/tape_size_fwd.hpp>
 
 #include "../type_name.hpp"
@@ -123,11 +124,29 @@ TEST(TapeSizeFwd, BSSinglePrice) {
     double result2 = tape.get(result_adhoc);
     EXPECT_EQ(result2, result);
 
-    auto int_tape = evaluate_fwd_return_vals(tape);
-    auto totalvol = v * sqrt(T);
-    double totalvol_val = int_tape.get(totalvol);
-    auto totalvol_val2 = 0.15 * std::sqrt(0.5);
-    EXPECT_EQ(totalvol_val, totalvol_val2);
+    auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
+
+    auto temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
+                              decltype(T), decltype(result_adhoc)>();
+
+    std::cout << type_name<decltype(temp)>() << std::endl;
+    // auto int_tape = evaluate_fwd_return_vals(tape);
+    // auto totalvol = v * sqrt(T);
+    // double totalvol_val = int_tape.get(totalvol);
+    // auto totalvol_val2 = 0.15 * std::sqrt(0.5);
+    // EXPECT_EQ(totalvol_val, totalvol_val2);
+}
+
+TEST(TapeSizeBwd, CutLeafs) {
+    auto [v0, v1, v2, v3] = Init<4>();
+    auto result = (v0 * v1) * (v2 * v3);
+    auto temp = tape_size_bwd<decltype(v0), decltype(v1), decltype(v2),
+                              decltype(v3), decltype(result)>();
+    auto temp2 = tape_size_bwd<decltype(v0), decltype(v1), decltype(result)>();
+
+    std::cout << type_name<decltype(temp)>() << std::endl;
+
+    std::cout << type_name<decltype(temp2)>() << std::endl;
 }
 
 } // namespace adhoc2

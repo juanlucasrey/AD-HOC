@@ -47,6 +47,11 @@ template <class... Roots> auto inline TapeRootsAndLeafs(Roots &.../* out */) {
     return detail::TapeRootsAndLeafs_aux<Roots...>(leafs);
 }
 
+template <class... ActiveLeafsAndRoots>
+auto inline TapeDerivatives(ActiveLeafsAndRoots &.../* in */) {
+    return Tape(ActiveLeafsAndRoots{}...);
+}
+
 } // namespace adhoc2
 
 #endif // ADHOC_TAPE_NODES_HPP
