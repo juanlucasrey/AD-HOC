@@ -11,25 +11,16 @@ namespace adhoc2 {
 namespace detail {
 
 #if __cplusplus >= 202002L
-
-template <constants::detail::AsTemplateArg<double> D, class... InputTypes,
-          class... IntermediateTypes>
-inline auto get(Tape<InputTypes...> const & /* in */,
-                Tape<IntermediateTypes...> const & /* intermediate */,
-                constants::CD<D> /* node */) -> double {
-    return constants::CD<D>::v();
-}
-
+template <constants::detail::AsTemplateArg<double> D, class... RootsAndLeafs,
+          class... IntermediateNodes>
 #else
-
 template <std::uint64_t D, class... RootsAndLeafs, class... IntermediateNodes>
+#endif
 inline auto get(Tape<RootsAndLeafs...> const & /* in */,
                 Tape<IntermediateNodes...> const & /* intermediate */,
                 constants::CD<D> /* node */) -> double {
     return constants::CD<D>::v();
 }
-
-#endif
 
 template <class Node, class... RootsAndLeafs, class... IntermediateNodes>
 inline auto get(Tape<RootsAndLeafs...> const &in,
