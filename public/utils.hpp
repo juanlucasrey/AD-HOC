@@ -33,12 +33,6 @@ template <typename T, typename... Ts> constexpr auto has_type2() -> bool {
            (std::is_same_v<T, Ts const> || ...);
 };
 
-template <typename T, typename... Ts> auto has_type3() -> bool {
-    bool result = (std::is_same_v<T, Ts> || ...);
-    bool result2 = (std::is_same_v<T, Ts const> || ...);
-    return result || result2;
-};
-
 template <typename T, typename... Ts>
 constexpr auto idx_type2() -> std::size_t {
     static_assert(has_type2<T, Ts...>());
