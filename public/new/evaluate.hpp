@@ -89,7 +89,7 @@ template <class... RootsAndLeafs, class... IntermediateNodes>
 inline void evaluate_aux(Tape<RootsAndLeafs...> &in,
                          std::tuple<IntermediateNodes...> /* types */) {
     auto constexpr calcs =
-        detail::calc_order_aux_t<RootsAndLeafs...>::template call();
+        detail::calc_order_aux_t<true, RootsAndLeafs...>::template call();
     auto intermediate = Tape(IntermediateNodes{}...);
     evaluate_fwd(in, intermediate, calcs);
 }
@@ -99,7 +99,7 @@ inline auto
 evaluate_fwd_return_vals_aux(Tape<RootsAndLeafs...> &in,
                              std::tuple<IntermediateNodes...> /* types */) {
     auto constexpr calcs =
-        detail::calc_order_aux_t<RootsAndLeafs...>::template call();
+        detail::calc_order_aux_t<true, RootsAndLeafs...>::template call();
     auto intermediate = Tape(IntermediateNodes{}...);
     evaluate_fwd(in, intermediate, calcs);
     return intermediate;

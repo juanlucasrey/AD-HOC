@@ -12,35 +12,37 @@ namespace adhoc2 {
 
 namespace detail {
 
-template <typename... NodesAlive> struct calc_order_aux_t {
+template <bool OrderFwd, typename... NodesAlive> struct calc_order_aux_t {
     template <typename... Operations> constexpr static auto call() noexcept;
 };
 
-template <> struct calc_order_aux_t<> {
+template <bool OrderFwd> struct calc_order_aux_t<OrderFwd> {
     template <typename... Operations> constexpr static auto call() noexcept {
         return std::tuple<Operations...>{};
     }
 };
 
-template <constants::ArgType D, typename... NodesAlive>
-struct calc_order_aux_t<constants::CD<D>, NodesAlive...> {
+template <bool OrderFwd, constants::ArgType D, typename... NodesAlive>
+struct calc_order_aux_t<OrderFwd, constants::CD<D>, NodesAlive...> {
     template <typename... Operations> constexpr static auto call() noexcept {
         // we don't add anything to operations because it's a constant
-        return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
+        return calc_order_aux_t<OrderFwd,
+                                NodesAlive...>::template call<Operations...>();
     }
 };
 
-template <std::size_t N, typename... NodesAlive>
-struct calc_order_aux_t<double_t<N>, NodesAlive...> {
+template <bool OrderFwd, std::size_t N, typename... NodesAlive>
+struct calc_order_aux_t<OrderFwd, double_t<N>, NodesAlive...> {
     template <typename... Operations> constexpr static auto call() noexcept {
         // we don't add anything to operations because it's an input
-        return calc_order_aux_t<NodesAlive...>::template call<Operations...>();
+        return calc_order_aux_t<OrderFwd,
+                                NodesAlive...>::template call<Operations...>();
     }
 };
 
-template <template <class...> class Xvariate, class... Node,
+template <bool OrderFwd, template <class...> class Xvariate, class... Node,
           typename... NodesAlive>
-struct calc_order_aux_t<Xvariate<Node...>, NodesAlive...> {
+struct calc_order_aux_t<OrderFwd, Xvariate<Node...>, NodesAlive...> {
     template <typename... Operations> constexpr static auto call() noexcept {
         using this_type = Xvariate<Node...>;
         // it is possible that some intermediate nodes are sent as input
@@ -51,19 +53,25 @@ struct calc_order_aux_t<Xvariate<Node...>, NodesAlive...> {
 
         if constexpr (other_types_depend_on_this) {
             // this_type will come up again because it is included on NodesAlive
-            return calc_order_aux_t<NodesAlive...>::template call<
+            return calc_order_aux_t<OrderFwd, NodesAlive...>::template call<
                 Operations...>();
         } else {
-            return calc_order_aux_t<Node..., NodesAlive...>::template call<
-                this_type, Operations...>();
+            if constexpr (OrderFwd) {
+                return calc_order_aux_t<OrderFwd, Node..., NodesAlive...>::
+                    template call<this_type, Operations...>();
+            } else {
+                return calc_order_aux_t<OrderFwd, Node..., NodesAlive...>::
+                    template call<Operations..., this_type>();
+            }
         }
     }
 };
 
 } // namespace detail
 
-template <class... Roots> constexpr auto calc_order_t(Roots const &.../* o */) {
-    return detail::calc_order_aux_t<Roots...>::template call();
+template <bool OrderFwd = true, class... Roots>
+constexpr auto calc_order_t(Roots const &.../* o */) {
+    return detail::calc_order_aux_t<OrderFwd, Roots...>::template call();
 }
 
 } // namespace adhoc2

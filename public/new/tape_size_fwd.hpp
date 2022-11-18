@@ -26,7 +26,8 @@ template <class... Roots> struct tape_size_fwd_aux_t {
 
 template <class... Roots> constexpr auto tape_size_fwd_t(Roots... /* in */) {
     auto constexpr leafs = detail::leafs_t<Roots...>::template call();
-    auto constexpr nodes = detail::calc_order_aux_t<Roots...>::template call();
+    auto constexpr nodes =
+        detail::calc_order_aux_t<true, Roots...>::template call();
 
     return detail::tape_size_fwd_aux_t<Roots...>::template call(leafs, nodes);
 }
