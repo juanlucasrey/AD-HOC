@@ -5,6 +5,7 @@
 #include "calc_order.hpp"
 #include "constants_type.hpp"
 #include "tape_nodes.hpp"
+#include "tape_size_fwd.hpp"
 
 namespace adhoc2 {
 
