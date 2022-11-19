@@ -20,8 +20,8 @@ constexpr auto active_nodes(std::tuple<Nodes...> /* in */) {
 
 template <std::size_t CurrentWidth, std::size_t MaxWidth,
           class... ActiveLeafsAndRoots, class... StoredNodes>
-constexpr auto tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
-                                  std::tuple<>, std::tuple<StoredNodes...>)
+constexpr auto tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
+                                 std::tuple<>, std::tuple<StoredNodes...>)
     -> std::size_t {
     return MaxWidth;
 }
@@ -31,17 +31,17 @@ template <std::size_t CurrentWidth, std::size_t MaxWidth,
           class... ActiveLeafsAndRoots, class... NodesAlive,
           class... StoredNodes>
 constexpr auto
-    tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
-                       std::tuple<Bivariate<Node1, Node2>, NodesAlive...>,
-                       std::tuple<StoredNodes...>) -> std::size_t;
+    tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
+                      std::tuple<Bivariate<Node1, Node2>, NodesAlive...>,
+                      std::tuple<StoredNodes...>) -> std::size_t;
 
 template <std::size_t CurrentWidth, std::size_t MaxWidth,
           template <class> class Univariate, class Node,
           class... ActiveLeafsAndRoots, class... NodesAlive,
           class... StoredNodes>
-constexpr auto tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
-                                  std::tuple<Univariate<Node>, NodesAlive...>,
-                                  std::tuple<StoredNodes...>) -> std::size_t {
+constexpr auto tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
+                                 std::tuple<Univariate<Node>, NodesAlive...>,
+                                 std::tuple<StoredNodes...>) -> std::size_t {
     using this_type = Univariate<Node>;
 
     constexpr bool is_this_node_root =
@@ -56,7 +56,7 @@ constexpr auto tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
     constexpr std::size_t new_max_widt =
         new_current_widt > MaxWidth ? new_current_widt : MaxWidth;
 
-    return tape_size_bwd_aux3<new_current_widt, new_max_widt>(
+    return tape_size_bwd_aux<new_current_widt, new_max_widt>(
         std::tuple<ActiveLeafsAndRoots...>{}, std::tuple<NodesAlive...>{},
         std::tuple<Node, StoredNodes...>{});
 }
@@ -66,9 +66,9 @@ template <std::size_t CurrentWidth, std::size_t MaxWidth,
           class... ActiveLeafsAndRoots, class... NodesAlive,
           class... StoredNodes>
 constexpr auto
-tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
-                   std::tuple<Bivariate<Node1, Node2>, NodesAlive...>,
-                   std::tuple<StoredNodes...>) -> std::size_t {
+tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
+                  std::tuple<Bivariate<Node1, Node2>, NodesAlive...>,
+                  std::tuple<StoredNodes...>) -> std::size_t {
     using this_type = Bivariate<Node1, Node2>;
 
     constexpr bool is_this_node_root =
@@ -89,7 +89,7 @@ tape_size_bwd_aux3(std::tuple<ActiveLeafsAndRoots...>,
     constexpr std::size_t new_max_widt =
         new_current_widt > MaxWidth ? new_current_widt : MaxWidth;
 
-    return tape_size_bwd_aux3<new_current_widt, new_max_widt>(
+    return tape_size_bwd_aux<new_current_widt, new_max_widt>(
         std::tuple<ActiveLeafsAndRoots...>{}, std::tuple<NodesAlive...>{},
         std::tuple<Node1, Node2, StoredNodes...>{});
 }
@@ -111,7 +111,7 @@ constexpr auto tape_size_bwd() -> std::size_t {
     auto constexpr active_nodes =
         detail::active_nodes<ActiveLeafsAndRoots...>(nodes_bwd);
 
-    return detail::tape_size_bwd_aux3<0U, 0U>(
+    return detail::tape_size_bwd_aux<0U, 0U>(
         std::tuple<ActiveLeafsAndRoots...>{}, active_nodes, std::tuple<>{});
 }
 
