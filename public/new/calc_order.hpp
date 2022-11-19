@@ -49,7 +49,7 @@ struct calc_order_aux_t<OrderFwd, Xvariate<Node...>, NodesAlive...> {
         // static_assert(!has_type2<this_type, NodesAlive...>());
 
         constexpr bool other_types_depend_on_this =
-            (depends<NodesAlive, this_type>::call() || ...);
+            (equal_or_depends<NodesAlive, this_type>::call() || ...);
 
         if constexpr (other_types_depend_on_this) {
             // this_type will come up again because it is included on NodesAlive
