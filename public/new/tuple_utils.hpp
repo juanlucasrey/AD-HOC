@@ -12,9 +12,10 @@ namespace detail {
 
 template <std::size_t IdxToReplace, class Replacement, class... TupleValues,
           std::size_t... IndicesStart, std::size_t... IndicesEnd>
-auto constexpr replace_first_aux2(std::tuple<TupleValues...> /* in */,
-                                  std::index_sequence<IndicesStart...>,
-                                  std::index_sequence<IndicesEnd...>) {
+auto constexpr replace_first_aux2(
+    std::tuple<TupleValues...> /* in */,
+    std::index_sequence<IndicesStart...> /* idx1 */,
+    std::index_sequence<IndicesEnd...> /* idx2 */) {
     return std::make_tuple(
         std::tuple_element_t<IndicesStart, std::tuple<TupleValues...>>{}...,
         Replacement{},
