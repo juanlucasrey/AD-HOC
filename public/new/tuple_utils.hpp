@@ -44,5 +44,18 @@ auto constexpr replace_first(std::tuple<TupleValues...> /* in */) {
         std::tuple<TupleValues...>{});
 }
 
+template <typename T, size_t N> class generate_tuple_type {
+    template <typename = std::make_index_sequence<N>> struct impl;
+
+    template <size_t... Is> struct impl<std::index_sequence<Is...>> {
+        template <size_t> using wrap = T;
+
+        using type = std::tuple<wrap<Is>...>;
+    };
+
+  public:
+    using type = typename impl<>::type;
+};
+
 } // namespace adhoc2
 #endif // ADHOC_TUPLE_UTILS_HPP

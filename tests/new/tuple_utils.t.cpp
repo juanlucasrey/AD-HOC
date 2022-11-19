@@ -55,4 +55,11 @@ TEST(TupleUitls, Repeat) {
                                         node2, node3, node4, node5, node6>>);
 }
 
+TEST(TupleUitls, GenerateTuple) {
+    auto constexpr temp = generate_tuple_type<available_t, 3>::type{};
+    static_assert(std::is_same_v<
+                  decltype(temp),
+                  const std::tuple<available_t, available_t, available_t>>);
+}
+
 } // namespace adhoc2
