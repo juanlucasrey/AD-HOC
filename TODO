@@ -4,3 +4,36 @@
 -high order
 -optimal order of execution for minimal array size
 -vectorisation
+
+functions with inverse:
+acos
+asin
+atan
+sinh
+tanh
+acosh
+asinh
+atanh
+
+exp
+log
+log10
+exp2
+expm1
+log1p
+log2
+logb
+sqrt
+cbrt
+pow (except pair power)
+erf
+erfc
+
+functions without inverse:
+cos
+sin
+tan
+atan2 (division)
+cosh
+tgamma
+lgamma
