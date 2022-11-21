@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
   adhoc_test
   new/leafs.t.cpp
+  new/tuple_utils.t.cpp
   new/static_tape.t.cpp
+  new/evaluate_bwd.t.cpp
   new/tape_size_fwd.t.cpp
   BS.t.cpp
   adhoc.t.cpp
@@ -31,6 +33,9 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     FetchContent_MakeAvailable(googletest)
 endif()
+
+# fo coverage
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping")
 
 # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wconversion -Wdouble-promotion -Wundef -Wdelete-non-virtual-dtor -Wnon-virtual-dtor -Wparentheses -Wcast-align -Wwrite-strings -Wredundant-decls -Wunused-parameter")
