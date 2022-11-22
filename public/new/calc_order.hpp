@@ -67,11 +67,36 @@ struct calc_order_aux_t<OrderFwd, Xvariate<Node...>, NodesAlive...> {
     }
 };
 
+template <class... ActiveLeafsAndRoots, class... Nodes>
+constexpr auto filter_active_nodes(std::tuple<Nodes...> /* in */) {
+    return std::tuple_cat(
+        std::conditional_t<(depends_many<Nodes, ActiveLeafsAndRoots...>()),
+                           std::tuple<Nodes>, std::tuple<>>{}...);
+}
+
+template <bool OrderFwd, class... ActiveLeafsAndRoots>
+constexpr auto calc_order_t() {
+    if constexpr (OrderFwd) {
+        // eventually, forward order should also filter active branches only
+        // because those are the only values that we need to store.
+        // however that will require to manage memory calculation of non-active
+        // branches on an array separately. to do later.
+        return detail::calc_order_aux_t<
+            OrderFwd, ActiveLeafsAndRoots...>::template call();
+    } else {
+        auto constexpr nodes_bwd =
+            detail::calc_order_aux_t<OrderFwd,
+                                     ActiveLeafsAndRoots...>::template call();
+
+        return detail::filter_active_nodes<ActiveLeafsAndRoots...>(nodes_bwd);
+    }
+}
+
 } // namespace detail
 
-template <bool OrderFwd = true, class... Roots>
-constexpr auto calc_order_t(Roots const &.../* o */) {
-    return detail::calc_order_aux_t<OrderFwd, Roots...>::template call();
+template <bool OrderFwd = true, class... ActiveLeafsAndRoots>
+constexpr auto calc_order_t(ActiveLeafsAndRoots const &.../* o */) {
+    return detail::calc_order_t<OrderFwd, ActiveLeafsAndRoots...>();
 }
 
 } // namespace adhoc2

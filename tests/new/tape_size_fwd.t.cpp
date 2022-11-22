@@ -1,4 +1,5 @@
 #include <new/calc_order.hpp>
+#include <new/evaluate_bwd.hpp>
 #include <new/evaluate_fwd.hpp>
 #include <new/init.hpp>
 #include <new/tape_nodes.hpp>
@@ -121,12 +122,13 @@ TEST(TapeSizeFwd, BSSinglePrice) {
     tape.set(v, 0.15);
     tape.set(T, 0.5);
 
-    evaluate(tape);
+    auto intermediate_tape = evaluate_fwd_return_vals(tape);
     double result2 = tape.get(result_adhoc);
     EXPECT_EQ(result2, result);
 
     auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
 
+    // evaluate_bwd(tape, intermediate_tape, tape_d);
     // auto result_adhoc2 = call_price(S, K, v, T);
     auto result_adhoc2 = cdf_n(S);
     auto temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),

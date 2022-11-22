@@ -11,13 +11,6 @@ namespace adhoc2 {
 
 namespace detail {
 
-template <class... ActiveLeafsAndRoots, class... Nodes>
-constexpr auto active_nodes(std::tuple<Nodes...> /* in */) {
-    return std::tuple_cat(
-        std::conditional_t<(depends_many<Nodes, ActiveLeafsAndRoots...>()),
-                           std::tuple<Nodes>, std::tuple<>>{}...);
-}
-
 template <std::size_t CurrentWidth, std::size_t MaxWidth,
           class... ActiveLeafsAndRoots, class... StoredNodes>
 constexpr auto tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
@@ -98,21 +91,10 @@ tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
 
 template <class... ActiveLeafsAndRoots>
 constexpr auto tape_size_bwd() -> std::size_t {
-
-    auto constexpr active_leaves_tuple = std::tuple_cat(
-        std::conditional_t<
-            (depends_many<ActiveLeafsAndRoots, ActiveLeafsAndRoots...>()),
-            std::tuple<>, std::tuple<ActiveLeafsAndRoots>>{}...);
-
-    auto constexpr nodes_bwd =
-        detail::calc_order_aux_t<false,
-                                 ActiveLeafsAndRoots...>::template call();
-
-    auto constexpr active_nodes =
-        detail::active_nodes<ActiveLeafsAndRoots...>(nodes_bwd);
-
+    auto constexpr nodes =
+        detail::calc_order_t<false, ActiveLeafsAndRoots...>();
     return detail::tape_size_bwd_aux<0U, 0U>(
-        std::tuple<ActiveLeafsAndRoots...>{}, active_nodes, std::tuple<>{});
+        std::tuple<ActiveLeafsAndRoots...>{}, nodes, std::tuple<>{});
 }
 
 } // namespace adhoc2

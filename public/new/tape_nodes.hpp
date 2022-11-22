@@ -18,6 +18,7 @@ template <class... Nodes> class Tape {
     explicit Tape(Nodes... /* in */) {}
     template <class Derived> void inline set(Base<Derived> var, double val);
     template <class Derived> auto inline get(Base<Derived> var) const -> double;
+    template <class Derived> auto inline get(Base<Derived> var) -> double &;
 };
 
 template <class... Nodes>
@@ -34,6 +35,12 @@ auto Tape<Nodes...>::get(Base<Derived> /* in */) const -> double {
     return this->buff[idx];
 }
 
+template <class... Nodes>
+template <class Derived>
+auto Tape<Nodes...>::get(Base<Derived> /* in */) -> double & {
+    constexpr auto idx = idx_type2<Derived, Nodes...>();
+    return this->buff[idx];
+}
 namespace detail {
 template <class... Roots, class... Leafs>
 auto constexpr TapeRootsAndLeafs_aux(std::tuple<Leafs...> /* in */) {

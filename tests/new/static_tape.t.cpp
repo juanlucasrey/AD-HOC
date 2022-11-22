@@ -21,6 +21,7 @@ TEST(StaticTape, TapeNodes) {
     leaf_and_root_tape.set(v1, 2.0);
     leaf_and_root_tape.set(v2, 3.0);
     leaf_and_root_tape.set(v3, 4.0);
+    leaf_and_root_tape.get(v3) = 5.0;
 
     auto derivatives = Tape(v0, v1, v2, res1, res2);
 
