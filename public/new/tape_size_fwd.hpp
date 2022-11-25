@@ -17,7 +17,7 @@ template <class... Roots> struct tape_size_fwd_aux_t {
     constexpr static auto call(std::tuple<Leafs...> /* in1 */,
                                std::tuple<Nodes...> /* in2 */) {
         return std::tuple_cat(
-            std::conditional_t<has_type2<Nodes, Leafs..., Roots...>(),
+            std::conditional_t<has_type<Nodes, Leafs..., Roots...>(),
                                std::tuple<>, std::tuple<Nodes>>{}...);
     }
 };

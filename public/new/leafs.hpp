@@ -35,7 +35,7 @@ struct leafs_t<double_t<N>, NodesAlive...> {
     template <typename... Leafs> constexpr static auto call() noexcept {
         using this_type = double_t<N>;
 
-        constexpr bool already_included = has_type2<this_type, Leafs...>();
+        constexpr bool already_included = has_type<this_type, Leafs...>();
 
         if constexpr (already_included) {
             // It's already been added, so we don't add the leaf

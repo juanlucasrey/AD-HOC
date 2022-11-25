@@ -38,10 +38,10 @@ constexpr auto tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
     using this_type = Univariate<Node>;
 
     constexpr bool is_this_node_root =
-        has_type2<this_type, ActiveLeafsAndRoots...>();
+        has_type<this_type, ActiveLeafsAndRoots...>();
 
     constexpr bool is_next_node_new =
-        !has_type2<Node, StoredNodes..., ActiveLeafsAndRoots...>();
+        !has_type<Node, StoredNodes..., ActiveLeafsAndRoots...>();
 
     constexpr std::size_t new_current_widt =
         CurrentWidth - !is_this_node_root + is_next_node_new;
@@ -65,14 +65,14 @@ tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
     using this_type = Bivariate<Node1, Node2>;
 
     constexpr bool is_this_node_root =
-        has_type2<this_type, ActiveLeafsAndRoots...>();
+        has_type<this_type, ActiveLeafsAndRoots...>();
 
     constexpr bool is_next_node1_new =
-        !has_type2<Node1, StoredNodes..., ActiveLeafsAndRoots...>() &&
+        !has_type<Node1, StoredNodes..., ActiveLeafsAndRoots...>() &&
         equal_or_depends_many<Node1, ActiveLeafsAndRoots...>();
 
     constexpr bool is_next_node2_new =
-        !has_type2<Node2, StoredNodes..., ActiveLeafsAndRoots...>() &&
+        !has_type<Node2, StoredNodes..., ActiveLeafsAndRoots...>() &&
         equal_or_depends_many<Node2, ActiveLeafsAndRoots...>();
 
     constexpr std::size_t new_current_widt = CurrentWidth - !is_this_node_root +

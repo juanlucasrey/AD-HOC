@@ -23,7 +23,7 @@ template <class Node, class... RootsAndLeafs, class... IntermediateNodes>
 inline auto get(Tape<RootsAndLeafs...> const &in,
                 Tape<IntermediateNodes...> const &intermediate, Node /* node */)
     -> double {
-    constexpr bool is_root_or_leaf = has_type2<Node, RootsAndLeafs...>();
+    constexpr bool is_root_or_leaf = has_type<Node, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
         return in.get(Node{});
     } else {
@@ -51,7 +51,7 @@ inline void evaluate_fwd(
     Tape<RootsAndLeafs...> &in, Tape<IntermediateNodes...> &intermediate,
     std::tuple<Univariate<Node>, IntermediateTypesToCalc...> /* nodes */) {
     using this_type = Univariate<Node>;
-    constexpr bool is_root_or_leaf = has_type2<this_type, RootsAndLeafs...>();
+    constexpr bool is_root_or_leaf = has_type<this_type, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
         in.set(Univariate<Node>{},
                Univariate<Node>::v(get(in, intermediate, Node{})));
@@ -71,7 +71,7 @@ evaluate_fwd(Tape<RootsAndLeafs...> &in,
              Tape<IntermediateNodes...> &intermediate,
              std::tuple<Bivariate<Node1, Node2>, NodesToCalc...> /* nodes */) {
     using this_type = Bivariate<Node1, Node2>;
-    constexpr bool is_root_or_leaf = has_type2<this_type, RootsAndLeafs...>();
+    constexpr bool is_root_or_leaf = has_type<this_type, RootsAndLeafs...>();
     if constexpr (is_root_or_leaf) {
         in.set(Bivariate<Node1, Node2>{},
                Bivariate<Node1, Node2>::v(get(in, intermediate, Node1{}),

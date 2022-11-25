@@ -27,7 +27,7 @@ inline auto get2(Tape<InputTypes...> const &in,
                 Tape<IntermediateTypes...> const &intermediate, Input /* in
                 */)
     -> double {
-    constexpr bool is_input = has_type2<Input, InputTypes...>();
+    constexpr bool is_input = has_type<Input, InputTypes...>();
     if constexpr (is_input) {
         return in.get(Input{});
     } else {
@@ -78,10 +78,9 @@ inline void univariate_bwd(Tape<RootsAndLeafs...> const &in,
                            std::array<double, N> &deriv_vals, const double &d,
                            std::tuple<NodesAlive...> /* deriv_ids */,
                            std::tuple<NodesToCalc...> /* nodes */) {
-    constexpr bool is_next_node_leaf =
-        has_type2<Node, ActiveRootsAndLeafs...>();
+    constexpr bool is_next_node_leaf = has_type<Node, ActiveRootsAndLeafs...>();
     constexpr bool is_current_node_root =
-        has_type2<this_type, ActiveRootsAndLeafs...>();
+        has_type<this_type, ActiveRootsAndLeafs...>();
 
     if constexpr (is_next_node_leaf) {
         if constexpr (is_current_node_root) {
@@ -100,7 +99,7 @@ inline void univariate_bwd(Tape<RootsAndLeafs...> const &in,
                          std::tuple<NodesToCalc...>{});
         }
     } else {
-        constexpr bool is_next_node_stored = has_type2<Node, NodesAlive...>();
+        constexpr bool is_next_node_stored = has_type<Node, NodesAlive...>();
         if constexpr (is_current_node_root) {
             if constexpr (is_next_node_stored) {
                 auto constexpr position_node =
@@ -174,11 +173,11 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                                          std::tuple<NodesToCalc...>{});
     } else if constexpr (!node1_has_0_deriv && !node2_has_0_deriv) {
         constexpr bool is_next_node1_leaf =
-            has_type2<Node1, ActiveRootsAndLeafs...>();
+            has_type<Node1, ActiveRootsAndLeafs...>();
         constexpr bool is_next_node2_leaf =
-            has_type2<Node2, ActiveRootsAndLeafs...>();
+            has_type<Node2, ActiveRootsAndLeafs...>();
         constexpr bool is_current_node_root =
-            has_type2<this_type, ActiveRootsAndLeafs...>();
+            has_type<this_type, ActiveRootsAndLeafs...>();
 
         double const d1 = this_type::d1(get2(in, intermediate, this_type{}),
                                         get2(in, intermediate, Node1{}),
@@ -197,7 +196,7 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                                  std::tuple<NodesToCalc...>{});
                 } else {
                     constexpr bool is_next_node2_stored =
-                        has_type2<Node2, NodesAlive...>();
+                        has_type<Node2, NodesAlive...>();
                     if constexpr (is_next_node2_stored) {
                         auto constexpr position_node2 =
                             get_idx_first<Node2>(std::tuple<NodesAlive...>{});
@@ -225,7 +224,7 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                     derivs.get(Node2{}) += derivs.get(this_type{}) * d2;
 
                     constexpr bool is_next_node1_stored =
-                        has_type2<Node1, NodesAlive...>();
+                        has_type<Node1, NodesAlive...>();
                     if constexpr (is_next_node1_stored) {
                         auto constexpr position_node1 =
                             get_idx_first<Node1>(std::tuple<NodesAlive...>{});
@@ -249,9 +248,9 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                     }
                 } else {
                     constexpr bool is_next_node1_stored =
-                        has_type2<Node1, NodesAlive...>();
+                        has_type<Node1, NodesAlive...>();
                     constexpr bool is_next_node2_stored =
-                        has_type2<Node2, NodesAlive...>();
+                        has_type<Node2, NodesAlive...>();
                     if constexpr (is_next_node1_stored) {
                         auto constexpr position_node1 =
                             get_idx_first<Node1>(std::tuple<NodesAlive...>{});
@@ -326,7 +325,7 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                                  deriv_ids_new, std::tuple<NodesToCalc...>{});
                 } else {
                     constexpr bool is_next_node2_stored =
-                        has_type2<Node2, NodesAlive...>();
+                        has_type<Node2, NodesAlive...>();
                     if constexpr (is_next_node2_stored) {
                         auto constexpr position_node2 =
                             get_idx_first<Node2>(deriv_ids_new);
@@ -351,7 +350,7 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                 if constexpr (is_next_node2_leaf) {
                     derivs.get(Node2{}) += deriv_vals[position_root] * d2;
                     constexpr bool is_next_node1_stored =
-                        has_type2<Node1, NodesAlive...>();
+                        has_type<Node1, NodesAlive...>();
                     if constexpr (is_next_node1_stored) {
                         auto constexpr position_node1 =
                             get_idx_first<Node1>(deriv_ids_new);
@@ -373,9 +372,9 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                     }
                 } else {
                     constexpr bool is_next_node1_stored =
-                        has_type2<Node1, NodesAlive...>();
+                        has_type<Node1, NodesAlive...>();
                     constexpr bool is_next_node2_stored =
-                        has_type2<Node2, NodesAlive...>();
+                        has_type<Node2, NodesAlive...>();
                     if constexpr (is_next_node1_stored) {
                         auto constexpr position_node1 =
                             get_idx_first<Node1>(deriv_ids_new);

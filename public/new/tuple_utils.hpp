@@ -36,14 +36,14 @@ auto constexpr replace_first_aux(std::tuple<TupleValues...> /* in */) {
 
 template <class Type, class... TupleValues>
 auto constexpr get_idx_first(std::tuple<TupleValues...> /* in */) {
-    static_assert(has_type2<Type, TupleValues...>(),
+    static_assert(has_type<Type, TupleValues...>(),
                   "type to replace not on this tuple");
     return detail::get_index<Type, TupleValues...>::value;
 }
 
 template <class TypeToReplace, class Replacement, class... TupleValues>
 auto constexpr replace_first(std::tuple<TupleValues...> /* in */) {
-    static_assert(has_type2<TypeToReplace, TupleValues...>(),
+    static_assert(has_type<TypeToReplace, TupleValues...>(),
                   "type to replace not on this tuple");
     constexpr auto idx =
         detail::get_index<TypeToReplace, TupleValues...>::value;

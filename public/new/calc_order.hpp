@@ -46,7 +46,7 @@ struct calc_order_aux_t<OrderFwd, Xvariate<Node...>, NodesAlive...> {
     template <typename... Operations> constexpr static auto call() noexcept {
         using this_type = Xvariate<Node...>;
         // it is possible that some intermediate nodes are sent as input
-        // static_assert(!has_type2<this_type, NodesAlive...>());
+        // static_assert(!has_type<this_type, NodesAlive...>());
 
         constexpr bool other_types_depend_on_this =
             (equal_or_depends<NodesAlive, this_type>::call() || ...);

@@ -28,14 +28,14 @@ constexpr auto idx_type(T const & /* in */) -> std::size_t {
     return detail::get_index<T, Ts...>::value;
 };
 
-template <typename T, typename... Ts> constexpr auto has_type2() -> bool {
+template <typename T, typename... Ts> constexpr auto has_type() -> bool {
     return (std::is_same_v<T, Ts> || ...) ||
            (std::is_same_v<T, Ts const> || ...);
 };
 
 template <typename T, typename... Ts>
 constexpr auto idx_type2() -> std::size_t {
-    static_assert(has_type2<T, Ts...>(), "variable not on this tape");
+    static_assert(has_type<T, Ts...>(), "variable not on this tape");
     return detail::get_index<T, Ts...>::value;
 };
 
