@@ -57,6 +57,18 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
              std::tuple<NodesAlive...> /* deriv_ids */,
              std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */);
 
+template <class... RootsAndLeafs, class... IntermediateNodes,
+          class... ActiveRootsAndLeafs, std::size_t N, class... NodesAlive,
+          template <class, class> class Bivariate, class Node1, class Node2,
+          class... NodesToCalc>
+inline void
+evaluate_bwd(Tape<RootsAndLeafs...> const &in,
+             Tape<IntermediateNodes...> const &intermediate,
+             Tape<ActiveRootsAndLeafs...> &derivs,
+             std::array<double, N> &deriv_vals,
+             std::tuple<NodesAlive...> /* deriv_ids */,
+             std::tuple<Bivariate<Node1, Node2>, NodesToCalc...> /* nodes */);
+
 template <class this_type, class Node, class... RootsAndLeafs,
           class... IntermediateNodes, class... ActiveRootsAndLeafs,
           std::size_t N, class... NodesAlive, class... NodesToCalc>
@@ -78,32 +90,53 @@ inline void univariate_bwd(Tape<RootsAndLeafs...> const &in,
                          std::tuple<NodesAlive...>{},
                          std::tuple<NodesToCalc...>{});
         } else {
-            auto constexpr pos =
+            auto constexpr position_root =
                 get_idx_first<this_type>(std::tuple<NodesAlive...>{});
             auto constexpr deriv_ids_new =
                 replace_first<this_type, available_t>(
                     std::tuple<NodesAlive...>{});
-            derivs.get(Node{}) += deriv_vals[pos] * d;
+            derivs.get(Node{}) += deriv_vals[position_root] * d;
             evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
                          std::tuple<NodesToCalc...>{});
         }
     } else {
+        constexpr bool is_next_node_stored = has_type2<Node, NodesAlive...>();
         if constexpr (is_current_node_root) {
-            auto constexpr pos =
-                get_idx_first<available_t>(std::tuple<NodesAlive...>{});
-            auto constexpr deriv_ids_new =
-                replace_first<available_t, Node>(std::tuple<NodesAlive...>{});
-            deriv_vals[pos] = derivs.get(this_type{}) * d;
-            evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
-                         std::tuple<NodesToCalc...>{});
+            if constexpr (is_next_node_stored) {
+                auto constexpr position_node =
+                    get_idx_first<Node>(std::tuple<NodesAlive...>{});
+                deriv_vals[position_node] += derivs.get(this_type{}) * d;
+                evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                             std::tuple<NodesAlive...>{},
+                             std::tuple<NodesToCalc...>{});
+            } else {
+                auto constexpr position_node =
+                    get_idx_first<available_t>(std::tuple<NodesAlive...>{});
+                auto constexpr deriv_ids_new = replace_first<available_t, Node>(
+                    std::tuple<NodesAlive...>{});
+                deriv_vals[position_node] = derivs.get(this_type{}) * d;
+                evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                             deriv_ids_new, std::tuple<NodesToCalc...>{});
+            }
         } else {
-            auto constexpr pos =
+            auto constexpr position_root =
                 get_idx_first<this_type>(std::tuple<NodesAlive...>{});
-            auto constexpr deriv_ids_new =
-                replace_first<this_type, Node>(std::tuple<NodesAlive...>{});
-            deriv_vals[pos] *= d;
-            evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
-                         std::tuple<NodesToCalc...>{});
+            if constexpr (is_next_node_stored) {
+                auto constexpr position_node =
+                    get_idx_first<Node>(std::tuple<NodesAlive...>{});
+                auto constexpr deriv_ids_new =
+                    replace_first<this_type, available_t>(
+                        std::tuple<NodesAlive...>{});
+                deriv_vals[position_node] += deriv_vals[position_root] * d;
+                evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                             deriv_ids_new, std::tuple<NodesToCalc...>{});
+            } else {
+                auto constexpr deriv_ids_new =
+                    replace_first<this_type, Node>(std::tuple<NodesAlive...>{});
+                deriv_vals[position_root] *= d;
+                evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                             deriv_ids_new, std::tuple<NodesToCalc...>{});
+            }
         }
     }
 }
@@ -127,10 +160,26 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
         !equal_or_depends_many<Node2, ActiveRootsAndLeafs...>();
     static_assert(!node1_has_0_deriv || !node2_has_0_deriv);
 
-    constexpr bool is_current_node_root =
-        has_type2<this_type, ActiveRootsAndLeafs...>();
+    // ideally this should be differentiated at the type level
+    if constexpr (std::is_same_v<Node1, Node2>) {
+        static_assert(!node1_has_0_deriv && !node2_has_0_deriv);
+        // could be d1 or d2
+        double const d = 2 * this_type::d1(get2(in, intermediate, this_type{}),
+                                           get2(in, intermediate, Node1{}),
+                                           get2(in, intermediate, Node2{}));
 
-    if constexpr (!node1_has_0_deriv && !node2_has_0_deriv) {
+        // could be Node1 or Node2
+        univariate_bwd<this_type, Node1>(in, intermediate, derivs, deriv_vals,
+                                         d, std::tuple<NodesAlive...>{},
+                                         std::tuple<NodesToCalc...>{});
+    } else if constexpr (!node1_has_0_deriv && !node2_has_0_deriv) {
+        constexpr bool is_next_node1_leaf =
+            has_type2<Node1, ActiveRootsAndLeafs...>();
+        constexpr bool is_next_node2_leaf =
+            has_type2<Node2, ActiveRootsAndLeafs...>();
+        constexpr bool is_current_node_root =
+            has_type2<this_type, ActiveRootsAndLeafs...>();
+
         double const d1 = this_type::d1(get2(in, intermediate, this_type{}),
                                         get2(in, intermediate, Node1{}),
                                         get2(in, intermediate, Node2{}));
@@ -138,6 +187,264 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
         double const d2 = this_type::d2(get2(in, intermediate, this_type{}),
                                         get2(in, intermediate, Node1{}),
                                         get2(in, intermediate, Node2{}));
+        if constexpr (is_current_node_root) {
+            if constexpr (is_next_node1_leaf) {
+                derivs.get(Node1{}) += derivs.get(this_type{}) * d1;
+                if constexpr (is_next_node2_leaf) {
+                    derivs.get(Node2{}) += derivs.get(this_type{}) * d2;
+                    evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                 std::tuple<NodesAlive...>{},
+                                 std::tuple<NodesToCalc...>{});
+                } else {
+                    constexpr bool is_next_node2_stored =
+                        has_type2<Node2, NodesAlive...>();
+                    if constexpr (is_next_node2_stored) {
+                        auto constexpr position_node2 =
+                            get_idx_first<Node2>(std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node2] +=
+                            derivs.get(this_type{}) * d2;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     std::tuple<NodesAlive...>{},
+                                     std::tuple<NodesToCalc...>{});
+                    } else {
+                        auto constexpr position_node2 =
+                            get_idx_first<available_t>(
+                                std::tuple<NodesAlive...>{});
+                        auto constexpr deriv_ids_new =
+                            replace_first<available_t, Node2>(
+                                std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node2] =
+                            derivs.get(this_type{}) * d2;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new,
+                                     std::tuple<NodesToCalc...>{});
+                    }
+                }
+            } else {
+                if constexpr (is_next_node2_leaf) {
+                    derivs.get(Node2{}) += derivs.get(this_type{}) * d2;
+
+                    constexpr bool is_next_node1_stored =
+                        has_type2<Node1, NodesAlive...>();
+                    if constexpr (is_next_node1_stored) {
+                        auto constexpr position_node1 =
+                            get_idx_first<Node1>(std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node1] +=
+                            derivs.get(this_type{}) * d1;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     std::tuple<NodesAlive...>{},
+                                     std::tuple<NodesToCalc...>{});
+                    } else {
+                        auto constexpr position_node1 =
+                            get_idx_first<available_t>(
+                                std::tuple<NodesAlive...>{});
+                        auto constexpr deriv_ids_new =
+                            replace_first<available_t, Node1>(
+                                std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node1] =
+                            derivs.get(this_type{}) * d1;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new,
+                                     std::tuple<NodesToCalc...>{});
+                    }
+                } else {
+                    constexpr bool is_next_node1_stored =
+                        has_type2<Node1, NodesAlive...>();
+                    constexpr bool is_next_node2_stored =
+                        has_type2<Node2, NodesAlive...>();
+                    if constexpr (is_next_node1_stored) {
+                        auto constexpr position_node1 =
+                            get_idx_first<Node1>(std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node1] +=
+                            derivs.get(this_type{}) * d1;
+                        if constexpr (is_next_node2_stored) {
+                            auto constexpr position_node2 =
+                                get_idx_first<Node2>(
+                                    std::tuple<NodesAlive...>{});
+                            deriv_vals[position_node2] +=
+                                derivs.get(this_type{}) * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         std::tuple<NodesAlive...>{},
+                                         std::tuple<NodesToCalc...>{});
+                        } else {
+                            auto constexpr position_node2 =
+                                get_idx_first<available_t>(
+                                    std::tuple<NodesAlive...>{});
+                            auto constexpr deriv_ids_new =
+                                replace_first<available_t, Node2>(
+                                    std::tuple<NodesAlive...>{});
+                            deriv_vals[position_node2] =
+                                derivs.get(this_type{}) * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new,
+                                         std::tuple<NodesToCalc...>{});
+                        }
+                    } else {
+                        auto constexpr position_node1 =
+                            get_idx_first<available_t>(
+                                std::tuple<NodesAlive...>{});
+                        auto constexpr deriv_ids_new =
+                            replace_first<available_t, Node1>(
+                                std::tuple<NodesAlive...>{});
+                        deriv_vals[position_node1] =
+                            derivs.get(this_type{}) * d1;
+                        if constexpr (is_next_node2_stored) {
+                            auto constexpr position_node2 =
+                                get_idx_first<Node2>(
+                                    std::tuple<NodesAlive...>{});
+                            deriv_vals[position_node2] +=
+                                derivs.get(this_type{}) * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new,
+                                         std::tuple<NodesToCalc...>{});
+                        } else {
+                            auto constexpr position_node2 =
+                                get_idx_first<available_t>(deriv_ids_new);
+                            auto constexpr deriv_ids_new2 =
+                                replace_first<available_t, Node2>(
+                                    deriv_ids_new);
+                            deriv_vals[position_node2] =
+                                derivs.get(this_type{}) * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new2,
+                                         std::tuple<NodesToCalc...>{});
+                        }
+                    }
+                }
+            }
+        } else {
+            auto constexpr position_root =
+                get_idx_first<this_type>(std::tuple<NodesAlive...>{});
+            auto constexpr deriv_ids_new =
+                replace_first<this_type, available_t>(
+                    std::tuple<NodesAlive...>{});
+            if constexpr (is_next_node1_leaf) {
+                derivs.get(Node1{}) += deriv_vals[position_root] * d1;
+                if constexpr (is_next_node2_leaf) {
+                    derivs.get(Node2{}) += deriv_vals[position_root] * d2;
+                    evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                 deriv_ids_new, std::tuple<NodesToCalc...>{});
+                } else {
+                    constexpr bool is_next_node2_stored =
+                        has_type2<Node2, NodesAlive...>();
+                    if constexpr (is_next_node2_stored) {
+                        auto constexpr position_node2 =
+                            get_idx_first<Node2>(deriv_ids_new);
+                        deriv_vals[position_node2] +=
+                            deriv_vals[position_root] * d2;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new,
+                                     std::tuple<NodesToCalc...>{});
+                    } else {
+                        auto constexpr position_node2 =
+                            get_idx_first<available_t>(deriv_ids_new);
+                        auto constexpr deriv_ids_new2 =
+                            replace_first<available_t, Node2>(deriv_ids_new);
+                        deriv_vals[position_node2] =
+                            deriv_vals[position_root] * d2;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new2,
+                                     std::tuple<NodesToCalc...>{});
+                    }
+                }
+            } else {
+                if constexpr (is_next_node2_leaf) {
+                    derivs.get(Node2{}) += deriv_vals[position_root] * d2;
+                    constexpr bool is_next_node1_stored =
+                        has_type2<Node1, NodesAlive...>();
+                    if constexpr (is_next_node1_stored) {
+                        auto constexpr position_node1 =
+                            get_idx_first<Node1>(deriv_ids_new);
+                        deriv_vals[position_node1] +=
+                            deriv_vals[position_root] * d1;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new,
+                                     std::tuple<NodesToCalc...>{});
+                    } else {
+                        auto constexpr position_node1 =
+                            get_idx_first<available_t>(deriv_ids_new);
+                        auto constexpr deriv_ids_new2 =
+                            replace_first<available_t, Node1>(deriv_ids_new);
+                        deriv_vals[position_node1] =
+                            deriv_vals[position_root] * d1;
+                        evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                     deriv_ids_new2,
+                                     std::tuple<NodesToCalc...>{});
+                    }
+                } else {
+                    constexpr bool is_next_node1_stored =
+                        has_type2<Node1, NodesAlive...>();
+                    constexpr bool is_next_node2_stored =
+                        has_type2<Node2, NodesAlive...>();
+                    if constexpr (is_next_node1_stored) {
+                        auto constexpr position_node1 =
+                            get_idx_first<Node1>(deriv_ids_new);
+                        deriv_vals[position_node1] +=
+                            deriv_vals[position_root] * d1;
+                        if constexpr (is_next_node2_stored) {
+                            auto constexpr position_node2 =
+                                get_idx_first<Node2>(deriv_ids_new);
+                            deriv_vals[position_node2] +=
+                                deriv_vals[position_root] * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new,
+                                         std::tuple<NodesToCalc...>{});
+                        } else {
+                            auto constexpr position_node2 =
+                                get_idx_first<available_t>(deriv_ids_new);
+                            auto constexpr deriv_ids_new2 =
+                                replace_first<available_t, Node2>(
+                                    deriv_ids_new);
+                            deriv_vals[position_node2] =
+                                deriv_vals[position_root] * d2;
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new2,
+                                         std::tuple<NodesToCalc...>{});
+                        }
+                    } else {
+                        auto constexpr position_node1 =
+                            get_idx_first<available_t>(deriv_ids_new);
+                        auto constexpr deriv_ids_new2 =
+                            replace_first<available_t, Node1>(deriv_ids_new);
+                        if constexpr (is_next_node2_stored) {
+                            auto constexpr position_node2 =
+                                get_idx_first<Node2>(deriv_ids_new2);
+                            deriv_vals[position_node2] +=
+                                deriv_vals[position_root] * d2;
+
+                            if constexpr (position_node1 == position_root) {
+                                deriv_vals[position_node1] *= d1;
+                            } else {
+                                deriv_vals[position_node1] =
+                                    deriv_vals[position_root] * d1;
+                            }
+
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new2,
+                                         std::tuple<NodesToCalc...>{});
+                        } else {
+                            auto constexpr position_node2 =
+                                get_idx_first<available_t>(deriv_ids_new2);
+                            auto constexpr deriv_ids_new3 =
+                                replace_first<available_t, Node2>(
+                                    deriv_ids_new2);
+                            deriv_vals[position_node2] =
+                                deriv_vals[position_root] * d2;
+
+                            if constexpr (position_node1 == position_root) {
+                                deriv_vals[position_node1] *= d1;
+                            } else {
+                                deriv_vals[position_node1] =
+                                    deriv_vals[position_root] * d1;
+                            }
+                            evaluate_bwd(in, intermediate, derivs, deriv_vals,
+                                         deriv_ids_new3,
+                                         std::tuple<NodesToCalc...>{});
+                        }
+                    }
+                }
+            }
+        }
     } else if constexpr (node1_has_0_deriv) {
         double const d = this_type::d2(get2(in, intermediate, this_type{}),
                                        get2(in, intermediate, Node1{}),
@@ -173,47 +480,6 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
     univariate_bwd<this_type, Node>(in, intermediate, derivs, deriv_vals, d,
                                     std::tuple<NodesAlive...>{},
                                     std::tuple<NodesToCalc...>{});
-    // constexpr bool is_next_node_leaf =
-    //     has_type2<Node, ActiveRootsAndLeafs...>();
-    // constexpr bool is_current_node_root =
-    //     has_type2<this_type, ActiveRootsAndLeafs...>();
-
-    // if constexpr (is_next_node_leaf) {
-    //     if constexpr (is_current_node_root) {
-    //         derivs.get(Node{}) += derivs.get(this_type{}) * d;
-    //         evaluate_bwd(in, intermediate, derivs, deriv_vals,
-    //                      std::tuple<NodesAlive...>{},
-    //                      std::tuple<NodesToCalc...>{});
-    //     } else {
-    //         auto constexpr pos =
-    //             get_idx_first<this_type>(std::tuple<NodesAlive...>{});
-    //         auto constexpr deriv_ids_new =
-    //             replace_first<this_type, available_t>(
-    //                 std::tuple<NodesAlive...>{});
-    //         derivs.get(Node{}) += deriv_vals[pos] * d;
-    //         evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
-    //                      std::tuple<NodesToCalc...>{});
-    //     }
-    // } else {
-    //     if constexpr (is_current_node_root) {
-    //         auto constexpr pos =
-    //             get_idx_first<available_t>(std::tuple<NodesAlive...>{});
-    //         auto constexpr deriv_ids_new =
-    //             replace_first<available_t,
-    //             Node>(std::tuple<NodesAlive...>{});
-    //         deriv_vals[pos] = derivs.get(this_type{}) * d;
-    //         evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
-    //                      std::tuple<NodesToCalc...>{});
-    //     } else {
-    //         auto constexpr pos =
-    //             get_idx_first<this_type>(std::tuple<NodesAlive...>{});
-    //         auto constexpr deriv_ids_new =
-    //             replace_first<this_type, Node>(std::tuple<NodesAlive...>{});
-    //         deriv_vals[pos] *= d;
-    //         evaluate_bwd(in, intermediate, derivs, deriv_vals, deriv_ids_new,
-    //                      std::tuple<NodesToCalc...>{});
-    //     }
-    // }
 }
 
 } // namespace detail
