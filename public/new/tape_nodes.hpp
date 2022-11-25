@@ -24,21 +24,21 @@ template <class... Nodes> class Tape {
 template <class... Nodes>
 template <class Derived>
 void Tape<Nodes...>::set(Base<Derived> /* in */, double val) {
-    constexpr auto idx = idx_type2<Derived, Nodes...>();
+    constexpr auto idx = idx_type<Derived, Nodes...>();
     this->buff[idx] = val;
 }
 
 template <class... Nodes>
 template <class Derived>
 auto Tape<Nodes...>::get(Base<Derived> /* in */) const -> double {
-    constexpr auto idx = idx_type2<Derived, Nodes...>();
+    constexpr auto idx = idx_type<Derived, Nodes...>();
     return this->buff[idx];
 }
 
 template <class... Nodes>
 template <class Derived>
 auto Tape<Nodes...>::get(Base<Derived> /* in */) -> double & {
-    constexpr auto idx = idx_type2<Derived, Nodes...>();
+    constexpr auto idx = idx_type<Derived, Nodes...>();
     return this->buff[idx];
 }
 namespace detail {
