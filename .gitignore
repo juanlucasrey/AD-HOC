@@ -3,3 +3,4 @@ build
 .vscode
 .project
 .DS_Store
+benchmark
