@@ -64,5 +64,25 @@ template <typename T, size_t N> class generate_tuple_type {
     using type = typename impl<>::type;
 };
 
+template <class Type, class... TupleValues>
+auto constexpr get_idx_first2(std::tuple<TupleValues...> /* in */) {
+    if constexpr (has_type<Type, TupleValues...>()) {
+        return detail::get_index<Type, TupleValues...>::value;
+    } else {
+        // if the type is not found we go beyond the end
+        return sizeof...(TupleValues);
+    }
+}
+
+template <std::size_t IdxToReplace, class Replacement, class... TupleValues>
+auto constexpr replace_first2(std::tuple<TupleValues...> /* in */) {
+    if constexpr (IdxToReplace >= sizeof...(TupleValues)) {
+        return std::tuple<TupleValues...>{};
+    } else {
+        return detail::replace_first_aux<IdxToReplace, Replacement>(
+            std::tuple<TupleValues...>{});
+    }
+}
+
 } // namespace adhoc2
 #endif // ADHOC_TUPLE_UTILS_HPP

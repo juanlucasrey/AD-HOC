@@ -13,12 +13,16 @@ namespace adhoc2 {
 
 template <class... Nodes> class Tape {
     std::array<double, sizeof...(Nodes)> buff{};
+    double zero{0};
 
   public:
     explicit Tape(Nodes... /* in */) {}
     template <class Derived> void inline set(Base<Derived> var, double val);
     template <class Derived> auto inline get(Base<Derived> var) const -> double;
+    template <class Derived>
+    auto inline get2(Base<Derived> var) const -> double;
     template <class Derived> auto inline get(Base<Derived> var) -> double &;
+    template <class Derived> auto inline get2(Base<Derived> var) -> double &;
 };
 
 template <class... Nodes>
@@ -37,10 +41,33 @@ auto Tape<Nodes...>::get(Base<Derived> /* in */) const -> double {
 
 template <class... Nodes>
 template <class Derived>
+auto Tape<Nodes...>::get2(Base<Derived> /* in */) const -> double {
+    if constexpr (has_type<Derived, Nodes...>()) {
+        constexpr auto idx = idx_type<Derived, Nodes...>();
+        return this->buff[idx];
+    } else {
+        return 0;
+    }
+}
+
+template <class... Nodes>
+template <class Derived>
 auto Tape<Nodes...>::get(Base<Derived> /* in */) -> double & {
     constexpr auto idx = idx_type<Derived, Nodes...>();
     return this->buff[idx];
 }
+
+template <class... Nodes>
+template <class Derived>
+auto Tape<Nodes...>::get2(Base<Derived> /* in */) -> double & {
+    if constexpr (has_type<Derived, Nodes...>()) {
+        constexpr auto idx = idx_type<Derived, Nodes...>();
+        return this->buff[idx];
+    } else {
+        return this->zero;
+    }
+}
+
 namespace detail {
 template <class... Roots, class... Leafs>
 auto constexpr TapeRootsAndLeafs_aux(std::tuple<Leafs...> /* in */) {

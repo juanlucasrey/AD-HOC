@@ -121,10 +121,10 @@ TEST(EvaluateBwd, BlackScholes) {
 
     evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
 
-    std::cout << tape_d.get(S) << std::endl;
-    std::cout << tape_d.get(K) << std::endl;
-    std::cout << tape_d.get(v) << std::endl;
-    std::cout << tape_d.get(T) << std::endl;
+    EXPECT_NEAR(tape_d.get(S), 0.33961663008862131, 1e-14);
+    EXPECT_NEAR(tape_d.get(K), -0.38387614859866631, 1e-14);
+    EXPECT_NEAR(tape_d.get(v), -30.580208040388474, 1e-14);
+    EXPECT_NEAR(tape_d.get(T), -4.5870312060582705, 1e-14);
 }
 
 } // namespace adhoc2

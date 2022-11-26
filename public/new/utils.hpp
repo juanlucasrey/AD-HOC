@@ -32,6 +32,15 @@ template <typename T, typename... Ts> constexpr auto idx_type() -> std::size_t {
     return detail::get_index<T, Ts...>::value;
 };
 
+template <typename T, typename... Ts>
+constexpr auto idx_type2() -> std::size_t {
+    if constexpr (has_type<T, Ts...>()) {
+        return detail::get_index<T, Ts...>::value;
+    } else {
+        return sizeof...(Ts);
+    }
+};
+
 } // namespace adhoc2
 
 #endif // ADHOC_UTILS_HPP
