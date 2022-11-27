@@ -138,19 +138,30 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
         !equal_or_depends_many<Node2, ActiveRootsAndLeafs...>();
     static_assert(!node1_has_0_deriv || !node2_has_0_deriv);
 
-    // ideally this should be differentiated at the type level
-    if constexpr (std::is_same_v<Node1, Node2>) {
-        static_assert(!node1_has_0_deriv && !node2_has_0_deriv);
-        // could be d1 or d2
-        double const d = 2 * this_type::d1(get2(in, intermediate, this_type{}),
-                                           get2(in, intermediate, Node1{}),
-                                           get2(in, intermediate, Node2{}));
+    // ideally std::is_same_v<Node1, Node2> should be differentiated as type
+    if constexpr (std::is_same_v<Node1, Node2> || node1_has_0_deriv ||
+                  node2_has_0_deriv) {
+        double const d3 =
+            std::is_same_v<Node1, Node2>
+                ? 2 * this_type::d1 /* could be d1 or d2 */ (
+                          get2(in, intermediate, this_type{}),
+                          get2(in, intermediate, Node1{}),
+                          get2(in, intermediate, Node2{}))
+            : node1_has_0_deriv
+                ? this_type::d2(get2(in, intermediate, this_type{}),
+                                get2(in, intermediate, Node1{}),
+                                get2(in, intermediate, Node2{}))
+                : this_type::d1(get2(in, intermediate, this_type{}),
+                                get2(in, intermediate, Node1{}),
+                                get2(in, intermediate, Node2{}));
 
-        // could be Node1 or Node2
-        univariate_bwd<this_type, Node1>(in, intermediate, derivs, deriv_vals,
-                                         d, std::tuple<NodesAlive...>{},
-                                         std::tuple<NodesToCalc...>{});
-    } else if constexpr (!node1_has_0_deriv && !node2_has_0_deriv) {
+        using NextNodeAlive =
+            std::conditional_t<node1_has_0_deriv, Node2, Node1>;
+
+        univariate_bwd<this_type, NextNodeAlive>(
+            in, intermediate, derivs, deriv_vals, d3,
+            std::tuple<NodesAlive...>{}, std::tuple<NodesToCalc...>{});
+    } else {
         constexpr bool is_next_node1_leaf =
             has_type<Node1, ActiveRootsAndLeafs...>();
         constexpr bool is_next_node2_leaf =
@@ -273,20 +284,6 @@ evaluate_bwd(Tape<RootsAndLeafs...> const &in,
                 }
             }
         }
-    } else if constexpr (node1_has_0_deriv) {
-        double const d = this_type::d2(get2(in, intermediate, this_type{}),
-                                       get2(in, intermediate, Node1{}),
-                                       get2(in, intermediate, Node2{}));
-        univariate_bwd<this_type, Node2>(in, intermediate, derivs, deriv_vals,
-                                         d, std::tuple<NodesAlive...>{},
-                                         std::tuple<NodesToCalc...>{});
-    } else if constexpr (node2_has_0_deriv) {
-        double const d = this_type::d1(get2(in, intermediate, this_type{}),
-                                       get2(in, intermediate, Node1{}),
-                                       get2(in, intermediate, Node2{}));
-        univariate_bwd<this_type, Node1>(in, intermediate, derivs, deriv_vals,
-                                         d, std::tuple<NodesAlive...>{},
-                                         std::tuple<NodesToCalc...>{});
     }
 }
 
