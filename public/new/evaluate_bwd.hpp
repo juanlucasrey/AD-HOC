@@ -1,7 +1,6 @@
 #ifndef ADHOC_EVALUATE_BWD_HPP
 #define ADHOC_EVALUATE_BWD_HPP
 
-// #include "adhoc.hpp"
 #include "calc_order.hpp"
 #include "constants_type.hpp"
 #include "tape_nodes.hpp"
