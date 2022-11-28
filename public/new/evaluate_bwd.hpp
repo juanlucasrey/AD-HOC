@@ -75,7 +75,8 @@ template <class CurrentNode, class NextNode, class... RootsAndLeafs,
 inline void univariate_bwd(Tape<RootsAndLeafs...> const &in,
                            Tape<IntermediateNodes...> const &intermediate,
                            Tape<ActiveRootsAndLeafs...> &derivs,
-                           std::array<double, N> &deriv_vals, const double &d,
+                           std::array<double, N> &deriv_vals,
+                           const double &current_node_d,
                            std::tuple<NodesAlive...> /* deriv_ids */,
                            std::tuple<NodesToCalc...> /* nodes */) {
     constexpr bool is_next_node_leaf =
@@ -103,16 +104,16 @@ inline void univariate_bwd(Tape<RootsAndLeafs...> const &in,
 
     constexpr auto position_next = get_idx_first2<NextNode>(NodesAlive4{});
 
-    double &next_node_val =
+    double &next_node_total_d =
         is_next_node_leaf ? derivs.get2(NextNode{}) : deriv_vals[position_next];
 
-    double const current_node_d = is_current_node_root
-                                      ? derivs.get2(CurrentNode{})
-                                      : deriv_vals[position_root];
+    double const next_node_d =
+        current_node_d * (is_current_node_root ? derivs.get2(CurrentNode{})
+                                               : deriv_vals[position_root]);
     if constexpr (next_node_needs_new_storing) {
-        next_node_val = current_node_d * d;
+        next_node_total_d = next_node_d;
     } else {
-        next_node_val += current_node_d * d;
+        next_node_total_d += next_node_d;
     }
 
     evaluate_bwd(in, intermediate, derivs, deriv_vals, NodesAlive4{},
@@ -140,7 +141,7 @@ inline void evaluate_bwd(
     // ideally std::is_same_v<Node1, Node2> should be differentiated as type
     if constexpr (std::is_same_v<NextNode1, NextNode2> || node1_has_0_deriv ||
                   node2_has_0_deriv) {
-        double const d3 =
+        double const current_node_d =
             std::is_same_v<NextNode1, NextNode2>
                 ? 2 * CurrentNode::d1 /* could be d1 or d2 */ (
                           get2(in, intermediate, CurrentNode{}),
@@ -158,7 +159,7 @@ inline void evaluate_bwd(
             std::conditional_t<node1_has_0_deriv, NextNode2, NextNode1>;
 
         univariate_bwd<CurrentNode, NextNodeAlive>(
-            in, intermediate, derivs, deriv_vals, d3,
+            in, intermediate, derivs, deriv_vals, current_node_d,
             std::tuple<NodesAlive...>{}, std::tuple<NodesToCalc...>{});
     } else {
         constexpr bool is_next_node1_leaf =
@@ -215,24 +216,22 @@ inline void evaluate_bwd(
                                           ? derivs.get2(CurrentNode{})
                                           : deriv_vals[position_root];
 
-        double const d1 = CurrentNode::d1(get2(in, intermediate, CurrentNode{}),
-                                          get2(in, intermediate, NextNode1{}),
-                                          get2(in, intermediate, NextNode2{}));
-
-        double const d2 = CurrentNode::d2(get2(in, intermediate, CurrentNode{}),
-                                          get2(in, intermediate, NextNode1{}),
-                                          get2(in, intermediate, NextNode2{}));
+        auto d = CurrentNode::d(get2(in, intermediate, CurrentNode{}),
+                                get2(in, intermediate, NextNode1{}),
+                                get2(in, intermediate, NextNode2{}));
+        d[0] *= current_node_d;
+        d[1] *= current_node_d;
 
         if constexpr (next_node1_needs_new_storing) {
-            next_node1_val = current_node_d * d1;
+            next_node1_val = d[0];
         } else {
-            next_node1_val += current_node_d * d1;
+            next_node1_val += d[0];
         }
 
         if constexpr (next_node2_needs_new_storing) {
-            next_node2_val = current_node_d * d2;
+            next_node2_val = d[1];
         } else {
-            next_node2_val += current_node_d * d2;
+            next_node2_val += d[1];
         }
 
         evaluate_bwd(in, intermediate, derivs, deriv_vals, NodesAlive4{},

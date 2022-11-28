@@ -4,6 +4,7 @@
 #include "base.hpp"
 #include "constants_constexpr.hpp"
 
+#include <array>
 #include <cmath>
 
 namespace adhoc2 {
@@ -81,6 +82,11 @@ struct add_t : public Base<add_t<Input1, Input2>> {
                                     double /* in2 */) -> double {
         return 1.0;
     }
+
+    static inline constexpr auto d(double /* thisv */, double /* in1 */,
+                                   double /* in2 */) {
+        return std::array<double, 2>{1.0, 1.0};
+    }
 };
 
 template <class Input1, class Input2>
@@ -94,6 +100,10 @@ struct sub_t : public Base<sub_t<Input1, Input2>> {
                                     double /* in2 */) -> double {
         return -1.0;
     }
+    static inline constexpr auto d(double /* thisv */, double /* in1 */,
+                                   double /* in2 */) {
+        return std::array<double, 2>{1.0, -1.0};
+    }
 };
 
 template <class Input1, class Input2>
@@ -106,6 +116,9 @@ struct mul_t : public Base<mul_t<Input1, Input2>> {
     static inline auto d2(double /* thisv */, double in1, double /* in2 */)
         -> double {
         return in1;
+    }
+    static inline auto d(double /* thisv */, double in1, double in2) {
+        return std::array<double, 2>{in2, in1};
     }
 };
 
@@ -129,6 +142,12 @@ struct div_t : public Base<div_t<Input1, Input2>> {
     //     -> double {
     //     return -in1 / (in2 * in2);
     // }
+
+    static inline auto d(double thisv, double /* in1 */, double in2) {
+        std::array<double, 2> res{1.0 / in2, 0};
+        res[1] = -thisv * res[0];
+        return res;
+    }
 };
 
 template <std::size_t N> struct double_t : public Base<double_t<N>> {};
