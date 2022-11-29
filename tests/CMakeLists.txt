@@ -14,7 +14,6 @@ add_executable(
   constants.t.cpp
   static_tape.t.cpp
   tape_size_bwd.t.cpp
-  tape_size_fwd.t.cpp
   evaluate_fwd.t.cpp
   mcsim.t.cpp
   # opencl only for clang at the moment
