@@ -4,19 +4,6 @@
 
 namespace adhoc {
 
-TEST(adhoc2, EvaluateFwdUni) {
-    auto tape = CreateTapeInitial<1>();
-    auto [val0] = tape.getalias();
-    auto temp = exp(val0);
-
-    tape.set(val0, 1.0);
-    auto intermediate_tape = CreateTapeIntermediate(temp);
-    evaluate_fwd(tape, intermediate_tape);
-
-    double result = intermediate_tape.get(temp);
-    EXPECT_EQ(result, std::exp(1.0));
-}
-
 TEST(adhoc2, EvaluateFwdBi) {
     auto tape = CreateTapeInitial<2>();
     auto [val0, val1] = tape.getalias();
