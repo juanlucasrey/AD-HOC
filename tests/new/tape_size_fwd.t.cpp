@@ -12,30 +12,30 @@
 
 namespace adhoc2 {
 
-// TEST(TapeSizeFwd, Zero) {
-//     double_t<0> val1;
-//     constexpr std::size_t size =
-//         std::tuple_size_v<decltype(calc_order_t(val1))>;
-//     static_assert(size == 0);
-// }
+TEST(TapeSizeFwd, Zero) {
+    double_t<0> val1;
+    constexpr std::size_t size =
+        std::tuple_size_v<decltype(calc_order_t(val1))>;
+    static_assert(size == 0);
+}
 
-// TEST(TapeSizeFwd, tapefwdbi) {
-//     double_t<0> val1;
-//     double_t<1> val2;
-//     auto valprod = val1 * val2;
-//     constexpr std::size_t size =
-//         std::tuple_size_v<decltype(calc_order_t(valprod))>;
-//     static_assert(size == 1);
-// }
+TEST(TapeSizeFwd, tapefwdbi) {
+    double_t<0> val1;
+    double_t<1> val2;
+    auto valprod = val1 * val2;
+    constexpr std::size_t size =
+        std::tuple_size_v<decltype(calc_order_t(valprod))>;
+    static_assert(size == 1);
+}
 
-// TEST(TapeSizeFwd, tapefwddiv) {
-//     double_t<0> val1;
-//     double_t<1> val2;
-//     auto result = val1 / val2;
-//     constexpr std::size_t size =
-//         std::tuple_size_v<decltype(calc_order_t(result))>;
-//     static_assert(size == 1);
-// }
+TEST(TapeSizeFwd, tapefwddiv) {
+    double_t<0> val1;
+    double_t<1> val2;
+    auto result = val1 / val2;
+    constexpr std::size_t size =
+        std::tuple_size_v<decltype(calc_order_t(result))>;
+    static_assert(size == 1);
+}
 
 // TEST(TapeSizeFwd, tapefwd2complicated) {
 //     double_t<0> val1;
@@ -102,7 +102,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     // return ((S * K) * v) * T;
 }
 
-TEST(TapeSizeFwd, BSSinglePrice) {
+TEST(TapeSizeFwd2, BSSinglePrice) {
     double result = 0.;
 
     {
