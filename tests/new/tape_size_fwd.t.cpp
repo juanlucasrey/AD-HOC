@@ -7,6 +7,7 @@
 #include <new/tape_size_fwd.hpp>
 
 #include "../type_name.hpp"
+#include "call_price.hpp"
 
 #include <gtest/gtest.h>
 
@@ -72,36 +73,12 @@ TEST(TapeSizeFwd, tapesizefwd) {
 
     evaluate(leaves_and_roots);
 
-    std::cout << type_name<decltype(nodes_inside)>() << std::endl;
-
     constexpr std::size_t size =
         std::tuple_size_v<decltype(calc_order_t(result))>;
     static_assert(size == 3);
 }
 
-template <class D> inline auto cdf_n(D const &x) {
-    using constants::CD;
-    using constants::encode;
-    using std::erfc;
-    constexpr double minus_one_over_root_two =
-        -1.0 / constexpression::sqrt(2.0);
-    return CD<encode(0.5)>() * erfc(x * CD<encode(minus_one_over_root_two)>());
-    // return CD<0.5>() * erfc(x * CD<minus_one_over_root_two>());
-}
-
-template <class I1, class I2, class I3, class I4>
-auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using constants::CD;
-    using constants::encode;
-    using std::log;
-    using std::sqrt;
-    auto totalvol = v * sqrt(T);
-    auto d1 = log(S / K) / totalvol + totalvol * CD<encode(0.5)>();
-    auto d2 = d1 + totalvol;
-    return S * cdf_n(d1) - K * cdf_n(d2);
-}
-
-TEST(TapeSizeFwd2, BSSinglePrice) {
+TEST(TapeSizeFwd, BSSinglePrice) {
     double result = 0.;
 
     {
@@ -127,43 +104,34 @@ TEST(TapeSizeFwd2, BSSinglePrice) {
 
     auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
 
-    // evaluate_bwd(tape, intermediate_tape, tape_d);
     auto result_adhoc2 = call_price(S, K, v, T);
-    // auto result_adhoc2 = cdf_n(S);
-    auto temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
-                              decltype(T), decltype(result_adhoc2)>();
+    auto constexpr temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
+                                        decltype(T), decltype(result_adhoc2)>();
 
-    std::cout << temp << std::endl;
-    // std::cout << type_name<decltype(temp)>() << std::endl;
-    // auto int_tape = evaluate_fwd_return_vals(tape);
-    // auto totalvol = v * sqrt(T);
-    // double totalvol_val = int_tape.get(totalvol);
-    // auto totalvol_val2 = 0.15 * std::sqrt(0.5);
-    // EXPECT_EQ(totalvol_val, totalvol_val2);
+    static_assert(temp == 3);
 }
 
 TEST(TapeSizeFwd, BSSinglePrice2) {
     auto [S, K, v, T] = Init<4>();
-    auto result_adhoc2 = call_price(S, K, v, T);
+    auto result_adhoc = call_price(S, K, v, T);
 
-    auto nodes_bwd = calc_order_t<false>(result_adhoc2);
+    auto constexpr temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
+                                        decltype(T), decltype(result_adhoc)>();
 
-    auto temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
-                              decltype(T), decltype(result_adhoc2)>();
-
-    std::cout << temp << std::endl;
+    static_assert(temp == 3);
 }
 
 TEST(TapeSizeBwd, CutLeafs) {
     auto [v0, v1, v2, v3] = Init<4>();
     auto result = (v0 * v1) * (v2 * v3);
-    auto temp = tape_size_bwd<decltype(v0), decltype(v1), decltype(v2),
-                              decltype(v3), decltype(result)>();
-    auto temp2 = tape_size_bwd<decltype(v0), decltype(v1), decltype(result)>();
+    auto constexpr temp =
+        tape_size_bwd<decltype(v0), decltype(v1), decltype(v2), decltype(v3),
+                      decltype(result)>();
+    auto constexpr temp2 =
+        tape_size_bwd<decltype(v0), decltype(v1), decltype(result)>();
 
-    std::cout << temp << std::endl;
-
-    std::cout << temp2 << std::endl;
+    static_assert(temp == 2);
+    static_assert(temp2 == 1);
 }
 
 } // namespace adhoc2

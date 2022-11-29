@@ -1,11 +1,11 @@
-#include <constants_type.hpp>
+#include <new/constants_type.hpp>
 
 #include <bitset>
 #include <random>
 
 #include <gtest/gtest.h>
 
-namespace adhoc::constants {
+namespace adhoc2::constants {
 
 auto double_to_uint64_runtime(double x) -> uint64_t {
     union {
@@ -571,6 +571,7 @@ TEST(Constants, sizes) {
     static_assert(oneeps == oneeps_type);
 }
 #else
+
 TEST(Constants, sizes) {
     double constexpr oned = 1.0;
     CD<encode(1.0)> oned_type;
@@ -597,4 +598,4 @@ TEST(Constants, sizes) {
 }
 #endif
 
-} // namespace adhoc::constants
+} // namespace adhoc2::constants
