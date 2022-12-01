@@ -1,5 +1,5 @@
-#ifndef ADHOC_TAPE_SIZE_FWD_HPP
-#define ADHOC_TAPE_SIZE_FWD_HPP
+#ifndef ADHOC_CALC_ORDER_HPP
+#define ADHOC_CALC_ORDER_HPP
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
@@ -101,4 +101,4 @@ constexpr auto calc_order_t(ActiveLeafsAndRoots const &.../* o */) {
 
 } // namespace adhoc2
 
-#endif // ADHOC_TAPE_SIZE_FWD_HPP
+#endif // ADHOC_CALC_ORDER_HPP

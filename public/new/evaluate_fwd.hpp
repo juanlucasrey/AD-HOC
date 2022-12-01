@@ -1,5 +1,5 @@
-#ifndef ADHOC_EVALUATE_HPP
-#define ADHOC_EVALUATE_HPP
+#ifndef ADHOC_EVALUATE_FWD_HPP
+#define ADHOC_EVALUATE_FWD_HPP
 
 #include "adhoc.hpp"
 #include "calc_order.hpp"
@@ -122,4 +122,4 @@ inline auto evaluate_fwd_return_vals(Tape<RootsAndLeafs...> &in) {
 
 } // namespace adhoc2
 
-#endif // ADHOC_EVALUATE_HPP
+#endif // ADHOC_EVALUATE_FWD_HPP

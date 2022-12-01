@@ -1,5 +1,5 @@
-#ifndef NEW_TAPE_SIZE_FWD_HPP
-#define NEW_TAPE_SIZE_FWD_HPP
+#ifndef ADHOC_TAPE_SIZE_FWD_HPP
+#define ADHOC_TAPE_SIZE_FWD_HPP
 
 #include "calc_order.hpp"
 #include "dependency.hpp"
@@ -34,4 +34,4 @@ template <class... Roots> constexpr auto tape_size_fwd_t(Roots... /* in */) {
 
 } // namespace adhoc2
 
-#endif // NEW_TAPE_SIZE_FWD_HPP
+#endif // ADHOC_TAPE_SIZE_FWD_HPP
