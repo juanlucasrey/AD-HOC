@@ -13,7 +13,7 @@ add_executable(
   new/tape_size_fwd.t.cpp
   new/tape_size_bwd.t.cpp
   new/mcsim.t.cpp
-  BS.t.cpp
+  new/BS.t.cpp
   adhoc.t.cpp
   # opencl only for clang at the moment
   # new/opencl.t.cpp
