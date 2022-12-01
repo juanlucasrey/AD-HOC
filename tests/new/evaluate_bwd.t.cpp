@@ -2,6 +2,8 @@
 #include <new/evaluate_fwd.hpp>
 #include <new/init.hpp>
 
+#include "call_price.hpp"
+
 #include <gtest/gtest.h>
 
 namespace adhoc2 {
@@ -70,28 +72,6 @@ TEST(EvaluateBwd, BivariateCutLeaf2) {
 
     evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
     EXPECT_NEAR(tape_d.get(v1), std::cos(0.5) * -std::sin(2.), 1e-13);
-}
-
-template <class D> inline auto cdf_n(D const &x) {
-    using constants::CD;
-    using constants::encode;
-    using std::erfc;
-    constexpr double minus_one_over_root_two =
-        -1.0 / constexpression::sqrt(2.0);
-    return CD<encode(0.5)>() * erfc(x * CD<encode(minus_one_over_root_two)>());
-    // return CD<0.5>() * erfc(x * CD<minus_one_over_root_two>());
-}
-
-template <class I1, class I2, class I3, class I4>
-auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using constants::CD;
-    using constants::encode;
-    using std::log;
-    using std::sqrt;
-    auto totalvol = v * sqrt(T);
-    auto d1 = log(S / K) / totalvol + totalvol * CD<encode(0.5)>();
-    auto d2 = d1 + totalvol;
-    return S * cdf_n(d1) - K * cdf_n(d2);
 }
 
 TEST(EvaluateBwd, BlackScholes) {
