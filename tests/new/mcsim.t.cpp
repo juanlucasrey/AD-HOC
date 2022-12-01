@@ -1,13 +1,13 @@
-#include <adhoc.hpp>
-#include <constants_type.hpp>
+#include <new/adhoc.hpp>
+#include <new/constants_type.hpp>
 
-#include "type_name.hpp"
+#include "../type_name.hpp"
 
 #include <gtest/gtest.h>
 
 #include <random>
 
-namespace adhoc {
+namespace adhoc2 {
 
 auto transform_in_place_m(std::vector<double> &in, double val)
     -> std::vector<double> & {
@@ -66,19 +66,18 @@ void accumulate_t<V, Init, Lambda>::print() {
 template <std::size_t N, class T, class BinaryOperation>
 auto accumulate(begin_t<vector<N>> /* first */, end_t<vector<N>> /* last */,
                 T init, BinaryOperation op) {
-    return accumulate_t<vector<N>, T,
-                        decltype(op(init, detail::double_t<N>{}))>();
+    return accumulate_t<vector<N>, T, decltype(op(init, double_t<N>{}))>();
 }
 
 #if __cplusplus >= 202002L
 TEST(AD, BlackScholesSimulationadhoc) {
-    detail::double_t<0> S;
-    detail::double_t<1> K;
-    detail::double_t<2> v;
-    detail::double_t<3> T;
+    double_t<0> S;
+    double_t<1> K;
+    double_t<2> v;
+    double_t<3> T;
     vector<4> rndnmbrs;
 
-    detail::double_t<5> n_times;
+    double_t<5> n_times;
     auto dt = T / n_times;
 
     auto adjvol = v * sqrt(dt);
@@ -223,4 +222,4 @@ TEST(AD, accumulate) {
     std::cout << result << std::endl;
 }
 
-} // namespace adhoc
+} // namespace adhoc2
