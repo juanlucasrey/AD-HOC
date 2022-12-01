@@ -3,7 +3,6 @@
 #include <new/evaluate_fwd.hpp>
 #include <new/init.hpp>
 #include <new/tape_nodes.hpp>
-#include <new/tape_size_bwd.hpp>
 #include <new/tape_size_fwd.hpp>
 
 #include "../type_name.hpp"
