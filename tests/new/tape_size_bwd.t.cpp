@@ -60,7 +60,7 @@ TEST(TapeSizeBwd, MulMul) {
 
     constexpr std::size_t size =
         tape_size_bwd<decltype(result), decltype(val1), decltype(val2)>();
-    static_assert(size == 2);
+    static_assert(size == 1);
 }
 
 TEST(TapeSizeBwd, Complex) {

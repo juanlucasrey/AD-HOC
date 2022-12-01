@@ -40,6 +40,24 @@ TEST(EvaluateBwd, Univariate2) {
     EXPECT_NEAR(tape_d.get(v0), 1.6487212707001282, 1e-13);
 }
 
+TEST(EvaluateBwd, RepeatVar) {
+    auto [val1, val2] = Init<2>();
+    auto m = val1 * val2;
+    auto result = m * m;
+
+    auto leaves_and_roots = TapeRootsAndLeafs(result);
+    leaves_and_roots.get(val1) = 0.5;
+    leaves_and_roots.get(val2) = 2.5;
+
+    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
+    auto tape_d = TapeDerivatives(result, val1, val2);
+    tape_d.get(result) = 1.0;
+
+    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
+    EXPECT_NEAR(tape_d.get(val1), 6.25, 1e-13);
+    EXPECT_NEAR(tape_d.get(val2), 1.25, 1e-13);
+}
+
 TEST(EvaluateBwd, BivariateCutLeaf1) {
     auto [v0, v1] = Init<2>();
     // auto r = exp(cos(v0) * (v1 * v1));

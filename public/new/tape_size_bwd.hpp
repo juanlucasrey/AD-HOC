@@ -75,9 +75,11 @@ tape_size_bwd_aux(std::tuple<ActiveLeafsAndRoots...>,
         !has_type<Node2, StoredNodes..., ActiveLeafsAndRoots...>() &&
         equal_or_depends_many<Node2, ActiveLeafsAndRoots...>();
 
-    constexpr std::size_t new_current_widt = CurrentWidth - !is_this_node_root +
-                                             is_next_node1_new +
-                                             is_next_node2_new;
+    constexpr bool is_same_node = std::is_same_v<Node1, Node2>;
+
+    constexpr std::size_t new_current_widt =
+        CurrentWidth - !is_this_node_root + is_next_node1_new +
+        (!is_same_node && is_next_node2_new);
 
     constexpr std::size_t new_max_widt =
         new_current_widt > MaxWidth ? new_current_widt : MaxWidth;
