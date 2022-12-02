@@ -1,4 +1,4 @@
-#include <new/erf_inv.hpp>
+#include <erf_inv.hpp>
 
 #include "call_price.hpp"
 

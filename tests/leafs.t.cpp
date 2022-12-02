@@ -1,5 +1,5 @@
-#include <new/init.hpp>
-#include <new/leafs.hpp>
+#include <init.hpp>
+#include <leafs.hpp>
 
 #include "type_name.hpp"
 

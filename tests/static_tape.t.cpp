@@ -1,8 +1,8 @@
-#include <new/adhoc.hpp>
-#include <new/base.hpp>
-#include <new/calc_order.hpp>
-#include <new/init.hpp>
-#include <new/tape_nodes.hpp>
+#include <adhoc.hpp>
+#include <base.hpp>
+#include <calc_order.hpp>
+#include <init.hpp>
+#include <tape_nodes.hpp>
 
 #include "type_name.hpp"
 

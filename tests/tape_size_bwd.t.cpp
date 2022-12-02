@@ -1,5 +1,5 @@
-#include <new/init.hpp>
-#include <new/tape_size_bwd.hpp>
+#include <init.hpp>
+#include <tape_size_bwd.hpp>
 
 #include <gtest/gtest.h>
 

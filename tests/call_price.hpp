@@ -1,8 +1,8 @@
 #ifndef CALL_PRICE_HPP
 #define CALL_PRICE_HPP
 
-#include <new/constants_constexpr.hpp>
-#include <new/constants_type.hpp>
+#include <constants_constexpr.hpp>
+#include <constants_type.hpp>
 
 namespace adhoc2 {
 
