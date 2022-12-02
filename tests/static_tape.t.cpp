@@ -4,7 +4,7 @@
 #include <new/init.hpp>
 #include <new/tape_nodes.hpp>
 
-#include "../type_name.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 

@@ -4,18 +4,18 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(
   adhoc_test
-  new/leafs.t.cpp
-  new/constants.t.cpp
-  new/tuple_utils.t.cpp
-  new/static_tape.t.cpp
-  new/evaluate_fwd.t.cpp
-  new/evaluate_bwd.t.cpp
-  new/tape_size_fwd.t.cpp
-  new/tape_size_bwd.t.cpp
-  new/mcsim.t.cpp
-  new/BS.t.cpp
+  leafs.t.cpp
+  constants.t.cpp
+  tuple_utils.t.cpp
+  static_tape.t.cpp
+  evaluate_fwd.t.cpp
+  evaluate_bwd.t.cpp
+  tape_size_fwd.t.cpp
+  tape_size_bwd.t.cpp
+  mcsim.t.cpp
+  BS.t.cpp
   # opencl only for clang at the moment
-  # new/opencl.t.cpp
+  # opencl.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

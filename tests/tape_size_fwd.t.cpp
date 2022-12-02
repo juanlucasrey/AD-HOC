@@ -5,8 +5,8 @@
 #include <new/tape_nodes.hpp>
 #include <new/tape_size_fwd.hpp>
 
-#include "../type_name.hpp"
 #include "call_price.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 

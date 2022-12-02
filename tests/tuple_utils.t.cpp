@@ -1,6 +1,6 @@
 #include <new/tuple_utils.hpp>
 
-#include "../type_name.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 

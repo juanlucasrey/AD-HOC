@@ -1,7 +1,7 @@
 #include <new/init.hpp>
 #include <new/leafs.hpp>
 
-#include "../type_name.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
