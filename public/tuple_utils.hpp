@@ -6,7 +6,7 @@
 #include <iostream>
 #include <tuple>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -84,5 +84,5 @@ auto constexpr replace_first2(std::tuple<TupleValues...> /* in */) {
     }
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 #endif // ADHOC_TUPLE_UTILS_HPP

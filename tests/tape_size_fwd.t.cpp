@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(TapeSizeFwd, Zero) {
     double_t<0> val1;
@@ -103,9 +103,8 @@ TEST(TapeSizeFwd, BSSinglePrice) {
 
     auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
 
-    auto result_adhoc2 = call_price(S, K, v, T);
     auto constexpr temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
-                                        decltype(T), decltype(result_adhoc2)>();
+                                        decltype(T), decltype(result_adhoc)>();
 
     static_assert(temp == 3);
 }
@@ -133,4 +132,4 @@ TEST(TapeSizeBwd, CutLeafs) {
     static_assert(temp2 == 1);
 }
 
-} // namespace adhoc2
+} // namespace adhoc

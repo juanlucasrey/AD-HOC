@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2::constants {
+namespace adhoc::constants {
 
 auto double_to_uint64_runtime(double x) -> uint64_t {
     union {
@@ -598,4 +598,4 @@ TEST(Constants, sizes) {
 }
 #endif
 
-} // namespace adhoc2::constants
+} // namespace adhoc::constants

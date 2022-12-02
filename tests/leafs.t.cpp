@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(Leafs, First) {
 
@@ -19,4 +19,4 @@ TEST(Leafs, First) {
     static_assert(std::is_same_v<decltype(res), decltype(temp)>);
 }
 
-} // namespace adhoc2
+} // namespace adhoc

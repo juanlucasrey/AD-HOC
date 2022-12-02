@@ -8,7 +8,7 @@
 
 #include <tuple>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -99,6 +99,6 @@ constexpr auto calc_order_t(ActiveLeafsAndRoots const &.../* o */) {
     return detail::calc_order_t<OrderFwd, ActiveLeafsAndRoots...>();
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_CALC_ORDER_HPP

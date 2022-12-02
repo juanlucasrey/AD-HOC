@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace adhoc2 {
+namespace adhoc {
 
 template <class Input1, class Input2> struct add_t;
 template <class Input1, class Input2> struct sub_t;
@@ -32,6 +32,6 @@ template <class Derived> struct Base {
     }
 };
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_BASE_HPP

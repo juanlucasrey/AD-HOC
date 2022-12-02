@@ -10,7 +10,7 @@
 #include <cstdint>
 #endif
 
-namespace adhoc2::constants {
+namespace adhoc::constants {
 
 template <class Derived> struct ConstBase {
     operator double() const { return Derived::v(); }
@@ -248,6 +248,6 @@ struct CD : public Base<CD<D>>, public ConstBase<CD<D>> {
 using ArgType = std::uint64_t;
 #endif
 
-} // namespace adhoc2::constants
+} // namespace adhoc::constants
 
 #endif // ADHOC_CONSTANTS_TYPE_HPP

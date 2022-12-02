@@ -6,7 +6,7 @@
 
 #include <type_traits>
 
-namespace adhoc2 {
+namespace adhoc {
 
 template <class First, class Second> struct equal_or_depends;
 
@@ -95,6 +95,6 @@ inline constexpr auto depends_many() noexcept -> bool {
     }
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_DEPENDENCY_HPP

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <tuple>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -99,6 +99,6 @@ constexpr auto tape_size_bwd() -> std::size_t {
         std::tuple<ActiveLeafsAndRoots...>{}, nodes, std::tuple<>{});
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_TAPE_SIZE_BWD_HPP

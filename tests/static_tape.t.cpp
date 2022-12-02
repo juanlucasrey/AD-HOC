@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(StaticTape, TapeNodes) {
 
@@ -49,4 +49,4 @@ TEST(StaticTape, TapeNodes2) {
     std::cout << type_name<decltype(calcs)>() << std::endl;
 }
 
-} // namespace adhoc2
+} // namespace adhoc

@@ -7,7 +7,7 @@
 
 #include <random>
 
-namespace adhoc2 {
+namespace adhoc {
 
 auto transform_in_place_m(std::vector<double> &in, double val)
     -> std::vector<double> & {
@@ -222,4 +222,4 @@ TEST(AD, accumulate) {
     std::cout << result << std::endl;
 }
 
-} // namespace adhoc2
+} // namespace adhoc

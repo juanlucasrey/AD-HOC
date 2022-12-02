@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(TapeSizeBwd, OneVar) {
     auto [val1] = Init<1>();
@@ -109,4 +109,4 @@ TEST(TapeSizeBwd, SameCalcDifferentTapeSize) {
     static_assert(size2 == 3);
 }
 
-} // namespace adhoc2
+} // namespace adhoc

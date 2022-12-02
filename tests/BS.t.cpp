@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(BlackScholes, erfcinverse) {
     double x = 0.5;
@@ -78,4 +78,4 @@ TEST(BlackScholes, Inverse) {
     EXPECT_NEAR(d2, d2_inv, 1e-12);
 }
 
-} // namespace adhoc2
+} // namespace adhoc

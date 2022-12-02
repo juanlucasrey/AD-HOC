@@ -8,7 +8,7 @@
 
 #include <tuple>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -32,6 +32,6 @@ template <class... Roots> constexpr auto tape_size_fwd_t(Roots... /* in */) {
     return detail::tape_size_fwd_aux_t<Roots...>::template call(leafs, nodes);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_TAPE_SIZE_FWD_HPP

@@ -7,7 +7,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace adhoc2 {
+namespace adhoc {
 
 enum class algorithm {
     bsm,
@@ -612,6 +612,6 @@ inline void erf_inv(ForwardIt first, ForwardIt last) {
     }
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_ERF_INV_HPP

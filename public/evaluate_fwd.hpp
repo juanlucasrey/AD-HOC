@@ -7,7 +7,7 @@
 #include "tape_nodes.hpp"
 #include "tape_size_fwd.hpp"
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -120,6 +120,6 @@ inline auto evaluate_fwd_return_vals(Tape<RootsAndLeafs...> &in) {
     return detail::evaluate_fwd_return_vals_aux(in, nodes_inside);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_EVALUATE_FWD_HPP

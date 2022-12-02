@@ -6,7 +6,7 @@
 #include <tuple>
 #include <utility>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -21,6 +21,6 @@ template <std::size_t N> auto inline Init() {
     return detail::Init_aux(std::make_index_sequence<N>{});
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_INIT_HPP

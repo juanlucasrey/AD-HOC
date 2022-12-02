@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace adhoc2 {
+namespace adhoc {
 
 template <class... Nodes> class Tape {
     std::array<double, sizeof...(Nodes)> buff{};
@@ -86,6 +86,6 @@ auto inline TapeDerivatives(ActiveLeafsAndRoots &.../* in */) {
     return Tape(ActiveLeafsAndRoots{}...);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_TAPE_NODES_HPP

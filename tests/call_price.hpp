@@ -4,7 +4,7 @@
 #include <constants_constexpr.hpp>
 #include <constants_type.hpp>
 
-namespace adhoc2 {
+namespace adhoc {
 
 template <class D> inline auto cdf_n(D const &x) {
     using constants::CD;
@@ -28,6 +28,6 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     return S * cdf_n(d1) - K * cdf_n(d2);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // CALL_PRICE_HPP

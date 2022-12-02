@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(EvaluateFwd, EvaluateFwdUni) {
     auto [val0] = Init<1>();
@@ -74,4 +74,4 @@ TEST(EvaluateFwd, BSAdhoc) {
     EXPECT_EQ(result2, result);
 }
 
-} // namespace adhoc2
+} // namespace adhoc

@@ -8,7 +8,7 @@
 
 #include <tuple>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -61,6 +61,6 @@ template <class... Roots> constexpr auto Leafs(Roots const &.../* o */) {
     return detail::leafs_t<Roots...>::template call();
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_LEAFS_HPP

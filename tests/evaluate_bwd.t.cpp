@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 TEST(EvaluateBwd, Exp) {
     auto [v0] = Init<1>();
@@ -357,4 +357,4 @@ TEST(EvaluateBwd, ComplexEvaluate) {
 // print(dfdx(2, 3, 5))
 // print(d2fdx2(2, 3, 5))
 
-} // namespace adhoc2
+} // namespace adhoc

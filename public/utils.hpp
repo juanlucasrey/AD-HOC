@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 template <typename T, typename... Ts> struct get_index;
@@ -41,6 +41,6 @@ constexpr auto idx_type2() -> std::size_t {
     }
 };
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_UTILS_HPP

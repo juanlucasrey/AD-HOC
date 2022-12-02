@@ -7,7 +7,7 @@
 #include <array>
 #include <cmath>
 
-namespace adhoc2 {
+namespace adhoc {
 
 template <class Input> struct exp_t : public Base<exp_t<Input>> {
     static inline auto v(double in) -> double { return std::exp(in); }
@@ -152,6 +152,6 @@ struct div_t : public Base<div_t<Input1, Input2>> {
 
 template <std::size_t N> struct double_t : public Base<double_t<N>> {};
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_ADHOC_HPP

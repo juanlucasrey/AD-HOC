@@ -9,7 +9,7 @@
 
 #include <array>
 
-namespace adhoc2 {
+namespace adhoc {
 
 namespace detail {
 
@@ -277,6 +277,6 @@ inline void evaluate_bwd(Tape<RootsAndLeafs...> const &in,
         nodes_ordered);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
 
 #endif // ADHOC_EVALUATE_BWD_HPP

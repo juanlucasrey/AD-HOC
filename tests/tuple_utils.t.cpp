@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-namespace adhoc2 {
+namespace adhoc {
 
 class available_t {};
 class replacement_t {};
@@ -62,4 +62,4 @@ TEST(TupleUitls, GenerateTuple) {
                   const std::tuple<available_t, available_t, available_t>>);
 }
 
-} // namespace adhoc2
+} // namespace adhoc
