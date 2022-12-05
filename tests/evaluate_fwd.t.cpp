@@ -1,6 +1,7 @@
 #include <constants_type.hpp>
 #include <evaluate_fwd.hpp>
 #include <init.hpp>
+#include <tape.hpp>
 
 #include "call_price.hpp"
 
@@ -12,12 +13,12 @@ TEST(EvaluateFwd, EvaluateFwdUni) {
     auto [val0] = Init<1>();
     auto temp = exp(val0);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(temp);
+    auto t = Tape3(temp);
 
-    leaves_and_roots.get(val0) = 1.0;
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
+    t.val(val0) = 1.0;
+    evaluate_fwd(t);
 
-    double result = leaves_and_roots.get(temp);
+    double result = t.val(temp);
     EXPECT_EQ(result, std::exp(1.0));
 }
 
@@ -25,13 +26,13 @@ TEST(EvaluateFwd, EvaluateFwdBi) {
     auto [val0, val1] = Init<2>();
     auto temp = val0 * val1;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(temp);
+    auto t = Tape3(temp);
 
-    leaves_and_roots.get(val0) = 2.0;
-    leaves_and_roots.get(val1) = 3.0;
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
+    t.val(val0) = 2.0;
+    t.val(val1) = 3.0;
+    evaluate_fwd(t);
 
-    double result = leaves_and_roots.get(temp);
+    double result = t.val(temp);
     EXPECT_EQ(result, 6.0);
 }
 
@@ -40,11 +41,11 @@ TEST(EvaluateFwd, EvaluateFwdConst) {
     using namespace constants;
     auto temp = val0 * CD<encode(0.5)>();
 
-    auto leaves_and_roots = TapeRootsAndLeafs(temp);
-    leaves_and_roots.get(val0) = 1.0;
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
+    auto t = Tape3(temp);
+    t.val(val0) = 1.0;
+    evaluate_fwd(t);
 
-    double result = leaves_and_roots.get(temp);
+    double result = t.val(temp);
     EXPECT_EQ(result, 0.5);
 }
 
@@ -62,15 +63,15 @@ TEST(EvaluateFwd, BSAdhoc) {
     auto [S, K, v, T] = Init<4>();
     auto result_adhoc = call_price(S, K, v, T);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result_adhoc);
+    auto t = Tape3(result_adhoc);
 
-    leaves_and_roots.get(S) = 100.0;
-    leaves_and_roots.get(K) = 102.0;
-    leaves_and_roots.get(v) = 0.15;
-    leaves_and_roots.get(T) = 0.5;
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
+    t.val(S) = 100.0;
+    t.val(K) = 102.0;
+    t.val(v) = 0.15;
+    t.val(T) = 0.5;
+    evaluate_fwd(t);
 
-    double result2 = leaves_and_roots.get(result_adhoc);
+    double result2 = t.val(result_adhoc);
     EXPECT_EQ(result2, result);
 }
 

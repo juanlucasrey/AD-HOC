@@ -8,6 +8,7 @@ add_executable(
   constants.t.cpp
   tuple_utils.t.cpp
   static_tape.t.cpp
+  tape.t.cpp
   evaluate_fwd.t.cpp
   evaluate_bwd.t.cpp
   tape_size_fwd.t.cpp

@@ -1,8 +1,6 @@
 #include <calc_order.hpp>
-#include <evaluate_bwd.hpp>
-#include <evaluate_fwd.hpp>
 #include <init.hpp>
-#include <tape_nodes.hpp>
+#include <tape_size_bwd.hpp>
 #include <tape_size_fwd.hpp>
 
 #include "call_price.hpp"
@@ -59,18 +57,27 @@ TEST(TapeSizeFwd, tapefwd2skip) {
     static_assert(size == 3);
 }
 
-TEST(TapeSizeFwd, tapesizefwd) {
+TEST(TapeSizeFwd, tapesizefwd2) {
     double_t<0> val1;
     double_t<1> val2;
     double_t<2> val3;
     auto temp = val1 * val2;
     auto temp2 = temp * val3;
     auto result = temp * temp2;
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
 
-    auto constexpr nodes_inside = tape_size_fwd_t(result);
+    constexpr std::size_t size =
+        std::tuple_size_v<decltype(calc_order_t(result))>;
+    static_assert(size == 3);
+}
 
-    evaluate(leaves_and_roots);
+TEST(TapeSizeFwd, tapesizefwdExternalNode) {
+    double_t<0> val1;
+    double_t<1> val2;
+    double_t<2> val3;
+    double_t<2> val4;
+    auto temp = val1 * val2;
+    auto temp2 = temp * val3;
+    auto result = temp * temp2;
 
     constexpr std::size_t size =
         std::tuple_size_v<decltype(calc_order_t(result))>;
@@ -78,38 +85,6 @@ TEST(TapeSizeFwd, tapesizefwd) {
 }
 
 TEST(TapeSizeFwd, BSSinglePrice) {
-    double result = 0.;
-
-    {
-        double S = 100.0;
-        double K = 102.0;
-        double v = 0.15;
-        double T = 0.5;
-        result = call_price(S, K, v, T);
-    }
-
-    auto [S, K, v, T] = Init<4>();
-    auto result_adhoc = call_price(S, K, v, T);
-
-    auto tape = TapeRootsAndLeafs(result_adhoc);
-    tape.set(S, 100.0);
-    tape.set(K, 102.0);
-    tape.set(v, 0.15);
-    tape.set(T, 0.5);
-
-    auto intermediate_tape = evaluate_fwd_return_vals(tape);
-    double result2 = tape.get(result_adhoc);
-    EXPECT_EQ(result2, result);
-
-    auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
-
-    auto constexpr temp = tape_size_bwd<decltype(S), decltype(K), decltype(v),
-                                        decltype(T), decltype(result_adhoc)>();
-
-    static_assert(temp == 3);
-}
-
-TEST(TapeSizeFwd, BSSinglePrice2) {
     auto [S, K, v, T] = Init<4>();
     auto result_adhoc = call_price(S, K, v, T);
 

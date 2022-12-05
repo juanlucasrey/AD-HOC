@@ -12,141 +12,129 @@ TEST(EvaluateBwd, Exp) {
     auto [v0] = Init<1>();
     auto r = exp(v0);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 1.0);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    t.der(r) = 1.0;
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), std::exp(1.0), 1e-13);
+    evaluate_bwd(t);
+    EXPECT_NEAR(t.der(v0), std::exp(1.0), 1e-13);
 }
 
 TEST(EvaluateBwd, Cos) {
     auto [v0] = Init<1>();
     auto r = cos(v0);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 1.0);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    t.der(r) = 1.0;
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), -std::sin(1.0), 1e-13);
+    evaluate_bwd(t);
+    EXPECT_NEAR(t.der(v0), -std::sin(1.0), 1e-13);
 }
 
 TEST(EvaluateBwd, CosExp) {
     auto [v0] = Init<1>();
     auto r = cos(exp(v0));
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 1.0);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    t.der(r) = 1.0;
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), -1.1166193174450132, 1e-13);
+    evaluate_bwd(t);
+    EXPECT_NEAR(t.der(v0), -1.1166193174450132, 1e-13);
 }
 
 TEST(EvaluateBwd, Univariate) {
     auto [v0] = Init<1>();
-    // auto r = exp(cos(v0) * (v1 * v1));
     auto r = exp(cos(log(v0)));
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 0.5);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 0.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), 2.757914160416556, 1e-13);
+    EXPECT_NEAR(t.der(v0), 2.757914160416556, 1e-13);
 }
 
 TEST(EvaluateBwd, Univariate2) {
     auto [v0] = Init<1>();
-    // auto r = exp(cos(v0) * (v1 * v1));
     auto r = exp(v0);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 0.5);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 0.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), 1.6487212707001282, 1e-13);
+    EXPECT_NEAR(t.der(v0), 1.6487212707001282, 1e-13);
 }
 
 TEST(EvaluateBwd, Add) {
-    auto [val1, val2] = Init<2>();
-    auto result = val1 + val2;
+    auto [v0, v1] = Init<2>();
+    auto r = v0 + v1;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
-    leaves_and_roots.get(val1) = 2.0;
-    leaves_and_roots.get(val2) = 3.0;
+    auto t = Tape3(r, v0, v1);
+    t.val(v0) = 2.0;
+    t.val(v1) = 3.0;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(result, val1, val2);
-    tape_d.get(result) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(val1), 1.0, 1e-13);
-    EXPECT_NEAR(tape_d.get(val2), 1.0, 1e-13);
+    EXPECT_NEAR(t.der(v0), 1.0, 1e-13);
+    EXPECT_NEAR(t.der(v1), 1.0, 1e-13);
 }
 
 TEST(EvaluateBwd, Mult) {
-    auto [val1, val2] = Init<2>();
-    auto result = val1 * val2;
+    auto [v0, v1] = Init<2>();
+    auto r = v0 * v1;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
-    leaves_and_roots.get(val1) = 100.0;
-    leaves_and_roots.get(val2) = 10.0;
+    auto t = Tape3(r, v0, v1);
+    t.val(v0) = 100.0;
+    t.val(v1) = 10.0;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(result, val1, val2);
-    tape_d.get(result) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(val1), 10.0, 1e-13);
-    EXPECT_NEAR(tape_d.get(val2), 100.0, 1e-13);
+    EXPECT_NEAR(t.der(v0), 10.0, 1e-13);
+    EXPECT_NEAR(t.der(v1), 100.0, 1e-13);
 }
 
 TEST(EvaluateBwd, MultSame) {
-    auto [val1] = Init<1>();
-    auto result = val1 * val1;
+    auto [v0] = Init<1>();
+    auto r = v0 * v0;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
-    leaves_and_roots.get(val1) = 1.5;
+    auto t = Tape3(r, v0);
+    t.val(v0) = 1.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(result, val1);
-    tape_d.get(result) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(val1), 3.0, 1e-13);
+    EXPECT_NEAR(t.der(v0), 3.0, 1e-13);
 }
 
 TEST(EvaluateBwd, Div) {
-    auto [val1, val2] = Init<2>();
-    auto result = val1 / val2;
+    auto [v0, v1] = Init<2>();
+    auto r = v0 / v1;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
-    leaves_and_roots.get(val1) = 1.5;
-    leaves_and_roots.get(val2) = 2.5;
+    auto t = Tape3(r, v0, v1);
+    t.val(v0) = 1.5;
+    t.val(v1) = 2.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(result, val1, val2);
-    tape_d.get(result) = 1.0;
-
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
     // from sympy import *
     // x = Symbol('x')
@@ -155,79 +143,71 @@ TEST(EvaluateBwd, Div) {
     // print(lambdify([x, y], f.diff(x))(1.5, 2.5))
     // print(lambdify([x, y], f.diff(y))(1.5, 2.5))
 
-    EXPECT_NEAR(tape_d.get(val1), 0.4, 1e-13);
-    EXPECT_NEAR(tape_d.get(val2), -0.24, 1e-13);
+    EXPECT_NEAR(t.der(v0), 0.4, 1e-13);
+    EXPECT_NEAR(t.der(v1), -0.24, 1e-13);
 }
 
 TEST(EvaluateBwd, RepeatVar) {
-    auto [val1, val2] = Init<2>();
-    auto m = val1 * val2;
-    auto result = m * m;
+    auto [v0, v1] = Init<2>();
+    auto m = v0 * v1;
+    auto r = m * m;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result);
-    leaves_and_roots.get(val1) = 0.5;
-    leaves_and_roots.get(val2) = 2.5;
+    auto t = Tape3(r, v0, v1);
+    t.val(v0) = 0.5;
+    t.val(v1) = 2.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(result, val1, val2);
-    tape_d.get(result) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(val1), 6.25, 1e-13);
-    EXPECT_NEAR(tape_d.get(val2), 1.25, 1e-13);
+    EXPECT_NEAR(t.der(v0), 6.25, 1e-13);
+    EXPECT_NEAR(t.der(v1), 1.25, 1e-13);
 }
 
 TEST(EvaluateBwd, BivariateCutLeaf1) {
     auto [v0, v1] = Init<2>();
-    // auto r = exp(cos(v0) * (v1 * v1));
     auto r = cos(v0) * cos(v1);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 0.5);
-    leaves_and_roots.set(v1, 2.);
+    auto t = Tape3(r, v0);
+    t.val(v0) = 0.5;
+    t.val(v1) = 2.;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), -std::sin(0.5) * std::cos(2.), 1e-13);
+    EXPECT_NEAR(t.der(v0), -std::sin(0.5) * std::cos(2.), 1e-13);
 }
 
 TEST(EvaluateBwd, BivariateCutLeaf2) {
     auto [v0, v1] = Init<2>();
-    // auto r = exp(cos(v0) * (v1 * v1));
     auto r = cos(v0) * cos(v1);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 0.5);
-    leaves_and_roots.set(v1, 2.);
+    auto t = Tape3(r, v1);
+    t.val(v0) = 0.5;
+    t.val(v1) = 2.;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v1, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v1), std::cos(0.5) * -std::sin(2.), 1e-13);
+    EXPECT_NEAR(t.der(v1), std::cos(0.5) * -std::sin(2.), 1e-13);
 }
 
 TEST(EvaluateBwd, SimpleEvaluate) {
     auto [v0, v1] = Init<2>();
     auto r = (v0 * v1) + (v0);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(r);
-    leaves_and_roots.set(v0, 1.0);
-    leaves_and_roots.set(v1, 2.0);
+    auto t = Tape3(r, v0, v1);
+    t.val(v0) = 1.0;
+    t.val(v1) = 2.0;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(v0, v1, r);
-    tape_d.get(r) = 1.0;
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-    EXPECT_NEAR(tape_d.get(v0), 3.0, 1e-15);
-    EXPECT_NEAR(tape_d.get(v1), 1.0, 1e-15);
-
-    // EXPECT_NEAR(tape_d.get(v0), -std::sin(0.5) * std::cos(2.), 1e-13);
+    EXPECT_NEAR(t.der(v0), 3.0, 1e-15);
+    EXPECT_NEAR(t.der(v1), 1.0, 1e-15);
 }
 
 TEST(EvaluateBwd, BlackScholes) {
@@ -242,25 +222,22 @@ TEST(EvaluateBwd, BlackScholes) {
     }
 
     auto [S, K, v, T] = Init<4>();
-    auto result_adhoc = call_price(S, K, v, T);
+    auto r = call_price(S, K, v, T);
 
-    auto leaves_and_roots = TapeRootsAndLeafs(result_adhoc);
-    leaves_and_roots.set(S, 100.0);
-    leaves_and_roots.set(K, 102.0);
-    leaves_and_roots.set(v, 0.15);
-    leaves_and_roots.set(T, 0.5);
+    auto t = Tape3(r, S, K, v, T);
+    t.val(S) = 100.0;
+    t.val(K) = 102.0;
+    t.val(v) = 0.15;
+    t.val(T) = 0.5;
+    t.der(r) = 1.0;
 
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(S, K, v, T, result_adhoc);
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    tape_d.get(result_adhoc) = 1.0;
-
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
-
-    EXPECT_NEAR(tape_d.get(S), 0.33961663008862131, 1e-14);
-    EXPECT_NEAR(tape_d.get(K), -0.38387614859866631, 1e-14);
-    EXPECT_NEAR(tape_d.get(v), -30.580208040388474, 1e-14);
-    EXPECT_NEAR(tape_d.get(T), -4.5870312060582705, 1e-14);
+    EXPECT_NEAR(t.der(S), 0.33961663008862131, 1e-14);
+    EXPECT_NEAR(t.der(K), -0.38387614859866631, 1e-14);
+    EXPECT_NEAR(t.der(v), -30.580208040388474, 1e-14);
+    EXPECT_NEAR(t.der(T), -4.5870312060582705, 1e-14);
 }
 
 TEST(EvaluateBwd, ComplexEvaluate) {
@@ -275,38 +252,36 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
-    auto leaves_and_roots = TapeRootsAndLeafs(res);
-    leaves_and_roots.get(val1) = 1.0;
-    leaves_and_roots.get(val2) = 2.0;
-    leaves_and_roots.get(val3) = 2.0;
-    leaves_and_roots.get(val4) = 3.0;
-    leaves_and_roots.get(val5) = 4.0;
-    auto intermediate_tape = evaluate_fwd_return_vals(leaves_and_roots);
-    auto tape_d = TapeDerivatives(val1, val2, val3, res);
+    auto t = Tape3(res, val1, val2, val3);
+    t.val(val1) = 1.0;
+    t.val(val2) = 2.0;
+    t.val(val3) = 2.0;
+    t.val(val4) = 3.0;
+    t.val(val5) = 4.0;
+    t.der(res) = 1.0;
 
-    tape_d.get(res) = 1.0;
-    evaluate_bwd(leaves_and_roots, intermediate_tape, tape_d);
+    evaluate_fwd(t);
+    evaluate_bwd(t);
 
-    EXPECT_NEAR(tape_d.get(val1), 412.44979516578081, 1e-14);
-    EXPECT_NEAR(tape_d.get(val2), 1588.4738734117946, 1e-14);
-    EXPECT_NEAR(tape_d.get(val3), 80, 1e-14);
+    EXPECT_NEAR(t.der(val1), 412.44979516578081, 1e-14);
+    EXPECT_NEAR(t.der(val2), 1588.4738734117946, 1e-14);
+    EXPECT_NEAR(t.der(val3), 80, 1e-14);
 
     auto res2 = valprod3 * valsum;
-    auto leaves_and_roots2 = TapeRootsAndLeafs(res2);
-    leaves_and_roots2.get(val1) = 1.0;
-    leaves_and_roots2.get(val2) = 2.0;
-    leaves_and_roots2.get(val3) = 2.0;
-    leaves_and_roots2.get(val4) = 3.0;
-    leaves_and_roots2.get(val5) = 4.0;
-    auto intermediate_tape2 = evaluate_fwd_return_vals(leaves_and_roots2);
-    auto tape_d2 = TapeDerivatives(val1, val2, val3, res2);
+    auto t2 = Tape3(res2, val1, val2, val3);
+    t2.val(val1) = 1.0;
+    t2.val(val2) = 2.0;
+    t2.val(val3) = 2.0;
+    t2.val(val4) = 3.0;
+    t2.val(val5) = 4.0;
+    t2.der(res2) = 1.0;
 
-    tape_d2.get(res2) = 1.0;
-    evaluate_bwd(leaves_and_roots2, intermediate_tape2, tape_d2);
+    evaluate_fwd(t2);
+    evaluate_bwd(t2);
 
-    EXPECT_NEAR(tape_d2.get(val1), 412.44979516578081, 1e-14);
-    EXPECT_NEAR(tape_d2.get(val2), 1588.4738734117946, 1e-14);
-    EXPECT_NEAR(tape_d2.get(val3), 80, 1e-14);
+    EXPECT_NEAR(t2.der(val1), 412.44979516578081, 1e-14);
+    EXPECT_NEAR(t2.der(val2), 1588.4738734117946, 1e-14);
+    EXPECT_NEAR(t2.der(val3), 80, 1e-14);
 }
 
 // TEST(EvaluateBwd, Derivative2nd) {
