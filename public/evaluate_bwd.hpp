@@ -16,39 +16,37 @@ namespace detail {
 class available_t {};
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth, class... NodesAlive>
+          class... NodesAlive>
+inline void evaluate_bwd(
+    detail::Tape2<std::tuple<Values...>,
+                  std::tuple<ActiveLeafsAndRootsDerivatives...>> & /* in */,
+    std::tuple<NodesAlive...> /* nodes_intermediate */,
+    std::tuple<> /* nodes */) {}
+
+template <class... Values, class... ActiveLeafsAndRootsDerivatives,
+          class... NodesAlive, template <class> class Univariate, class Node,
+          class... NodesToCalc>
 inline void
 evaluate_bwd(detail::Tape2<std::tuple<Values...>,
-                           std::tuple<ActiveLeafsAndRootsDerivatives...>,
-                           MaxWidth> & /* in */,
-             std::tuple<NodesAlive...> /* nodes_intermediate */,
-             std::tuple<> /* nodes */) {}
+                           std::tuple<ActiveLeafsAndRootsDerivatives...>> &in,
+             std::tuple<NodesAlive...> /* deriv_ids */,
+             std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */);
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth, class... NodesAlive,
-          template <class> class Univariate, class Node, class... NodesToCalc>
+          class... NodesAlive, template <class, class> class Bivariate,
+          class NextNode1, class NextNode2, class... NodesToCalc>
 inline void evaluate_bwd(
     detail::Tape2<std::tuple<Values...>,
-                  std::tuple<ActiveLeafsAndRootsDerivatives...>, MaxWidth> &in,
-    std::tuple<NodesAlive...> /* deriv_ids */,
-    std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */);
-
-template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth, class... NodesAlive,
-          template <class, class> class Bivariate, class NextNode1,
-          class NextNode2, class... NodesToCalc>
-inline void evaluate_bwd(
-    detail::Tape2<std::tuple<Values...>,
-                  std::tuple<ActiveLeafsAndRootsDerivatives...>, MaxWidth> &in,
+                  std::tuple<ActiveLeafsAndRootsDerivatives...>> &in,
     std::tuple<NodesAlive...> /* deriv_ids */,
     std::tuple<Bivariate<NextNode1, NextNode2>, NodesToCalc...> /* nodes*/);
 
 template <class CurrentNode, class NextNode, class... Values,
-          class... ActiveLeafsAndRootsDerivatives, std::size_t MaxWidth,
-          class... NodesAlive, class... NodesToCalc>
+          class... ActiveLeafsAndRootsDerivatives, class... NodesAlive,
+          class... NodesToCalc>
 inline void univariate_bwd(
-    Tape2<std::tuple<Values...>, std::tuple<ActiveLeafsAndRootsDerivatives...>,
-          MaxWidth> &in,
+    Tape2<std::tuple<Values...>, std::tuple<ActiveLeafsAndRootsDerivatives...>>
+        &in,
     const double &current_node_d, std::tuple<NodesAlive...> /* deriv_ids */,
     std::tuple<NodesToCalc...> /* nodes */) {
     constexpr bool is_next_node_leaf =
@@ -92,12 +90,11 @@ inline void univariate_bwd(
 }
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth, class... NodesAlive,
-          template <class, class> class Bivariate, class NextNode1,
-          class NextNode2, class... NodesToCalc>
+          class... NodesAlive, template <class, class> class Bivariate,
+          class NextNode1, class NextNode2, class... NodesToCalc>
 inline void evaluate_bwd(
     detail::Tape2<std::tuple<Values...>,
-                  std::tuple<ActiveLeafsAndRootsDerivatives...>, MaxWidth> &in,
+                  std::tuple<ActiveLeafsAndRootsDerivatives...>> &in,
     std::tuple<NodesAlive...> /* deriv_ids */,
     std::tuple<Bivariate<NextNode1, NextNode2>, NodesToCalc...> /* nodes */) {
     using CurrentNode = Bivariate<NextNode1, NextNode2>;
@@ -205,13 +202,13 @@ inline void evaluate_bwd(
 }
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth, class... NodesAlive,
-          template <class> class Univariate, class Node, class... NodesToCalc>
-inline void evaluate_bwd(
-    detail::Tape2<std::tuple<Values...>,
-                  std::tuple<ActiveLeafsAndRootsDerivatives...>, MaxWidth> &in,
-    std::tuple<NodesAlive...> /* deriv_ids */,
-    std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */) {
+          class... NodesAlive, template <class> class Univariate, class Node,
+          class... NodesToCalc>
+inline void
+evaluate_bwd(detail::Tape2<std::tuple<Values...>,
+                           std::tuple<ActiveLeafsAndRootsDerivatives...>> &in,
+             std::tuple<NodesAlive...> /* deriv_ids */,
+             std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */) {
     using CurrentNode = Univariate<Node>;
 
     double const d = CurrentNode::d(val(in, CurrentNode{}), val(in, Node{}));
@@ -222,16 +219,17 @@ inline void evaluate_bwd(
 
 } // namespace detail
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives,
-          std::size_t MaxWidth>
+template <class... Values, class... ActiveLeafsAndRootsDerivatives>
 inline void
 evaluate_bwd(detail::Tape2<std::tuple<Values...>,
-                           std::tuple<ActiveLeafsAndRootsDerivatives...>,
-                           MaxWidth> &in) {
+                           std::tuple<ActiveLeafsAndRootsDerivatives...>> &in) {
     constexpr auto nodes_ordered =
         detail::calc_order_t<false, ActiveLeafsAndRootsDerivatives...>();
     detail::evaluate_bwd(
-        in, typename generate_tuple_type<detail::available_t, MaxWidth>::type{},
+        in,
+        typename generate_tuple_type<
+            detail::available_t,
+            tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>::type{},
         nodes_ordered);
 }
 

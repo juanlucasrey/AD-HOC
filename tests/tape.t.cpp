@@ -15,10 +15,9 @@ TEST(Tape, TapeInitial) {
     double_t<1> val2;
     auto res = val1 * val2;
 
-    auto temp =
-        detail::Tape2<std::tuple<decltype(val1), decltype(val2), decltype(res)>,
-                      std::tuple<decltype(val1), decltype(val2), decltype(res)>,
-                      2>{};
+    auto temp = detail::Tape2<
+        std::tuple<decltype(val1), decltype(val2), decltype(res)>,
+        std::tuple<decltype(val1), decltype(val2), decltype(res)>>{};
 
     temp.val(val1) = 1;
     temp.der(val1) = 1;

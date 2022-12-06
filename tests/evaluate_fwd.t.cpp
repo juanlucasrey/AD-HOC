@@ -1,5 +1,4 @@
 #include <constants_type.hpp>
-#include <evaluate_fwd.hpp>
 #include <init.hpp>
 #include <tape.hpp>
 
@@ -16,7 +15,7 @@ TEST(EvaluateFwd, EvaluateFwdUni) {
     auto t = Tape(temp);
 
     t.val(val0) = 1.0;
-    evaluate_fwd(t);
+    t.evaluate_fwd();
 
     double result = t.val(temp);
     EXPECT_EQ(result, std::exp(1.0));
@@ -30,7 +29,7 @@ TEST(EvaluateFwd, EvaluateFwdBi) {
 
     t.val(val0) = 2.0;
     t.val(val1) = 3.0;
-    evaluate_fwd(t);
+    t.evaluate_fwd();
 
     double result = t.val(temp);
     EXPECT_EQ(result, 6.0);
@@ -43,7 +42,7 @@ TEST(EvaluateFwd, EvaluateFwdConst) {
 
     auto t = Tape(temp);
     t.val(val0) = 1.0;
-    evaluate_fwd(t);
+    t.evaluate_fwd();
 
     double result = t.val(temp);
     EXPECT_EQ(result, 0.5);
@@ -69,7 +68,7 @@ TEST(EvaluateFwd, BSAdhoc) {
     t.val(K) = 102.0;
     t.val(v) = 0.15;
     t.val(T) = 0.5;
-    evaluate_fwd(t);
+    t.evaluate_fwd();
 
     double result2 = t.val(result_adhoc);
     EXPECT_EQ(result2, result);
