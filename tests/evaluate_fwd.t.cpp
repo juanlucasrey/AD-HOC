@@ -13,7 +13,7 @@ TEST(EvaluateFwd, EvaluateFwdUni) {
     auto [val0] = Init<1>();
     auto temp = exp(val0);
 
-    auto t = Tape3(temp);
+    auto t = Tape(temp);
 
     t.val(val0) = 1.0;
     evaluate_fwd(t);
@@ -26,7 +26,7 @@ TEST(EvaluateFwd, EvaluateFwdBi) {
     auto [val0, val1] = Init<2>();
     auto temp = val0 * val1;
 
-    auto t = Tape3(temp);
+    auto t = Tape(temp);
 
     t.val(val0) = 2.0;
     t.val(val1) = 3.0;
@@ -41,7 +41,7 @@ TEST(EvaluateFwd, EvaluateFwdConst) {
     using namespace constants;
     auto temp = val0 * CD<encode(0.5)>();
 
-    auto t = Tape3(temp);
+    auto t = Tape(temp);
     t.val(val0) = 1.0;
     evaluate_fwd(t);
 
@@ -63,7 +63,7 @@ TEST(EvaluateFwd, BSAdhoc) {
     auto [S, K, v, T] = Init<4>();
     auto result_adhoc = call_price(S, K, v, T);
 
-    auto t = Tape3(result_adhoc);
+    auto t = Tape(result_adhoc);
 
     t.val(S) = 100.0;
     t.val(K) = 102.0;

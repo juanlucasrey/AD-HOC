@@ -12,7 +12,7 @@ TEST(EvaluateBwd, Exp) {
     auto [v0] = Init<1>();
     auto r = exp(v0);
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 1.0;
 
     evaluate_fwd(t);
@@ -26,7 +26,7 @@ TEST(EvaluateBwd, Cos) {
     auto [v0] = Init<1>();
     auto r = cos(v0);
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 1.0;
 
     evaluate_fwd(t);
@@ -40,7 +40,7 @@ TEST(EvaluateBwd, CosExp) {
     auto [v0] = Init<1>();
     auto r = cos(exp(v0));
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 1.0;
 
     evaluate_fwd(t);
@@ -54,7 +54,7 @@ TEST(EvaluateBwd, Univariate) {
     auto [v0] = Init<1>();
     auto r = exp(cos(log(v0)));
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 0.5;
     t.der(r) = 1.0;
 
@@ -68,7 +68,7 @@ TEST(EvaluateBwd, Univariate2) {
     auto [v0] = Init<1>();
     auto r = exp(v0);
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 0.5;
     t.der(r) = 1.0;
 
@@ -82,7 +82,7 @@ TEST(EvaluateBwd, Add) {
     auto [v0, v1] = Init<2>();
     auto r = v0 + v1;
 
-    auto t = Tape3(r, v0, v1);
+    auto t = Tape(r, v0, v1);
     t.val(v0) = 2.0;
     t.val(v1) = 3.0;
     t.der(r) = 1.0;
@@ -98,7 +98,7 @@ TEST(EvaluateBwd, Mult) {
     auto [v0, v1] = Init<2>();
     auto r = v0 * v1;
 
-    auto t = Tape3(r, v0, v1);
+    auto t = Tape(r, v0, v1);
     t.val(v0) = 100.0;
     t.val(v1) = 10.0;
     t.der(r) = 1.0;
@@ -114,7 +114,7 @@ TEST(EvaluateBwd, MultSame) {
     auto [v0] = Init<1>();
     auto r = v0 * v0;
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 1.5;
     t.der(r) = 1.0;
 
@@ -128,7 +128,7 @@ TEST(EvaluateBwd, Div) {
     auto [v0, v1] = Init<2>();
     auto r = v0 / v1;
 
-    auto t = Tape3(r, v0, v1);
+    auto t = Tape(r, v0, v1);
     t.val(v0) = 1.5;
     t.val(v1) = 2.5;
     t.der(r) = 1.0;
@@ -152,7 +152,7 @@ TEST(EvaluateBwd, RepeatVar) {
     auto m = v0 * v1;
     auto r = m * m;
 
-    auto t = Tape3(r, v0, v1);
+    auto t = Tape(r, v0, v1);
     t.val(v0) = 0.5;
     t.val(v1) = 2.5;
     t.der(r) = 1.0;
@@ -168,7 +168,7 @@ TEST(EvaluateBwd, BivariateCutLeaf1) {
     auto [v0, v1] = Init<2>();
     auto r = cos(v0) * cos(v1);
 
-    auto t = Tape3(r, v0);
+    auto t = Tape(r, v0);
     t.val(v0) = 0.5;
     t.val(v1) = 2.;
     t.der(r) = 1.0;
@@ -183,7 +183,7 @@ TEST(EvaluateBwd, BivariateCutLeaf2) {
     auto [v0, v1] = Init<2>();
     auto r = cos(v0) * cos(v1);
 
-    auto t = Tape3(r, v1);
+    auto t = Tape(r, v1);
     t.val(v0) = 0.5;
     t.val(v1) = 2.;
     t.der(r) = 1.0;
@@ -198,7 +198,7 @@ TEST(EvaluateBwd, SimpleEvaluate) {
     auto [v0, v1] = Init<2>();
     auto r = (v0 * v1) + (v0);
 
-    auto t = Tape3(r, v0, v1);
+    auto t = Tape(r, v0, v1);
     t.val(v0) = 1.0;
     t.val(v1) = 2.0;
     t.der(r) = 1.0;
@@ -224,7 +224,7 @@ TEST(EvaluateBwd, BlackScholes) {
     auto [S, K, v, T] = Init<4>();
     auto r = call_price(S, K, v, T);
 
-    auto t = Tape3(r, S, K, v, T);
+    auto t = Tape(r, S, K, v, T);
     t.val(S) = 100.0;
     t.val(K) = 102.0;
     t.val(v) = 0.15;
@@ -252,7 +252,7 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     auto valprod3 = valprod * valprod2;
     auto res = valsum * valprod3;
 
-    auto t = Tape3(res, val1, val2, val3);
+    auto t = Tape(res, val1, val2, val3);
     t.val(val1) = 1.0;
     t.val(val2) = 2.0;
     t.val(val3) = 2.0;
@@ -268,7 +268,7 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     EXPECT_NEAR(t.der(val3), 80, 1e-14);
 
     auto res2 = valprod3 * valsum;
-    auto t2 = Tape3(res2, val1, val2, val3);
+    auto t2 = Tape(res2, val1, val2, val3);
     t2.val(val1) = 1.0;
     t2.val(val2) = 2.0;
     t2.val(val3) = 2.0;

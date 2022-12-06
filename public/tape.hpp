@@ -129,7 +129,7 @@ inline auto val(Tape const &in, Node /* node */) -> double {
 } // namespace detail
 
 template <class... ActiveLeafsAndRoots>
-auto inline Tape3(ActiveLeafsAndRoots... /* out */) {
+auto inline Tape(ActiveLeafsAndRoots... /* out */) {
     constexpr auto leafs =
         detail::leafs_t<ActiveLeafsAndRoots...>::template call();
     constexpr auto nodes =
