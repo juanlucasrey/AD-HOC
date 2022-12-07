@@ -10,26 +10,25 @@
 
 namespace adhoc {
 
-TEST(Tape, TapeInitial) {
-    double_t<0> val1;
-    double_t<1> val2;
-    auto res = val1 * val2;
+// TEST(Tape, TapeInitial) {
+//     double_t<0> val1;
+//     double_t<1> val2;
+//     auto res = val1 * val2;
 
-    auto temp = detail::Tape2<
-        std::tuple<decltype(val1), decltype(val2), decltype(res)>,
-        std::tuple<decltype(val1), decltype(val2), decltype(res)>>{};
+//     auto temp = Tape2<
+//         std::tuple<decltype(val1), decltype(val2), decltype(res)>>{};
 
-    temp.val(val1) = 1;
-    temp.der(val1) = 1;
-    temp.val(val2) = 1;
-}
+//     temp.val(val1) = 1;
+//     temp.der(val1) = 1;
+//     temp.val(val2) = 1;
+// }
 
 TEST(Tape, TapeInitial2) {
     double_t<0> val1;
     double_t<1> val2;
     auto res = val1 * val2;
 
-    auto tape = Tape(val1, res);
+    Tape tape(val1, res);
     tape.der_check(val1) = 1.0;
     // auto temp =
     //     Tape2<std::tuple<decltype(val1), decltype(val2), decltype(res)>,

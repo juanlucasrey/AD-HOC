@@ -14,14 +14,7 @@
 
 namespace adhoc {
 
-namespace detail {
-
-template <class ValuesTuple, class ActiveLeafsAndRootsDerivativesTuple>
-class Tape2;
-
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
-class Tape2<std::tuple<Values...>,
-            std::tuple<ActiveLeafsAndRootsDerivatives...>> {
+template <class... ActiveLeafsAndRootsDerivatives> class Tape {
 
     using ValuesTuple = decltype(std::tuple_cat(
         detail::leafs_t<ActiveLeafsAndRootsDerivatives...>::template call(),
@@ -37,6 +30,7 @@ class Tape2<std::tuple<Values...>,
     std::array<double, buffersize::value> m_buffer{};
 
   public:
+    explicit Tape(ActiveLeafsAndRootsDerivatives... /* out */) {}
     template <class Derived> auto inline val(Base<Derived> var) const -> double;
     template <class Derived> auto inline val(Base<Derived> var) -> double &;
     template <class Derived> auto inline der(Base<Derived> var) const -> double;
@@ -281,30 +275,26 @@ class Tape2<std::tuple<Values...>,
     }
 };
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<std::tuple<Values...>,
-           std::tuple<ActiveLeafsAndRootsDerivatives...>>::
-    val(Base<Derived> /* in */) const -> double {
+auto Tape<ActiveLeafsAndRootsDerivatives...>::val(Base<Derived> /* in */) const
+    -> double {
     constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
 }
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<
-    std::tuple<Values...>,
-    std::tuple<ActiveLeafsAndRootsDerivatives...>>::val(Base<Derived> /* in */)
+auto Tape<ActiveLeafsAndRootsDerivatives...>::val(Base<Derived> /* in */)
     -> double & {
     constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
 }
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<std::tuple<Values...>,
-           std::tuple<ActiveLeafsAndRootsDerivatives...>>::
-    der(Base<Derived> /* in */) const -> double {
+auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */) const
+    -> double {
     if constexpr (has_type<Derived, ActiveLeafsAndRootsDerivatives...>()) {
         constexpr auto idx =
             idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
@@ -314,11 +304,9 @@ auto Tape2<std::tuple<Values...>,
     }
 }
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<
-    std::tuple<Values...>,
-    std::tuple<ActiveLeafsAndRootsDerivatives...>>::der(Base<Derived> /* in */)
+auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */)
     -> double & {
     if constexpr (has_type<Derived, ActiveLeafsAndRootsDerivatives...>()) {
         constexpr auto idx =
@@ -329,36 +317,22 @@ auto Tape2<
     }
 }
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<std::tuple<Values...>,
-           std::tuple<ActiveLeafsAndRootsDerivatives...>>::
-    val_check(Base<Derived> /* in */) -> double & {
+auto Tape<ActiveLeafsAndRootsDerivatives...>::val_check(Base<Derived> /* in */)
+    -> double & {
     constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
 }
 
-template <class... Values, class... ActiveLeafsAndRootsDerivatives>
+template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape2<std::tuple<Values...>,
-           std::tuple<ActiveLeafsAndRootsDerivatives...>>::
-    der_check(Base<Derived> /* in */) -> double & {
+auto Tape<ActiveLeafsAndRootsDerivatives...>::der_check(Base<Derived> /* in */)
+    -> double & {
     static_assert(has_type<Derived, ActiveLeafsAndRootsDerivatives...>(),
                   "variable not active");
     constexpr auto idx = idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
     return this->m_derivatives[idx];
-}
-
-} // namespace detail
-
-template <class... ActiveLeafsAndRoots>
-auto inline Tape(ActiveLeafsAndRoots... /* out */) {
-    constexpr auto leafs =
-        detail::leafs_t<ActiveLeafsAndRoots...>::template call();
-    constexpr auto nodes =
-        detail::calc_order_aux_t<true, ActiveLeafsAndRoots...>::template call();
-    return detail::Tape2<decltype(std::tuple_cat(leafs, nodes)),
-                         std::tuple<ActiveLeafsAndRoots...>>();
 }
 
 } // namespace adhoc
