@@ -1,5 +1,5 @@
-#include <evaluate_bwd.hpp>
 #include <init.hpp>
+#include <tape.hpp>
 
 #include "call_price.hpp"
 
@@ -17,7 +17,7 @@ TEST(EvaluateBwd, Exp) {
     t.evaluate_fwd();
     t.der(r) = 1.0;
 
-    evaluate_bwd(t);
+    t.evaluate_bwd();
     EXPECT_NEAR(t.der(v0), std::exp(1.0), 1e-13);
 }
 
@@ -31,7 +31,7 @@ TEST(EvaluateBwd, Cos) {
     t.evaluate_fwd();
     t.der(r) = 1.0;
 
-    evaluate_bwd(t);
+    t.evaluate_bwd();
     EXPECT_NEAR(t.der(v0), -std::sin(1.0), 1e-13);
 }
 
@@ -45,7 +45,7 @@ TEST(EvaluateBwd, CosExp) {
     t.evaluate_fwd();
     t.der(r) = 1.0;
 
-    evaluate_bwd(t);
+    t.evaluate_bwd();
     EXPECT_NEAR(t.der(v0), -1.1166193174450132, 1e-13);
 }
 
@@ -58,7 +58,7 @@ TEST(EvaluateBwd, Univariate) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 2.757914160416556, 1e-13);
 }
@@ -72,7 +72,7 @@ TEST(EvaluateBwd, Univariate2) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 1.6487212707001282, 1e-13);
 }
@@ -87,7 +87,7 @@ TEST(EvaluateBwd, Add) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 1.0, 1e-13);
     EXPECT_NEAR(t.der(v1), 1.0, 1e-13);
@@ -103,7 +103,7 @@ TEST(EvaluateBwd, Mult) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 10.0, 1e-13);
     EXPECT_NEAR(t.der(v1), 100.0, 1e-13);
@@ -118,7 +118,7 @@ TEST(EvaluateBwd, MultSame) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 3.0, 1e-13);
 }
@@ -133,7 +133,7 @@ TEST(EvaluateBwd, Div) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     // from sympy import *
     // x = Symbol('x')
@@ -157,7 +157,7 @@ TEST(EvaluateBwd, RepeatVar) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 6.25, 1e-13);
     EXPECT_NEAR(t.der(v1), 1.25, 1e-13);
@@ -173,7 +173,7 @@ TEST(EvaluateBwd, BivariateCutLeaf1) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), -std::sin(0.5) * std::cos(2.), 1e-13);
 }
@@ -188,7 +188,7 @@ TEST(EvaluateBwd, BivariateCutLeaf2) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v1), std::cos(0.5) * -std::sin(2.), 1e-13);
 }
@@ -203,7 +203,7 @@ TEST(EvaluateBwd, SimpleEvaluate) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(v0), 3.0, 1e-15);
     EXPECT_NEAR(t.der(v1), 1.0, 1e-15);
@@ -231,7 +231,7 @@ TEST(EvaluateBwd, BlackScholes) {
     t.der(r) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(S), 0.33961663008862131, 1e-14);
     EXPECT_NEAR(t.der(K), -0.38387614859866631, 1e-14);
@@ -260,7 +260,7 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     t.der(res) = 1.0;
 
     t.evaluate_fwd();
-    evaluate_bwd(t);
+    t.evaluate_bwd();
 
     EXPECT_NEAR(t.der(val1), 412.44979516578081, 1e-14);
     EXPECT_NEAR(t.der(val2), 1588.4738734117946, 1e-14);
@@ -276,7 +276,7 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     t2.der(res2) = 1.0;
 
     t2.evaluate_fwd();
-    evaluate_bwd(t2);
+    t2.evaluate_bwd();
 
     EXPECT_NEAR(t2.der(val1), 412.44979516578081, 1e-14);
     EXPECT_NEAR(t2.der(val2), 1588.4738734117946, 1e-14);
