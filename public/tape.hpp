@@ -25,11 +25,10 @@ class Tape2<std::tuple<Values...>,
     std::array<double, sizeof...(Values)> m_values{};
     std::array<double, sizeof...(ActiveLeafsAndRootsDerivatives)>
         m_derivatives{};
-
-  public:
     std::array<double, tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>
         m_buffer{};
 
+  public:
     template <class Derived> auto inline val(Base<Derived> var) const -> double;
     template <class Derived> auto inline val(Base<Derived> var) -> double &;
     template <class Derived> auto inline der(Base<Derived> var) const -> double;
@@ -79,19 +78,7 @@ class Tape2<std::tuple<Values...>,
     }
 
   private:
-    class available2_t {};
-
-    // template <class... NodesAlive, template <class, class> class Bivariate,
-    //           class NextNode1, class NextNode2, class... NodesToCalc>
-    // inline void evaluate_bwd_aux(std::tuple<NodesAlive...> /* deriv_ids */,
-    //                              std::tuple<Bivariate<NextNode1, NextNode2>,
-    //                                         NodesToCalc...> /* nodes */);
-
-    // template <class... NodesAlive, template <class> class Univariate,
-    //           class Node, class... NodesToCalc>
-    // inline void evaluate_bwd_aux(
-    //     std::tuple<NodesAlive...> /* deriv_ids */,
-    //     std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */);
+    class available_t {};
 
     template <class CurrentNode, class NextNode, class... NodesAlive,
               class... NodesToCalc>
@@ -106,23 +93,22 @@ class Tape2<std::tuple<Values...>,
         constexpr auto position_root =
             get_idx_first2<CurrentNode>(std::tuple<NodesAlive...>{});
 
-        using NodesAlive2 =
-            decltype(replace_first2<position_root, available2_t>(
-                std::tuple<NodesAlive...>{}));
+        using NodesAlive2 = decltype(replace_first2<position_root, available_t>(
+            std::tuple<NodesAlive...>{}));
 
         constexpr bool next_node_needs_new_storing =
             !is_next_node_leaf && !has_type<NextNode, NodesAlive...>();
 
         constexpr auto position_next_available =
-            get_idx_first2<available2_t>(NodesAlive2{});
+            get_idx_first2<available_t>(NodesAlive2{});
 
-        using NodesAlive4 = std::conditional_t<
+        using NodesAlive3 = std::conditional_t<
             next_node_needs_new_storing,
             decltype(replace_first2<position_next_available, NextNode>(
                 NodesAlive2{})),
             NodesAlive2>;
 
-        constexpr auto position_next = get_idx_first2<NextNode>(NodesAlive4{});
+        constexpr auto position_next = get_idx_first2<NextNode>(NodesAlive3{});
 
         double &next_node_total_d = is_next_node_leaf
                                         ? this->der(NextNode{})
@@ -138,7 +124,7 @@ class Tape2<std::tuple<Values...>,
             next_node_total_d += next_node_d;
         }
 
-        this->evaluate_bwd_aux(NodesAlive4{}, std::tuple<NodesToCalc...>{});
+        this->evaluate_bwd_aux(NodesAlive3{}, std::tuple<NodesToCalc...>{});
     }
 
     template <class... NodesAlive>
@@ -196,14 +182,14 @@ class Tape2<std::tuple<Values...>,
                 get_idx_first2<CurrentNode>(std::tuple<NodesAlive...>{});
 
             using NodesAlive2 =
-                decltype(replace_first2<position_root, available2_t>(
+                decltype(replace_first2<position_root, available_t>(
                     std::tuple<NodesAlive...>{}));
 
             constexpr bool next_node1_needs_new_storing =
                 !is_next_node1_leaf && !has_type<NextNode1, NodesAlive...>();
 
             constexpr auto position_next_node1_available =
-                get_idx_first2<available2_t>(NodesAlive2{});
+                get_idx_first2<available_t>(NodesAlive2{});
 
             using NodesAlive3 = std::conditional_t<
                 next_node1_needs_new_storing,
@@ -215,7 +201,7 @@ class Tape2<std::tuple<Values...>,
                 !is_next_node2_leaf && !has_type<NextNode2, NodesAlive...>();
 
             constexpr auto position_next_node2_available =
-                get_idx_first2<available2_t>(NodesAlive3{});
+                get_idx_first2<available_t>(NodesAlive3{});
 
             using NodesAlive4 = std::conditional_t<
                 next_node2_needs_new_storing,
@@ -282,7 +268,7 @@ class Tape2<std::tuple<Values...>,
             detail::calc_order_t<false, ActiveLeafsAndRootsDerivatives...>();
         this->evaluate_bwd_aux(
             typename generate_tuple_type<
-                available2_t,
+                available_t,
                 tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>::type{},
             nodes_ordered);
     }
@@ -363,16 +349,6 @@ auto Tape2<std::tuple<Values...>,
                   "variable not active");
     constexpr auto idx = idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
     return this->m_derivatives[idx];
-}
-
-template <constants::ArgType D, class Tape>
-inline auto val(Tape const & /* in */, constants::CD<D> /* node */) -> double {
-    return constants::CD<D>::v();
-}
-
-template <class Node, class Tape>
-inline auto val(Tape const &in, Node /* node */) -> double {
-    return in.val(Node{});
 }
 
 } // namespace detail
