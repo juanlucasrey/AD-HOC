@@ -25,8 +25,9 @@ class Tape2<std::tuple<Values...>,
     std::array<double, sizeof...(Values)> m_values{};
     std::array<double, sizeof...(ActiveLeafsAndRootsDerivatives)>
         m_derivatives{};
-    std::array<double, tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>
-        m_buffer{};
+    using buffersize = std::integral_constant<
+        std::size_t, tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>;
+    std::array<double, buffersize::value> m_buffer{};
 
   public:
     template <class Derived> auto inline val(Base<Derived> var) const -> double;
@@ -267,9 +268,8 @@ class Tape2<std::tuple<Values...>,
         constexpr auto nodes_ordered =
             detail::calc_order_t<false, ActiveLeafsAndRootsDerivatives...>();
         this->evaluate_bwd_aux(
-            typename generate_tuple_type<
-                available_t,
-                tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>::type{},
+            typename generate_tuple_type<available_t,
+                                         buffersize::value>::type{},
             nodes_ordered);
     }
 };
