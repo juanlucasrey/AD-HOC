@@ -14,7 +14,8 @@ TEST(EvaluateFwd, EvaluateFwdUni) {
 
     Tape t(temp);
 
-    t.val(val0) = 1.0;
+    t.set(val0) = 1.0;
+    // t.set(temp) = 1.0; // fails because it's not a leaf
     t.evaluate_fwd();
 
     double result = t.val(temp);
@@ -27,8 +28,8 @@ TEST(EvaluateFwd, EvaluateFwdBi) {
 
     Tape t(temp);
 
-    t.val(val0) = 2.0;
-    t.val(val1) = 3.0;
+    t.set(val0) = 2.0;
+    t.set(val1) = 3.0;
     t.evaluate_fwd();
 
     double result = t.val(temp);
@@ -37,11 +38,11 @@ TEST(EvaluateFwd, EvaluateFwdBi) {
 
 TEST(EvaluateFwd, EvaluateFwdConst) {
     auto [val0] = Init<1>();
-    // using namespace constants;
-    auto temp = val0 * constants::CD<constants::encode(0.5)>();
+    using namespace constants;
+    auto temp = val0 * CD<encode(0.5)>();
 
     Tape t(temp);
-    t.val(val0) = 1.0;
+    t.set(val0) = 1.0;
     t.evaluate_fwd();
 
     double result = t.val(temp);
@@ -64,10 +65,10 @@ TEST(EvaluateFwd, BSAdhoc) {
 
     Tape t(result_adhoc);
 
-    t.val(S) = 100.0;
-    t.val(K) = 102.0;
-    t.val(v) = 0.15;
-    t.val(T) = 0.5;
+    t.set(S) = 100.0;
+    t.set(K) = 102.0;
+    t.set(v) = 0.15;
+    t.set(T) = 0.5;
     t.evaluate_fwd();
 
     double result2 = t.val(result_adhoc);

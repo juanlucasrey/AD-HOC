@@ -16,8 +16,10 @@ namespace adhoc {
 
 template <class... ActiveLeafsAndRootsDerivatives> class Tape {
 
+    using leafs = decltype(detail::leafs_t<
+                           ActiveLeafsAndRootsDerivatives...>::template call());
     using ValuesTuple = decltype(std::tuple_cat(
-        detail::leafs_t<ActiveLeafsAndRootsDerivatives...>::template call(),
+        leafs{},
         detail::calc_order_aux_t<
             true, ActiveLeafsAndRootsDerivatives...>::template call()));
 
@@ -32,14 +34,9 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
   public:
     explicit Tape(ActiveLeafsAndRootsDerivatives... /* out */) {}
     template <class Derived> auto inline val(Base<Derived> var) const -> double;
-    template <class Derived> auto inline val(Base<Derived> var) -> double &;
+    template <class Derived> auto inline set(Base<Derived> var) -> double &;
     template <class Derived> auto inline der(Base<Derived> var) const -> double;
     template <class Derived> auto inline der(Base<Derived> var) -> double &;
-
-    template <class Derived>
-    auto inline val_check(Base<Derived> var) -> double &;
-    template <class Derived>
-    auto inline der_check(Base<Derived> var) -> double &;
 
   private:
     template <constants::ArgType D>
@@ -48,7 +45,8 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     }
 
     template <class Node> inline auto val_aux(Node /* node */) -> double {
-        return this->val(Node{});
+        constexpr auto idx = get_idx_first2<Node>(ValuesTuple{});
+        return this->m_values[idx];
     }
 
     inline void evaluate_fwd_aux(std::tuple<> /* nodes */) {}
@@ -58,7 +56,8 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     inline void
     evaluate_fwd_aux(std::tuple<Univariate<Node>, NodesToCalc...> /* nodes */) {
         using CurrentNode = Univariate<Node>;
-        this->val(CurrentNode{}) = CurrentNode::v(this->val_aux(Node{}));
+        constexpr auto idx = get_idx_first2<CurrentNode>(ValuesTuple{});
+        this->m_values[idx] = CurrentNode::v(this->val_aux(Node{}));
         this->evaluate_fwd_aux(std::tuple<NodesToCalc...>{});
     }
 
@@ -67,7 +66,8 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     inline void evaluate_fwd_aux(
         std::tuple<Bivariate<Node1, Node2>, NodesToCalc...> /* nodes */) {
         using CurrentNode = Bivariate<Node1, Node2>;
-        this->val(CurrentNode{}) =
+        constexpr auto idx = get_idx_first2<CurrentNode>(ValuesTuple{});
+        this->m_values[idx] =
             CurrentNode::v(this->val_aux(Node1{}), this->val_aux(Node2{}));
         this->evaluate_fwd_aux(std::tuple<NodesToCalc...>{});
     }
@@ -285,8 +285,10 @@ auto Tape<ActiveLeafsAndRootsDerivatives...>::val(Base<Derived> /* in */) const
 
 template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
-auto Tape<ActiveLeafsAndRootsDerivatives...>::val(Base<Derived> /* in */)
+auto Tape<ActiveLeafsAndRootsDerivatives...>::set(Base<Derived> /* in */)
     -> double & {
+    static_assert(get_idx_first2<Derived>(leafs{}) != std::tuple_size<leafs>{},
+                  "only leafs are allowed to be set");
     constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
 }
@@ -295,43 +297,17 @@ template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
 auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */) const
     -> double {
-    if constexpr (has_type<Derived, ActiveLeafsAndRootsDerivatives...>()) {
-        constexpr auto idx =
-            idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
-        return this->m_derivatives[idx];
-    } else {
-        return 0;
-    }
+    constexpr auto idx = get_idx_first2<Derived>(
+        std::tuple<ActiveLeafsAndRootsDerivatives...>{});
+    return this->m_derivatives[idx];
 }
 
 template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
 auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */)
     -> double & {
-    if constexpr (has_type<Derived, ActiveLeafsAndRootsDerivatives...>()) {
-        constexpr auto idx =
-            idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
-        return this->m_derivatives[idx];
-    } else {
-        return this->m_buffer[0];
-    }
-}
-
-template <class... ActiveLeafsAndRootsDerivatives>
-template <class Derived>
-auto Tape<ActiveLeafsAndRootsDerivatives...>::val_check(Base<Derived> /* in */)
-    -> double & {
-    constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
-    return this->m_values[idx];
-}
-
-template <class... ActiveLeafsAndRootsDerivatives>
-template <class Derived>
-auto Tape<ActiveLeafsAndRootsDerivatives...>::der_check(Base<Derived> /* in */)
-    -> double & {
-    static_assert(has_type<Derived, ActiveLeafsAndRootsDerivatives...>(),
-                  "variable not active");
-    constexpr auto idx = idx_type<Derived, ActiveLeafsAndRootsDerivatives...>();
+    constexpr auto idx = get_idx_first2<Derived>(
+        std::tuple<ActiveLeafsAndRootsDerivatives...>{});
     return this->m_derivatives[idx];
 }
 
