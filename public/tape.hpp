@@ -22,9 +22,16 @@ class Tape2;
 template <class... Values, class... ActiveLeafsAndRootsDerivatives>
 class Tape2<std::tuple<Values...>,
             std::tuple<ActiveLeafsAndRootsDerivatives...>> {
-    std::array<double, sizeof...(Values)> m_values{};
+
+    using ValuesTuple = decltype(std::tuple_cat(
+        detail::leafs_t<ActiveLeafsAndRootsDerivatives...>::template call(),
+        detail::calc_order_aux_t<
+            true, ActiveLeafsAndRootsDerivatives...>::template call()));
+
+    std::array<double, std::tuple_size<ValuesTuple>{}> m_values{};
     std::array<double, sizeof...(ActiveLeafsAndRootsDerivatives)>
         m_derivatives{};
+
     using buffersize = std::integral_constant<
         std::size_t, tape_size_bwd<ActiveLeafsAndRootsDerivatives...>()>;
     std::array<double, buffersize::value> m_buffer{};
@@ -279,12 +286,8 @@ template <class Derived>
 auto Tape2<std::tuple<Values...>,
            std::tuple<ActiveLeafsAndRootsDerivatives...>>::
     val(Base<Derived> /* in */) const -> double {
-    if constexpr (has_type<Derived, Values...>()) {
-        constexpr auto idx = idx_type<Derived, Values...>();
-        return this->m_values[idx];
-    } else {
-        return 0;
-    }
+    constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
+    return this->m_values[idx];
 }
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives>
@@ -293,12 +296,8 @@ auto Tape2<
     std::tuple<Values...>,
     std::tuple<ActiveLeafsAndRootsDerivatives...>>::val(Base<Derived> /* in */)
     -> double & {
-    if constexpr (has_type<Derived, Values...>()) {
-        constexpr auto idx = idx_type<Derived, Values...>();
-        return this->m_values[idx];
-    } else {
-        return this->m_buffer[0];
-    }
+    constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
+    return this->m_values[idx];
 }
 
 template <class... Values, class... ActiveLeafsAndRootsDerivatives>
@@ -335,8 +334,7 @@ template <class Derived>
 auto Tape2<std::tuple<Values...>,
            std::tuple<ActiveLeafsAndRootsDerivatives...>>::
     val_check(Base<Derived> /* in */) -> double & {
-    static_assert(has_type<Derived, Values...>());
-    constexpr auto idx = idx_type<Derived, Values...>();
+    constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
 }
 
