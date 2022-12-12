@@ -71,6 +71,17 @@ template <class Derived> auto erfc(Base<Derived> /* in */) {
     return erfc_t<Derived>{};
 }
 
+template <class Input> struct minus_t : public Base<minus_t<Input>> {
+    static inline auto v(double in) -> double { return -in; }
+    static inline auto d(double /* thisv */, double /* in */) -> double {
+        return -1.0;
+    }
+};
+
+template <class Derived> auto operator-(Base<Derived> /* in */) {
+    return minus_t<Derived>{};
+}
+
 template <class Input1, class Input2>
 struct add_t : public Base<add_t<Input1, Input2>> {
     static inline auto v(double in1, double in2) -> double { return in1 + in2; }
