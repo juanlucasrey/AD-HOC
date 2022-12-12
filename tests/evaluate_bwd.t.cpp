@@ -283,6 +283,50 @@ TEST(EvaluateBwd, ComplexEvaluate) {
     EXPECT_NEAR(t2.der(val3), 80, 1e-14);
 }
 
+TEST(EvaluateBwd, CallAndPut) {
+    double result_call = 0.;
+    double result_put = 0.;
+
+    {
+        double S = 100.0;
+        double K = 102.0;
+        double v = 0.15;
+        double T = 0.5;
+        result_call = call_price(S, K, v, T);
+        result_put = put_price(S, K, v, T);
+    }
+
+    auto [S, K, v, T] = Init<4>();
+    auto rc = call_price(S, K, v, T);
+    auto rp = put_price(S, K, v, T);
+
+    Tape t(rc, rp, S, K, v, T);
+    t.set(S) = 100.0;
+    t.set(K) = 102.0;
+    t.set(v) = 0.15;
+    t.set(T) = 0.5;
+    t.evaluate_fwd();
+    EXPECT_EQ(t.val(rc), result_call);
+    EXPECT_EQ(t.val(rp), result_put);
+
+    t.der(rc) = 1.0;
+    t.evaluate_bwd();
+
+    EXPECT_NEAR(t.der(S), 0.33961663008862131, 1e-14);
+    EXPECT_NEAR(t.der(K), -0.38387614859866631, 1e-14);
+    EXPECT_NEAR(t.der(v), -30.580208040388474, 1e-14);
+    EXPECT_NEAR(t.der(T), -4.5870312060582705, 1e-14);
+
+    t.reset_der();
+    t.der(rp) = 1.0;
+    t.evaluate_bwd();
+
+    EXPECT_NEAR(t.der(S), -0.6603833699113788, 1e-14);
+    EXPECT_NEAR(t.der(K), 0.61612385140133341, 1e-14);
+    EXPECT_NEAR(t.der(v), -30.580208040388474, 1e-14);
+    EXPECT_NEAR(t.der(T), -4.5870312060582705, 1e-14);
+}
+
 // TEST(EvaluateBwd, Derivative2nd) {
 //     adouble x(2);
 //     adouble y(3);

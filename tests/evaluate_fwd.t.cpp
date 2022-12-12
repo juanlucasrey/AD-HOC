@@ -75,4 +75,35 @@ TEST(EvaluateFwd, BSAdhoc) {
     EXPECT_EQ(result2, result);
 }
 
+TEST(EvaluateFwd, CallAndPut) {
+    double result_call = 0.;
+    double result_put = 0.;
+
+    {
+        double S = 100.0;
+        double K = 102.0;
+        double v = 0.15;
+        double T = 0.5;
+        result_call = call_price(S, K, v, T);
+        result_put = put_price(S, K, v, T);
+    }
+
+    auto [S, K, v, T] = Init<4>();
+    auto rc = call_price(S, K, v, T);
+    auto rp = put_price(S, K, v, T);
+
+    Tape t(rc, rp);
+
+    t.set(S) = 100.0;
+    t.set(K) = 102.0;
+    t.set(v) = 0.15;
+    t.set(T) = 0.5;
+    t.evaluate_fwd();
+
+    double result_call2 = t.val(rc);
+    EXPECT_EQ(result_call2, result_call);
+    double result_put2 = t.val(rp);
+    EXPECT_EQ(result_put2, result_put);
+}
+
 } // namespace adhoc
