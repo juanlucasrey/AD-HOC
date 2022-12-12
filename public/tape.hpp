@@ -37,6 +37,10 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     template <class Derived> auto inline set(Base<Derived> var) -> double &;
     template <class Derived> auto inline der(Base<Derived> var) const -> double;
     template <class Derived> auto inline der(Base<Derived> var) -> double &;
+    void inline reset_der() {
+        std::fill(std::begin(this->m_derivatives),
+                  std::end(this->m_derivatives), 0.);
+    }
 
   private:
     template <constants::ArgType D>
