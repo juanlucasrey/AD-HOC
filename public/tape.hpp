@@ -32,6 +32,7 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     std::array<double, buffersize::value> m_buffer{};
 
   public:
+    explicit Tape() = default;
     explicit Tape(ActiveLeafsAndRootsDerivatives... /* out */) {}
     template <class Derived> auto inline val(Base<Derived> var) const -> double;
     template <class Derived> auto inline set(Base<Derived> var) -> double &;
