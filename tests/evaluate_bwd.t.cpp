@@ -327,6 +327,27 @@ TEST(EvaluateBwd, CallAndPut) {
     EXPECT_NEAR(t.der(T), -4.5870312060582705, 1e-14);
 }
 
+TEST(EvaluateBwd, WrongDer) {
+    using constants::CD;
+    using constants::encode;
+    auto [S, K, T] = Init<3>();
+    auto price = S * K + T;
+
+    Tape t(price, S, K);
+
+    t.set(S) = 100.0;
+    t.set(K) = 102.0;
+    t.set(T) = 0.5;
+    t.evaluate_fwd();
+
+    // uncommenting this should give the static assert message: "Only nodes or
+    // leafs can have derivatives set or read"
+
+    // t.der(T) = 1.0;
+
+    t.evaluate_bwd();
+}
+
 // TEST(EvaluateBwd, Derivative2nd) {
 //     adouble x(2);
 //     adouble y(3);

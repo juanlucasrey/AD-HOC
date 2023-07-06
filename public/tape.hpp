@@ -43,6 +43,10 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
     }
 
   private:
+    template <class Derived>
+    auto inline der_int(Base<Derived> var) const -> double;
+    template <class Derived> auto inline der_int(Base<Derived> var) -> double &;
+
     template <constants::ArgType D>
     inline auto val_aux(constants::CD<D> /* node */) -> double {
         return constants::CD<D>::v();
@@ -117,12 +121,12 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
         constexpr auto position_next = get_idx_first2<NextNode>(NodesAlive3{});
 
         double &next_node_total_d = is_next_node_leaf
-                                        ? this->der(NextNode{})
+                                        ? this->der_int(NextNode{})
                                         : this->m_buffer[position_next];
 
         double const next_node_d =
             current_node_d * (is_current_node_root
-                                  ? this->der(CurrentNode{})
+                                  ? this->der_int(CurrentNode{})
                                   : this->m_buffer[position_root]);
         if constexpr (next_node_needs_new_storing) {
             next_node_total_d = next_node_d;
@@ -221,15 +225,15 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
                 get_idx_first2<NextNode2>(NodesAlive4{});
 
             double &next_node1_val = is_next_node1_leaf
-                                         ? this->der(NextNode1{})
+                                         ? this->der_int(NextNode1{})
                                          : this->m_buffer[position_next1];
 
             double &next_node2_val = is_next_node2_leaf
-                                         ? this->der(NextNode2{})
+                                         ? this->der_int(NextNode2{})
                                          : this->m_buffer[position_next2];
 
             double const current_node_d = is_current_node_root
-                                              ? this->der(CurrentNode{})
+                                              ? this->der_int(CurrentNode{})
                                               : this->m_buffer[position_root];
 
             auto d = CurrentNode::d(this->val_aux(CurrentNode{}),
@@ -301,6 +305,8 @@ template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
 auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */) const
     -> double {
+    static_assert(has_type<Derived, ActiveLeafsAndRootsDerivatives...>(),
+                  "Only nodes or leafs can have derivatives set or read");
     constexpr auto idx = get_idx_first2<Derived>(
         std::tuple<ActiveLeafsAndRootsDerivatives...>{});
     return this->m_derivatives[idx];
@@ -309,6 +315,26 @@ auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */) const
 template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
 auto Tape<ActiveLeafsAndRootsDerivatives...>::der(Base<Derived> /* in */)
+    -> double & {
+    static_assert(has_type<Derived, ActiveLeafsAndRootsDerivatives...>(),
+                  "Only nodes or leafs can have derivatives set or read");
+    constexpr auto idx = get_idx_first2<Derived>(
+        std::tuple<ActiveLeafsAndRootsDerivatives...>{});
+    return this->m_derivatives[idx];
+}
+
+template <class... ActiveLeafsAndRootsDerivatives>
+template <class Derived>
+auto Tape<ActiveLeafsAndRootsDerivatives...>::der_int(
+    Base<Derived> /* in */) const -> double {
+    constexpr auto idx = get_idx_first2<Derived>(
+        std::tuple<ActiveLeafsAndRootsDerivatives...>{});
+    return this->m_derivatives[idx];
+}
+
+template <class... ActiveLeafsAndRootsDerivatives>
+template <class Derived>
+auto Tape<ActiveLeafsAndRootsDerivatives...>::der_int(Base<Derived> /* in */)
     -> double & {
     constexpr auto idx = get_idx_first2<Derived>(
         std::tuple<ActiveLeafsAndRootsDerivatives...>{});
