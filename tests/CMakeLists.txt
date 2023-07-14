@@ -2,6 +2,15 @@
 set(CMAKE_CXX_STANDARD 20)
 # add_definitions(-DCODELOGGER)
 
+find_package(Eigen3 REQUIRED)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    # without this parameter loops will not be vectorised
+    # set_source_files_properties(random/tools/scrambler.cpp PROPERTIES COMPILE_FLAGS "$<$<CONFIG:Release,RelWithDebInfo>:--param vect-max-version-for-alias-checks=100>")
+    # set_source_files_properties(random/tools/scrambler.cpp PROPERTIES COMPILE_FLAGS "$<$<CONFIG:Release,RelWithDebInfo>:-fopt-info-vec-all --param vect-max-version-for-alias-checks=100>")
+    set_source_files_properties(least_squares.t.cpp PROPERTIES COMPILE_FLAGS "-Wno-useless-cast")
+endif()
+
 add_executable(
   adhoc_test
   leafs.t.cpp
@@ -14,6 +23,7 @@ add_executable(
   tape_size_bwd.t.cpp
   mcsim.t.cpp
   BS.t.cpp
+  least_squares.t.cpp
   # opencl only for clang at the moment
   # opencl.t.cpp
 )
@@ -42,7 +52,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 endif()
 
 
-target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
+target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public)
 target_link_directories(adhoc_test SYSTEM PUBLIC /usr/local/lib)
 
 find_package(OpenCL REQUIRED)
