@@ -23,7 +23,10 @@ add_executable(
   tape_size_bwd.t.cpp
   mcsim.t.cpp
   BS.t.cpp
-  least_squares.t.cpp
+
+  # complains  with clang
+  least_squares.t.cpp 
+
   # opencl only for clang at the moment
   # opencl.t.cpp
 )
