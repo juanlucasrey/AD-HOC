@@ -14,6 +14,7 @@ endif()
 add_executable(
   adhoc_test3
   dependency.t.cpp
+  ders.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
