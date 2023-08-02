@@ -2,6 +2,7 @@
 #define ADHOC3_DERS_HPP
 
 #include "adhoc.hpp"
+#include "strict_order.hpp"
 
 namespace adhoc3 {
 
@@ -25,6 +26,19 @@ auto constexpr duplicate_id(mvar_t<IdAndOrder_t<Base<IdDerived>, Order1>>,
     return thisisduplicate || duplicateinnext;
 }
 
+template <std::size_t... Orders, class... IdsDerived>
+auto var_aux(mvar_t<mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...>) {
+
+    static_assert(!detail::duplicate_id(
+                      mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>{}...),
+                  "duplicate ids on multivariate derivative declaration");
+
+    return mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>...>{};
+}
+
+template <class... Ts>
+using MyContainer = instantiate_t<mvar_t, sorted_list_t<list<Ts...>>>;
+
 } // namespace detail
 
 template <std::size_t Order = 1, class Derived> auto var(Base<Derived>) {
@@ -33,12 +47,9 @@ template <std::size_t Order = 1, class Derived> auto var(Base<Derived>) {
 
 template <std::size_t... Orders, class... IdsDerived>
 auto var(mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...) {
-
-    static_assert(!detail::duplicate_id(
-                      mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>{}...),
-                  "duplicate ids on multivariate derivative declaration");
-
-    return mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>...>{};
+    return detail::var_aux(
+        detail::MyContainer<
+            mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...>{});
 }
 
 } // namespace adhoc3
