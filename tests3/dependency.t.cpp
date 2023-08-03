@@ -15,18 +15,30 @@ TEST(Dependency, First) {
                   std::numeric_limits<std::size_t>::max());
 
     auto sumv = K + v;
+    static_assert(order<decltype(sumv), decltype(S)>::call() == 0);
     static_assert(order<decltype(sumv), decltype(K)>::call() == 1);
+    static_assert(order<decltype(sumv), decltype(v)>::call() == 1);
+    static_assert(order<decltype(sumv), decltype(T)>::call() == 0);
 
     auto mulv = K * v * K;
+    static_assert(order<decltype(sumv), decltype(S)>::call() == 0);
     static_assert(order<decltype(mulv), decltype(K)>::call() == 2);
+    static_assert(order<decltype(mulv), decltype(v)>::call() == 1);
+    static_assert(order<decltype(sumv), decltype(T)>::call() == 0);
 
     auto mulexpv = K * v * exp(K);
+    static_assert(order<decltype(mulexpv), decltype(S)>::call() == 0);
     static_assert(order<decltype(mulexpv), decltype(K)>::call() ==
                   std::numeric_limits<std::size_t>::max());
+    static_assert(order<decltype(mulexpv), decltype(v)>::call() == 1);
+    static_assert(order<decltype(mulexpv), decltype(T)>::call() == 0);
 
     auto divv = v / K;
+    static_assert(order<decltype(divv), decltype(S)>::call() == 0);
     static_assert(order<decltype(divv), decltype(K)>::call() ==
                   std::numeric_limits<std::size_t>::max());
+    static_assert(order<decltype(divv), decltype(v)>::call() == 1);
+    static_assert(order<decltype(divv), decltype(T)>::call() == 0);
 
     using constants::CD;
     using constants::encode;

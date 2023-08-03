@@ -2,6 +2,7 @@
 #define ADHOC3_DERS_HPP
 
 #include "adhoc.hpp"
+#include "dependency.hpp"
 #include "strict_order.hpp"
 
 namespace adhoc3 {
@@ -17,23 +18,23 @@ template <> auto constexpr duplicate_id() -> bool { return false; }
 
 template <std::size_t Order1, class IdDerived, std::size_t... Orders,
           class... IdsDerived>
-auto constexpr duplicate_id(mvar_t<IdAndOrder_t<Base<IdDerived>, Order1>>,
-                            mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...)
+auto constexpr duplicate_id(mvar_t<IdAndOrder_t<IdDerived, Order1>>,
+                            mvar_t<IdAndOrder_t<IdsDerived, Orders>>...)
     -> bool {
     bool thisisduplicate = (std::is_same<IdDerived, IdsDerived>::value || ...);
     bool duplicateinnext =
-        duplicate_id(mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>{}...);
+        duplicate_id(mvar_t<IdAndOrder_t<IdsDerived, Orders>>{}...);
     return thisisduplicate || duplicateinnext;
 }
 
 template <std::size_t... Orders, class... IdsDerived>
-auto var_aux(mvar_t<mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...>) {
+auto var_aux(mvar_t<mvar_t<IdAndOrder_t<IdsDerived, Orders>>...>) {
 
-    static_assert(!detail::duplicate_id(
-                      mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>{}...),
-                  "duplicate ids on multivariate derivative declaration");
+    static_assert(
+        !detail::duplicate_id(mvar_t<IdAndOrder_t<IdsDerived, Orders>>{}...),
+        "duplicate ids on multivariate derivative declaration");
 
-    return mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>...>{};
+    return mvar_t<IdAndOrder_t<IdsDerived, Orders>...>{};
 }
 
 template <class... Ts>
@@ -41,15 +42,21 @@ using MyContainer = instantiate_t<mvar_t, sorted_list_t<list<Ts...>>>;
 
 } // namespace detail
 
-template <std::size_t Order = 1, class Derived> auto var(Base<Derived>) {
-    return mvar_t<IdAndOrder_t<Base<Derived>, Order>>{};
+template <std::size_t Order = 1, class Derived> auto var(Derived) {
+    return mvar_t<IdAndOrder_t<Derived, Order>>{};
 }
 
 template <std::size_t... Orders, class... IdsDerived>
-auto var(mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...) {
+auto var(mvar_t<IdAndOrder_t<IdsDerived, Orders>>...) {
     return detail::var_aux(
-        detail::MyContainer<
-            mvar_t<IdAndOrder_t<Base<IdsDerived>, Orders>>...>{});
+        detail::MyContainer<mvar_t<IdAndOrder_t<IdsDerived, Orders>>...>{});
+}
+
+template <class NumIdDerived, std::size_t... Orders, class... IdsDerived>
+constexpr auto der_non_null(NumIdDerived,
+                            mvar_t<IdAndOrder_t<IdsDerived, Orders>...>)
+    -> bool {
+    return ((Orders <= order<NumIdDerived, IdsDerived>::call()) && ...);
 }
 
 } // namespace adhoc3
