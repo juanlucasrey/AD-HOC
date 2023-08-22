@@ -59,6 +59,14 @@ constexpr auto der_non_null(NumIdDerived,
     return ((Orders <= order<NumIdDerived, IdsDerived>::call()) && ...);
 }
 
+namespace der {
+
+template <class Id, std::size_t Order = 1> struct d {};
+template <class Id, std::size_t Power = 1> struct p {};
+template <class... Ids> struct m {};
+
+} // namespace der
+
 } // namespace adhoc3
 
 #endif // ADHOC3_DERS_HPP
