@@ -16,6 +16,7 @@ add_executable(
   dependency.t.cpp
   ders.t.cpp
   raw.t.cpp
+  differential_operator.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
