@@ -42,11 +42,13 @@ TEST(DifferentialOperator, dID) {
     constexpr auto co = calc_order_t<true>(res);
 
     std::tuple<p<d<decltype(x), 2>, 3>, p<d<decltype(y), 4>, 5>> der3{};
+    std::tuple<p<d<decltype(y), 4>, 5>, p<d<decltype(x), 2>, 3>> der3_inv{};
 
     constexpr auto der3ordered = order_differential_operator(der3, co);
+    constexpr auto der3_inv_ordered = order_differential_operator(der3_inv, co);
 
-    std::cout << type_name<decltype(der3)>() << std::endl;
-    std::cout << type_name<decltype(der3ordered)>() << std::endl;
+    static_assert(
+        std::is_same<decltype(der3ordered), decltype(der3_inv_ordered)>::value);
 }
 
 } // namespace adhoc3
