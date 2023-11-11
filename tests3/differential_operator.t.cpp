@@ -62,7 +62,7 @@ TEST(DifferentialOperator, DerivativeNonNull2) {
 }
 
 TEST(DifferentialOperator, DerivativeNonNull3) {
-    auto [x, y] = Init<2>();
+    auto [x, y, z] = Init<3>();
 
     auto prod = x * y;
 
@@ -70,14 +70,14 @@ TEST(DifferentialOperator, DerivativeNonNull3) {
                der2::p<der2::d<decltype(prod), 2>, 1>>
         dnode{};
 
-    auto din1 = diff_op<3>(x);
+    auto din1 = d<3>(x);
     std::cout << der_non_null(dnode, din1) << std::endl;
 
     std::tuple<der2::p<der2::d<decltype(x), 1>, 2>,
                der2::p<der2::d<decltype(y), 1>, 1>>
         din2{};
 
-    auto din2_2 = diff_op(diff_op<3>(x), diff_op<3>(y));
+    auto din2_2 = d<3>(x) * d<3>(y) * d(z);
     std::cout << type_name2<decltype(din2_2)>() << std::endl;
 
     std::cout << der_non_null(dnode, din2) << std::endl;
@@ -87,8 +87,11 @@ TEST(DifferentialOperator, DerivativeNonNull3) {
         din3{};
     std::cout << der_non_null(dnode, din3) << std::endl;
 
-    auto din4 = diff_op<3>(y);
+    auto din4 = d<3>(y);
     std::cout << der_non_null(dnode, din4) << std::endl;
+
+    auto din1_1 = d(x);
+    std::cout << der_non_null(dnode, din1_1) << std::endl;
 }
 
 } // namespace adhoc3

@@ -64,13 +64,16 @@ constexpr auto order_differential_operator(
         nodes);
 }
 
-template <std::size_t Order, class Id> constexpr auto diff_op(Id /* id */) {
+template <std::size_t Order = 1, class Id> constexpr auto d(Id /* id */) {
     return std::tuple<der2::p<der2::d<Id, 1>, Order>>{};
 }
 
-template <std::size_t... Orders, class... Ids>
-constexpr auto diff_op(std::tuple<der2::p<der2::d<Ids, 1>, Orders>>... id) {
-    return std::tuple_cat(id...);
+template <std::size_t... Orders1, class... Ids1, std::size_t... Orders2,
+          class... Ids2>
+constexpr auto
+operator*(std::tuple<der2::p<der2::d<Ids1, 1>, Orders1>...> id1,
+          std::tuple<der2::p<der2::d<Ids2, 1>, Orders2>...> id2) {
+    return std::tuple_cat(id1, id2);
 }
 
 } // namespace adhoc3
