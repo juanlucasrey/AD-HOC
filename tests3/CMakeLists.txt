@@ -17,6 +17,7 @@ add_executable(
   ders.t.cpp
   raw.t.cpp
   differential_operator.t.cpp
+  tape.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -44,7 +45,7 @@ endif()
 
 
 target_include_directories(adhoc_test3 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public3)
-target_link_directories(adhoc_test3 SYSTEM PUBLIC /usr/local/lib)
+target_link_directories(adhoc_test3 PUBLIC /usr/local/lib)
 
 find_package(OpenCL REQUIRED)
 target_link_libraries(

@@ -15,11 +15,11 @@ TEST(DifferentialOperator, dID) {
     auto res = (x * y) * (x * cos(y));
     constexpr auto co = calc_order_t<true>(res);
 
-    std::tuple<der2::p<der2::d<decltype(x), 2>, 3>,
-               der2::p<der2::d<decltype(y), 4>, 5>>
+    std::tuple<der::p<der::d<decltype(x), 2>, 3>,
+               der::p<der::d<decltype(y), 4>, 5>>
         der3{};
-    std::tuple<der2::p<der2::d<decltype(y), 4>, 5>,
-               der2::p<der2::d<decltype(x), 2>, 3>>
+    std::tuple<der::p<der::d<decltype(y), 4>, 5>,
+               der::p<der::d<decltype(x), 2>, 3>>
         der3_inv{};
 
     constexpr auto der3ordered = order_differential_operator(der3, co);
@@ -35,30 +35,32 @@ TEST(DifferentialOperator, DerivativeNonNull2) {
     auto prod = x * y;
     auto prodf = cos(x) * exp(y);
 
-    std::tuple<der2::p<der2::d<decltype(prod), 1>, 2>,
-               der2::p<der2::d<decltype(prodf), 1>, 1>>
+    std::tuple<der::p<der::d<decltype(prod), 1>, 2>,
+               der::p<der::d<decltype(prodf), 1>, 1>>
         dnode{};
 
-    std::cout << order<decltype(prod), decltype(x)>::call() << std::endl;
-    std::cout << order<decltype(prod), decltype(y)>::call() << std::endl;
-    std::cout << order<decltype(prodf), decltype(x)>::call() << std::endl;
-    std::cout << order<decltype(prodf), decltype(y)>::call() << std::endl;
+    static_assert(order<decltype(prod), decltype(x)>::call() == 1);
+    static_assert(order<decltype(prod), decltype(y)>::call() == 1);
+    static_assert(order<decltype(prodf), decltype(x)>::call() ==
+                  std::numeric_limits<std::size_t>::max());
+    static_assert(order<decltype(prodf), decltype(y)>::call() ==
+                  std::numeric_limits<std::size_t>::max());
 
-    std::tuple<der2::p<der2::d<decltype(x), 1>, 3>> din1{};
-    std::cout << der_non_null(dnode, din1) << std::endl;
+    std::tuple<der::p<der::d<decltype(x), 1>, 3>> din1{};
+    static_assert(der_non_null(dnode, din1));
 
-    std::tuple<der2::p<der2::d<decltype(x), 1>, 2>,
-               der2::p<der2::d<decltype(y), 1>, 1>>
+    std::tuple<der::p<der::d<decltype(x), 1>, 2>,
+               der::p<der::d<decltype(y), 1>, 1>>
         din2{};
-    std::cout << der_non_null(dnode, din2) << std::endl;
+    static_assert(der_non_null(dnode, din2));
 
-    std::tuple<der2::p<der2::d<decltype(x), 1>, 1>,
-               der2::p<der2::d<decltype(y), 1>, 2>>
+    std::tuple<der::p<der::d<decltype(x), 1>, 1>,
+               der::p<der::d<decltype(y), 1>, 2>>
         din3{};
-    std::cout << der_non_null(dnode, din3) << std::endl;
+    static_assert(der_non_null(dnode, din3));
 
-    std::tuple<der2::p<der2::d<decltype(y), 1>, 3>> din4{};
-    std::cout << der_non_null(dnode, din4) << std::endl;
+    std::tuple<der::p<der::d<decltype(y), 1>, 3>> din4{};
+    static_assert(der_non_null(dnode, din4));
 }
 
 TEST(DifferentialOperator, DerivativeNonNull3) {
@@ -66,32 +68,32 @@ TEST(DifferentialOperator, DerivativeNonNull3) {
 
     auto prod = x * y;
 
-    std::tuple<der2::p<der2::d<decltype(prod), 1>, 1>,
-               der2::p<der2::d<decltype(prod), 2>, 1>>
+    std::tuple<der::p<der::d<decltype(prod), 1>, 1>,
+               der::p<der::d<decltype(prod), 2>, 1>>
         dnode{};
 
     auto din1 = d<3>(x);
-    std::cout << der_non_null(dnode, din1) << std::endl;
+    static_assert(!der_non_null(dnode, din1));
 
-    std::tuple<der2::p<der2::d<decltype(x), 1>, 2>,
-               der2::p<der2::d<decltype(y), 1>, 1>>
+    std::tuple<der::p<der::d<decltype(x), 1>, 2>,
+               der::p<der::d<decltype(y), 1>, 1>>
         din2{};
 
     auto din2_2 = d<3>(x) * d<3>(y) * d(z);
-    std::cout << type_name2<decltype(din2_2)>() << std::endl;
+    // std::cout << type_name2<decltype(din2_2)>() << std::endl;
 
-    std::cout << der_non_null(dnode, din2) << std::endl;
+    static_assert(der_non_null(dnode, din2));
 
-    std::tuple<der2::p<der2::d<decltype(x), 1>, 1>,
-               der2::p<der2::d<decltype(y), 1>, 2>>
+    std::tuple<der::p<der::d<decltype(x), 1>, 1>,
+               der::p<der::d<decltype(y), 1>, 2>>
         din3{};
-    std::cout << der_non_null(dnode, din3) << std::endl;
+    static_assert(der_non_null(dnode, din3));
 
     auto din4 = d<3>(y);
-    std::cout << der_non_null(dnode, din4) << std::endl;
+    static_assert(!der_non_null(dnode, din4));
 
     auto din1_1 = d(x);
-    std::cout << der_non_null(dnode, din1_1) << std::endl;
+    static_assert(der_non_null(dnode, din1_1));
 }
 
 } // namespace adhoc3

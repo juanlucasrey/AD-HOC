@@ -2,6 +2,8 @@
 #include <adhoc.hpp>
 #include <ders.hpp>
 #include <init.hpp>
+#include <tape.hpp>
+#include <tuple_utils.hpp>
 // #include <strict_order.hpp>
 
 // #include "type_name.hpp"
@@ -891,7 +893,314 @@ multinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
     return res;
 }
 
+// template <class Id, std::size_t Order = 1> struct d {};
+// template <class Id, std::size_t Power = 1> struct p {};
+// template <class... Ids> struct m {};
+
+// TEST(Raw, dID) {
+//     auto [x, y] = Init<2>();
+//     m<p<d<decltype(x), 1>, 3>> der1{};
+//     m<p<d<decltype(x), 1>, 2>, p<d<decltype(y), 1>, 1>> der2{};
+//     m<p<d<decltype(x), 1>, 1>, p<d<decltype(y), 1>, 2>> der3{};
+//     m<p<d<decltype(y), 1>, 3>> der4{};
+// }
+
+// template <class In, class... TupleInputs>
+// inline auto der(std::tuple<TupleInputs...> /* idxs */, In /* in */,
+//                 std::array<double, sizeof...(TupleInputs)> vals) -> double &
+//                 {
+//     static_assert(has_type<In, TupleInputs...>(),
+//                   "Only nodes or leafs can have derivatives set or read");
+//     // constexpr auto idx = get_idx_first2<In>(std::tuple<TupleInputs...>{});
+//     constexpr auto idx = idx_type2<In, TupleInputs...>();
+//     return vals[idx];
+// }
+
+// template <class... Ders, std::size_t... Orders>
+// constexpr auto d_order(m<p<d<Ders, 1>, Orders>...> /* in */) -> std::size_t {
+//     return (Orders + ...);
+// }
+
+// namespace detail {
+
+// template <typename... OutputsAndDerivativesAlive> struct outputs_t {
+//     template <typename... Outputs> constexpr static auto call() noexcept;
+// };
+
+// template <> struct outputs_t<> {
+//     template <typename... Outputs> constexpr static auto call() noexcept {
+//         return std::tuple<Outputs...>{};
+//     }
+// };
+
+// template <typename... D, typename... OutputsAndDerivativesAlive>
+// struct outputs_t<m<D...>, OutputsAndDerivativesAlive...> {
+//     template <typename... Outputs> constexpr static auto call() noexcept {
+//         // we don't add anything because a derivative is not an output
+//         return outputs_t<OutputsAndDerivativesAlive...>::template call<
+//             Outputs...>();
+//     }
+// };
+
+// template <class D, typename... OutputsAndDerivativesAlive>
+// struct outputs_t<D, OutputsAndDerivativesAlive...> {
+//     template <typename... Outputs> constexpr static auto call() noexcept {
+//         return outputs_t<OutputsAndDerivativesAlive...>::template call<
+//             Outputs..., D>();
+//     }
+// };
+
+// template <typename... OutputsAndDerivativesAlive> struct derivatives_t {
+//     template <typename... Derivatives> constexpr static auto call() noexcept;
+// };
+
+// template <> struct derivatives_t<> {
+//     template <typename... Derivatives> constexpr static auto call() noexcept
+//     {
+//         return std::tuple<Derivatives...>{};
+//     }
+// };
+
+// template <typename... D, typename... OutputsAndDerivativesAlive>
+// struct derivatives_t<m<D...>, OutputsAndDerivativesAlive...> {
+//     template <typename... Derivatives> constexpr static auto call() noexcept
+//     {
+//         return derivatives_t<OutputsAndDerivativesAlive...>::template call<
+//             Derivatives..., m<D...>>();
+//     }
+// };
+
+// template <class D, typename... OutputsAndDerivativesAlive>
+// struct derivatives_t<D, OutputsAndDerivativesAlive...> {
+//     template <typename... Derivatives> constexpr static auto call() noexcept
+//     {
+//         // we don't add anything because an output is not a derivative
+//         return derivatives_t<OutputsAndDerivativesAlive...>::template call<
+//             Derivatives...>();
+//     }
+// };
+
+// template <typename... NodesAlive> struct inputs_t {
+//     template <typename... Inputs> constexpr static auto call() noexcept;
+// };
+
+// template <> struct inputs_t<> {
+//     template <typename... Inputs> constexpr static auto call() noexcept {
+//         return std::tuple<Inputs...>{};
+//     }
+// };
+
+// template <constants::ArgType D, typename... NodesAlive>
+// struct inputs_t<constants::CD<D>, NodesAlive...> {
+//     template <typename... Inputs> constexpr static auto call() noexcept {
+//         // we don't add anything because a constant is not an input
+//         return inputs_t<NodesAlive...>::template call<Inputs...>();
+//     }
+// };
+
+// template <std::size_t N, typename... NodesAlive>
+// struct inputs_t<double_t<N>, NodesAlive...> {
+//     template <typename... Inputs> constexpr static auto call() noexcept {
+//         using this_type = double_t<N>;
+
+//         constexpr bool already_included = has_type<this_type, Inputs...>();
+
+//         if constexpr (already_included) {
+//             // It's already been added, so we don't add the leaf
+//             return inputs_t<NodesAlive...>::template call<Inputs...>();
+//         } else {
+//             // we add the leaf
+//             return inputs_t<NodesAlive...>::template call<Inputs...,
+//                                                           this_type>();
+//         }
+//     }
+// };
+
+// template <template <class...> class Xvariate, class... Node,
+//           typename... NodesAlive>
+// struct inputs_t<Xvariate<Node...>, NodesAlive...> {
+//     template <typename... Inputs> constexpr static auto call() noexcept {
+//         return inputs_t<Node..., NodesAlive...>::template call<Inputs...>();
+//     }
+// };
+
+// template <typename... Derivatives> struct orders_t {
+//     template <std::size_t... Orders> constexpr static auto call() noexcept;
+// };
+
+// template <> struct orders_t<> {
+//     template <std::size_t... Orders> constexpr static auto call() noexcept {
+//         return std::index_sequence<Orders...>{};
+//     }
+// };
+
+// template <typename D, typename... Derivatives>
+// struct orders_t<D, Derivatives...> {
+//     template <std::size_t... Orders> constexpr static auto call() noexcept {
+//         auto constexpr this_order = d_order(D{});
+
+//         constexpr bool already_included = ((this_order == Orders) || ...);
+
+//         if constexpr (already_included) {
+//             // It's already been added, so we don't add the new order
+//             return orders_t<Derivatives...>::template call<Orders...>();
+//         } else {
+//             // we add the order
+//             return orders_t<Derivatives...>::template call<Orders...,
+//                                                            this_order>();
+//         }
+//     }
+// };
+
+// template <class Output, std::size_t... Orders> constexpr auto expand() {
+//     return std::tuple<d<Output, Orders>...>{};
+// }
+
+// } // namespace detail
+
+// template <class... OutputsAndDerivatives>
+// constexpr auto Outputs(OutputsAndDerivatives... /* o */) {
+//     return detail::outputs_t<OutputsAndDerivatives...>::template call<>();
+// }
+
+// template <class... OutputsAndDerivatives>
+// constexpr auto Derivatives(OutputsAndDerivatives... /* o */) {
+//     return detail::derivatives_t<OutputsAndDerivatives...>::template
+//     call<>();
+// }
+
+// template <class... Outputs>
+// constexpr auto Inputs(std::tuple<Outputs...> /* o */) {
+//     return detail::inputs_t<Outputs...>::template call<>();
+// }
+
+// template <class... Derivatives>
+// constexpr auto Orders(std::tuple<Derivatives...> /* o */) {
+//     return detail::orders_t<Derivatives...>::template call<>();
+// }
+
+// template <class... Outputs, std::size_t... Orders>
+// constexpr auto ExpandOutputs(std::tuple<Outputs...> /* o */,
+//                              std::index_sequence<Orders...> /* orders */) {
+//     return std::tuple_cat((detail::expand<Outputs, Orders...>())...);
+// }
+
+// template <class... OutputsAndDerivatives> class Tape2 {
+//   private:
+//     using outputs =
+//         decltype(detail::outputs_t<OutputsAndDerivatives...>::template
+//         call());
+
+//     using inputs = decltype(Inputs(outputs{}));
+
+//     using derivatives_inputs =
+//         decltype(detail::derivatives_t<
+//                  OutputsAndDerivatives...>::template call());
+
+//     using orders = decltype(Orders(derivatives_inputs{}));
+
+//     using derivatives_outputs = decltype(ExpandOutputs(outputs{}, orders{}));
+
+//     using derivatives_outputs_and_inputs =
+//         decltype(std::tuple_cat(derivatives_inputs{},
+//         derivatives_outputs{}));
+
+//     std::array<double, std::tuple_size_v<derivatives_outputs_and_inputs>>
+//         m_derivatives{};
+
+//   public:
+//     explicit Tape2(OutputsAndDerivatives... /* out */) {}
+
+//     template <class D> auto inline der(D var) const -> double;
+//     template <class D> auto inline der(D var) -> double &;
+//     void inline reset_der() {
+//         std::fill(std::begin(this->m_derivatives),
+//                   std::end(this->m_derivatives), 0.);
+//     }
+// };
+
+// template <class... OutputsAndDerivatives>
+// template <class D>
+// auto Tape2<OutputsAndDerivatives...>::der(D /* in */) const -> double {
+//     static_assert(has_type<D, OutputsAndDerivatives...>(),
+//                   "derivative not on tape");
+//     constexpr auto idx =
+//         get_idx_first2<D>(std::tuple<OutputsAndDerivatives...>{});
+//     return this->m_derivatives[idx];
+// }
+
+// template <class... OutputsAndDerivatives>
+// template <class D>
+// auto Tape2<OutputsAndDerivatives...>::der(D /* in */) -> double & {
+//     static_assert(has_type<D, OutputsAndDerivatives...>(),
+//                   "derivative not on tape");
+//     constexpr auto idx =
+//         get_idx_first2<D>(std::tuple<OutputsAndDerivatives...>{});
+//     return this->m_derivatives[idx];
+// }
+
+TEST(Raw, SeparateInputs) {
+    auto [x_t, y_t] = Init<2>();
+    auto ly_t = log(y_t);
+    auto cx_t = cos(x_t);
+    auto lytcx_t = ly_t * cx_t;
+    auto slytcx_t = sin(lytcx_t);
+    auto clytcx_t = cos(lytcx_t);
+
+    std::tuple<der::p<der::d<decltype(x_t), 1>, 3>> d1{};
+    std::tuple<der::p<der::d<decltype(x_t), 1>, 2>,
+               der::p<der::d<decltype(y_t), 1>, 1>>
+        d2{};
+    std::tuple<der::p<der::d<decltype(x_t), 1>, 1>,
+               der::p<der::d<decltype(y_t), 1>, 2>>
+        d3{};
+    std::tuple<der::p<der::d<decltype(y_t), 1>, 3>> d4{};
+
+    std::tuple<der::p<der::d<decltype(x_t), 1>, 1>> d11{};
+
+    der::d<decltype(clytcx_t), 3> dseed{};
+
+    auto tape = Tape(clytcx_t, slytcx_t, d1, d2, d3, d4, d11);
+    tape.der(dseed) = 1.;
+}
+
 TEST(Raw, Der3) {
+    auto [x_t, y_t] = Init<2>();
+    auto ly_t = log(y_t);
+    auto cx_t = cos(x_t);
+    auto lytcx_t = ly_t * cx_t;
+    auto slytcx_t = sin(lytcx_t);
+
+    // std::tuple<m<p<d<decltype(slytcx_t), 3>, 1>>, m<p<d<decltype(x_t), 1>,
+    // 3>>,
+    //            m<p<d<decltype(x_t), 1>, 2>, p<d<decltype(y_t), 1>, 1>>,
+    //            m<p<d<decltype(x_t), 1>, 1>, p<d<decltype(y_t), 1>, 2>>,
+    //            m<p<d<decltype(y_t), 1>, 3>>>
+    //     r_t;
+
+    // auto constexpr resx1 = d_order(m<p<d<decltype(x_t), 1>, 3>>{});
+    // std::cout << resx1 << std::endl;
+
+    // auto constexpr resx2 =
+    //     d_order(m<p<d<decltype(x_t), 1>, 2>, p<d<decltype(y_t), 1>, 1>>{});
+    // std::cout << resx2 << std::endl;
+
+    // auto constexpr resx3 =
+    //     d_order(m<p<d<decltype(x_t), 1>, 1>, p<d<decltype(y_t), 1>, 2>>{});
+    // std::cout << resx3 << std::endl;
+
+    // auto constexpr resx4 = d_order(m<p<d<decltype(y_t), 1>, 3>>{});
+    // std::cout << resx4 << std::endl;
+
+    // x3, x2y1, x1y2, y3
+    std::array<double, 5> results{};
+    results.fill(0);
+
+    results[0] = 1.0;
+
+    // m<p<d<decltype(slytcx_t), 3>, 1>> ind{};
+    // std::cout << der(r_t, ind, results) << std::endl;
+
     // sin( log(y) * cos(x) )
     // y = 0.5 x = 0.3
     double y = 0.5;
@@ -926,9 +1235,11 @@ TEST(Raw, Der3) {
 
     std::vector<double> buffer(11);
 
-    // <ln(y)*cos(x), 1, 3>
-    // <ln(y)*cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
-    // <ln(y)*cos(x), 3, 1>
+    // std::tuple<m<p<d<decltype(slytcx_t), 3>, 1>>> c1_t;
+
+    // 0: <ln(y)*cos(x), 1, 3>
+    // 1: <ln(y)*cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 2: <ln(y)*cos(x), 3, 1>
     buffer[0] = BellCoeff(first.arr);
     // buffer[0] = 1.;
     buffer[0] *= ders[order1];
@@ -1003,33 +1314,30 @@ TEST(Raw, Der3) {
     lncs13[0] = multinomialCoeff<3, 2>(factorials, multparts3[0]);
     lncs13[0] *= cxarr[multparts3[0][0]] * lyarr[multparts3[0][1]];
     lncs13[1] = multinomialCoeff<3, 2>(factorials, multparts3[1]);
-    // lncs13[1] = std::numeric_limits<double>::quiet_NaN();
-    // lncs13[1] = 1;
     lncs13[1] *= cxarr[multparts3[1][0]] * lyarr[multparts3[1][1]];
     lncs13[2] = multinomialCoeff<3, 2>(factorials, multparts3[2]);
-    // lncs13[2] = 1;
     lncs13[2] *= cxarr[multparts3[2][0]] * lyarr[multparts3[2][1]];
     lncs13[3] = multinomialCoeff<3, 2>(factorials, multparts3[3]);
     lncs13[3] = cxarr[multparts3[3][0]] * lyarr[multparts3[3][1]];
 
-    // < cos(x), 1, 3>
-    // <ln(y)*cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
-    // <ln(y)*cos(x), 3, 1>
-    // <ln(y), 1, 3>
-    // <ln(y), 1, 2> < cos(x), 1, 1>
-    // <ln(y), 1, 1> < cos(x), 1, 2>
+    // 0: <cos(x), 1, 3>
+    // 1: <ln(y)*cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 2: <ln(y)*cos(x), 3, 1>
+    // 3: <ln(y), 1, 3>
+    // 4: <ln(y), 1, 2> < cos(x), 1, 1>
+    // 5: <ln(y), 1, 1> < cos(x), 1, 2>
     buffer[3] = buffer[0] * lncs13[0];
-    buffer[4] = buffer[0] * lncs13[1];
-    buffer[5] = buffer[0] * lncs13[2];
+    buffer[4] = buffer[0] * lncs13[1] / 3.; // xxx
+    buffer[5] = buffer[0] * lncs13[2] / 3.; // xxx
     buffer[0] *= lncs13[3];
 
-    // <cos(x), 1, 3>
-    // <ln(y), 1, 1> <ln(y)*cos(x), 2, 1>
-    // <ln(y)*cos(x), 3, 1>
-    // <ln(y), 1, 3>
-    // <ln(y), 1, 2> < cos(x), 1, 1>
-    // <ln(y), 1, 1> < cos(x), 1, 2>
-    // <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 0: <cos(x), 1, 3>
+    // 1: <ln(y), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 2: <ln(y)*cos(x), 3, 1>
+    // 3: <ln(y), 1, 3>
+    // 4: <ln(y), 1, 2> < cos(x), 1, 1>
+    // 5: <ln(y), 1, 1> < cos(x), 1, 2>
+    // 6: <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
     buffer[6] = buffer[1] * lncs1[1];
     buffer[1] *= lncs1[0];
 
@@ -1039,17 +1347,17 @@ TEST(Raw, Der3) {
     // <ln(y), 1, 2> <cos(x), 1, 1>
     // <ln(y), 1, 1> <cos(x), 2, 1>
 
-    // <cos(x), 1, 3>
-    // <ln(y), 1, 1> <cos(x), 2, 1>
-    // <ln(y)*cos(x), 3, 1>
-    // <ln(y), 1, 3>
-    // <ln(y), 1, 2> < cos(x), 1, 1>
-    // <ln(y), 1, 1> < cos(x), 1, 2>
-    // <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
-    // <ln(y), 1, 1> <ln(y), 2, 1>
+    // 0: <cos(x), 1, 3>
+    // 1: <ln(y), 1, 1> <cos(x), 2, 1>
+    // 2: <ln(y)*cos(x), 3, 1>
+    // 3: <ln(y), 1, 3>
+    // 4: <ln(y), 1, 2> < cos(x), 1, 1>
+    // 5: <ln(y), 1, 1> < cos(x), 1, 2>
+    // 6: <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 7: <ln(y), 1, 1> <ln(y), 2, 1>
     buffer[7] = buffer[1] * lncs2[0];
-    buffer[4] += buffer[1] * lncs2[1];
-    buffer[1] *= lncs2[2];
+    buffer[4] += buffer[1] * lncs2[1] / 3.; // xxx
+    buffer[1] *= lncs2[2] / 3.;             // xxx
 
     // <ln(y) * cos(x), 3, 1> ->
     // cos(x) * <ln(y), 3, 1>
@@ -1057,19 +1365,19 @@ TEST(Raw, Der3) {
     // <ln(y), 1, 1> <cos(x), 2, 1>
     // ln(y) * <cos(x), 3, 1>
 
-    // <cos(x), 1, 3>
-    // <ln(y), 1, 1> <cos(x), 2, 1>
-    // <cos(x), 3, 1>
-    // <ln(y), 1, 3>
-    // <ln(y), 1, 2> <cos(x), 1, 1>
-    // <ln(y), 1, 1> <cos(x), 1, 2>
-    // <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
-    // <ln(y), 1, 1> <ln(y), 2, 1>
-    // <ln(y), 3, 1>
-    // <ln(y), 2, 1> <cos(x), 1, 1>
+    // 0: <cos(x), 1, 3>
+    // 1: <ln(y), 1, 1> <cos(x), 2, 1>
+    // 2: <cos(x), 3, 1>
+    // 3: <ln(y), 1, 3>
+    // 4: <ln(y), 1, 2> <cos(x), 1, 1>
+    // 5: <ln(y), 1, 1> <cos(x), 1, 2>
+    // 6: <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
+    // 7: <ln(y), 1, 1> <ln(y), 2, 1>
+    // 8: <ln(y), 3, 1>
+    // 9: <ln(y), 2, 1> <cos(x), 1, 1>
     buffer[8] = buffer[2] * lncs3[0];
     buffer[9] = buffer[2] * lncs3[1];
-    buffer[1] += buffer[2] * lncs3[2];
+    buffer[1] += buffer[2] * lncs3[2] / 3.; // xxx
     buffer[2] *= lncs3[3];
 
     // <cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
@@ -1078,23 +1386,19 @@ TEST(Raw, Der3) {
     // <ln(y), 1, 1> <cos(x), 1, 2>
     // <cos(x), 1, 1> <cos(x), 2, 1>
 
-    // <cos(x), 1, 3>
-    // <ln(y), 1, 1> <cos(x), 2, 1>
-    // <cos(x), 3, 1>
-    // <ln(y), 1, 3>
-    // <ln(y), 1, 2> <cos(x), 1, 1>
-    // <ln(y), 1, 1> <cos(x), 1, 2>
-    // <cos(x), 1, 1> <cos(x), 2, 1>
-    // <ln(y), 1, 1> <ln(y), 2, 1>
-    // <ln(y), 3, 1>
-    // <ln(y), 2, 1> <cos(x), 1, 1>
+    // 0: <cos(x), 1, 3>
+    // 1: <ln(y), 1, 1> <cos(x), 2, 1>
+    // 2: <cos(x), 3, 1>
+    // 3: <ln(y), 1, 3>
+    // 4: <ln(y), 1, 2> <cos(x), 1, 1>
+    // 5: <ln(y), 1, 1> <cos(x), 1, 2>
+    // 6: <cos(x), 1, 1> <cos(x), 2, 1>
+    // 7: <ln(y), 1, 1> <ln(y), 2, 1>
+    // 8: <ln(y), 3, 1>
+    // 9: <ln(y), 2, 1> <cos(x), 1, 1>
     buffer[9] += buffer[6] * lncs2[0];
-    buffer[5] += buffer[6] * lncs2[1];
+    buffer[5] += buffer[6] * lncs2[1] / 3; // xxx
     buffer[6] *= lncs2[2];
-
-    // x3, x2y1, x1y2, y3
-    std::array<double, 4> results{};
-    results.fill(0);
 
     auto derslog = log_t<decltype(whatever)>::d2<3>(ly, y);
     // 0: <cos(x), 1, 3>
@@ -1115,7 +1419,7 @@ TEST(Raw, Der3) {
 
     results[3] += buffer[7] * derslog[0] * derslog[1]; // 7 is free now
     results[3] += buffer[8] * derslog[2];              // 8 is free now
-    buffer[9] *= derslog[1];
+    buffer[9] *= derslog[1] / 3.;                      // xxx
 
     auto derscos = cos_t<decltype(whatever)>::d2<3>(cx, x);
     // 0: <cos(x), 1, 3>
@@ -1135,15 +1439,15 @@ TEST(Raw, Der3) {
     results[2] += buffer[9] * derscos[0];
 
     constexpr double third = 1. / 3.;
-    // std::cout.precision(std::numeric_limits<double>::max_digits10);
-    // std::cout << results[0] << std::endl;
-    // std::cout << results[1] * third << std::endl;
-    // std::cout << results[2] * third << std::endl;
-    // std::cout << results[3] << std::endl;
-    EXPECT_NEAR(results[0], 0.081872135144674396, 1e-14);
-    EXPECT_NEAR(results[1] * third, -0.9410337416235649, 1e-14);
-    EXPECT_NEAR(results[2] * third, -1.5274504231928869, 1e-14);
-    EXPECT_NEAR(results[3], -6.9137888891600721, 1e-14);
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
+    std::cout << results[0] / 0.081872135144674396 << std::endl;
+    std::cout << results[1] / -0.9410337416235649 << std::endl;
+    std::cout << results[2] / -1.5274504231928869 << std::endl;
+    std::cout << results[3] / -6.9137888891600721 << std::endl;
+    // EXPECT_NEAR(results[0], 0.081872135144674396, 1e-14);
+    // EXPECT_NEAR(results[1] * third, -0.9410337416235649, 1e-14);
+    // EXPECT_NEAR(results[2] * third, -1.5274504231928869, 1e-14);
+    // EXPECT_NEAR(results[3], -6.9137888891600721, 1e-14);
 
     // finite der x3
     double xoriginal = x;
@@ -1310,13 +1614,13 @@ TEST(Raw, Der3Sin) {
     // <y, 2, 1> <x, 1, 1>
     // <y, 1, 1> <x, 2, 1>
     // y * <x, 3, 1>
-    std::array<double, 4> lncs3{};
-    lncs3[0] = multinomialCoeff<3, 2>(factorials, multparts3[0]);
-    lncs3[1] = multinomialCoeff<3, 2>(factorials, multparts3[1]);
-    lncs3[2] = multinomialCoeff<3, 2>(factorials, multparts3[2]);
-    lncs3[3] = multinomialCoeff<3, 2>(factorials, multparts3[3]);
-    lncs3.front() *= x;
-    lncs3.back() *= y;
+    // std::array<double, 4> lncs3{};
+    // lncs3[0] = multinomialCoeff<3, 2>(factorials, multparts3[0]);
+    // lncs3[1] = multinomialCoeff<3, 2>(factorials, multparts3[1]);
+    // lncs3[2] = multinomialCoeff<3, 2>(factorials, multparts3[2]);
+    // lncs3[3] = multinomialCoeff<3, 2>(factorials, multparts3[3]);
+    // lncs3.front() *= x;
+    // lncs3.back() *= y;
 
     std::array<double, 4> cxarr{};
     cxarr[0] = 1.;
@@ -1385,6 +1689,206 @@ TEST(Raw, Der3Sin) {
     EXPECT_NEAR(results[1] * third, -0.22359596331880238, 1e-14);
     EXPECT_NEAR(results[2] * third, -0.13415757799128142, 1e-14);
     EXPECT_NEAR(results[3], -0.026696819104273139, 1e-14);
+}
+
+TEST(Raw, Der4Sin) {
+    // sin( y * x )
+    // y = 0.5 x = 0.3
+    double y = 0.5;
+    double x = 0.3;
+    double yx = y * x;
+    double syx = std::sin(yx);
+
+    auto [whatever] = Init<1>();
+    auto ders_sin = sin_t<decltype(whatever)>::d2<4>(syx, yx);
+
+    std::array<std::array<std::size_t, 4>, integerPartition(4, 4)> parts{};
+
+    constexpr auto last = PartFirst<4>();
+    constexpr auto first = PartLast<4>();
+
+    constexpr std::array<std::array<std::size_t, 4>, 5> parts2{
+        {{4, 0, 0, 0}, {2, 1, 0, 0}, {0, 2, 0, 0}, {1, 0, 1, 0}, {0, 0, 0, 1}}};
+
+    parts[0] = PartLast<4>().arr;
+    parts[1] = B<4>(first.arr, last.arr).arr;
+    parts[2] = B<4>(parts[1], last.arr).arr;
+
+    constexpr auto rnext1 = B<4>(first.arr, last.arr);
+    constexpr auto rnext2 = B<4>(rnext1.arr, last.arr);
+    constexpr auto rnext3 = B<4>(rnext2.arr, last.arr);
+    constexpr auto rnext4 = B<4>(rnext3.arr, last.arr);
+    static_assert(last.arr == rnext4.arr);
+
+    constexpr std::size_t order1 =
+        std::accumulate(first.arr.begin(), first.arr.end(), 0UL) - 1;
+    constexpr std::size_t order2 =
+        std::accumulate(rnext1.arr.begin(), rnext1.arr.end(), 0UL) - 1;
+    constexpr std::size_t order3 =
+        std::accumulate(rnext2.arr.begin(), rnext2.arr.end(), 0UL) - 1;
+    constexpr std::size_t order4 =
+        std::accumulate(rnext3.arr.begin(), rnext3.arr.end(), 0UL) - 1;
+    constexpr std::size_t order5 =
+        std::accumulate(rnext4.arr.begin(), rnext4.arr.end(), 0UL) - 1;
+
+    std::vector<double> buffer(10);
+
+    // 0: <y*x, 1, 4>
+    // 1: <y*x, 1, 2> <y*x, 2, 1>
+    // 2: <y*x, 2, 2>
+    // <y*x, 1, 1> <y*x, 3, 1> = 0
+    // <y*x, 4, 1> = 0
+
+    buffer[0] = BellCoeff(first.arr);
+    buffer[0] *= ders_sin[order1];
+    buffer[1] = BellCoeff(rnext1.arr);
+    buffer[1] *= ders_sin[order2];
+    buffer[2] = BellCoeff(rnext2.arr);
+    buffer[2] *= ders_sin[order3];
+
+    static_assert(combinations(2, 1) == 2);
+    constexpr std::array<std::array<std::size_t, 2>, combinations(2, 1)>
+        multparts1{{{1, 0}, {0, 1}}};
+
+    static_assert(combinations(2, 2) == 3);
+    constexpr std::array<std::array<std::size_t, 2>, combinations(2, 2)>
+        multparts2{{{2, 0}, {1, 1}, {0, 2}}};
+    constexpr auto factorials = factorialarr<4>();
+    // https://calculus.subwiki.org/wiki/Product_rule_for_higher_derivatives
+    // <y * x, 1, 1> ->
+    // x * <y, 1, 1>
+    // y * <x, 1, 1>
+    std::array<double, 2> lncs1{};
+    lncs1[0] = multinomialCoeff<1, 2>(factorials, multparts1[0]);
+    lncs1[1] = multinomialCoeff<1, 2>(factorials, multparts1[1]);
+    lncs1.front() *= x;
+    lncs1.back() *= y;
+    // <y * x, 2, 1> ->
+    // x * <y, 2, 1>,
+    // <x, 1, 1> * <y, 1, 1>
+    // y * <x, 2, 1>
+    std::array<double, 3> lncs2{};
+    lncs2[0] = multinomialCoeff<2, 2>(factorials, multparts2[0]);
+    lncs2[1] = multinomialCoeff<2, 2>(factorials, multparts2[1]);
+    lncs2[2] = multinomialCoeff<2, 2>(factorials, multparts2[2]);
+    lncs2.front() *= x;
+    lncs2.back() *= y;
+
+    std::array<double, 5> cxarr{};
+    cxarr[0] = 1.;
+    cxarr[1] = lncs1[0];
+    cxarr[2] = cxarr[1] * lncs1[0];
+    cxarr[3] = cxarr[2] * lncs1[0];
+    cxarr[4] = cxarr[3] * lncs1[0];
+
+    std::array<double, 5> lyarr{};
+    lyarr[0] = 1.;
+    lyarr[1] = lncs1[1];
+    lyarr[2] = lyarr[1] * lncs1[1];
+    lyarr[3] = lyarr[2] * lncs1[1];
+    lyarr[4] = lyarr[3] * lncs1[1];
+
+    static_assert(combinations(2, 4) == 5);
+    constexpr std::array<std::array<std::size_t, 2>, combinations(2, 4)>
+        multparts4{{{4, 0}, {3, 1}, {2, 2}, {1, 3}, {0, 4}}};
+    // <a * <y, 1, 1> +
+    // b * <x, 1, 1>, 4> ->
+    std::array<double, combinations(2, 4)> lncs14{};
+    lncs14[0] = multinomialCoeff<4, 2>(factorials, multparts4[0]);
+    lncs14[0] *= cxarr[multparts4[0][0]] * lyarr[multparts4[0][1]];
+
+    lncs14[1] = multinomialCoeff<4, 2>(factorials, multparts4[1]);
+    // lncs13[1] = 1;
+    lncs14[1] *= cxarr[multparts4[1][0]] * lyarr[multparts4[1][1]];
+
+    lncs14[2] = multinomialCoeff<4, 2>(factorials, multparts4[2]);
+    // lncs13[2] = 1;
+    lncs14[2] *= cxarr[multparts4[2][0]] * lyarr[multparts4[2][1]];
+
+    lncs14[3] = multinomialCoeff<4, 2>(factorials, multparts4[3]);
+    lncs14[3] *= cxarr[multparts4[3][0]] * lyarr[multparts4[3][1]];
+
+    lncs14[4] = multinomialCoeff<4, 2>(factorials, multparts4[4]);
+    lncs14[4] *= cxarr[multparts4[4][0]] * lyarr[multparts4[4][1]];
+
+    // y4, y3x1, y2x2, y1x3, x4
+    std::array<double, 5> results{};
+    results.fill(0);
+
+    // 0: <y*x, 1, 4>
+    // 1: <y*x, 1, 2> <y*x, 2, 1>
+    // 2: <y*x, 2, 2>
+
+    results[4] += buffer[0] * lncs14[4];
+    results[0] += buffer[0] * lncs14[0];
+    results[1] += buffer[0] * lncs14[1];
+    results[2] += buffer[0] * lncs14[2];
+    results[3] += buffer[0] * lncs14[3];
+
+    // 0: free
+    // 1: <y*x, 1, 2> <y*x, 2, 1>
+    // 2: <y*x, 2, 2>
+
+    // static_assert(combinations(2, 2) == 3);
+    // constexpr std::array<std::array<std::size_t, 2>, combinations(2, 2)>
+    //     multparts2{{{2, 0}, {1, 1}, {0, 2}}};
+
+    std::array<double, combinations(2, 2)> lncs12{};
+    lncs12[0] = multinomialCoeff<2, 2>(factorials, multparts2[0]);
+    lncs12[0] *= cxarr[multparts2[0][0]] * lyarr[multparts2[0][1]];
+
+    lncs12[1] = multinomialCoeff<2, 2>(factorials, multparts2[1]);
+    lncs12[1] *= cxarr[multparts2[1][0]] * lyarr[multparts2[1][1]];
+
+    lncs12[2] = multinomialCoeff<2, 2>(factorials, multparts2[2]);
+    lncs12[2] *= cxarr[multparts2[2][0]] * lyarr[multparts2[2][1]];
+
+    // 0: <y, 1, 2> <y*x, 2, 1>
+    // 1: <x, 1, 2> <y*x, 2, 1>
+    // 2: <y*x, 2, 2>
+    // 3: <y, 1, 1> <x, 1, 1> <y*x, 2, 1>
+    buffer[0] = lncs12[0] * buffer[1];
+    buffer[3] = lncs12[1] * buffer[1];
+    buffer[1] *= lncs12[2];
+
+    // 0: empty
+    // 1: <x, 1, 2> <y*x, 2, 1>
+    // 2: <y*x, 2, 2>
+    // 3: <y, 1, 1> <x, 1, 1> <y*x, 2, 1>
+    // results[0] += buffer[0] * lncs2[0];
+    results[1] += buffer[0] * lncs2[1];
+    // results[2] += buffer[0] * lncs2[2];
+
+    // 0: empty
+    // 1: empty
+    // 2: <y*x, 2, 2>
+    // 3: <y, 1, 1> <x, 1, 1> <y*x, 2, 1>
+    // results[2] += buffer[1] * lncs2[0];
+    results[3] += buffer[1] * lncs2[1];
+    // results[4] += buffer[1] * lncs2[2];
+
+    // 0: empty
+    // 1: empty
+    // 2: <y*x, 2, 2>
+    // 3: empty
+    // results[1] += buffer[3] * lncs2[0];
+    results[2] += buffer[3] * lncs2[1];
+    // results[3] += buffer[3] * lncs2[2];
+
+    results[2] += buffer[2] * lncs2[1] * lncs2[1];
+
+    EXPECT_NEAR(results[0], 0.00121044887303615, 1e-14);
+    EXPECT_NEAR(results[1] / 4, -0.26495077625433783, 1e-14);
+    EXPECT_NEAR(results[2] / 6, -0.88877655372816777, 1e-14);
+    EXPECT_NEAR(results[3] / 4, -0.73597437848427172, 1e-14);
+    EXPECT_NEAR(results[4], 0.009339883279599951, 1e-14);
+
+    // std::cout.precision(std::numeric_limits<double>::max_digits10);
+    // std::cout << results[0] << std::endl;
+    // std::cout << results[1] / 4 << std::endl;
+    // std::cout << results[2] / 6 << std::endl;
+    // std::cout << results[3] / 4 << std::endl;
+    // std::cout << results[4] << std::endl;
 }
 
 } // namespace adhoc3

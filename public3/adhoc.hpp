@@ -14,21 +14,92 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
     static inline auto d(double thisv, double /* in */) -> double {
         return thisv;
     }
+
+    template <std::size_t Order>
+    static inline auto d2(double thisv, double /* in */)
+        -> std::array<std::size_t, Order> {
+        std::array<std::size_t, Order> res;
+        res.fill(thisv);
+        return res;
+    }
 };
 
 template <class Derived> auto exp(Base<Derived> /* in */) {
     return exp_t<Derived>{};
 }
 
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void cossin(std::array<double, Order> &res) {
+    res[N] = -res[N - 2];
+    if constexpr ((N + 1) < Order) {
+        cossin<N + 1>(res);
+    }
+}
+
+} // namespace detail
+
 template <class Input> struct cos_t : public Base<cos_t<Input>> {
     static inline auto v(double in) -> double { return std::cos(in); }
     static inline auto d(double /* thisv */, double in) -> double {
         return -std::sin(in);
     }
+
+    template <std::size_t Order>
+    static inline auto d2(double thisv, double in)
+        -> std::array<double, Order> {
+        std::array<double, Order> res;
+
+        if constexpr (Order >= 1) {
+            res[0] = -std::sin(in);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -thisv;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::cossin<2>(res);
+        }
+
+        return res;
+    }
 };
 
 template <class Derived> auto cos(Base<Derived> /* in */) {
     return cos_t<Derived>{};
+}
+
+template <class Input> struct sin_t : public Base<sin_t<Input>> {
+    static inline auto v(double in) -> double { return std::sin(in); }
+    static inline auto d(double /* thisv */, double in) -> double {
+        return std::cos(in);
+    }
+
+    template <std::size_t Order>
+    static inline auto d2(double thisv, double in)
+        -> std::array<double, Order> {
+        std::array<double, Order> res;
+
+        if constexpr (Order >= 1) {
+            res[0] = std::cos(in);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -thisv;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::cossin<2>(res);
+        }
+
+        return res;
+    }
+};
+
+template <class Derived> auto sin(Base<Derived> /* in */) {
+    return sin_t<Derived>{};
 }
 
 template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
@@ -47,10 +118,42 @@ template <class Derived> auto sqrt(Base<Derived> /* in */) {
     return sqrt_t<Derived>{};
 }
 
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void lnders(std::array<double, Order> &res) {
+    res[N] = -static_cast<double>(N) * res[N - 1] * res[0];
+    if constexpr ((N + 1) < Order) {
+        lnders<N + 1>(res);
+    }
+}
+
+} // namespace detail
+
 template <class Input> struct log_t : public Base<log_t<Input>> {
     static inline auto v(double in) -> double { return std::log(in); }
     static inline auto d(double /* thisv */, double in) -> double {
         return 1.0 / in;
+    }
+
+    template <std::size_t Order>
+    static inline auto d2(double /* thisv */, double in)
+        -> std::array<double, Order> {
+        std::array<double, Order> res;
+
+        if constexpr (Order >= 1) {
+            res[0] = 1.0 / in;
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -res[0] * res[0];
+        }
+
+        if constexpr (Order >= 3) {
+            detail::lnders<2>(res);
+        }
+
+        return res;
     }
 };
 

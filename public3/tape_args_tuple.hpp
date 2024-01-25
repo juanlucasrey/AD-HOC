@@ -4,6 +4,7 @@
 #include "adhoc.hpp"
 #include "constants_type.hpp"
 #include "ders.hpp"
+#include "differential_operator.hpp"
 #include "utils.hpp"
 
 #include <tuple>
@@ -13,7 +14,7 @@ namespace adhoc3 {
 namespace detail {
 
 template <class... Ders, std::size_t... Orders>
-constexpr auto d_order(der::m<der::p<der::d<Ders, 1>, Orders>...> /* in */)
+constexpr auto d_order(std::tuple<der::p<der::d<Ders, 1>, Orders>...> /* in */)
     -> std::size_t {
     return (Orders + ...);
 }
@@ -29,7 +30,7 @@ template <> struct outputs_t<> {
 };
 
 template <typename... D, typename... OutputsAndDerivativesAlive>
-struct outputs_t<der::m<D...>, OutputsAndDerivativesAlive...> {
+struct outputs_t<std::tuple<D...>, OutputsAndDerivativesAlive...> {
     template <typename... Outputs> constexpr static auto call() noexcept {
         // we don't add anything because a derivative is not an output
         return outputs_t<OutputsAndDerivativesAlive...>::template call<
@@ -56,10 +57,10 @@ template <> struct derivatives_t<> {
 };
 
 template <typename... D, typename... OutputsAndDerivativesAlive>
-struct derivatives_t<der::m<D...>, OutputsAndDerivativesAlive...> {
+struct derivatives_t<std::tuple<D...>, OutputsAndDerivativesAlive...> {
     template <typename... Derivatives> constexpr static auto call() noexcept {
         return derivatives_t<OutputsAndDerivativesAlive...>::template call<
-            Derivatives..., der::m<D...>>();
+            Derivatives..., std::tuple<D...>>();
     }
 };
 
