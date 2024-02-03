@@ -10,8 +10,6 @@
 namespace adhoc3 {
 
 template <class... Roots> class CalcTree {
-
-  public: // remove me
     using leafs = decltype(detail::leafs_t<Roots...>::template call());
     using ValuesTuple = decltype(std::tuple_cat(
         leafs{},

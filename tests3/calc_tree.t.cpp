@@ -15,9 +15,6 @@ TEST(CalcTree, EvaluateFwdUni) {
 
     CalcTree t(temp);
 
-    std::cout << type_name2<decltype(CalcTree<decltype(temp)>::leafs())>()
-              << std::endl;
-
     std::cout << type_name2<decltype(val0)>() << std::endl;
 
     t.set(val0) = 1.0;
