@@ -18,6 +18,7 @@ add_executable(
   raw.t.cpp
   differential_operator.t.cpp
   tape.t.cpp
+  calc_tree.t.cpp
 )
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")

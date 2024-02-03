@@ -6,9 +6,9 @@
 #include <tuple_utils.hpp>
 // #include <strict_order.hpp>
 
-// #include "type_name.hpp"
 #include "../public/init.hpp"
 #include "../public/tape.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
@@ -1147,20 +1147,19 @@ TEST(Raw, SeparateInputs) {
     auto slytcx_t = sin(lytcx_t);
     auto clytcx_t = cos(lytcx_t);
 
-    std::tuple<der::p<der::d<decltype(x_t), 1>, 3>> d1{};
-    std::tuple<der::p<der::d<decltype(x_t), 1>, 2>,
-               der::p<der::d<decltype(y_t), 1>, 1>>
-        d2{};
-    std::tuple<der::p<der::d<decltype(x_t), 1>, 1>,
-               der::p<der::d<decltype(y_t), 1>, 2>>
-        d3{};
-    std::tuple<der::p<der::d<decltype(y_t), 1>, 3>> d4{};
+    auto d1 = d<3>(x_t);
+    auto d2 = d<2>(x_t) * d(y_t);
+    auto d3 = d(x_t) * d<2>(y_t);
+    auto d4 = d<3>(y_t);
 
-    std::tuple<der::p<der::d<decltype(x_t), 1>, 1>> d11{};
+    auto d11 = d(x_t);
 
+    // auto dseed = d<3>(clytcx_t);
     der::d<decltype(clytcx_t), 3> dseed{};
 
     auto tape = Tape(clytcx_t, slytcx_t, d1, d2, d3, d4, d11);
+
+    std::cout << type_name2<decltype(dseed)>() << std::endl;
     tape.der(dseed) = 1.;
 }
 

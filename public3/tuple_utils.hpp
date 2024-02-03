@@ -84,5 +84,11 @@ auto constexpr replace_first2(std::tuple<TupleValues...> /* in */) {
     }
 }
 
+template <typename T, typename Tuple> struct has_type_tuple;
+
+template <typename T, typename... Us>
+struct has_type_tuple<T, std::tuple<Us...>>
+    : std::disjunction<std::is_same<T, Us>...> {};
+
 } // namespace adhoc3
 #endif // ADHOC3_TUPLE_UTILS_HPP
