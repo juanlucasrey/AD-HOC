@@ -17,6 +17,7 @@ add_executable(
   ders.t.cpp
   raw.t.cpp
   differential_operator.t.cpp
+  differential_operator_2.t.cpp
   tape.t.cpp
   calc_tree.t.cpp
 )
