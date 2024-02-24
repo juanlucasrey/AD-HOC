@@ -18,6 +18,13 @@ constexpr auto is_root_derivative(
     return false;
 }
 
+template <class... Ders>
+constexpr auto select_root_derivatives(std::tuple<Ders...> /* ids */) {
+    return std::tuple_cat(
+        std::conditional_t<(is_root_derivative(Ders{})), std::tuple<Ders>,
+                           std::tuple<>>{}...);
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_DIFFERENTIAL_OPERATOR_UTIL_HPP

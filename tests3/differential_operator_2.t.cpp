@@ -45,4 +45,19 @@ TEST(DifferentialOperator2, isRoot) {
     static_assert(!is_root_derivative(dcrosswithres));
 }
 
+TEST(DifferentialOperator2, selectRoot) {
+    auto [x, y] = Init<2>();
+    auto res = (x * y) * (x * cos(y));
+
+    auto dx = d(x);
+    auto dy = d(y);
+    auto dcross = d(y) * d(x);
+    auto dres = d(res);
+    auto dcrosswithres = d(res) * d(x);
+    auto tu = std::make_tuple(dx, dy, dcross, dres, dcrosswithres);
+    auto tus = select_root_derivatives(tu);
+    auto tures = std::make_tuple(dx, dy, dcross);
+    static_assert(std::is_same_v<decltype(tus), decltype(tures)>);
+}
+
 } // namespace adhoc3
