@@ -67,8 +67,8 @@ TEST(CalcTree, EvaluateFwdTwoVals) {
 
     double result = t.val(temp);
     double result2 = t.val(temp2);
-    EXPECT_EQ(result, 2.);
-    EXPECT_EQ(result2, 1.0806);
+    EXPECT_NEAR(result, 2., 1e-10);
+    EXPECT_NEAR(result2, 1.0806046117362795, 1e-10);
 }
 
 // TEST(CalcTree, BSAdhoc) {
