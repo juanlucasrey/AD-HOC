@@ -95,7 +95,7 @@ inline constexpr auto depends_many() noexcept -> bool {
     }
 }
 
-//  oder<First, Second>::call() gives the highest order for which
+//  order<First, Second>::call() gives the highest order for which
 //  d^n(First)/d(Second)^n is non-null
 template <class First, class Second> struct order;
 

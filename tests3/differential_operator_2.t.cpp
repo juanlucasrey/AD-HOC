@@ -34,15 +34,15 @@ TEST(DifferentialOperator2, isRoot) {
     auto res = (x * y) * (x * cos(y));
 
     auto dx = d(x);
-    static_assert(is_root_derivative(dx));
+    static_assert(is_root_class_v<decltype(dx)>);
     auto dy = d(y);
-    static_assert(is_root_derivative(dy));
+    static_assert(is_root_class_v<decltype(dy)>);
     auto dcross = d(y) * d(x);
-    static_assert(is_root_derivative(dcross));
+    static_assert(is_root_class_v<decltype(dcross)>);
     auto dres = d(res);
-    static_assert(!is_root_derivative(dres));
+    static_assert(!is_root_class_v<decltype(dres)>);
     auto dcrosswithres = d(res) * d(x);
-    static_assert(!is_root_derivative(dcrosswithres));
+    static_assert(!is_root_class_v<decltype(dcrosswithres)>);
 }
 
 TEST(DifferentialOperator2, selectRoot) {
@@ -58,6 +58,9 @@ TEST(DifferentialOperator2, selectRoot) {
     auto tus = select_root_derivatives(tu);
     auto tures = std::make_tuple(dx, dy, dcross);
     static_assert(std::is_same_v<decltype(tus), decltype(tures)>);
+    auto tuns = select_non_root_derivatives(tu);
+    auto turens = std::make_tuple(dres, dcrosswithres);
+    static_assert(std::is_same_v<decltype(tuns), decltype(turens)>);
 }
 
 } // namespace adhoc3

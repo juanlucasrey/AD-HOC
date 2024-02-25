@@ -55,6 +55,22 @@ TEST(CalcTree, EvaluateFwdConst) {
     EXPECT_EQ(result, 0.5);
 }
 
+TEST(CalcTree, EvaluateFwdTwoVals) {
+    auto [val0, val1] = Init<2>();
+    auto temp = val0 * val1;
+    auto temp2 = cos(val0) * val1;
+
+    CalcTree t(temp, temp2);
+    t.set(val0) = 1.0;
+    t.set(val1) = 2.0;
+    t.evaluate();
+
+    double result = t.val(temp);
+    double result2 = t.val(temp2);
+    EXPECT_EQ(result, 2.);
+    EXPECT_EQ(result2, 1.0806);
+}
+
 // TEST(CalcTree, BSAdhoc) {
 //     double result = 0;
 

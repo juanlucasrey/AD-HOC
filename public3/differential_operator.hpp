@@ -3,6 +3,7 @@
 
 // #include "adhoc.hpp"
 #include "dependency.hpp"
+#include "utils.hpp"
 
 namespace adhoc3 {
 

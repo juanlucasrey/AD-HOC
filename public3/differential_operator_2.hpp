@@ -4,6 +4,8 @@
 #include "dependency.hpp"
 #include "utils.hpp"
 
+#include <tuple>
+
 namespace adhoc3 {
 
 namespace der2 {
