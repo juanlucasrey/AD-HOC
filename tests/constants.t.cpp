@@ -550,7 +550,7 @@ TEST(Constants, sizes) {
     long double constexpr oneld = 1.0l;
     C<long double, 1.0l> oneld_type;
     // different sizes, type is empty
-    static_assert(sizeof(oneld) == 16);
+    static_assert(sizeof(oneld) == sizeof(long double));
     static_assert(sizeof(oneld_type) == 1);
     // same values
     static_assert(oneld == oneld_type);
