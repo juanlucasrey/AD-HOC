@@ -306,8 +306,9 @@ TEST(EvaluateBwd, CallAndPut) {
     t.set(v) = 0.15;
     t.set(T) = 0.5;
     t.evaluate_fwd();
-    EXPECT_EQ(t.val(rc), result_call);
-    EXPECT_EQ(t.val(rp), result_put);
+    // they are not equal because of FMA optimisation on some compilers
+    EXPECT_NEAR(t.val(rc), result_call, 1e-14);
+    EXPECT_NEAR(t.val(rp), result_put, 1e-14);
 
     t.der(rc) = 1.0;
     t.evaluate_bwd();
