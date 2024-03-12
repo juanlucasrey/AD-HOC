@@ -72,7 +72,9 @@ TEST(EvaluateFwd, BSAdhoc) {
     t.evaluate_fwd();
 
     double result2 = t.val(result_adhoc);
-    EXPECT_EQ(result2, result);
+
+    // they are not equal because of FMA optimisation on some compilers
+    EXPECT_NEAR(result2, result, 1e-14);
 }
 
 TEST(EvaluateFwd, CallAndPut) {
@@ -101,9 +103,11 @@ TEST(EvaluateFwd, CallAndPut) {
     t.evaluate_fwd();
 
     double result_call2 = t.val(rc);
-    EXPECT_EQ(result_call2, result_call);
+
+    // they are not equal because of FMA optimisation on some compilers
+    EXPECT_NEAR(result_call2, result_call, 1e-14);
     double result_put2 = t.val(rp);
-    EXPECT_EQ(result_put2, result_put);
+    EXPECT_NEAR(result_put2, result_put, 1e-14);
 }
 
 } // namespace adhoc
