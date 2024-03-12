@@ -37,6 +37,22 @@ TEST(Tape2, First) {
 TEST(Tape2, TapeAndTree) {
     auto [x, y] = Init<2>();
     auto res = (x * y) * (x * cos(y));
+    auto res2 = cos(x) * y;
+    CalcTree ct(res, res2);
+
+    auto dx = d(x);
+    auto dy = d(y);
+    auto dcross = d(y) * d(x);
+    auto dres = d(res);
+    auto dcrosswithres = d(res) * d(x);
+    auto t = Tape2(dx, dy, dcross, dres, dcrosswithres);
+    t.set(dx) = 1.;
+    t.set(dy) = 2.;
+    t.set(dcross) = 3.;
+    t.set(dres) = 4.;
+    t.set(dcrosswithres) = 5.;
+
+    t.backpropagate(ct);
 }
 
 } // namespace adhoc3

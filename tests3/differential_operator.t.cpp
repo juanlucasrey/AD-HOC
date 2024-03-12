@@ -10,6 +10,21 @@
 
 namespace adhoc3 {
 
+TEST(DifferentialOperator, dID2) {
+    auto [x, y] = Init<2>();
+    auto res = (x * y) * (x * cos(y));
+    constexpr auto co = calc_order_t<true>(res);
+
+    auto der3_1 = d<2>(x) * d<2>(x) * d<2>(x) * d<4>(y) * d<4>(y) * d<4>(y) *
+                  d<4>(y) * d<4>(y);
+    std::tuple<der::p<der::d<decltype(x), 2>, 3>,
+               der::p<der::d<decltype(y), 4>, 5>>
+        der3_2{};
+
+    std::cout << type_name2<decltype(der3_1)>() << std::endl;
+    std::cout << type_name2<decltype(der3_2)>() << std::endl;
+}
+
 TEST(DifferentialOperator, dID) {
     auto [x, y] = Init<2>();
     auto res = (x * y) * (x * cos(y));
@@ -80,6 +95,10 @@ TEST(DifferentialOperator, DerivativeNonNull3) {
         din2{};
 
     auto din2_2 = d<3>(x) * d<3>(y) * d(z);
+
+    // correct syntax
+    // pow<2>(d(x))
+
     // std::cout << type_name2<decltype(din2_2)>() << std::endl;
 
     static_assert(der_non_null(dnode, din2));

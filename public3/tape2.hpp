@@ -3,10 +3,15 @@
 
 #include "differential_operator_util.hpp"
 
+#include "calc_tree.hpp"
+
+#include <array>
+
 namespace adhoc3 {
 
 template <class... OutputsAndDerivatives> class Tape2 {
-  private:
+    //   private:
+  public:
     using roots =
         decltype(select_root_derivatives2<OutputsAndDerivatives...>());
 
@@ -30,6 +35,8 @@ template <class... OutputsAndDerivatives> class Tape2 {
         std::fill(std::begin(this->m_derivatives),
                   std::end(this->m_derivatives), 0.);
     }
+
+    template <class... Roots> void backpropagate(CalcTree<Roots...> ct);
 };
 
 template <class... OutputsAndDerivatives>
@@ -50,6 +57,15 @@ auto Tape2<OutputsAndDerivatives...>::set(D /* in */) -> double & {
 
     return this
         ->m_derivatives[detail::get_index<D, OutputsAndDerivatives...>::value];
+}
+
+template <class... OutputsAndDerivatives>
+template <class... Roots>
+void Tape2<OutputsAndDerivatives...>::backpropagate(
+    CalcTree<Roots...> /* ct */) {
+
+    // exact buffer size to be determined at compile time
+    std::array<double, 10> buffer{};
 }
 
 } // namespace adhoc3

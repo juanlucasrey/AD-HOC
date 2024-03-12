@@ -14,6 +14,8 @@ add_executable(
   tape_size_bwd.t.cpp
   mcsim.t.cpp
   BS.t.cpp
+  yc_test.cpp
+  vector.cpp
   # opencl only for clang at the moment
   # opencl.t.cpp
 )
@@ -43,7 +45,7 @@ endif()
 
 
 target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
-target_link_directories(adhoc_test SYSTEM PUBLIC /usr/local/lib)
+target_link_directories(adhoc_test PUBLIC /usr/local/lib)
 
 find_package(OpenCL REQUIRED)
 target_link_libraries(

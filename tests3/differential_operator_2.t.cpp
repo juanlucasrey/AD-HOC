@@ -1,6 +1,9 @@
 #include <differential_operator_2.hpp>
 #include <differential_operator_util.hpp>
 #include <init.hpp>
+#include <tape2.hpp>
+
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
@@ -61,6 +64,42 @@ TEST(DifferentialOperator2, selectRoot) {
     auto tuns = select_non_root_derivatives(tu);
     auto turens = std::make_tuple(dres, dcrosswithres);
     static_assert(std::is_same_v<decltype(tuns), decltype(turens)>);
+}
+
+TEST(DifferentialOperator2, derivativeCheck) {
+    auto [x, y] = Init<2>();
+    auto res = (x * y) * (x * cos(y));
+
+    auto dcross = d(y) * d(x);
+    // auto dres = d(res);
+    // EXPECT_EQ(derivative_non_null(dres, dcross), false);
+
+    auto dres2 = d<2>(res);
+    EXPECT_EQ(derivative_non_null(dres2, dcross), true);
+
+    // auto d2x = d<2>(x);
+    // auto dres22 = d(res) * d(res);
+    // EXPECT_EQ(derivative_non_null(dres22, d2x), false);
+}
+
+TEST(DifferentialOperator2, calcTreeOrderUsage) {
+    auto [x, y] = Init<2>();
+    auto res1 = x * y;
+    auto res2 = x + y;
+    CalcTree t(res1, res2);
+
+    auto dx = d(x);
+    auto dy = d(y);
+    auto d1 = d(res1);
+    auto d2 = d(res2);
+
+    Tape2 t2(d1, d2, dx, dy);
+
+    decltype(t2)::leaves a;
+    std::cout << type_name2<decltype(a)>() << std::endl;
+
+    decltype(t)::ValuesTupleInverse b;
+    std::cout << type_name2<decltype(b)>() << std::endl;
 }
 
 } // namespace adhoc3

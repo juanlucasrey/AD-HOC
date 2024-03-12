@@ -10,10 +10,16 @@
 namespace adhoc3 {
 
 template <class... Roots> class CalcTree {
+  public:
     using leafs = decltype(detail::leafs_t<Roots...>::template call());
     using ValuesTuple = decltype(std::tuple_cat(
         leafs{},
         detail::calc_order_aux_t<false, true, Roots...>::template call()));
+
+    using ValuesTupleInverse = decltype(std::tuple_cat(
+
+        detail::calc_order_aux_t<false, false, Roots...>::template call(),
+        leafs{}));
 
     std::array<double, std::tuple_size<ValuesTuple>{}> m_values{};
 
