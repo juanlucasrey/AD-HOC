@@ -349,6 +349,25 @@ TEST(EvaluateBwd, WrongDer) {
     t.evaluate_bwd();
 }
 
+TEST(EvaluateBwd, Size) {
+    auto [x, y] = Init<2>();
+    auto r = x * cos(y) + y * cos(x);
+
+    Tape t(r, x, y);
+
+    t.set(x) = 100.0;
+    // t.set(K) = 102.0;
+    // t.set(T) = 0.5;
+    // t.evaluate_fwd();
+
+    // uncommenting this should give the static assert message: "Only nodes or
+    // leafs can have derivatives set or read"
+
+    // t.der(T) = 1.0;
+
+    // t.evaluate_bwd();
+}
+
 // TEST(EvaluateBwd, Derivative2nd) {
 //     adouble x(2);
 //     adouble y(3);

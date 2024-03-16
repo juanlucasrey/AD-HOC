@@ -2,7 +2,7 @@
 set(CMAKE_CXX_STANDARD 20)
 # add_definitions(-DCODELOGGER)
 
-find_package(Eigen3 REQUIRED)
+# find_package(Eigen3 REQUIRED)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     # without this parameter loops will not be vectorised
@@ -22,19 +22,6 @@ add_executable(
   tape2.t.cpp
   calc_tree.t.cpp
 )
-
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # googletest should be installed via brew, but it only works with clang compiled code
-    # To ensure it works with other compilers (mostly GCC), I need to download and statically link.
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      GIT_REPOSITORY https://github.com/google/googletest.git
-      GIT_TAG main
-    )
-
-    FetchContent_MakeAvailable(googletest)
-endif()
 
 # fo coverage
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping")

@@ -94,6 +94,7 @@ TEST(AD, BlackScholesSimulationadhoc) {
     CD<encode(0)> init;
     auto result =
         accumulate(rndnmbrs.begin(), rndnmbrs.end(), init, lambdafunc);
+    std::cout << type_name<decltype(result)>() << std::endl;
 
     auto fwd = S * exp(result);
 }
