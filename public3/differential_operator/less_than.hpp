@@ -57,9 +57,9 @@ constexpr auto less_than_check_first(
     constexpr auto idx1 = get_idx_first2<Id1>(nodes);
     constexpr auto idx2 = get_idx_first2<Id2>(nodes);
     if constexpr (idx1 < idx2) {
-        return true;
-    } else if constexpr (idx1 > idx2) {
         return false;
+    } else if constexpr (idx1 > idx2) {
+        return true;
     } else if constexpr (Order1 < Order2) {
         return true;
     } else if constexpr (Order1 > Order2) {
