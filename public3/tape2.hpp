@@ -1,8 +1,6 @@
 #ifndef ADHOC3_TAPE2_HPP
 #define ADHOC3_TAPE2_HPP
 
-#include "differential_operator_util.hpp"
-
 #include "calc_tree.hpp"
 
 #include <array>
