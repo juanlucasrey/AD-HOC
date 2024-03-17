@@ -5,6 +5,7 @@
 #include "../dependency.hpp"
 #include "derivative_non_null.hpp"
 #include "differential_operator.hpp"
+#include "is_ordered.hpp"
 
 namespace adhoc3 {
 
@@ -82,12 +83,16 @@ template <class... Ids, std::size_t... Orders, std::size_t... Powers,
 constexpr auto order_differential_operator(
     std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...> diff_operator,
     std::tuple<CalculationNodes...> nodes) {
-    return std::apply(
-        [diff_operator](auto &&...args) {
-            return std::tuple_cat(
-                detail::create_single_tuple(args, diff_operator)...);
-        },
-        nodes);
+    if constexpr (is_ordered(diff_operator, nodes)) {
+        return diff_operator;
+    } else {
+        return std::apply(
+            [diff_operator](auto &&...args) {
+                return std::tuple_cat(
+                    detail::create_single_tuple(args, diff_operator)...);
+            },
+            nodes);
+    }
 }
 
 } // namespace adhoc3

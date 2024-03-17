@@ -92,6 +92,26 @@ less_than(std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...> in1,
     return detail::less_than_check_empty(ordered_in1, ordered_in2, nodes);
 }
 
+template <class Id1, std::size_t Order1, std::size_t Power1, class Id2,
+          std::size_t Order2, std::size_t Power2, class... CalculationNodes>
+constexpr auto less_than(der2::p<Power1, der2::d<Order1, Id1>> /* in1 */,
+                         der2::p<Power2, der2::d<Order2, Id2>> /* in2 */,
+                         std::tuple<CalculationNodes...> nodes) {
+    constexpr auto idx1 = get_idx_first2<Id1>(nodes);
+    constexpr auto idx2 = get_idx_first2<Id2>(nodes);
+    if constexpr (idx1 < idx2) {
+        return false;
+    } else if constexpr (idx1 > idx2) {
+        return true;
+    } else if constexpr (Order1 < Order2) {
+        return true;
+    } else if constexpr (Order1 > Order2) {
+        return false;
+    } else {
+        return false;
+    }
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_DIFFERENTIAL_OPERATOR_LESS_THAN_HPP

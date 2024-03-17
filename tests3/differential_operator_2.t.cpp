@@ -261,6 +261,14 @@ TEST(DifferentialOperator2, expandsum) {
     auto r4b = expand(r4a, co);
     auto r4c = std::tuple<decltype(dx12), decltype(dx22), decltype(dx2)>{};
     static_assert(std::is_same<decltype(r4b), decltype(r4c)>::value);
+
+    static_assert(is_ordered(dres2, co));
+
+    auto dres3 = d<2>(res) * d(res);
+    static_assert(is_ordered(dres3, co));
+
+    auto dres4 = d(res) * d<2>(res);
+    static_assert(!is_ordered(dres4, co));
 }
 
 } // namespace adhoc3

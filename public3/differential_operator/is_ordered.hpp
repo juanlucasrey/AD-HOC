@@ -1,5 +1,5 @@
-#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_UTIL_HPP
-#define ADHOC3_DIFFERENTIAL_OPERATOR_UTIL_HPP
+#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_IS_ORDERED_HPP
+#define ADHOC3_DIFFERENTIAL_OPERATOR_IS_ORDERED_HPP
 
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
@@ -46,4 +46,4 @@ constexpr auto is_ordered(std::tuple<Ids...> in,
 
 } // namespace adhoc3
 
-#endif // ADHOC3_DIFFERENTIAL_OPERATOR_UTIL_HPP
+#endif // ADHOC3_DIFFERENTIAL_OPERATOR_IS_ORDERED_HPP
