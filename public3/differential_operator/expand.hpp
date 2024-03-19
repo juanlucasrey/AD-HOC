@@ -7,7 +7,7 @@
 #include "differential_operator.hpp"
 #include "is_ordered.hpp"
 #include "merge_ordered.hpp"
-#include "order_differential_operator.hpp"
+#include "ordered_mult.hpp"
 #include "select_root_derivatives.hpp"
 
 namespace adhoc3 {
@@ -60,32 +60,16 @@ expand_single(std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
             std::tuple<der2::p<Power, der2::d<Order, Id1>>,
                        der2::p<Powers, der2::d<Orders, Ids>>...>{});
     } else {
-        // why do we multiply? because multiplication allows for Id1 to be
-        // absorbed into Ids... if it is there
-        auto constexpr unordered_differential_operator_1 =
-            std::tuple<der2::p<Power, der2::d<Order, Id1>>>{} *
-            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{};
-
-        // however multiplication operator does not guarantee proper internal
-        // ordering of the differential operator, so we have to order
-        // explicitely
-        auto constexpr ordered_differential_operator_1 =
-            order_differential_operator(unordered_differential_operator_1,
-                                        nodes);
-        // TODO: an insertion operator of der2::p<Power, der2::d<Order, Id1>>
-        // into der2::p<Powers, der2::d<Orders, Ids>>... it should be more
-        // efficient at compile time
+        auto constexpr ordered_differential_operator_1 = multiply_ordered(
+            std::tuple<der2::p<Power, der2::d<Order, Id1>>>{},
+            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{}, nodes);
 
         auto constexpr expanded_differential_operator_1 =
             expand_single(ordered_differential_operator_1, nodes);
 
-        auto constexpr unordered_differential_operator_2 =
-            std::tuple<der2::p<Power, der2::d<Order, Id2>>>{} *
-            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{};
-
-        auto constexpr ordered_differential_operator_2 =
-            order_differential_operator(unordered_differential_operator_2,
-                                        nodes);
+        auto constexpr ordered_differential_operator_2 = multiply_ordered(
+            std::tuple<der2::p<Power, der2::d<Order, Id2>>>{},
+            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{}, nodes);
 
         auto constexpr expanded_differential_operator_2 =
             expand_single(ordered_differential_operator_2, nodes);

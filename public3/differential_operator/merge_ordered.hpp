@@ -15,7 +15,7 @@ template <class Id1, class... Ids1, class Id2, class... Ids2, class... Out,
           class... CalculationNodes>
 constexpr auto merge_ordered_compare(std::tuple<Id1, Ids1...> in1,
                                      std::tuple<Id2, Ids2...> in2,
-                                     std::tuple<Out...> /* out */,
+                                     std::tuple<Out...> out,
                                      std::tuple<CalculationNodes...> nodes);
 
 template <class... Ids1, class... Ids2, class... Out, class... CalculationNodes>
