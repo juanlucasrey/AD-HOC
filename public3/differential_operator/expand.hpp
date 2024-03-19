@@ -22,11 +22,8 @@ struct is_constant_class<constants::CD<N>> : std::true_type {};
 template <class T>
 constexpr bool is_constant_class_v = is_constant_class<T>::value;
 
-template <class... Ids, std::size_t... Orders, std::size_t... Powers,
-          class... CalculationNodes>
-constexpr auto
-expand_single(std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...> id,
-              std::tuple<CalculationNodes...> nodes);
+template <class Arg1, class Arg2>
+constexpr auto expand_single(Arg1 arg1, Arg2 arg2);
 
 template <class... CalculationNodes>
 constexpr auto expand_single(std::tuple<> /* id */,
