@@ -22,6 +22,7 @@ add_executable(
   tape2.t.cpp
   calc_tree.t.cpp
   partition/binomial_coefficient.t.cpp
+  partition/partition_function.t.cpp
 )
 
 # fo coverage

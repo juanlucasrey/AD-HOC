@@ -9,6 +9,7 @@
 #include "../public/init.hpp"
 #include "../public/tape.hpp"
 #include "../public3/partition/binomial_coefficient.hpp"
+#include "../public3/partition/partition_function.hpp"
 #include "type_name.hpp"
 
 #include <gtest/gtest.h>
@@ -38,17 +39,6 @@ TEST(Raw, First) {
         der_non_null((x2 * y2), var(x)) && der_non_null((x2 * cos(y2)), var(y));
     auto cross2 =
         der_non_null((x2 * y2), var(y)) && der_non_null((x2 * cos(y2)), var(x));
-}
-
-constexpr int integerPartition(int n, int k) {
-    if (k == 0)
-        return 0;
-    if (n == 0)
-        return 1;
-    if (n < 0)
-        return 0;
-
-    return integerPartition(n, k - 1) + integerPartition(n - k, k);
 }
 
 // A utility function to print an array p[] of size 'n'
@@ -115,17 +105,6 @@ void printAllUniqueParts(int n) {
 //     return Coeffs;
 // }
 
-// constexpr int integerPartition(int n, int k) {
-//     if (k == 0)
-//         return 0;
-//     if (n == 0)
-//         return 1;
-//     if (n < 0)
-//         return 0;
-
-//     return integerPartition(n, k - 1) + integerPartition(n - k, k);
-// }
-
 template <std::size_t N, std::size_t I>
 constexpr auto innerN(const std::array<std::size_t, N>(&str)) -> std::size_t {
     if constexpr (I == 0) {
@@ -175,7 +154,7 @@ TEST(Raw, BellCoeffs) {
     // https://en.wikipedia.org/wiki/Bell_polynomials coefficients
     // order 1
     {
-        static_assert(integerPartition(1, 1) == 1);
+        static_assert(partition_function(1) == 1);
         constexpr std::array<std::array<std::size_t, 1>, 1> parts{{{1}}};
 
         static_assert(BellCoeff(parts[0]) == 1);
@@ -183,7 +162,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 2
     {
-        static_assert(integerPartition(2, 2) == 2);
+        static_assert(partition_function(2) == 2);
         constexpr std::array<std::array<std::size_t, 2>, 2> parts{
             {{0, 1}, {2, 0}}};
 
@@ -193,7 +172,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 3
     {
-        static_assert(integerPartition(3, 3) == 3);
+        static_assert(partition_function(3) == 3);
         constexpr std::array<std::array<std::size_t, 3>, 3> parts{
             {{0, 0, 1}, {1, 1, 0}, {3, 0, 0}}};
 
@@ -204,7 +183,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 4
     {
-        static_assert(integerPartition(4, 4) == 5);
+        static_assert(partition_function(4) == 5);
         constexpr std::array<std::array<std::size_t, 4>, 5> parts{
             {{0, 0, 0, 1},
              {1, 0, 1, 0},
@@ -221,7 +200,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 5
     {
-        static_assert(integerPartition(5, 5) == 7);
+        static_assert(partition_function(5) == 7);
         constexpr std::array<std::array<std::size_t, 5>, 7> parts{
             {{0, 0, 0, 0, 1},
              {1, 0, 0, 1, 0},
@@ -242,7 +221,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 6
     {
-        static_assert(integerPartition(6, 6) == 11);
+        static_assert(partition_function(6) == 11);
         constexpr std::array<std::array<std::size_t, 6>, 11> parts{
             {{0, 0, 0, 0, 0, 1},
              {1, 0, 0, 0, 1, 0},
@@ -271,7 +250,7 @@ TEST(Raw, BellCoeffs) {
 
     // order 7
     {
-        static_assert(integerPartition(7, 7) == 15);
+        static_assert(partition_function(7) == 15);
         constexpr std::array<std::array<std::size_t, 7>, 15> parts{
             {{0, 0, 0, 0, 0, 0, 1},
              {1, 0, 0, 0, 0, 1, 0},
@@ -315,10 +294,10 @@ TEST(Raw, BellCoeffs) {
     // while (current != last) {
     //     partitions.push_back(current);
     // }
-    // static_assert(integerPartition(4, 4) == 5);
-    // static_assert(integerPartition(5, 5) == 7);
-    // std::cout << integerPartition(4, 4) << std::endl;
-    // std::cout << integerPartition(5, 5) << std::endl;
+    // static_assert(partition_function(4) == 5);
+    // static_assert(partition_function(5) == 7);
+    // std::cout << partition_function(4) << std::endl;
+    // std::cout << partition_function(5) << std::endl;
 
     // std::cout << "\nAll Unique Partitions of 4 \n";
     // printAllUniqueParts(4);
@@ -1175,7 +1154,7 @@ TEST(Raw, Der3) {
     auto [whatever] = Init<1>();
     auto ders = sin_t<decltype(whatever)>::d2<3>(slytcx, lytcx);
 
-    std::array<std::array<std::size_t, 3>, integerPartition(3, 3)> parts{};
+    std::array<std::array<std::size_t, 3>, partition_function(3)> parts{};
 
     constexpr auto last = PartFirst<3>();
     constexpr auto first = PartLast<3>();
@@ -1506,7 +1485,7 @@ TEST(Raw, Der3Sin) {
     auto [whatever] = Init<1>();
     auto ders_sin = sin_t<decltype(whatever)>::d2<3>(syx, yx);
 
-    std::array<std::array<std::size_t, 3>, integerPartition(3, 3)> parts{};
+    std::array<std::array<std::size_t, 3>, partition_function(3)> parts{};
 
     constexpr auto last = PartFirst<3>();
     constexpr auto first = PartLast<3>();
@@ -1664,7 +1643,7 @@ TEST(Raw, Der4Sin) {
     auto [whatever] = Init<1>();
     auto ders_sin = sin_t<decltype(whatever)>::d2<4>(syx, yx);
 
-    std::array<std::array<std::size_t, 4>, integerPartition(4, 4)> parts{};
+    std::array<std::array<std::size_t, 4>, partition_function(4)> parts{};
 
     constexpr auto last = PartFirst<4>();
     constexpr auto first = PartLast<4>();
