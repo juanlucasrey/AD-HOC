@@ -8,6 +8,7 @@
 
 #include "../public/init.hpp"
 #include "../public/tape.hpp"
+#include "../public3/partition/binomial_coefficient.hpp"
 #include "type_name.hpp"
 
 #include <gtest/gtest.h>
@@ -37,44 +38,6 @@ TEST(Raw, First) {
         der_non_null((x2 * y2), var(x)) && der_non_null((x2 * cos(y2)), var(y));
     auto cross2 =
         der_non_null((x2 * y2), var(y)) && der_non_null((x2 * cos(y2)), var(x));
-}
-
-// template <std::size_t N, std::size_t P> constexpr auto CnP() -> double {
-//     return static_cast<double>(N * P);
-// }
-
-constexpr inline size_t binom(size_t n, size_t k) noexcept {
-    return (k > n) ? 0 : // out of range
-               (k == 0 || k == n) ? 1
-                                  : // edge
-               (k == 1 || k == n - 1) ? n
-                                      : // first
-               (k + k < n) ?            // recursive:
-               (binom(n - 1, k - 1) * n) / k
-                           :                    //  path to k=1   is faster
-               (binom(n - 1, k) * n) / (n - k); //  path to k=n-1 is faster
-}
-
-TEST(Raw, CnP) {
-    // std::cout << "n=0" << std::endl;
-    static_assert(binom(0, 0) == 1);
-    // std::cout << "n=1" << std::endl;
-    static_assert(binom(1, 0) == 1);
-    static_assert(binom(1, 1) == 1);
-
-    static_assert(binom(2, 0) == 1);
-    static_assert(binom(2, 1) == 2);
-    static_assert(binom(2, 2) == 1);
-    static_assert(binom(3, 0) == 1);
-    static_assert(binom(3, 1) == 3);
-    static_assert(binom(3, 2) == 3);
-    static_assert(binom(3, 3) == 1);
-    // n=4
-    static_assert(binom(4, 0) == 1);
-    static_assert(binom(4, 1) == 4);
-    static_assert(binom(4, 2) == 6);
-    static_assert(binom(4, 3) == 4);
-    static_assert(binom(4, 4) == 1);
 }
 
 constexpr int integerPartition(int n, int k) {
@@ -781,7 +744,7 @@ template <int N> struct C {
 };
 
 constexpr inline size_t combinations(size_t bins, size_t balls) noexcept {
-    return binom(bins + balls - 1, bins - 1);
+    return binomial_coefficient(bins + balls - 1, bins - 1);
 }
 
 TEST(Raw, PartitionsBinom) {
