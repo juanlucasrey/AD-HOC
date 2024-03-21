@@ -90,6 +90,14 @@ expand_single(std::tuple<der2::p<Power, der2::d<Order, sub_t<Id1, Id2>>>,
         nodes);
 }
 
+template <template <class> class Univariate, class Id, class... Ids,
+          std::size_t Order, std::size_t... Orders, std::size_t Power,
+          std::size_t... Powers, class... CalculationNodes>
+constexpr auto
+expand_single(std::tuple<der2::p<Power, der2::d<Order, Univariate<Id>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
+              std::tuple<CalculationNodes...> /* nodes */) {}
+
 } // namespace detail
 
 template <class... Ids, class... CalculationNodes>
