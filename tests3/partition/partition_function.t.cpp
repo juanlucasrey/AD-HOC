@@ -1,4 +1,4 @@
-#include "../../public3/partition/partition_function.hpp"
+#include <partition/partition_function.hpp>
 
 #include <gtest/gtest.h>
 

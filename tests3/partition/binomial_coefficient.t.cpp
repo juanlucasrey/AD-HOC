@@ -1,4 +1,4 @@
-#include "../../public3/partition/binomial_coefficient.hpp"
+#include <partition/binomial_coefficient.hpp>
 
 #include <gtest/gtest.h>
 

@@ -6,7 +6,43 @@
 
 namespace adhoc3 {
 
-TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator) {
+TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator1) {
+    auto [x1] = Init<1>();
+    constexpr auto expansion =
+        integer_partition_univariate_function<decltype(x1), 1>();
+
+    constexpr auto result =
+        std::tuple<std::tuple<der2::p<1, der2::d<1, decltype(x1)>>>>{};
+
+    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+}
+
+TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator2) {
+    auto [x1] = Init<1>();
+    constexpr auto expansion =
+        integer_partition_univariate_function<decltype(x1), 2>();
+
+    constexpr auto result =
+        std::tuple<std::tuple<der2::p<1, der2::d<2, decltype(x1)>>>,
+                   std::tuple<der2::p<2, der2::d<1, decltype(x1)>>>>{};
+
+    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+}
+
+TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator3) {
+    auto [x1] = Init<1>();
+    constexpr auto expansion =
+        integer_partition_univariate_function<decltype(x1), 3>();
+
+    constexpr auto result =
+        std::tuple<std::tuple<der2::p<1, der2::d<3, decltype(x1)>>>,
+                   std::tuple<der2::p<1, der2::d<2, decltype(x1)>>,
+                              der2::p<1, der2::d<1, decltype(x1)>>>,
+                   std::tuple<der2::p<3, der2::d<1, decltype(x1)>>>>{};
+
+    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+}
+TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     auto [x1] = Init<1>();
 
     //  {0, 0, 0, 0, 0, 0, 1},
