@@ -8,9 +8,11 @@
 
 #include "../public/init.hpp"
 #include "../public/tape.hpp"
-#include "../public3/partition/binomial_coefficient.hpp"
-#include "../public3/partition/partition_function.hpp"
 #include "type_name.hpp"
+
+#include <partition/binomial_coefficient.hpp>
+#include <partition/integer_partition.hpp>
+#include <partition/partition_function.hpp>
 
 #include <gtest/gtest.h>
 
@@ -335,351 +337,6 @@ TEST(Raw, BellCoeffs) {
     // {0, 0, 0, 0, 0, 1} 6
     // {1, 0, 0, 0, 1, 0} 5, 1
     // {1, 0, 0, 1, 0, 0} 5, 1
-}
-
-template <std::size_t N> struct PartFirst {
-    constexpr PartFirst() : arr() { arr[N - 1] = 1; }
-    std::array<std::size_t, N> arr;
-};
-
-template <std::size_t N> struct PartLast {
-    constexpr PartLast() : arr() { arr[0] = N; }
-    std::array<std::size_t, N> arr;
-};
-
-template <int N> struct A {
-    constexpr A(std::array<std::size_t, N> const &prev,
-                std::array<std::size_t, N> const &last)
-        : arr() {
-
-        if (prev == last) {
-            return;
-        }
-
-        arr = prev;
-
-        // Find the rightmost non-one value in arr. Also, update the
-        // rem_val so that we know how much value can be accommodated
-        std::size_t rem_val = arr.front();
-        arr.front() = 0;
-        std::size_t k = 1;
-        while (arr[k] == 0) {
-            k++;
-        }
-
-        arr[k]--;
-        rem_val += (k + 1);
-
-        // If rem_val is more, then the sorted order is violated. Divide
-        // rem_val in different values of size p[k] and copy these values at
-        // different positions after p[k]
-        if (rem_val > k) {
-            // std::div will be constexpr in C++23 so we use a manual version in
-            // the meantime
-            std::size_t div = rem_val / k;
-            arr[k - 1] += div;
-            rem_val -= k * div;
-        }
-
-        if (rem_val) {
-            arr[rem_val - 1]++;
-        }
-    }
-    std::array<std::size_t, N> arr;
-};
-
-template <int N> struct B {
-    constexpr B(std::array<std::size_t, N> const &prev,
-                // B(std::array<std::size_t, N> const &prev,
-                std::array<std::size_t, N> const &last)
-        : arr() {
-
-        if (prev == last) {
-            return;
-        }
-
-        arr = prev;
-
-        // Find the rightmost non-one value in arr. Also, update the
-        // rem_val so that we know how much value can be accommodated
-        std::size_t rem_val = arr.front();
-        arr.front() = 0;
-        std::size_t k = 1;
-        while (k >= rem_val) {
-            rem_val += arr[k] * (k + 1);
-            arr[k] = 0;
-            k++;
-        }
-
-        arr[k]++;
-        rem_val -= (k + 1);
-
-        arr.front() = rem_val;
-    }
-    std::array<std::size_t, N> arr;
-};
-
-TEST(Raw, PartitionsBell) {
-
-    {
-        constexpr std::array<std::array<std::size_t, 1>, 1> parts{{{1}}};
-
-        constexpr auto first = PartFirst<1>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<1>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next = A<1>(first.arr, last.arr);
-        static_assert(next.arr == std::array<std::size_t, 1>{});
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 2>, 2> parts{
-            {{0, 1}, {2, 0}}};
-
-        constexpr auto first = PartFirst<2>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<2>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next = A<2>(first.arr, last.arr);
-        static_assert(next.arr == parts[1]);
-
-        constexpr auto zero = A<2>(next.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 2>{});
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 3>, 3> parts{
-            {{0, 0, 1}, {1, 1, 0}, {3, 0, 0}}};
-
-        constexpr auto first = PartFirst<3>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<3>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next1 = A<3>(first.arr, last.arr);
-        static_assert(next1.arr == parts[1]);
-
-        constexpr auto next2 = A<3>(next1.arr, last.arr);
-        static_assert(next2.arr == parts[2]);
-
-        constexpr auto zero = A<3>(next2.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 3>{});
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 4>, 5> parts{
-            {{0, 0, 0, 1},
-             {1, 0, 1, 0},
-             {0, 2, 0, 0},
-             {2, 1, 0, 0},
-             {4, 0, 0, 0}}};
-
-        constexpr auto first = PartFirst<4>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<4>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next1 = A<4>(first.arr, last.arr);
-        static_assert(next1.arr == parts[1]);
-
-        constexpr auto next2 = A<4>(next1.arr, last.arr);
-        static_assert(next2.arr == parts[2]);
-
-        constexpr auto next3 = A<4>(next2.arr, last.arr);
-        static_assert(next3.arr == parts[3]);
-
-        constexpr auto next4 = A<4>(next3.arr, last.arr);
-        static_assert(next4.arr == parts[4]);
-
-        constexpr auto zero = A<4>(next4.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 4>{});
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 5>, 7> parts{
-            {{0, 0, 0, 0, 1},
-             {1, 0, 0, 1, 0},
-             {0, 1, 1, 0, 0},
-             {2, 0, 1, 0, 0},
-             {1, 2, 0, 0, 0},
-             {3, 1, 0, 0, 0},
-             {5, 0, 0, 0, 0}}};
-
-        constexpr auto first = PartFirst<5>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<5>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next1 = A<5>(first.arr, last.arr);
-        static_assert(next1.arr == parts[1]);
-
-        constexpr auto next2 = A<5>(next1.arr, last.arr);
-        static_assert(next2.arr == parts[2]);
-
-        constexpr auto next3 = A<5>(next2.arr, last.arr);
-        static_assert(next3.arr == parts[3]);
-
-        constexpr auto next4 = A<5>(next3.arr, last.arr);
-        static_assert(next4.arr == parts[4]);
-
-        constexpr auto next5 = A<5>(next4.arr, last.arr);
-        static_assert(next5.arr == parts[5]);
-
-        constexpr auto next6 = A<5>(next5.arr, last.arr);
-        static_assert(next6.arr == parts[6]);
-
-        constexpr auto zero = A<5>(next6.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 5>{});
-
-        constexpr auto rnext1 = B<5>(last.arr, first.arr);
-        static_assert(rnext1.arr == parts[5]);
-
-        constexpr auto rnext2 = B<5>(rnext1.arr, first.arr);
-        static_assert(rnext2.arr == parts[4]);
-
-        constexpr auto rnext3 = B<5>(rnext2.arr, first.arr);
-        static_assert(rnext3.arr == parts[3]);
-
-        constexpr auto rnext4 = B<5>(rnext3.arr, first.arr);
-        static_assert(rnext4.arr == parts[2]);
-
-        constexpr auto rnext5 = B<5>(rnext4.arr, first.arr);
-        static_assert(rnext5.arr == parts[1]);
-
-        constexpr auto rnext6 = B<5>(rnext5.arr, first.arr);
-        static_assert(rnext6.arr == parts[0]);
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 6>, 11> parts{
-            {{0, 0, 0, 0, 0, 1},
-             {1, 0, 0, 0, 1, 0},
-             {0, 1, 0, 1, 0, 0},
-             {2, 0, 0, 1, 0, 0},
-             {0, 0, 2, 0, 0, 0},
-             {1, 1, 1, 0, 0, 0},
-             {3, 0, 1, 0, 0, 0},
-             {0, 3, 0, 0, 0, 0},
-             {2, 2, 0, 0, 0, 0},
-             {4, 1, 0, 0, 0, 0},
-             {6, 0, 0, 0, 0, 0}}};
-
-        constexpr auto first = PartFirst<6>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<6>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next1 = A<6>(first.arr, last.arr);
-        static_assert(next1.arr == parts[1]);
-
-        constexpr auto next2 = A<6>(next1.arr, last.arr);
-        static_assert(next2.arr == parts[2]);
-
-        constexpr auto next3 = A<6>(next2.arr, last.arr);
-        static_assert(next3.arr == parts[3]);
-
-        constexpr auto next4 = A<6>(next3.arr, last.arr);
-        static_assert(next4.arr == parts[4]);
-
-        constexpr auto next5 = A<6>(next4.arr, last.arr);
-        static_assert(next5.arr == parts[5]);
-
-        constexpr auto next6 = A<6>(next5.arr, last.arr);
-        static_assert(next6.arr == parts[6]);
-
-        constexpr auto next7 = A<6>(next6.arr, last.arr);
-        static_assert(next7.arr == parts[7]);
-
-        constexpr auto next8 = A<6>(next7.arr, last.arr);
-        static_assert(next8.arr == parts[8]);
-
-        constexpr auto next9 = A<6>(next8.arr, last.arr);
-        static_assert(next9.arr == parts[9]);
-
-        constexpr auto next10 = A<6>(next9.arr, last.arr);
-        static_assert(next10.arr == parts[10]);
-
-        constexpr auto zero = A<6>(next10.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 6>{});
-    }
-
-    {
-        constexpr std::array<std::array<std::size_t, 7>, 15> parts{
-            {{0, 0, 0, 0, 0, 0, 1},
-             {1, 0, 0, 0, 0, 1, 0},
-             {0, 1, 0, 0, 1, 0, 0},
-             {2, 0, 0, 0, 1, 0, 0},
-             {0, 0, 1, 1, 0, 0, 0},
-             {1, 1, 0, 1, 0, 0, 0},
-             {3, 0, 0, 1, 0, 0, 0},
-             {1, 0, 2, 0, 0, 0, 0},
-             {0, 2, 1, 0, 0, 0, 0},
-             {2, 1, 1, 0, 0, 0, 0},
-             {4, 0, 1, 0, 0, 0, 0},
-             {1, 3, 0, 0, 0, 0, 0},
-             {3, 2, 0, 0, 0, 0, 0},
-             {5, 1, 0, 0, 0, 0, 0},
-             {7, 0, 0, 0, 0, 0, 0}}};
-
-        constexpr auto first = PartFirst<7>();
-        static_assert(first.arr == parts.front());
-
-        constexpr auto last = PartLast<7>();
-        static_assert(last.arr == parts.back());
-
-        constexpr auto next1 = A<7>(first.arr, last.arr);
-        static_assert(next1.arr == parts[1]);
-
-        constexpr auto next2 = A<7>(next1.arr, last.arr);
-        static_assert(next2.arr == parts[2]);
-
-        constexpr auto next3 = A<7>(next2.arr, last.arr);
-        static_assert(next3.arr == parts[3]);
-
-        constexpr auto next4 = A<7>(next3.arr, last.arr);
-        static_assert(next4.arr == parts[4]);
-
-        constexpr auto next5 = A<7>(next4.arr, last.arr);
-        static_assert(next5.arr == parts[5]);
-
-        constexpr auto next6 = A<7>(next5.arr, last.arr);
-        static_assert(next6.arr == parts[6]);
-
-        constexpr auto next7 = A<7>(next6.arr, last.arr);
-        static_assert(next7.arr == parts[7]);
-
-        constexpr auto next8 = A<7>(next7.arr, last.arr);
-        static_assert(next8.arr == parts[8]);
-
-        constexpr auto next9 = A<7>(next8.arr, last.arr);
-        static_assert(next9.arr == parts[9]);
-
-        constexpr auto next10 = A<7>(next9.arr, last.arr);
-        static_assert(next10.arr == parts[10]);
-
-        constexpr auto next11 = A<7>(next10.arr, last.arr);
-        static_assert(next11.arr == parts[11]);
-
-        constexpr auto next12 = A<7>(next11.arr, last.arr);
-        static_assert(next12.arr == parts[12]);
-
-        constexpr auto next13 = A<7>(next12.arr, last.arr);
-        static_assert(next13.arr == parts[13]);
-
-        constexpr auto next14 = A<7>(next13.arr, last.arr);
-        static_assert(next14.arr == parts[14]);
-
-        constexpr auto zero = A<7>(next14.arr, last.arr);
-        static_assert(zero.arr == std::array<std::size_t, 7>{});
-    }
 }
 
 template <std::size_t Bins, std::size_t Balls> struct MultinomialFirst {
@@ -1156,15 +813,15 @@ TEST(Raw, Der3) {
 
     std::array<std::array<std::size_t, 3>, partition_function(3)> parts{};
 
-    constexpr auto last = PartFirst<3>();
-    constexpr auto first = PartLast<3>();
+    constexpr auto last = FirstPartition<3>();
+    constexpr auto first = LastPartition<3>();
 
-    parts[0] = PartLast<3>().arr;
-    parts[1] = B<3>(first.arr, last.arr).arr;
-    parts[2] = B<3>(parts[1], last.arr).arr;
+    parts[0] = LastPartition<3>().arr;
+    parts[1] = PrevPartition(first.arr, last.arr).arr;
+    parts[2] = PrevPartition(parts[1], last.arr).arr;
 
-    constexpr auto rnext1 = B<3>(first.arr, last.arr);
-    constexpr auto rnext2 = B<3>(rnext1.arr, last.arr);
+    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
+    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
     static_assert(last.arr == rnext2.arr);
 
     constexpr std::size_t order1 =
@@ -1487,15 +1144,15 @@ TEST(Raw, Der3Sin) {
 
     std::array<std::array<std::size_t, 3>, partition_function(3)> parts{};
 
-    constexpr auto last = PartFirst<3>();
-    constexpr auto first = PartLast<3>();
+    constexpr auto last = FirstPartition<3>();
+    constexpr auto first = LastPartition<3>();
 
-    parts[0] = PartLast<3>().arr;
-    parts[1] = B<3>(first.arr, last.arr).arr;
-    parts[2] = B<3>(parts[1], last.arr).arr;
+    parts[0] = LastPartition<3>().arr;
+    parts[1] = PrevPartition(first.arr, last.arr).arr;
+    parts[2] = PrevPartition(parts[1], last.arr).arr;
 
-    constexpr auto rnext1 = B<3>(first.arr, last.arr);
-    constexpr auto rnext2 = B<3>(rnext1.arr, last.arr);
+    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
+    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
     static_assert(last.arr == rnext2.arr);
 
     constexpr std::size_t order1 =
@@ -1645,20 +1302,20 @@ TEST(Raw, Der4Sin) {
 
     std::array<std::array<std::size_t, 4>, partition_function(4)> parts{};
 
-    constexpr auto last = PartFirst<4>();
-    constexpr auto first = PartLast<4>();
+    constexpr auto last = FirstPartition<4>();
+    constexpr auto first = LastPartition<4>();
 
     constexpr std::array<std::array<std::size_t, 4>, 5> parts2{
         {{4, 0, 0, 0}, {2, 1, 0, 0}, {0, 2, 0, 0}, {1, 0, 1, 0}, {0, 0, 0, 1}}};
 
-    parts[0] = PartLast<4>().arr;
-    parts[1] = B<4>(first.arr, last.arr).arr;
-    parts[2] = B<4>(parts[1], last.arr).arr;
+    parts[0] = LastPartition<4>().arr;
+    parts[1] = PrevPartition(first.arr, last.arr).arr;
+    parts[2] = PrevPartition(parts[1], last.arr).arr;
 
-    constexpr auto rnext1 = B<4>(first.arr, last.arr);
-    constexpr auto rnext2 = B<4>(rnext1.arr, last.arr);
-    constexpr auto rnext3 = B<4>(rnext2.arr, last.arr);
-    constexpr auto rnext4 = B<4>(rnext3.arr, last.arr);
+    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
+    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
+    constexpr auto rnext3 = PrevPartition(rnext2.arr, last.arr);
+    constexpr auto rnext4 = PrevPartition(rnext3.arr, last.arr);
     static_assert(last.arr == rnext4.arr);
 
     constexpr std::size_t order1 =

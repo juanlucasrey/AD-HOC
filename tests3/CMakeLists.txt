@@ -23,6 +23,7 @@ add_executable(
   calc_tree.t.cpp
   partition/binomial_coefficient.t.cpp
   partition/partition_function.t.cpp
+  partition/integer_partition.t.cpp
   differential_operator/integer_partition_univariate_function.t.cpp
 )
 

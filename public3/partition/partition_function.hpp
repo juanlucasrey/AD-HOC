@@ -1,8 +1,6 @@
 #ifndef ADHOC3_PARTITION_PARTITION_FUNCTION_HPP
 #define ADHOC3_PARTITION_PARTITION_FUNCTION_HPP
 
-// #include <cstddef>
-
 namespace adhoc3 {
 
 namespace detail {
