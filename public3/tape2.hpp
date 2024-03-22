@@ -3,6 +3,8 @@
 
 #include "calc_tree.hpp"
 
+#include "differential_operator/select_root_derivatives.hpp"
+
 #include <array>
 
 namespace adhoc3 {

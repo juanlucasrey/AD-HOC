@@ -41,7 +41,7 @@ TEST(DifferentialOperator, dID) {
     constexpr auto der3_inv_ordered = order_differential_operator(der3_inv, co);
 
     static_assert(
-        std::is_same<decltype(der3ordered), decltype(der3_inv_ordered)>::value);
+        std::is_same_v<decltype(der3ordered), decltype(der3_inv_ordered)>);
 }
 
 TEST(DifferentialOperator, DerivativeNonNull2) {

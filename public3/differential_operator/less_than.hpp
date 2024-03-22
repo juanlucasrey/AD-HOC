@@ -31,11 +31,11 @@ constexpr auto less_than_check_empty(
     std::tuple<der2::p<Powers2, der2::d<Orders2, Ids2>>...> in2,
     std::tuple<CalculationNodes...> nodes) {
 
-    if constexpr (std::is_same<decltype(in1), decltype(in2)>::value) {
+    if constexpr (std::is_same_v<decltype(in1), decltype(in2)>) {
         return false;
-    } else if constexpr (std::is_same<decltype(in1), std::tuple<>>::value) {
+    } else if constexpr (std::is_same_v<decltype(in1), std::tuple<>>) {
         return true;
-    } else if constexpr (std::is_same<decltype(in2), std::tuple<>>::value) {
+    } else if constexpr (std::is_same_v<decltype(in2), std::tuple<>>) {
         return false;
     } else {
         // we can now assume that both ids are different and non empty
@@ -69,9 +69,8 @@ constexpr auto less_than_check_first(
     } else if constexpr (Power1 > Power2) {
         return false;
     } else {
-        static_assert(
-            std::is_same<der2::p<Power1, der2::d<Order1, Id1>>,
-                         der2::p<Power2, der2::d<Order2, Id2>>>::value);
+        static_assert(std::is_same_v<der2::p<Power1, der2::d<Order1, Id1>>,
+                                     der2::p<Power2, der2::d<Order2, Id2>>>);
         return less_than_check_empty(
             std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...>{},
             std::tuple<der2::p<Powers2, der2::d<Orders2, Ids2>>...>{}, nodes);

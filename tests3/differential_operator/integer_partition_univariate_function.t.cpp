@@ -14,7 +14,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator1) {
     constexpr auto result =
         std::tuple<std::tuple<der2::p<1, der2::d<1, decltype(x1)>>>>{};
 
-    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+    static_assert(std::is_same_v<decltype(expansion), decltype(result)>);
 }
 
 TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator2) {
@@ -26,7 +26,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator2) {
         std::tuple<std::tuple<der2::p<1, der2::d<2, decltype(x1)>>>,
                    std::tuple<der2::p<2, der2::d<1, decltype(x1)>>>>{};
 
-    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+    static_assert(std::is_same_v<decltype(expansion), decltype(result)>);
 }
 
 TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator3) {
@@ -40,7 +40,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator3) {
                               der2::p<1, der2::d<1, decltype(x1)>>>,
                    std::tuple<der2::p<3, der2::d<1, decltype(x1)>>>>{};
 
-    static_assert(std::is_same<decltype(expansion), decltype(result)>::value);
+    static_assert(std::is_same_v<decltype(expansion), decltype(result)>);
 }
 TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     auto [x1] = Init<1>();
@@ -52,7 +52,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<6, decltype(x1)>>,
                          der2::p<1, der2::d<1, decltype(x1)>>>
         result1;
-    static_assert(std::is_same<decltype(result1), decltype(out1)>::value);
+    static_assert(std::is_same_v<decltype(result1), decltype(out1)>);
 
     //  {1, 0, 0, 0, 0, 1, 0},
     //  {0, 1, 0, 0, 1, 0, 0},
@@ -63,7 +63,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<5, decltype(x1)>>,
                          der2::p<1, der2::d<2, decltype(x1)>>>
         result2;
-    static_assert(std::is_same<decltype(result2), decltype(out2)>::value);
+    static_assert(std::is_same_v<decltype(result2), decltype(out2)>);
 
     //  {0, 1, 0, 0, 1, 0, 0},
     //  {2, 0, 0, 0, 1, 0, 0},
@@ -75,7 +75,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
                          der2::p<2, der2::d<1, decltype(x1)>>>
         result3;
 
-    static_assert(std::is_same<decltype(result3), decltype(out3)>::value);
+    static_assert(std::is_same_v<decltype(result3), decltype(out3)>);
 
     //  {2, 0, 0, 0, 1, 0, 0},
     //  {0, 0, 1, 1, 0, 0, 0},
@@ -86,7 +86,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<4, decltype(x1)>>,
                          der2::p<1, der2::d<3, decltype(x1)>>>
         result4;
-    static_assert(std::is_same<decltype(result4), decltype(out4)>::value);
+    static_assert(std::is_same_v<decltype(result4), decltype(out4)>);
 
     //  {0, 0, 1, 1, 0, 0, 0},
     //  {1, 1, 0, 1, 0, 0, 0},
@@ -98,7 +98,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
                          der2::p<1, der2::d<2, decltype(x1)>>,
                          der2::p<1, der2::d<1, decltype(x1)>>>
         result5;
-    static_assert(std::is_same<decltype(result5), decltype(out5)>::value);
+    static_assert(std::is_same_v<decltype(result5), decltype(out5)>);
 
     //  {1, 1, 0, 1, 0, 0, 0},
     //  {3, 0, 0, 1, 0, 0, 0},
@@ -111,7 +111,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
                          der2::p<3, der2::d<1, decltype(x1)>>>
         result6;
 
-    static_assert(std::is_same<decltype(result6), decltype(out6)>::value);
+    static_assert(std::is_same_v<decltype(result6), decltype(out6)>);
 
     //  {3, 0, 0, 1, 0, 0, 0},
     //  {1, 0, 2, 0, 0, 0, 0},
@@ -122,7 +122,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<2, der2::d<3, decltype(x1)>>,
                          der2::p<1, der2::d<1, decltype(x1)>>>
         result7;
-    static_assert(std::is_same<decltype(result7), decltype(out7)>::value);
+    static_assert(std::is_same_v<decltype(result7), decltype(out7)>);
 
     //  {1, 0, 2, 0, 0, 0, 0},
     //  {0, 2, 1, 0, 0, 0, 0},
@@ -133,7 +133,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<3, decltype(x1)>>,
                          der2::p<2, der2::d<2, decltype(x1)>>>
         result8;
-    static_assert(std::is_same<decltype(result8), decltype(out8)>::value);
+    static_assert(std::is_same_v<decltype(result8), decltype(out8)>);
 
     //  {0, 2, 1, 0, 0, 0, 0},
     //  {2, 1, 1, 0, 0, 0, 0},
@@ -145,7 +145,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
                          der2::p<1, der2::d<2, decltype(x1)>>,
                          der2::p<2, der2::d<1, decltype(x1)>>>
         result9;
-    static_assert(std::is_same<decltype(result9), decltype(out9)>::value);
+    static_assert(std::is_same_v<decltype(result9), decltype(out9)>);
 
     //  {2, 1, 1, 0, 0, 0, 0},
     //  {4, 0, 1, 0, 0, 0, 0},
@@ -157,7 +157,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<3, decltype(x1)>>,
                          der2::p<4, der2::d<1, decltype(x1)>>>
         result10;
-    static_assert(std::is_same<decltype(result10), decltype(out10)>::value);
+    static_assert(std::is_same_v<decltype(result10), decltype(out10)>);
 
     //  {4, 0, 1, 0, 0, 0, 0},
     //  {1, 3, 0, 0, 0, 0, 0},
@@ -168,7 +168,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<3, der2::d<2, decltype(x1)>>,
                          der2::p<1, der2::d<1, decltype(x1)>>>
         result11;
-    static_assert(std::is_same<decltype(result11), decltype(out11)>::value);
+    static_assert(std::is_same_v<decltype(result11), decltype(out11)>);
 
     //  {1, 3, 0, 0, 0, 0, 0},
     //  {3, 2, 0, 0, 0, 0, 0},
@@ -179,7 +179,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<2, der2::d<2, decltype(x1)>>,
                          der2::p<3, der2::d<1, decltype(x1)>>>
         result12;
-    static_assert(std::is_same<decltype(result12), decltype(out12)>::value);
+    static_assert(std::is_same_v<decltype(result12), decltype(out12)>);
 
     //  {3, 2, 0, 0, 0, 0, 0},
     //  {5, 1, 0, 0, 0, 0, 0},
@@ -190,7 +190,7 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
     constexpr std::tuple<der2::p<1, der2::d<2, decltype(x1)>>,
                          der2::p<5, der2::d<1, decltype(x1)>>>
         result13;
-    static_assert(std::is_same<decltype(result13), decltype(out13)>::value);
+    static_assert(std::is_same_v<decltype(result13), decltype(out13)>);
 
     //  {5, 1, 0, 0, 0, 0, 0},
     //  {7, 0, 0, 0, 0, 0, 0}
@@ -199,66 +199,80 @@ TEST(DifferentialOperator, ExpandUnivariateDifferentialOperator7) {
         in14;
     constexpr auto out14 = detail::get_next_partition(in14);
     constexpr std::tuple<der2::p<7, der2::d<1, decltype(x1)>>> result14;
-    static_assert(std::is_same<decltype(result14), decltype(out14)>::value);
+    static_assert(std::is_same_v<decltype(result14), decltype(out14)>);
 
     constexpr auto expansion =
         integer_partition_univariate_function<decltype(x1), 7>();
 
     static_assert(
-        std::is_same<decltype(in1), std::remove_reference<decltype(std::get<0>(
-                                        expansion))>::type>::value);
+        std::is_same_v<
+            decltype(in1),
+            std::remove_reference<decltype(std::get<0>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result1),
-                               std::remove_reference<decltype(std::get<1>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result1),
+            std::remove_reference<decltype(std::get<1>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result2),
-                               std::remove_reference<decltype(std::get<2>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result2),
+            std::remove_reference<decltype(std::get<2>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result3),
-                               std::remove_reference<decltype(std::get<3>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result3),
+            std::remove_reference<decltype(std::get<3>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result4),
-                               std::remove_reference<decltype(std::get<4>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result4),
+            std::remove_reference<decltype(std::get<4>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result5),
-                               std::remove_reference<decltype(std::get<5>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result5),
+            std::remove_reference<decltype(std::get<5>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result6),
-                               std::remove_reference<decltype(std::get<6>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result6),
+            std::remove_reference<decltype(std::get<6>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result7),
-                               std::remove_reference<decltype(std::get<7>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result7),
+            std::remove_reference<decltype(std::get<7>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result8),
-                               std::remove_reference<decltype(std::get<8>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result8),
+            std::remove_reference<decltype(std::get<8>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result9),
-                               std::remove_reference<decltype(std::get<9>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result9),
+            std::remove_reference<decltype(std::get<9>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result10),
-                               std::remove_reference<decltype(std::get<10>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result10),
+            std::remove_reference<decltype(std::get<10>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result11),
-                               std::remove_reference<decltype(std::get<11>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result11),
+            std::remove_reference<decltype(std::get<11>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result12),
-                               std::remove_reference<decltype(std::get<12>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result12),
+            std::remove_reference<decltype(std::get<12>(expansion))>::type>);
 
-    static_assert(std::is_same<decltype(result13),
-                               std::remove_reference<decltype(std::get<13>(
-                                   expansion))>::type>::value);
+    static_assert(
+        std::is_same_v<
+            decltype(result13),
+            std::remove_reference<decltype(std::get<13>(expansion))>::type>);
 }
 
 } // namespace adhoc3

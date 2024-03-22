@@ -21,7 +21,7 @@ template <std::size_t Order1, class IdDerived, std::size_t... Orders,
 auto constexpr duplicate_id(mvar_t<IdAndOrder_t<IdDerived, Order1>>,
                             mvar_t<IdAndOrder_t<IdsDerived, Orders>>...)
     -> bool {
-    bool thisisduplicate = (std::is_same<IdDerived, IdsDerived>::value || ...);
+    bool thisisduplicate = (std::is_same_v<IdDerived, IdsDerived> || ...);
     bool duplicateinnext =
         duplicate_id(mvar_t<IdAndOrder_t<IdsDerived, Orders>>{}...);
     return thisisduplicate || duplicateinnext;

@@ -131,7 +131,7 @@ TEST(DifferentialOperator2, dIDOrdered) {
     constexpr auto der3_inv_ordered = order_differential_operator(der3_inv, co);
 
     static_assert(
-        std::is_same<decltype(der3ordered), decltype(der3_inv_ordered)>::value);
+        std::is_same_v<decltype(der3ordered), decltype(der3_inv_ordered)>);
 }
 
 TEST(DifferentialOperator2, dIDOrderedSameId) {
@@ -158,7 +158,7 @@ TEST(DifferentialOperator2, dIDOrderedSameId) {
     std::cout << type_name2<decltype(der3_inv_ordered)>() << std::endl;
 
     static_assert(
-        std::is_same<decltype(der3ordered), decltype(der3_inv_ordered)>::value);
+        std::is_same_v<decltype(der3ordered), decltype(der3_inv_ordered)>);
 }
 
 TEST(DifferentialOperator2, lessThan) {
@@ -210,7 +210,7 @@ TEST(DifferentialOperator2, merge) {
 
     auto r1 = merge_ordered(t1, t2, co);
 
-    static_assert(std::is_same<decltype(r1), decltype(r)>::value);
+    static_assert(std::is_same_v<decltype(r1), decltype(r)>);
 
     auto dxx1 = d(x1);
     auto dxx2 = d<2>(x1);
@@ -224,7 +224,7 @@ TEST(DifferentialOperator2, merge) {
 
     auto rx1 = merge_ordered(tx1, tx2, co);
 
-    static_assert(std::is_same<decltype(rx1), decltype(rx)>::value);
+    static_assert(std::is_same_v<decltype(rx1), decltype(rx)>);
 }
 
 TEST(DifferentialOperator2, expandsum) {
@@ -239,11 +239,11 @@ TEST(DifferentialOperator2, expandsum) {
 
     auto r1a = std::tuple<decltype(dx1), decltype(dx2)>{};
     auto r1b = expand(r1a, co);
-    static_assert(std::is_same<decltype(r1a), decltype(r1b)>::value);
+    static_assert(std::is_same_v<decltype(r1a), decltype(r1b)>);
 
     auto r2a = std::tuple<decltype(dx2), std::tuple<>>{};
     auto r2b = expand(r2a, co);
-    static_assert(std::is_same<decltype(r2a), decltype(r2b)>::value);
+    static_assert(std::is_same_v<decltype(r2a), decltype(r2b)>);
 
     auto dres = d(res);
     auto r3a = std::tuple<decltype(dres), decltype(dx2)>{};
@@ -251,7 +251,7 @@ TEST(DifferentialOperator2, expandsum) {
     auto r3b = expand(r3a, co);
 
     auto r3c = std::tuple<decltype(dx1), decltype(dx2)>{};
-    static_assert(std::is_same<decltype(r3b), decltype(r3c)>::value);
+    static_assert(std::is_same_v<decltype(r3b), decltype(r3c)>);
 
     auto dres2 = d<2>(res);
     auto dx12 = d<2>(x1);
@@ -260,7 +260,7 @@ TEST(DifferentialOperator2, expandsum) {
     static_assert(is_ordered(r4a, co));
     auto r4b = expand(r4a, co);
     auto r4c = std::tuple<decltype(dx12), decltype(dx22), decltype(dx2)>{};
-    static_assert(std::is_same<decltype(r4b), decltype(r4c)>::value);
+    static_assert(std::is_same_v<decltype(r4b), decltype(r4c)>);
 
     static_assert(is_ordered(dres2, co));
 

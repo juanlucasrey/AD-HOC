@@ -39,7 +39,7 @@ constexpr auto merge_ordered_compare(std::tuple<Id1, Ids1...> in1,
                                      std::tuple<Id2, Ids2...> in2,
                                      std::tuple<Out...> /* out */,
                                      std::tuple<CalculationNodes...> nodes) {
-    if constexpr (std::is_same<Id1, Id2>::value) {
+    if constexpr (std::is_same_v<Id1, Id2>) {
         return merge_ordered_empty(std::tuple<Ids1...>{}, std::tuple<Ids2...>{},
                                    std::tuple<Out..., Id1>{}, nodes);
 
