@@ -25,6 +25,7 @@ add_executable(
   partition/partition_function.t.cpp
   partition/integer_partition.t.cpp
   differential_operator/integer_partition_univariate_function.t.cpp
+  differential_operator/ordered_mult.t.cpp
 )
 
 # fo coverage
