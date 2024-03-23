@@ -24,6 +24,7 @@ add_executable(
   partition/binomial_coefficient.t.cpp
   partition/partition_function.t.cpp
   partition/integer_partition.t.cpp
+  partition/multinomial_coefficient.t.cpp
   differential_operator/integer_partition_univariate_function.t.cpp
   differential_operator/ordered_mult.t.cpp
 )

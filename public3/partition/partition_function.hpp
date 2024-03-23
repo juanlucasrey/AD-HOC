@@ -4,7 +4,7 @@
 namespace adhoc3 {
 
 namespace detail {
-constexpr int partition_function_aux(int n, int k) {
+constexpr auto partition_function_aux(int n, int k) -> int {
     if (k == 0) {
         return 0;
     }

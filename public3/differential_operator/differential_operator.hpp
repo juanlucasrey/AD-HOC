@@ -23,7 +23,11 @@ template <std::size_t Power, class... Ids, std::size_t... Orders,
           std::size_t... Powers>
 constexpr auto
 pow(std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
-    return std::tuple<der2::p<Powers * Power, der2::d<Orders, Ids>>...>{};
+    if constexpr (Power == 0) {
+        return std::tuple<>{};
+    } else {
+        return std::tuple<der2::p<Powers * Power, der2::d<Orders, Ids>>...>{};
+    }
 }
 
 namespace detail {

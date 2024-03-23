@@ -79,6 +79,10 @@ multiply_ordered_compare(std::tuple<der2::p<Power1, der2::d<Order1, Id1>>,
 
 } // namespace detail
 
+template <class Nodes> constexpr auto multiply_ordered(Nodes /* nodes */) {
+    return std::tuple<>{};
+};
+
 template <class Nodes, class DerOp>
 constexpr auto multiply_ordered(Nodes nodes, DerOp in1) {
     static_assert(is_ordered(in1, nodes));
