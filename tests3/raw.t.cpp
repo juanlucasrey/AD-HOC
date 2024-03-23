@@ -11,7 +11,9 @@
 #include "type_name.hpp"
 
 #include <partition/binomial_coefficient.hpp>
+#include <partition/combinations.hpp>
 #include <partition/integer_partition.hpp>
+#include <partition/multinomial_coefficient.hpp>
 #include <partition/partition_function.hpp>
 
 #include <gtest/gtest.h>
@@ -339,16 +341,6 @@ TEST(Raw, BellCoeffs) {
     // {1, 0, 0, 1, 0, 0} 5, 1
 }
 
-template <std::size_t Bins, std::size_t Balls> struct MultinomialFirst {
-    constexpr MultinomialFirst() : arr() { arr[0] = Balls; }
-    std::array<std::size_t, Bins> arr;
-};
-
-template <std::size_t Bins, std::size_t Balls> struct MultinomialLast {
-    constexpr MultinomialLast() : arr() { arr.back() = Balls; }
-    std::array<std::size_t, Bins> arr;
-};
-
 template <int N> struct C {
     constexpr C(std::array<std::size_t, N> const &prev,
                 std::array<std::size_t, N> const &last)
@@ -379,10 +371,6 @@ template <int N> struct C {
     std::array<std::size_t, N> arr;
 };
 
-constexpr inline size_t combinations(size_t bins, size_t balls) noexcept {
-    return binomial_coefficient(bins + balls - 1, bins - 1);
-}
-
 TEST(Raw, PartitionsBinom) {
     // std::cout << combinations(4, 3) << std::endl;
     static_assert(combinations(4, 3) == 20);
@@ -391,64 +379,160 @@ TEST(Raw, PartitionsBinom) {
          {1, 1, 1, 0}, {0, 2, 1, 0}, {1, 0, 2, 0}, {0, 1, 2, 0}, {0, 0, 3, 0},
          {2, 0, 0, 1}, {1, 1, 0, 1}, {0, 2, 0, 1}, {1, 0, 1, 1}, {0, 1, 1, 1},
          {0, 0, 2, 1}, {1, 0, 0, 2}, {0, 1, 0, 2}, {0, 0, 1, 2}, {0, 0, 0, 3}}};
-    constexpr auto first = MultinomialFirst<4, 3>();
-    constexpr auto last = MultinomialLast<4, 3>();
 
-    constexpr auto next1 = C<4>(first.arr, last.arr);
+    constexpr auto first = FirstMultinomial<4, 3>();
+    constexpr auto last = LastMultinomial<4, 3>();
+
+    constexpr auto next1 = C<4>(first, last);
     static_assert(next1.arr == parts[1]);
 
-    constexpr auto next2 = C<4>(next1.arr, last.arr);
+    constexpr auto next2 = C<4>(next1.arr, last);
     static_assert(next2.arr == parts[2]);
 
-    constexpr auto next3 = C<4>(next2.arr, last.arr);
+    constexpr auto next3 = C<4>(next2.arr, last);
     static_assert(next3.arr == parts[3]);
 
-    constexpr auto next4 = C<4>(next3.arr, last.arr);
+    constexpr auto next4 = C<4>(next3.arr, last);
     static_assert(next4.arr == parts[4]);
 
-    constexpr auto next5 = C<4>(next4.arr, last.arr);
+    constexpr auto next5 = C<4>(next4.arr, last);
     static_assert(next5.arr == parts[5]);
 
-    constexpr auto next6 = C<4>(next5.arr, last.arr);
+    constexpr auto next6 = C<4>(next5.arr, last);
     static_assert(next6.arr == parts[6]);
 
-    constexpr auto next7 = C<4>(next6.arr, last.arr);
+    constexpr auto next7 = C<4>(next6.arr, last);
     static_assert(next7.arr == parts[7]);
 
-    constexpr auto next8 = C<4>(next7.arr, last.arr);
+    constexpr auto next8 = C<4>(next7.arr, last);
     static_assert(next8.arr == parts[8]);
 
-    constexpr auto next9 = C<4>(next8.arr, last.arr);
+    constexpr auto next9 = C<4>(next8.arr, last);
     static_assert(next9.arr == parts[9]);
 
-    constexpr auto next10 = C<4>(next9.arr, last.arr);
+    constexpr auto next10 = C<4>(next9.arr, last);
     static_assert(next10.arr == parts[10]);
 
-    constexpr auto next11 = C<4>(next10.arr, last.arr);
+    constexpr auto next11 = C<4>(next10.arr, last);
     static_assert(next11.arr == parts[11]);
 
-    constexpr auto next12 = C<4>(next11.arr, last.arr);
+    constexpr auto next12 = C<4>(next11.arr, last);
     static_assert(next12.arr == parts[12]);
 
-    constexpr auto next13 = C<4>(next12.arr, last.arr);
+    constexpr auto next13 = C<4>(next12.arr, last);
     static_assert(next13.arr == parts[13]);
 
-    constexpr auto next14 = C<4>(next13.arr, last.arr);
+    constexpr auto next14 = C<4>(next13.arr, last);
     static_assert(next14.arr == parts[14]);
 
-    constexpr auto next15 = C<4>(next14.arr, last.arr);
+    constexpr auto next15 = C<4>(next14.arr, last);
     static_assert(next15.arr == parts[15]);
 
-    constexpr auto next16 = C<4>(next15.arr, last.arr);
+    constexpr auto next16 = C<4>(next15.arr, last);
     static_assert(next16.arr == parts[16]);
 
-    constexpr auto next17 = C<4>(next16.arr, last.arr);
+    constexpr auto next17 = C<4>(next16.arr, last);
     static_assert(next17.arr == parts[17]);
 
-    constexpr auto next18 = C<4>(next17.arr, last.arr);
+    constexpr auto next18 = C<4>(next17.arr, last);
     static_assert(next18.arr == parts[18]);
 
-    constexpr auto next19 = C<4>(next18.arr, last.arr);
+    constexpr auto next19 = C<4>(next18.arr, last);
+    static_assert(next19.arr == parts[19]);
+}
+
+template <int N> struct D {
+    constexpr D(std::array<std::size_t, N> const &prev,
+                std::array<std::size_t, N> const &last)
+        : arr() {
+
+        if (prev == last) {
+            return;
+        }
+
+        arr = prev;
+
+        std::size_t rem_val = arr.back();
+        arr.back() = 0;
+        std::size_t k = static_cast<std::size_t>(N) - 2;
+        while (arr[k] == 0) {
+            k--;
+        }
+
+        arr[k]--;
+        rem_val++;
+        arr[k + 1] = rem_val;
+    }
+    std::array<std::size_t, N> arr;
+};
+
+TEST(Raw, PartitionsBinom2) {
+    // std::cout << combinations(4, 3) << std::endl;
+    static_assert(combinations(4, 3) == 20);
+    constexpr std::array<std::array<std::size_t, 4>, 20> parts{
+        {{3, 0, 0, 0}, {2, 1, 0, 0}, {2, 0, 1, 0}, {2, 0, 0, 1}, {1, 2, 0, 0},
+         {1, 1, 1, 0}, {1, 1, 0, 1}, {1, 0, 2, 0}, {1, 0, 1, 1}, {1, 0, 0, 2},
+         {0, 3, 0, 0}, {0, 2, 1, 0}, {0, 2, 0, 1}, {0, 1, 2, 0}, {0, 1, 1, 1},
+         {0, 1, 0, 2}, {0, 0, 3, 0}, {0, 0, 2, 1}, {0, 0, 1, 2}, {0, 0, 0, 3}}};
+
+    constexpr auto first = FirstMultinomial<4, 3>();
+    constexpr auto last = LastMultinomial<4, 3>();
+
+    constexpr auto next1 = D<4>(first, last);
+    static_assert(next1.arr == parts[1]);
+
+    constexpr auto next2 = D<4>(next1.arr, last);
+    static_assert(next2.arr == parts[2]);
+
+    constexpr auto next3 = D<4>(next2.arr, last);
+    static_assert(next3.arr == parts[3]);
+
+    constexpr auto next4 = D<4>(next3.arr, last);
+    static_assert(next4.arr == parts[4]);
+
+    constexpr auto next5 = D<4>(next4.arr, last);
+    static_assert(next5.arr == parts[5]);
+
+    constexpr auto next6 = D<4>(next5.arr, last);
+    static_assert(next6.arr == parts[6]);
+
+    constexpr auto next7 = D<4>(next6.arr, last);
+    static_assert(next7.arr == parts[7]);
+
+    constexpr auto next8 = D<4>(next7.arr, last);
+    static_assert(next8.arr == parts[8]);
+
+    constexpr auto next9 = D<4>(next8.arr, last);
+    static_assert(next9.arr == parts[9]);
+
+    constexpr auto next10 = D<4>(next9.arr, last);
+    static_assert(next10.arr == parts[10]);
+
+    constexpr auto next11 = D<4>(next10.arr, last);
+    static_assert(next11.arr == parts[11]);
+
+    constexpr auto next12 = D<4>(next11.arr, last);
+    static_assert(next12.arr == parts[12]);
+
+    constexpr auto next13 = D<4>(next12.arr, last);
+    static_assert(next13.arr == parts[13]);
+
+    constexpr auto next14 = D<4>(next13.arr, last);
+    static_assert(next14.arr == parts[14]);
+
+    constexpr auto next15 = D<4>(next14.arr, last);
+    static_assert(next15.arr == parts[15]);
+
+    constexpr auto next16 = D<4>(next15.arr, last);
+    static_assert(next16.arr == parts[16]);
+
+    constexpr auto next17 = D<4>(next16.arr, last);
+    static_assert(next17.arr == parts[17]);
+
+    constexpr auto next18 = D<4>(next17.arr, last);
+    static_assert(next18.arr == parts[18]);
+
+    constexpr auto next19 = D<4>(next18.arr, last);
     static_assert(next19.arr == parts[19]);
 }
 
@@ -816,20 +900,20 @@ TEST(Raw, Der3) {
     constexpr auto last = FirstPartition<3>();
     constexpr auto first = LastPartition<3>();
 
-    parts[0] = LastPartition<3>().arr;
-    parts[1] = PrevPartition(first.arr, last.arr).arr;
-    parts[2] = PrevPartition(parts[1], last.arr).arr;
+    parts[0] = LastPartition<3>();
+    parts[1] = PrevPartition(first);
+    parts[2] = PrevPartition(parts[1]);
 
-    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
-    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
-    static_assert(last.arr == rnext2.arr);
+    constexpr auto rnext1 = PrevPartition(first);
+    constexpr auto rnext2 = PrevPartition(rnext1);
+    static_assert(last == rnext2);
 
     constexpr std::size_t order1 =
-        std::accumulate(first.arr.begin(), first.arr.end(), 0UL) - 1;
+        std::accumulate(first.begin(), first.end(), 0UL) - 1;
     constexpr std::size_t order2 =
-        std::accumulate(rnext1.arr.begin(), rnext1.arr.end(), 0UL) - 1;
+        std::accumulate(rnext1.begin(), rnext1.end(), 0UL) - 1;
     constexpr std::size_t order3 =
-        std::accumulate(rnext2.arr.begin(), rnext2.arr.end(), 0UL) - 1;
+        std::accumulate(rnext2.begin(), rnext2.end(), 0UL) - 1;
 
     std::vector<double> buffer(11);
 
@@ -838,13 +922,13 @@ TEST(Raw, Der3) {
     // 0: <ln(y)*cos(x), 1, 3>
     // 1: <ln(y)*cos(x), 1, 1> <ln(y)*cos(x), 2, 1>
     // 2: <ln(y)*cos(x), 3, 1>
-    buffer[0] = BellCoeff(first.arr);
+    buffer[0] = BellCoeff(first);
     // buffer[0] = 1.;
     buffer[0] *= ders[order1];
-    buffer[1] = BellCoeff(rnext1.arr);
+    buffer[1] = BellCoeff(rnext1);
     // buffer[1] = 1.;
     buffer[1] *= ders[order2];
-    buffer[2] = BellCoeff(rnext2.arr);
+    buffer[2] = BellCoeff(rnext2);
     // buffer[2] = 1.;
     buffer[2] *= ders[order3];
 
@@ -1147,29 +1231,29 @@ TEST(Raw, Der3Sin) {
     constexpr auto last = FirstPartition<3>();
     constexpr auto first = LastPartition<3>();
 
-    parts[0] = LastPartition<3>().arr;
-    parts[1] = PrevPartition(first.arr, last.arr).arr;
-    parts[2] = PrevPartition(parts[1], last.arr).arr;
+    parts[0] = LastPartition<3>();
+    parts[1] = PrevPartition(first);
+    parts[2] = PrevPartition(parts[1]);
 
-    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
-    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
-    static_assert(last.arr == rnext2.arr);
+    constexpr auto rnext1 = PrevPartition(first);
+    constexpr auto rnext2 = PrevPartition(rnext1);
+    static_assert(last == rnext2);
 
     constexpr std::size_t order1 =
-        std::accumulate(first.arr.begin(), first.arr.end(), 0UL) - 1;
+        std::accumulate(first.begin(), first.end(), 0UL) - 1;
     constexpr std::size_t order2 =
-        std::accumulate(rnext1.arr.begin(), rnext1.arr.end(), 0UL) - 1;
+        std::accumulate(rnext1.begin(), rnext1.end(), 0UL) - 1;
     constexpr std::size_t order3 =
-        std::accumulate(rnext2.arr.begin(), rnext2.arr.end(), 0UL) - 1;
+        std::accumulate(rnext2.begin(), rnext2.end(), 0UL) - 1;
 
     std::vector<double> buffer(2);
 
     // <y*x, 1, 3>
     // <y*x, 1, 1> <y*x, 2, 1>
     // <y*x, 3, 1> der 0!
-    buffer[0] = BellCoeff(first.arr);
+    buffer[0] = BellCoeff(first);
     buffer[0] *= ders_sin[order1];
-    buffer[1] = BellCoeff(rnext1.arr);
+    buffer[1] = BellCoeff(rnext1);
     // buffer[1] = 1.;
     buffer[1] *= ders_sin[order2];
     // buffer[2] = ders_sin[order3] * BellCoeff(rnext2.arr);
@@ -1308,26 +1392,26 @@ TEST(Raw, Der4Sin) {
     constexpr std::array<std::array<std::size_t, 4>, 5> parts2{
         {{4, 0, 0, 0}, {2, 1, 0, 0}, {0, 2, 0, 0}, {1, 0, 1, 0}, {0, 0, 0, 1}}};
 
-    parts[0] = LastPartition<4>().arr;
-    parts[1] = PrevPartition(first.arr, last.arr).arr;
-    parts[2] = PrevPartition(parts[1], last.arr).arr;
+    parts[0] = LastPartition<4>();
+    parts[1] = PrevPartition(first);
+    parts[2] = PrevPartition(parts[1]);
 
-    constexpr auto rnext1 = PrevPartition(first.arr, last.arr);
-    constexpr auto rnext2 = PrevPartition(rnext1.arr, last.arr);
-    constexpr auto rnext3 = PrevPartition(rnext2.arr, last.arr);
-    constexpr auto rnext4 = PrevPartition(rnext3.arr, last.arr);
-    static_assert(last.arr == rnext4.arr);
+    constexpr auto rnext1 = PrevPartition(first);
+    constexpr auto rnext2 = PrevPartition(rnext1);
+    constexpr auto rnext3 = PrevPartition(rnext2);
+    constexpr auto rnext4 = PrevPartition(rnext3);
+    static_assert(last == rnext4);
 
     constexpr std::size_t order1 =
-        std::accumulate(first.arr.begin(), first.arr.end(), 0UL) - 1;
+        std::accumulate(first.begin(), first.end(), 0UL) - 1;
     constexpr std::size_t order2 =
-        std::accumulate(rnext1.arr.begin(), rnext1.arr.end(), 0UL) - 1;
+        std::accumulate(rnext1.begin(), rnext1.end(), 0UL) - 1;
     constexpr std::size_t order3 =
-        std::accumulate(rnext2.arr.begin(), rnext2.arr.end(), 0UL) - 1;
+        std::accumulate(rnext2.begin(), rnext2.end(), 0UL) - 1;
     constexpr std::size_t order4 =
-        std::accumulate(rnext3.arr.begin(), rnext3.arr.end(), 0UL) - 1;
+        std::accumulate(rnext3.begin(), rnext3.end(), 0UL) - 1;
     constexpr std::size_t order5 =
-        std::accumulate(rnext4.arr.begin(), rnext4.arr.end(), 0UL) - 1;
+        std::accumulate(rnext4.begin(), rnext4.end(), 0UL) - 1;
 
     std::vector<double> buffer(10);
 
@@ -1337,11 +1421,11 @@ TEST(Raw, Der4Sin) {
     // <y*x, 1, 1> <y*x, 3, 1> = 0
     // <y*x, 4, 1> = 0
 
-    buffer[0] = BellCoeff(first.arr);
+    buffer[0] = BellCoeff(first);
     buffer[0] *= ders_sin[order1];
-    buffer[1] = BellCoeff(rnext1.arr);
+    buffer[1] = BellCoeff(rnext1);
     buffer[1] *= ders_sin[order2];
-    buffer[2] = BellCoeff(rnext2.arr);
+    buffer[2] = BellCoeff(rnext2);
     buffer[2] *= ders_sin[order3];
 
     static_assert(combinations(2, 1) == 2);
