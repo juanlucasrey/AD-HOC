@@ -55,7 +55,7 @@ template <class Id, std::size_t... Powers, std::size_t... Orders>
 constexpr auto
 order_by_order(std::tuple<der2::p<Powers, der2::d<Orders, Id>>...> o) {
     auto constexpr numer_max_d = detail::max<Orders...>();
-    auto seq = std::make_integer_sequence<std::size_t, numer_max_d>{};
+    auto seq = std::make_index_sequence<numer_max_d>{};
     return order_by_order2(o, seq);
 };
 

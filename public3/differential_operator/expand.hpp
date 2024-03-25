@@ -128,7 +128,7 @@ constexpr auto generate_operators_mul2(std::index_sequence<I...> /* i */) {
 template <std::size_t Order, class Id1, class Id2, class Nodes>
 constexpr auto ordered_operators_mul(Nodes nodes) {
 
-    constexpr auto seq = std::make_integer_sequence<std::size_t, Order - 1>{};
+    constexpr auto seq = std::make_index_sequence<Order - 1>{};
 
     constexpr auto id1_less_than_id2 = static_cast<bool>(
         get_idx_first2<Id1>(nodes) >= get_idx_first2<Id2>(nodes));

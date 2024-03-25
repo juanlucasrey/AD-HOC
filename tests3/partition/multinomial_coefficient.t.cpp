@@ -1,8 +1,6 @@
 #include <partition/combinations.hpp>
 #include <partition/multinomial_coefficient.hpp>
 
-#include "../type_name.hpp"
-
 #include <gtest/gtest.h>
 
 namespace adhoc3 {

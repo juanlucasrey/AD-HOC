@@ -13,7 +13,7 @@ namespace detail {
 template <std::size_t Bins, std::size_t Balls, std::size_t... I>
 constexpr auto FirstMultinomialIS_aux(std::index_sequence<I...> /* i */) {
     constexpr auto first = FirstMultinomial<Bins, Balls>();
-    return std::integer_sequence<std::size_t, first[I]...>{};
+    return std::index_sequence<first[I]...>{};
 }
 
 } // namespace detail
@@ -29,7 +29,7 @@ namespace detail {
 template <std::size_t Bins, std::size_t Balls, std::size_t... I>
 constexpr auto LastMultinomialIS_aux(std::index_sequence<I...> /* i */) {
     constexpr auto last = LastMultinomial<Bins, Balls>();
-    return std::integer_sequence<std::size_t, last[I]...>{};
+    return std::index_sequence<last[I]...>{};
 }
 
 } // namespace detail
@@ -47,7 +47,7 @@ constexpr auto NextMultinomialIS_aux(std::index_sequence<I...> /* i */,
                                      std::index_sequence<I2...> /* i2 */) {
     constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
     constexpr auto next = NextMultinomial(temp);
-    return std::integer_sequence<std::size_t, next[I2]...>{};
+    return std::index_sequence<next[I2]...>{};
 }
 
 } // namespace detail
