@@ -26,24 +26,23 @@ constexpr bool is_constant_class_v = is_constant_class<T>::value;
 template <class Arg1, class Arg2>
 constexpr auto expand_single(Arg1 arg1, Arg2 arg2);
 
-template <class... CalculationNodes>
-constexpr auto expand_single(std::tuple<> /* id */,
-                             std::tuple<CalculationNodes...> /* nodes */) {
+template <class Nodes>
+constexpr auto expand_single(Nodes /* nodes */, std::tuple<> /* id */) {
     return std::tuple<std::tuple<>>{};
 }
 
-template <std::size_t N, class... Ids, std::size_t Order, std::size_t... Orders,
-          std::size_t Power, std::size_t... Powers, class... CalculationNodes>
+template <class Nodes, std::size_t N, class... Ids, std::size_t Order,
+          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
 constexpr auto
-expand_single(std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
-              std::tuple<CalculationNodes...> /* nodes */) {
+expand_single(Nodes /* nodes */,
+              std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
     return std::tuple<std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>,
                                  der2::p<Powers, der2::d<Orders, Ids>>...>>{};
 }
 
-template <std::size_t Order, class Id1, class Id2, class... CalculationNodes>
-constexpr auto ordered_operators_sum(std::tuple<CalculationNodes...> nodes) {
+template <std::size_t Order, class Id1, class Id2, class Nodes>
+constexpr auto ordered_operators_sum(Nodes nodes) {
     constexpr auto id1_less_than_id2 = static_cast<bool>(
         get_idx_first2<Id1>(nodes) >= get_idx_first2<Id2>(nodes));
     if constexpr (id1_less_than_id2) {
@@ -55,21 +54,20 @@ constexpr auto ordered_operators_sum(std::tuple<CalculationNodes...> nodes) {
     }
 }
 
-template <class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers,
-          class... CalculationNodes>
+template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
+          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
 constexpr auto
-expand_single(std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
-              std::tuple<CalculationNodes...> nodes) {
+expand_single(Nodes nodes,
+              std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
     if constexpr (is_constant_class_v<Id1>) {
         return expand_single(
-            std::tuple<der2::p<Power, der2::d<Order, Id2>>,
-                       der2::p<Powers, der2::d<Orders, Ids>>...>{});
+            nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>,
+                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
     } else if constexpr (is_constant_class_v<Id2>) {
         return expand_single(
-            std::tuple<der2::p<Power, der2::d<Order, Id1>>,
-                       der2::p<Powers, der2::d<Orders, Ids>>...>{});
+            nodes, std::tuple<der2::p<Power, der2::d<Order, Id1>>,
+                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
     } else {
         constexpr auto ordered_ids =
             ordered_operators_sum<Order, Id1, Id2>(nodes);
@@ -81,41 +79,39 @@ expand_single(std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
             std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{});
 
         auto constexpr expanded_differential_operator_1 =
-            expand_single(ordered_differential_operator_1, nodes);
+            expand_single(nodes, ordered_differential_operator_1);
 
         auto constexpr ordered_differential_operator_2 = multiply_ordered(
             nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>>{},
             std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{});
 
         auto constexpr expanded_differential_operator_2 =
-            expand_single(ordered_differential_operator_2, nodes);
+            expand_single(nodes, ordered_differential_operator_2);
 
-        return merge_ordered(expanded_differential_operator_1,
-                             expanded_differential_operator_2, nodes);
+        return merge_ordered(nodes, expanded_differential_operator_1,
+                             expanded_differential_operator_2);
     }
 }
 
-template <class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers,
-          class... CalculationNodes>
+template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
+          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
 constexpr auto
-expand_single(std::tuple<der2::p<Power, der2::d<Order, sub_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
-              std::tuple<CalculationNodes...> nodes) {
+expand_single(Nodes nodes,
+              std::tuple<der2::p<Power, der2::d<Order, sub_t<Id1, Id2>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
     // substraction and addition have the same expansion
     return expand_single(
-        std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
-                   der2::p<Powers, der2::d<Orders, Ids>>...>{},
-        nodes);
+        nodes, std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
+                          der2::p<Powers, der2::d<Orders, Ids>>...>{});
 }
 
-template <template <class> class Univariate, class Id, class... Ids,
-          std::size_t Order, std::size_t... Orders, std::size_t Power,
-          std::size_t... Powers, class... CalculationNodes>
+template <class Nodes, template <class> class Univariate, class Id,
+          class... Ids, std::size_t Order, std::size_t... Orders,
+          std::size_t Power, std::size_t... Powers>
 constexpr auto
-expand_single(std::tuple<der2::p<Power, der2::d<Order, Univariate<Id>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
-              std::tuple<CalculationNodes...> /* nodes */) {
+expand_single(Nodes /* nodes */,
+              std::tuple<der2::p<Power, der2::d<Order, Univariate<Id>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
     constexpr auto expansion =
         integer_partition_univariate_function<Id, Order>();
 }
@@ -129,8 +125,8 @@ constexpr auto generate_operators_mul2(std::index_sequence<I...> /* i */) {
         std::tuple<der2::p<1, der2::d<Order, IdSecond>>>{});
 }
 
-template <std::size_t Order, class Id1, class Id2, class... CalculationNodes>
-constexpr auto ordered_operators_mul(std::tuple<CalculationNodes...> nodes) {
+template <std::size_t Order, class Id1, class Id2, class Nodes>
+constexpr auto ordered_operators_mul(Nodes nodes) {
 
     constexpr auto seq = std::make_integer_sequence<std::size_t, Order - 1>{};
 
@@ -143,21 +139,20 @@ constexpr auto ordered_operators_mul(std::tuple<CalculationNodes...> nodes) {
     }
 }
 
-template <class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers,
-          class... CalculationNodes>
+template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
+          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
 constexpr auto
-expand_single(std::tuple<der2::p<Power, der2::d<Order, mul_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */,
-              std::tuple<CalculationNodes...> nodes) {
+expand_single(Nodes nodes,
+              std::tuple<der2::p<Power, der2::d<Order, mul_t<Id1, Id2>>>,
+                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
     if constexpr (is_constant_class_v<Id1>) {
         return expand_single(
-            std::tuple<der2::p<Power, der2::d<Order, Id2>>,
-                       der2::p<Powers, der2::d<Orders, Ids>>...>{});
+            nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>,
+                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
     } else if constexpr (is_constant_class_v<Id2>) {
         return expand_single(
-            std::tuple<der2::p<Power, der2::d<Order, Id1>>,
-                       der2::p<Powers, der2::d<Orders, Ids>>...>{});
+            nodes, std::tuple<der2::p<Power, der2::d<Order, Id1>>,
+                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
     } else {
         constexpr auto ordered_ids =
             ordered_operators_mul<Order, Id1, Id2>(nodes);
@@ -169,22 +164,19 @@ expand_single(std::tuple<der2::p<Power, der2::d<Order, mul_t<Id1, Id2>>>,
 
 } // namespace detail
 
-template <class... Ids, class... CalculationNodes>
-constexpr auto expand(std::tuple<Ids...> in1,
-                      std::tuple<CalculationNodes...> nodes);
+template <class Nodes, class... Ids>
+constexpr auto expand(Nodes nodes, std::tuple<Ids...> in1);
 
-template <class... CalculationNodes>
-constexpr auto expand(std::tuple<> /* in1 */,
-                      std::tuple<CalculationNodes...> /* nodes */) {
+template <class Nodes>
+constexpr auto expand(Nodes /* nodes */, std::tuple<> /* in1 */) {
     return std::tuple<>{};
 }
 
-template <class Id, class... Ids, class... CalculationNodes>
-constexpr auto expand(std::tuple<Id, Ids...> in,
-                      std::tuple<CalculationNodes...> nodes) {
-    static_assert(is_ordered(in, nodes));
-    return merge_ordered(detail::expand_single(Id{}, nodes),
-                         expand(std::tuple<Ids...>{}, nodes), nodes);
+template <class Nodes, class Id, class... Ids>
+constexpr auto expand(Nodes nodes, std::tuple<Id, Ids...> in) {
+    static_assert(is_ordered(nodes, in));
+    return merge_ordered(nodes, detail::expand_single(nodes, Id{}),
+                         expand(nodes, std::tuple<Ids...>{}));
 }
 
 } // namespace adhoc3

@@ -10,26 +10,21 @@ namespace adhoc3 {
 
 namespace detail {
 
-template <class... CalculationNodes>
-constexpr auto is_ordered_aux(std::tuple<> /* in */,
-                              std::tuple<CalculationNodes...> /* nodes */) {
-
+template <class Nodes>
+constexpr auto is_ordered_aux(Nodes /* nodes */, std::tuple<> /* in */) {
     return true;
 }
 
-template <class Id, class... CalculationNodes>
-constexpr auto is_ordered_aux(std::tuple<Id> /* in */,
-                              std::tuple<CalculationNodes...> /* nodes */) {
-
+template <class Nodes, class Id>
+constexpr auto is_ordered_aux(Nodes /* nodes */, std::tuple<Id> /* in */) {
     return true;
 }
 
-template <class Id1, class Id2, class... Ids, class... CalculationNodes>
-constexpr auto is_ordered_aux(std::tuple<Id1, Id2, Ids...> /* in */,
-                              std::tuple<CalculationNodes...> nodes) {
-
+template <class Nodes, class Id1, class Id2, class... Ids>
+constexpr auto is_ordered_aux(Nodes nodes,
+                              std::tuple<Id1, Id2, Ids...> /* in */) {
     if constexpr (less_than(nodes, Id2{}, Id1{})) {
-        return is_ordered_aux(std::tuple<Id2, Ids...>{}, nodes);
+        return is_ordered_aux(nodes, std::tuple<Id2, Ids...>{});
     } else {
         return false;
     }
@@ -37,11 +32,9 @@ constexpr auto is_ordered_aux(std::tuple<Id1, Id2, Ids...> /* in */,
 
 } // namespace detail
 
-template <class... Ids, class... CalculationNodes>
-constexpr auto is_ordered(std::tuple<Ids...> in,
-                          std::tuple<CalculationNodes...> nodes) {
-
-    return detail::is_ordered_aux(in, nodes);
+template <class Nodes, class... Ids>
+constexpr auto is_ordered(Nodes nodes, std::tuple<Ids...> in) {
+    return detail::is_ordered_aux(nodes, in);
 }
 
 } // namespace adhoc3

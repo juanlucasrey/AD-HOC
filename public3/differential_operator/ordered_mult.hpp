@@ -85,22 +85,22 @@ template <class Nodes> constexpr auto multiply_ordered(Nodes /* nodes */) {
 
 template <class Nodes, class DerOp>
 constexpr auto multiply_ordered(Nodes nodes, DerOp in1) {
-    static_assert(is_ordered(in1, nodes));
+    static_assert(is_ordered(nodes, in1));
     return in1;
 };
 
 template <class Nodes, class DerOp1, class DerOp2>
 constexpr auto multiply_ordered(Nodes nodes, DerOp1 in1, DerOp2 in2) {
-    static_assert(is_ordered(in1, nodes));
-    static_assert(is_ordered(in2, nodes));
+    static_assert(is_ordered(nodes, in1));
+    static_assert(is_ordered(nodes, in2));
     return detail::multiply_ordered_empty(in1, in2, std::tuple<>{}, nodes);
 };
 
 template <class Nodes, class DerOp1, class DerOp2, class... DerOps>
 constexpr auto multiply_ordered(Nodes nodes, DerOp1 in1, DerOp2 in2,
                                 DerOps... ins) {
-    static_assert(is_ordered(in1, nodes));
-    static_assert(is_ordered(in2, nodes));
+    static_assert(is_ordered(nodes, in1));
+    static_assert(is_ordered(nodes, in2));
     constexpr auto mult = multiply_ordered(nodes, in1, in2);
     return multiply_ordered(nodes, mult, ins...);
 };

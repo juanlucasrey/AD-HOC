@@ -9,10 +9,10 @@ namespace adhoc3 {
 
 namespace detail {
 
-template <class Id1, class... Ids1, std::size_t Order1, std::size_t... Orders1,
-          std::size_t Power1, std::size_t... Powers1, class Id2, class... Ids2,
-          std::size_t Order2, std::size_t... Orders2, std::size_t Power2,
-          std::size_t... Powers2, class Nodes>
+template <class Nodes, class Id1, class... Ids1, std::size_t Order1,
+          std::size_t... Orders1, std::size_t Power1, std::size_t... Powers1,
+          class Id2, class... Ids2, std::size_t Order2, std::size_t... Orders2,
+          std::size_t Power2, std::size_t... Powers2>
 constexpr auto
 less_than_check_first(Nodes nodes,
                       std::tuple<der2::p<Power1, der2::d<Order1, Id1>>,
@@ -22,9 +22,9 @@ less_than_check_first(Nodes nodes,
                                  der2::p<Powers2, der2::d<Orders2, Ids2>>...>
                           in2);
 
-template <class... Ids1, std::size_t... Orders1, std::size_t... Powers1,
-          class... Ids2, std::size_t... Orders2, std::size_t... Powers2,
-          class Nodes>
+template <class Nodes, class... Ids1, std::size_t... Orders1,
+          std::size_t... Powers1, class... Ids2, std::size_t... Orders2,
+          std::size_t... Powers2>
 constexpr auto less_than_check_empty(
     Nodes nodes, std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...> in1,
     std::tuple<der2::p<Powers2, der2::d<Orders2, Ids2>>...> in2) {
@@ -41,10 +41,10 @@ constexpr auto less_than_check_empty(
     }
 }
 
-template <class Id1, class... Ids1, std::size_t Order1, std::size_t... Orders1,
-          std::size_t Power1, std::size_t... Powers1, class Id2, class... Ids2,
-          std::size_t Order2, std::size_t... Orders2, std::size_t Power2,
-          std::size_t... Powers2, class Nodes>
+template <class Nodes, class Id1, class... Ids1, std::size_t Order1,
+          std::size_t... Orders1, std::size_t Power1, std::size_t... Powers1,
+          class Id2, class... Ids2, std::size_t Order2, std::size_t... Orders2,
+          std::size_t Power2, std::size_t... Powers2>
 constexpr auto less_than_check_first(
     Nodes nodes,
     std::tuple<der2::p<Power1, der2::d<Order1, Id1>>,
@@ -77,9 +77,9 @@ constexpr auto less_than_check_first(
 
 } // namespace detail
 
-template <class... Ids1, std::size_t... Orders1, std::size_t... Powers1,
-          class... Ids2, std::size_t... Orders2, std::size_t... Powers2,
-          class Nodes>
+template <class Nodes, class... Ids1, std::size_t... Orders1,
+          std::size_t... Powers1, class... Ids2, std::size_t... Orders2,
+          std::size_t... Powers2>
 constexpr auto
 less_than(Nodes nodes,
           std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...> in1,
@@ -87,8 +87,8 @@ less_than(Nodes nodes,
     return detail::less_than_check_empty(nodes, in1, in2);
 }
 
-template <class Id1, std::size_t Order1, std::size_t Power1, class Id2,
-          std::size_t Order2, std::size_t Power2, class Nodes>
+template <class Nodes, class Id1, std::size_t Order1, std::size_t Power1,
+          class Id2, std::size_t Order2, std::size_t Power2>
 constexpr auto less_than(Nodes nodes,
                          der2::p<Power1, der2::d<Order1, Id1>> /* in1 */,
                          der2::p<Power2, der2::d<Order2, Id2>> /* in2 */) {

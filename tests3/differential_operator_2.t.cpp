@@ -208,7 +208,7 @@ TEST(DifferentialOperator2, merge) {
     auto t1 = std::tuple<decltype(dx1), decltype(dx2)>{};
     auto t2 = std::tuple<decltype(dx3), decltype(dx4)>{};
 
-    auto r1 = merge_ordered(t1, t2, co);
+    auto r1 = merge_ordered(co, t1, t2);
 
     static_assert(std::is_same_v<decltype(r1), decltype(r)>);
 
@@ -222,7 +222,7 @@ TEST(DifferentialOperator2, merge) {
     auto tx1 = std::tuple<decltype(dxx2), decltype(dxx1)>{};
     auto tx2 = std::tuple<decltype(dxx4), decltype(dxx3)>{};
 
-    auto rx1 = merge_ordered(tx1, tx2, co);
+    auto rx1 = merge_ordered(co, tx1, tx2);
 
     static_assert(std::is_same_v<decltype(rx1), decltype(rx)>);
 }
@@ -238,17 +238,17 @@ TEST(DifferentialOperator2, expandsum) {
     auto dx2 = d(x2);
 
     auto r1a = std::tuple<decltype(dx1), decltype(dx2)>{};
-    auto r1b = expand(r1a, co);
+    auto r1b = expand(co, r1a);
     static_assert(std::is_same_v<decltype(r1a), decltype(r1b)>);
 
     auto r2a = std::tuple<decltype(dx2), std::tuple<>>{};
-    auto r2b = expand(r2a, co);
+    auto r2b = expand(co, r2a);
     static_assert(std::is_same_v<decltype(r2a), decltype(r2b)>);
 
     auto dres = d(res);
     auto r3a = std::tuple<decltype(dres), decltype(dx2)>{};
-    static_assert(is_ordered(r3a, co));
-    auto r3b = expand(r3a, co);
+    static_assert(is_ordered(co, r3a));
+    auto r3b = expand(co, r3a);
 
     auto r3c = std::tuple<decltype(dx1), decltype(dx2)>{};
     static_assert(std::is_same_v<decltype(r3b), decltype(r3c)>);
@@ -257,18 +257,18 @@ TEST(DifferentialOperator2, expandsum) {
     auto dx12 = d<2>(x1);
     auto dx22 = d<2>(x2);
     auto r4a = std::tuple<decltype(dres2), decltype(dx2)>{};
-    static_assert(is_ordered(r4a, co));
-    auto r4b = expand(r4a, co);
+    static_assert(is_ordered(co, r4a));
+    auto r4b = expand(co, r4a);
     auto r4c = std::tuple<decltype(dx12), decltype(dx22), decltype(dx2)>{};
     static_assert(std::is_same_v<decltype(r4b), decltype(r4c)>);
 
-    static_assert(is_ordered(dres2, co));
+    static_assert(is_ordered(co, dres2));
 
     auto dres3 = d<2>(res) * d(res);
-    static_assert(is_ordered(dres3, co));
+    static_assert(is_ordered(co, dres3));
 
     auto dres4 = d(res) * d<2>(res);
-    static_assert(!is_ordered(dres4, co));
+    static_assert(!is_ordered(co, dres4));
 }
 
 } // namespace adhoc3

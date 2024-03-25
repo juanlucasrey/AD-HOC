@@ -11,57 +11,55 @@ namespace adhoc3 {
 
 namespace detail {
 
-template <class Id1, class... Ids1, class Id2, class... Ids2, class... Out,
-          class... CalculationNodes>
-constexpr auto merge_ordered_compare(std::tuple<Id1, Ids1...> in1,
+template <class Nodes, class Id1, class... Ids1, class Id2, class... Ids2,
+          class... Out>
+constexpr auto merge_ordered_compare(Nodes nodes, std::tuple<Id1, Ids1...> in1,
                                      std::tuple<Id2, Ids2...> in2,
-                                     std::tuple<Out...> out,
-                                     std::tuple<CalculationNodes...> nodes);
+                                     std::tuple<Out...> out);
 
-template <class... Ids1, class... Ids2, class... Out, class... CalculationNodes>
-constexpr auto merge_ordered_empty(std::tuple<Ids1...> in1,
+template <class Nodes, class... Ids1, class... Ids2, class... Out>
+constexpr auto merge_ordered_empty(Nodes nodes, std::tuple<Ids1...> in1,
                                    std::tuple<Ids2...> in2,
-                                   std::tuple<Out...> out,
-                                   std::tuple<CalculationNodes...> nodes) {
+                                   std::tuple<Out...> out) {
 
     if constexpr (sizeof...(Ids2) == 0) {
         return std::tuple_cat(out, in1);
     } else if constexpr (sizeof...(Ids1) == 0) {
         return std::tuple_cat(out, in2);
     } else {
-        return merge_ordered_compare(in1, in2, out, nodes);
+        return merge_ordered_compare(nodes, in1, in2, out);
     }
 }
 
-template <class Id1, class... Ids1, class Id2, class... Ids2, class... Out,
-          class... CalculationNodes>
-constexpr auto merge_ordered_compare(std::tuple<Id1, Ids1...> in1,
+template <class Nodes, class Id1, class... Ids1, class Id2, class... Ids2,
+          class... Out>
+constexpr auto merge_ordered_compare(Nodes nodes, std::tuple<Id1, Ids1...> in1,
                                      std::tuple<Id2, Ids2...> in2,
-                                     std::tuple<Out...> /* out */,
-                                     std::tuple<CalculationNodes...> nodes) {
+                                     std::tuple<Out...> /* out */) {
     if constexpr (std::is_same_v<Id1, Id2>) {
-        return merge_ordered_empty(std::tuple<Ids1...>{}, std::tuple<Ids2...>{},
-                                   std::tuple<Out..., Id1>{}, nodes);
+        return merge_ordered_empty(nodes, std::tuple<Ids1...>{},
+                                   std::tuple<Ids2...>{},
+                                   std::tuple<Out..., Id1>{});
 
     } else if constexpr (less_than(nodes, Id1{}, Id2{})) {
-        return merge_ordered_empty(in1, std::tuple<Ids2...>{},
-                                   std::tuple<Out..., Id2>{}, nodes);
+        return merge_ordered_empty(nodes, in1, std::tuple<Ids2...>{},
+                                   std::tuple<Out..., Id2>{});
 
     } else {
-        return merge_ordered_empty(std::tuple<Ids1...>{}, in2,
-                                   std::tuple<Out..., Id1>{}, nodes);
+        return merge_ordered_empty(nodes, std::tuple<Ids1...>{}, in2,
+                                   std::tuple<Out..., Id1>{});
     }
 }
 
 } // namespace detail
 
-template <class... Ids1, class... Ids2, class... CalculationNodes>
-constexpr auto merge_ordered(std::tuple<Ids1...> in1, std::tuple<Ids2...> in2,
-                             std::tuple<CalculationNodes...> nodes) {
+template <class Nodes, class... Ids1, class... Ids2>
+constexpr auto merge_ordered(Nodes nodes, std::tuple<Ids1...> in1,
+                             std::tuple<Ids2...> in2) {
 
-    static_assert(is_ordered(in1, nodes));
-    static_assert(is_ordered(in2, nodes));
-    return detail::merge_ordered_empty(in1, in2, std::tuple<>{}, nodes);
+    static_assert(is_ordered(nodes, in1));
+    static_assert(is_ordered(nodes, in2));
+    return detail::merge_ordered_empty(nodes, in1, in2, std::tuple<>{});
 }
 
 } // namespace adhoc3

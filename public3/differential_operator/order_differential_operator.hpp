@@ -83,7 +83,7 @@ template <class... Ids, std::size_t... Orders, std::size_t... Powers,
 constexpr auto order_differential_operator(
     std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...> diff_operator,
     std::tuple<CalculationNodes...> nodes) {
-    if constexpr (is_ordered(diff_operator, nodes)) {
+    if constexpr (is_ordered(nodes, diff_operator)) {
         return diff_operator;
     } else {
         return std::apply(
