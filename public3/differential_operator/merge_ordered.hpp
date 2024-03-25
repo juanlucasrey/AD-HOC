@@ -43,7 +43,7 @@ constexpr auto merge_ordered_compare(std::tuple<Id1, Ids1...> in1,
         return merge_ordered_empty(std::tuple<Ids1...>{}, std::tuple<Ids2...>{},
                                    std::tuple<Out..., Id1>{}, nodes);
 
-    } else if constexpr (less_than(Id1{}, Id2{}, nodes)) {
+    } else if constexpr (less_than(nodes, Id1{}, Id2{})) {
         return merge_ordered_empty(in1, std::tuple<Ids2...>{},
                                    std::tuple<Out..., Id2>{}, nodes);
 

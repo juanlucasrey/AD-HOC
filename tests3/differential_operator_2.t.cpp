@@ -179,16 +179,16 @@ TEST(DifferentialOperator2, lessThan) {
     auto dxy3 = dy1 * dx1;
     auto dxy4 = dy1 * dx2;
 
-    static_assert(!less_than(std::tuple<>{}, std::tuple<>{}, co));
-    static_assert(!less_than(dx1, dx1, co));
-    static_assert(less_than(std::tuple<>{}, dx1, co));
-    static_assert(!less_than(dx1, std::tuple<>{}, co));
-    static_assert(!less_than(dx1, dy1, co));
-    static_assert(less_than(dx1, dx2, co));
-    static_assert(less_than(dx2, dx3, co));
-    static_assert(less_than(dy1, dy2, co));
-    static_assert(less_than(dxy1, dxy2, co));
-    static_assert(less_than(dxy3, dxy4, co));
+    static_assert(!less_than(co, std::tuple<>{}, std::tuple<>{}));
+    static_assert(!less_than(co, dx1, dx1));
+    static_assert(less_than(co, std::tuple<>{}, dx1));
+    static_assert(!less_than(co, dx1, std::tuple<>{}));
+    static_assert(!less_than(co, dx1, dy1));
+    static_assert(less_than(co, dx1, dx2));
+    static_assert(less_than(co, dx2, dx3));
+    static_assert(less_than(co, dy1, dy2));
+    static_assert(less_than(co, dxy1, dxy2));
+    static_assert(less_than(co, dxy3, dxy4));
 }
 
 TEST(DifferentialOperator2, merge) {

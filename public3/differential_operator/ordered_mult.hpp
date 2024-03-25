@@ -49,16 +49,16 @@ multiply_ordered_compare(std::tuple<der2::p<Power1, der2::d<Order1, Id1>>,
                              in2,
                          std::tuple<Out...> /* out */, Nodes nodes) {
 
-    if constexpr (less_than(der2::p<Power1, der2::d<Order1, Id1>>{},
-                            der2::p<Power2, der2::d<Order2, Id2>>{}, nodes)) {
+    if constexpr (less_than(nodes, der2::p<Power1, der2::d<Order1, Id1>>{},
+                            der2::p<Power2, der2::d<Order2, Id2>>{})) {
 
         return multiply_ordered_empty(
             in1, std::tuple<der2::p<Powers2, der2::d<Orders2, Ids2>>...>{},
             std::tuple<Out..., der2::p<Power2, der2::d<Order2, Id2>>>{}, nodes);
 
-    } else if constexpr (less_than(der2::p<Power2, der2::d<Order2, Id2>>{},
-                                   der2::p<Power1, der2::d<Order1, Id1>>{},
-                                   nodes)) {
+    } else if constexpr (less_than(nodes,
+                                   der2::p<Power2, der2::d<Order2, Id2>>{},
+                                   der2::p<Power1, der2::d<Order1, Id1>>{})) {
 
         return multiply_ordered_empty(
             std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...>{}, in2,

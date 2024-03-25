@@ -28,7 +28,7 @@ template <class Id1, class Id2, class... Ids, class... CalculationNodes>
 constexpr auto is_ordered_aux(std::tuple<Id1, Id2, Ids...> /* in */,
                               std::tuple<CalculationNodes...> nodes) {
 
-    if constexpr (less_than(Id2{}, Id1{}, nodes)) {
+    if constexpr (less_than(nodes, Id2{}, Id1{})) {
         return is_ordered_aux(std::tuple<Id2, Ids...>{}, nodes);
     } else {
         return false;
