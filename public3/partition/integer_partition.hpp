@@ -21,7 +21,7 @@ template <std::size_t N> constexpr auto LastPartition() {
 template <std::size_t N>
 constexpr auto NextPartition(std::array<std::size_t, N> const &prev) {
     if (prev == LastPartition<N>()) {
-        return std::array<std::size_t, N>{};
+        return prev;
     }
 
     std::array<std::size_t, N> arr = prev;
@@ -59,7 +59,7 @@ constexpr auto NextPartition(std::array<std::size_t, N> const &prev) {
 template <std::size_t N>
 constexpr auto PrevPartition(std::array<std::size_t, N> const &prev) {
     if (prev == FirstPartition<N>()) {
-        return std::array<std::size_t, N>{};
+        return prev;
     }
 
     std::array<std::size_t, N> arr = prev;

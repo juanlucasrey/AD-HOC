@@ -18,10 +18,10 @@ TEST(Partition, IntegerPartition) {
         static_assert(last == parts.back());
 
         constexpr auto next = NextPartition(first);
-        static_assert(next == std::array<std::size_t, 1>{});
+        static_assert(next == last);
 
         constexpr auto prev = PrevPartition(last);
-        static_assert(prev == std::array<std::size_t, 1>{});
+        static_assert(prev == last);
     }
 
     {
@@ -38,13 +38,13 @@ TEST(Partition, IntegerPartition) {
         static_assert(next == parts[1]);
 
         constexpr auto zero = NextPartition(next);
-        static_assert(zero == std::array<std::size_t, 2>{});
+        static_assert(zero == last);
 
         constexpr auto prev = PrevPartition(last);
         static_assert(prev == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev);
-        static_assert(zero2 == std::array<std::size_t, 2>{});
+        static_assert(zero2 == first);
     }
 
     {
@@ -64,7 +64,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(next2 == parts[2]);
 
         constexpr auto zero = NextPartition(next2);
-        static_assert(zero == std::array<std::size_t, 3>{});
+        static_assert(zero == last);
 
         constexpr auto prev1 = PrevPartition(last);
         static_assert(prev1 == parts[1]);
@@ -73,7 +73,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(prev2 == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev2);
-        static_assert(zero2 == std::array<std::size_t, 3>{});
+        static_assert(zero2 == first);
     }
 
     {
@@ -103,7 +103,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(next4 == parts[4]);
 
         constexpr auto zero = NextPartition(next4);
-        static_assert(zero == std::array<std::size_t, 4>{});
+        static_assert(zero == last);
 
         constexpr auto prev1 = PrevPartition(last);
         static_assert(prev1 == parts[3]);
@@ -118,7 +118,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(prev4 == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev4);
-        static_assert(zero2 == std::array<std::size_t, 4>{});
+        static_assert(zero2 == first);
     }
 
     {
@@ -156,7 +156,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(next6 == parts[6]);
 
         constexpr auto zero = NextPartition(next6);
-        static_assert(zero == std::array<std::size_t, 5>{});
+        static_assert(zero == last);
 
         constexpr auto prev1 = PrevPartition(last);
         static_assert(prev1 == parts[5]);
@@ -177,7 +177,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(prev6 == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev6);
-        static_assert(zero2 == std::array<std::size_t, 5>{});
+        static_assert(zero2 == first);
     }
 
     {
@@ -231,7 +231,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(next10 == parts[10]);
 
         constexpr auto zero = NextPartition(next10);
-        static_assert(zero == std::array<std::size_t, 6>{});
+        static_assert(zero == last);
 
         constexpr auto prev1 = PrevPartition(last);
         static_assert(prev1 == parts[9]);
@@ -264,7 +264,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(prev10 == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev10);
-        static_assert(zero2 == std::array<std::size_t, 6>{});
+        static_assert(zero2 == first);
     }
 
     {
@@ -334,7 +334,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(next14 == parts[14]);
 
         constexpr auto zero = NextPartition(next14);
-        static_assert(zero == std::array<std::size_t, 7>{});
+        static_assert(zero == last);
 
         constexpr auto prev1 = PrevPartition(last);
         static_assert(prev1 == parts[13]);
@@ -379,7 +379,7 @@ TEST(Partition, IntegerPartition) {
         static_assert(prev14 == parts[0]);
 
         constexpr auto zero2 = PrevPartition(prev14);
-        static_assert(zero2 == std::array<std::size_t, 7>{});
+        static_assert(zero2 == first);
     }
 }
 
