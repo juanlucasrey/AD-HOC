@@ -4,7 +4,6 @@
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
 #include "differential_operator.hpp"
-#include "order_differential_operator.hpp"
 
 namespace adhoc3 {
 
@@ -85,9 +84,7 @@ constexpr auto
 less_than(Nodes nodes,
           std::tuple<der2::p<Powers1, der2::d<Orders1, Ids1>>...> in1,
           std::tuple<der2::p<Powers2, der2::d<Orders2, Ids2>>...> in2) {
-    auto constexpr ordered_in1 = order_differential_operator(in1, nodes);
-    auto constexpr ordered_in2 = order_differential_operator(in2, nodes);
-    return detail::less_than_check_empty(nodes, ordered_in1, ordered_in2);
+    return detail::less_than_check_empty(nodes, in1, in2);
 }
 
 template <class Id1, std::size_t Order1, std::size_t Power1, class Id2,
