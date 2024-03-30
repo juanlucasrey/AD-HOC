@@ -3,8 +3,6 @@
 #include <init.hpp>
 #include <tape2.hpp>
 
-#include "../type_name.hpp"
-
 #include <gtest/gtest.h>
 
 namespace adhoc3 {
