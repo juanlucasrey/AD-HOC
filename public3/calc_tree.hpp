@@ -47,6 +47,16 @@ template <class... Roots> class CalcTree {
         this->evaluate_fwd_aux(std::tuple<NodesToCalc...>{});
     }
 
+    // why this special evaluation? because x/y is different from x * (1/y)
+    template <class Node1, class Node2, class... NodesToCalc>
+    inline void evaluate_fwd_aux(
+        std::tuple<mul_t<Node1, inv_t<Node2>>, NodesToCalc...> /* nodes */) {
+        using CurrentNode = mul_t<Node1, inv_t<Node2>>;
+        constexpr auto idx = get_idx_first2<CurrentNode>(ValuesTuple{});
+        this->m_values[idx] = this->val(Node1{}) / this->val(Node2{});
+        this->evaluate_fwd_aux(std::tuple<NodesToCalc...>{});
+    }
+
   public:
     explicit CalcTree() = default;
     explicit CalcTree(Roots... /* out */) {}

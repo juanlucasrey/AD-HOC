@@ -5,7 +5,8 @@
 #include "../constants_type.hpp"
 #include "../dependency.hpp"
 #include "differential_operator.hpp"
-#include "integer_partition_univariate_function.hpp"
+#include "expand_multinomial.hpp"
+#include "expand_univariate.hpp"
 #include "is_ordered.hpp"
 #include "merge_ordered.hpp"
 #include "ordered_mult.hpp"
@@ -20,100 +21,52 @@ template <typename T> struct is_constant_class : std::false_type {};
 template <constants::ArgType N>
 struct is_constant_class<constants::CD<N>> : std::true_type {};
 
+template <constants::ArgType N>
+struct is_constant_class<inv_t<constants::CD<N>>> : std::true_type {};
+
 template <class T>
 constexpr bool is_constant_class_v = is_constant_class<T>::value;
 
-template <class Arg1, class Arg2>
-constexpr auto expand_single(Arg1 arg1, Arg2 arg2);
-
-template <class Nodes>
-constexpr auto expand_single(Nodes /* nodes */, std::tuple<> /* id */) {
-    return std::tuple<std::tuple<>>{};
-}
-
-template <class Nodes, std::size_t N, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
-constexpr auto
-expand_single(Nodes /* nodes */,
-              std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
-    return std::tuple<std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>,
-                                 der2::p<Powers, der2::d<Orders, Ids>>...>>{};
-}
-
-template <std::size_t Order, class Id1, class Id2, class Nodes>
-constexpr auto ordered_operators_sum(Nodes nodes) {
+template <class Id1, class Id2, class Nodes>
+constexpr auto ordered_pair(Nodes nodes) {
     constexpr auto id1_less_than_id2 = static_cast<bool>(
         get_idx_first2<Id1>(nodes) >= get_idx_first2<Id2>(nodes));
     if constexpr (id1_less_than_id2) {
-        return std::tuple<der2::p<1, der2::d<Order, Id2>>,
-                          der2::p<1, der2::d<Order, Id1>>>{};
+        return std::tuple<Id2, Id1>{};
     } else {
-        return std::tuple<der2::p<1, der2::d<Order, Id1>>,
-                          der2::p<1, der2::d<Order, Id2>>>{};
+        return std::tuple<Id1, Id2>{};
     }
 }
 
-template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
-constexpr auto
-expand_single(Nodes nodes,
-              std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
-    if constexpr (is_constant_class_v<Id1>) {
-        return expand_single(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>,
-                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
-    } else if constexpr (is_constant_class_v<Id2>) {
-        return expand_single(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id1>>,
-                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
-    } else {
-        constexpr auto ordered_ids =
-            ordered_operators_sum<Order, Id1, Id2>(nodes);
-        // result is (ordered_ids[0] + ordered_ids[1])^Power
-
-        // ERROR! need to expand binomial (d(Id1) + d(Id2)) ^ Power
-        auto constexpr ordered_differential_operator_1 = multiply_ordered(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id1>>>{},
-            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{});
-
-        auto constexpr expanded_differential_operator_1 =
-            expand_single(nodes, ordered_differential_operator_1);
-
-        auto constexpr ordered_differential_operator_2 = multiply_ordered(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>>{},
-            std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...>{});
-
-        auto constexpr expanded_differential_operator_2 =
-            expand_single(nodes, ordered_differential_operator_2);
-
-        return merge_ordered(nodes, expanded_differential_operator_1,
-                             expanded_differential_operator_2);
-    }
-}
-
-template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
-constexpr auto
-expand_single(Nodes nodes,
-              std::tuple<der2::p<Power, der2::d<Order, sub_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
-    // substraction and addition have the same expansion
-    return expand_single(
-        nodes, std::tuple<der2::p<Power, der2::d<Order, add_t<Id1, Id2>>>,
-                          der2::p<Powers, der2::d<Orders, Ids>>...>{});
+template <class Id, std::size_t Order, std::size_t Power, class Nodes>
+constexpr auto expand_aux_univariate(Nodes nodes) {
+    constexpr auto expansion = expand_univariate<Id, Order>(nodes);
+    constexpr auto expansion_power =
+        expand_multinomial<Power>(nodes, expansion);
+    return expansion_power;
 }
 
 template <class Nodes, template <class> class Univariate, class Id,
-          class... Ids, std::size_t Order, std::size_t... Orders,
-          std::size_t Power, std::size_t... Powers>
+          std::size_t Order, std::size_t Power>
 constexpr auto
-expand_single(Nodes /* nodes */,
-              std::tuple<der2::p<Power, der2::d<Order, Univariate<Id>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
+expand_aux_single(Nodes nodes,
+                  der2::p<Power, der2::d<Order, Univariate<Id>>> /* id */) {
+    return expand_aux_univariate<Id, Order, Power>(nodes);
+}
+
+// default for sum and subs
+template <class Nodes, template <class, class> class Bivariate, class Id1,
+          class Id2, std::size_t Order, std::size_t Power, class OrderedId1,
+          class OrderedId2>
+constexpr auto expand_aux_single_bivariate(
+    Nodes nodes, der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> /* id */,
+    std::tuple<OrderedId1, OrderedId2> /* orderedid */) {
     constexpr auto expansion =
-        integer_partition_univariate_function<Id, Order>();
+        std::tuple<std::tuple<der2::p<1, der2::d<Order, OrderedId1>>>,
+                   std::tuple<der2::p<1, der2::d<Order, OrderedId2>>>>{};
+    constexpr auto expansion_power =
+        expand_multinomial<Power>(nodes, expansion);
+    return expansion_power;
 }
 
 template <std::size_t Order, class IdFirst, class IdSecond, std::size_t... I>
@@ -125,41 +78,63 @@ constexpr auto generate_operators_mul2(std::index_sequence<I...> /* i */) {
         std::tuple<der2::p<1, der2::d<Order, IdSecond>>>{});
 }
 
-template <std::size_t Order, class Id1, class Id2, class Nodes>
-constexpr auto ordered_operators_mul(Nodes nodes) {
+template <class Nodes, class Id1, class Id2, std::size_t Order,
+          std::size_t Power, class OrderedId1, class OrderedId2>
+constexpr auto expand_aux_single_bivariate(
+    Nodes nodes, der2::p<Power, der2::d<Order, mul_t<Id1, Id2>>> /* id */,
+    std::tuple<OrderedId1, OrderedId2> /* orderedid */) {
 
     constexpr auto seq = std::make_index_sequence<Order - 1>{};
+    constexpr auto expansion =
+        generate_operators_mul2<Order, OrderedId1, OrderedId2>(seq);
+    constexpr auto expansion_power =
+        expand_multinomial<Power>(nodes, expansion);
+    return expansion_power;
+}
 
-    constexpr auto id1_less_than_id2 = static_cast<bool>(
-        get_idx_first2<Id1>(nodes) >= get_idx_first2<Id2>(nodes));
-    if constexpr (id1_less_than_id2) {
-        return generate_operators_mul2<Order, Id2, Id1>(seq);
+template <class Nodes, template <class, class> class Bivariate, class Id1,
+          class Id2, std::size_t Order, std::size_t Power>
+constexpr auto
+expand_aux_single(Nodes nodes,
+                  der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> id) {
+    if constexpr (is_constant_class_v<Id1>) {
+        return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id2>>>>{};
+    } else if constexpr (is_constant_class_v<Id2>) {
+        return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id1>>>>{};
     } else {
-        return generate_operators_mul2<Order, Id1, Id2>(seq);
+        constexpr auto ordered_ids = ordered_pair<Id1, Id2>(nodes);
+        return expand_aux_single_bivariate(nodes, id, ordered_ids);
     }
 }
 
-template <class Nodes, class Id1, class Id2, class... Ids, std::size_t Order,
-          std::size_t... Orders, std::size_t Power, std::size_t... Powers>
-constexpr auto
-expand_single(Nodes nodes,
-              std::tuple<der2::p<Power, der2::d<Order, mul_t<Id1, Id2>>>,
-                         der2::p<Powers, der2::d<Orders, Ids>>...> /* id */) {
-    if constexpr (is_constant_class_v<Id1>) {
-        return expand_single(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id2>>,
-                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
-    } else if constexpr (is_constant_class_v<Id2>) {
-        return expand_single(
-            nodes, std::tuple<der2::p<Power, der2::d<Order, Id1>>,
-                              der2::p<Powers, der2::d<Orders, Ids>>...>{});
-    } else {
-        constexpr auto ordered_ids =
-            ordered_operators_mul<Order, Id1, Id2>(nodes);
-        // ordered_ids contains tuple(d^Order-I(Id1)*d^I(Id2))
+template <class Arg1, class Arg2>
+constexpr auto expand_aux(Arg1 arg1, Arg2 arg2);
 
-        return std::tuple<>{};
-    }
+template <class Nodes>
+constexpr auto expand_aux(Nodes /* nodes */, std::tuple<> id) {
+    return id;
+}
+
+template <class Nodes, std::size_t N, std::size_t Order, std::size_t Power,
+          class... RestFirstOp, class... Ops>
+constexpr auto expand_aux(
+    Nodes /* nodes */,
+    std::tuple<
+        std::tuple<der2::p<Power, der2::d<Order, double_t<N>>>, RestFirstOp...>,
+        Ops...>
+        id) {
+    return id;
+}
+
+template <class Nodes, class FirstOp, class... RestFirstOp, class... Ops>
+constexpr auto
+expand_aux(Nodes nodes,
+           std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> /* id */) {
+    constexpr auto single_result = expand_aux_single(nodes, FirstOp{});
+    constexpr auto append_rest = multiply_ordered_tuple(
+        nodes, single_result, std::tuple<RestFirstOp...>{});
+    return expand_aux(nodes,
+                      merge_ordered(nodes, append_rest, std::tuple<Ops...>{}));
 }
 
 } // namespace detail
@@ -172,11 +147,10 @@ constexpr auto expand(Nodes /* nodes */, std::tuple<> /* in1 */) {
     return std::tuple<>{};
 }
 
-template <class Nodes, class Id, class... Ids>
-constexpr auto expand(Nodes nodes, std::tuple<Id, Ids...> in) {
+template <class Nodes, class... Ids>
+constexpr auto expand(Nodes nodes, std::tuple<Ids...> in) {
     static_assert(is_ordered(nodes, in));
-    return merge_ordered(nodes, detail::expand_single(nodes, Id{}),
-                         expand(nodes, std::tuple<Ids...>{}));
+    return detail::expand_aux(nodes, in);
 }
 
 } // namespace adhoc3

@@ -1,6 +1,5 @@
 #include <differential_operator/derivative_non_null.hpp>
 #include <differential_operator/differential_operator.hpp>
-#include <differential_operator/expand.hpp>
 #include <differential_operator/is_ordered.hpp>
 #include <differential_operator/less_than.hpp>
 #include <differential_operator/merge_ordered.hpp>
@@ -225,50 +224,6 @@ TEST(DifferentialOperator2, merge) {
     auto rx1 = merge_ordered(co, tx1, tx2);
 
     static_assert(std::is_same_v<decltype(rx1), decltype(rx)>);
-}
-
-TEST(DifferentialOperator2, expandsum) {
-    auto [x1, x2] = Init<2>();
-
-    auto res = x1 + x2;
-    CalcTree t(res);
-    decltype(t)::ValuesTupleInverse co;
-
-    auto dx1 = d(x1);
-    auto dx2 = d(x2);
-
-    auto r1a = std::tuple<decltype(dx1), decltype(dx2)>{};
-    auto r1b = expand(co, r1a);
-    static_assert(std::is_same_v<decltype(r1a), decltype(r1b)>);
-
-    auto r2a = std::tuple<decltype(dx2), std::tuple<>>{};
-    auto r2b = expand(co, r2a);
-    static_assert(std::is_same_v<decltype(r2a), decltype(r2b)>);
-
-    auto dres = d(res);
-    auto r3a = std::tuple<decltype(dres), decltype(dx2)>{};
-    static_assert(is_ordered(co, r3a));
-    auto r3b = expand(co, r3a);
-
-    auto r3c = std::tuple<decltype(dx1), decltype(dx2)>{};
-    static_assert(std::is_same_v<decltype(r3b), decltype(r3c)>);
-
-    auto dres2 = d<2>(res);
-    auto dx12 = d<2>(x1);
-    auto dx22 = d<2>(x2);
-    auto r4a = std::tuple<decltype(dres2), decltype(dx2)>{};
-    static_assert(is_ordered(co, r4a));
-    auto r4b = expand(co, r4a);
-    auto r4c = std::tuple<decltype(dx12), decltype(dx22), decltype(dx2)>{};
-    static_assert(std::is_same_v<decltype(r4b), decltype(r4c)>);
-
-    static_assert(is_ordered(co, dres2));
-
-    auto dres3 = d<2>(res) * d(res);
-    static_assert(is_ordered(co, dres3));
-
-    auto dres4 = d(res) * d<2>(res);
-    static_assert(!is_ordered(co, dres4));
 }
 
 } // namespace adhoc3

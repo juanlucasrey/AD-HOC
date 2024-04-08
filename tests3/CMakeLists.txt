@@ -13,6 +13,7 @@ endif()
 
 add_executable(
   adhoc_test3
+  base.t.cpp
   dependency.t.cpp
   ders.t.cpp
   raw.t.cpp

@@ -71,6 +71,19 @@ TEST(CalcTree, EvaluateFwdTwoVals) {
     EXPECT_NEAR(result2, 1.0806046117362795, 1e-10);
 }
 
+TEST(CalcTree, EvaluateFwdDivision) {
+    auto [val0, val1] = Init<2>();
+    auto temp = val0 / val1;
+
+    CalcTree t(temp);
+    t.set(val0) = 1.0;
+    t.set(val1) = 2.0;
+    t.evaluate();
+
+    double result = t.val(temp);
+    EXPECT_NEAR(result, 1.0 / 2.0, 1e-10);
+}
+
 // TEST(CalcTree, BSAdhoc) {
 //     double result = 0;
 

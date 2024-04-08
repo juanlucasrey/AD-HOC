@@ -107,6 +107,13 @@ constexpr auto multiply_ordered(Nodes nodes, DerOp1 in1, DerOp2 in2,
     return multiply_ordered(nodes, mult, ins...);
 };
 
+template <class Nodes, class... DerOps1, class ToMult>
+constexpr auto multiply_ordered_tuple(Nodes nodes,
+                                      std::tuple<DerOps1...> /* in */,
+                                      ToMult in2) {
+    return std::make_tuple(multiply_ordered(nodes, DerOps1{}, in2)...);
+};
+
 } // namespace adhoc3
 
 #endif // ADHOC3_DIFFERENTIAL_OPERATOR_ORDERED_MULT_HPP
