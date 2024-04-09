@@ -39,26 +39,21 @@ constexpr auto order_bivariate(Nodes nodes, Bivariate<Id1, Id2> /* id */) {
     }
 }
 
-template <class Id, std::size_t Order, std::size_t Power, class Nodes>
-constexpr auto expand_aux_univariate(Nodes nodes) {
+template <class Nodes, template <class> class Univariate, class Id,
+          std::size_t Order, std::size_t Power>
+constexpr auto
+expand_single(Nodes nodes,
+              der2::p<Power, der2::d<Order, Univariate<Id>>> /* id */) {
     constexpr auto expansion = expand_univariate<Id, Order>(nodes);
     constexpr auto expansion_power =
         expand_multinomial<Power>(nodes, expansion);
     return expansion_power;
 }
 
-template <class Nodes, template <class> class Univariate, class Id,
-          std::size_t Order, std::size_t Power>
-constexpr auto
-expand_aux_single(Nodes nodes,
-                  der2::p<Power, der2::d<Order, Univariate<Id>>> /* id */) {
-    return expand_aux_univariate<Id, Order, Power>(nodes);
-}
-
 // default for sum and subs
 template <std::size_t Order, template <class, class> class Bivariate, class Id1,
           class Id2>
-constexpr auto expand_aux_bivariate(Bivariate<Id1, Id2> /* id */) {
+constexpr auto expand_bivariate(Bivariate<Id1, Id2> /* id */) {
     return std::tuple<std::tuple<der2::p<1, der2::d<Order, Id1>>>,
                       std::tuple<der2::p<1, der2::d<Order, Id2>>>>{};
 }
@@ -73,15 +68,16 @@ constexpr auto generate_operators_mul(std::index_sequence<I...> /* i */) {
 }
 
 template <std::size_t Order, class Id1, class Id2>
-constexpr auto expand_aux_bivariate(mul_t<Id1, Id2> /* id */) {
+constexpr auto expand_bivariate(mul_t<Id1, Id2> /* id */) {
     constexpr auto seq = std::make_index_sequence<Order - 1>{};
     return generate_operators_mul<Order, Id1, Id2>(seq);
 }
 
 template <class Nodes, template <class, class> class Bivariate, class Id1,
           class Id2, std::size_t Order, std::size_t Power>
-constexpr auto expand_aux_single(
-    Nodes nodes, der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> /* id */) {
+constexpr auto
+expand_single(Nodes nodes,
+              der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> /* id */) {
     if constexpr (is_constant_class_v<Id1>) {
         return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id2>>>>{};
     } else if constexpr (is_constant_class_v<Id2>) {
@@ -89,8 +85,7 @@ constexpr auto expand_aux_single(
     } else {
         constexpr auto ordered_bivariate =
             order_bivariate(nodes, Bivariate<Id1, Id2>{});
-        constexpr auto expansion =
-            expand_aux_bivariate<Order>(ordered_bivariate);
+        constexpr auto expansion = expand_bivariate<Order>(ordered_bivariate);
         return expand_multinomial<Power>(nodes, expansion);
     }
 }
@@ -118,7 +113,7 @@ template <class Nodes, class FirstOp, class... RestFirstOp, class... Ops>
 constexpr auto
 expand_aux(Nodes nodes,
            std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> /* id */) {
-    constexpr auto single_result = expand_aux_single(nodes, FirstOp{});
+    constexpr auto single_result = expand_single(nodes, FirstOp{});
     constexpr auto append_rest = multiply_ordered_tuple(
         nodes, single_result, std::tuple<RestFirstOp...>{});
     return expand_aux(nodes,
