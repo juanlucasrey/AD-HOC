@@ -80,9 +80,8 @@ constexpr auto expand_aux_bivariate(mul_t<Id1, Id2> /* id */) {
 
 template <class Nodes, template <class, class> class Bivariate, class Id1,
           class Id2, std::size_t Order, std::size_t Power>
-constexpr auto
-expand_aux_single(Nodes nodes,
-                  der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> id) {
+constexpr auto expand_aux_single(
+    Nodes nodes, der2::p<Power, der2::d<Order, Bivariate<Id1, Id2>>> /* id */) {
     if constexpr (is_constant_class_v<Id1>) {
         return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id2>>>>{};
     } else if constexpr (is_constant_class_v<Id2>) {
@@ -132,8 +131,8 @@ template <class Nodes, class... Ids>
 constexpr auto expand(Nodes nodes, std::tuple<Ids...> in1);
 
 template <class Nodes>
-constexpr auto expand(Nodes /* nodes */, std::tuple<> /* in1 */) {
-    return std::tuple<>{};
+constexpr auto expand(Nodes /* nodes */, std::tuple<> in1) {
+    return in1;
 }
 
 template <class Nodes, class... Ids>
