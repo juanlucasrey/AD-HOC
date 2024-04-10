@@ -10,10 +10,6 @@
 
 namespace adhoc3 {
 
-template <bool... Ints> class bool_sequence {};
-
-// template <bool... Ints> class bool_sequence::std::tuple<Ints...>;
-
 TEST(ExpandTree, First) {
     auto [x1, x2] = Init<2>();
     auto res = exp(x1) * cos(x2) + x1;

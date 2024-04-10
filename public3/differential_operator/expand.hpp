@@ -122,18 +122,11 @@ expand_aux(Nodes nodes,
 
 } // namespace detail
 
-template <class Nodes, class... Ids>
-constexpr auto expand(Nodes nodes, std::tuple<Ids...> in1);
-
-template <class Nodes>
-constexpr auto expand(Nodes /* nodes */, std::tuple<> in1) {
-    return in1;
-}
-
-template <class Nodes, class... Ids>
-constexpr auto expand(Nodes nodes, std::tuple<Ids...> in) {
-    static_assert(is_ordered(nodes, in));
-    return detail::expand_aux(nodes, in);
+template <class Nodes, class DersIn>
+constexpr auto expand(Nodes nodes, DersIn dersin) {
+    static_assert(std::tuple_size<DersIn>{} > 0, "no output derivatives!");
+    static_assert(is_ordered(nodes, dersin));
+    return detail::expand_aux(nodes, dersin);
 }
 
 } // namespace adhoc3

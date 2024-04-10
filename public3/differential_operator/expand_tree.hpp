@@ -146,27 +146,17 @@ constexpr auto expand_tree_aux(
 
 } // namespace detail
 
-template <class Nodes, class DersOut, class... Ids>
-constexpr auto expand_tree(Nodes nodes, DersOut dersout,
-                           std::tuple<Ids...> in1);
-
-template <class Nodes, class DersOut>
-constexpr auto expand_tree(Nodes /* nodes */, DersOut /* dersout */,
-                           std::tuple<> in1) {
-    return in1;
-}
-
-template <class Nodes, class DersOut, class... Ids>
-constexpr auto expand_tree(Nodes nodes, DersOut dersout,
-                           std::tuple<Ids...> in) {
-    static_assert(is_ordered(nodes, in));
-    constexpr auto all_nodes = detail::expand_tree_aux(nodes, dersout, in);
+template <class Nodes, class DersOut, class DersIn>
+constexpr auto expand_tree(Nodes nodes, DersOut dersout, DersIn dersin) {
+    static_assert(std::tuple_size<DersIn>{} > 0, "no output derivatives!");
+    static_assert(is_ordered(nodes, dersin));
+    constexpr auto all_nodes = detail::expand_tree_aux(nodes, dersout, dersin);
 
     constexpr auto all_included = std::apply(
         [all_nodes](auto... single_input) {
             return (contains(all_nodes, single_input) && ...);
         },
-        in);
+        dersin);
     static_assert(all_included,
                   "input derivative doesn't reach any output derivatives");
 
