@@ -29,6 +29,7 @@ add_executable(
   differential_operator/ordered_mult.t.cpp
   differential_operator/expand_multinomial.t.cpp
   differential_operator/expand_univariate.t.cpp
+  differential_operator/expand_tree.t.cpp
 )
 
 # fo coverage

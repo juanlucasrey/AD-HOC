@@ -90,5 +90,12 @@ template <typename T, typename... Us>
 struct has_type_tuple<T, std::tuple<Us...>>
     : std::disjunction<std::is_same<T, Us>...> {};
 
+template <typename T, typename Tuple>
+constexpr bool has_type_tuple_v = has_type_tuple<T, Tuple>::value;
+
+template <typename T, typename... Us>
+constexpr auto contains(std::tuple<Us...> /* tuple */, T /* value */) -> bool {
+    return std::disjunction<std::is_same<T, Us>...>::value;
+}
 } // namespace adhoc3
 #endif // ADHOC3_TUPLE_UTILS_HPP
