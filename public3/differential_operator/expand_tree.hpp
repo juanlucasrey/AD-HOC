@@ -13,6 +13,9 @@
 #include "select_root_derivatives.hpp"
 #include "tuple_utils.hpp"
 
+#include "../tests3/type_name.hpp"
+#include <type_traits>
+
 namespace adhoc3 {
 
 namespace detail {
@@ -74,6 +77,34 @@ constexpr auto expand_tree_bivariate(mul_t<Id1, Id2> /* id */) {
     return generate_operators_mul2<Order, Id1, Id2>(seq);
 }
 
+// default for sum and subs
+template <std::size_t Order, template <class, class> class Bivariate, class Id>
+constexpr auto expand_tree_bivariate_same(Bivariate<Id, Id> /* id */) {
+    return std::tuple<std::tuple<der2::p<1, der2::d<Order, Id>>>>{};
+}
+
+template <std::size_t Order, class Id, std::size_t... I>
+constexpr auto generate_operators_mul_same(std::index_sequence<I...> /* i */) {
+    if constexpr ((Order / 2) * 2 == Order) {
+        return std::make_tuple(
+            std::tuple<der2::p<1, der2::d<Order, Id>>>{},
+            std::tuple<der2::p<1, der2::d<Order - I - 1, Id>>,
+                       der2::p<1, der2::d<I + 1, Id>>>{}...,
+            std::tuple<der2::p<2, der2::d<Order / 2, Id>>>{});
+    } else {
+        return std::make_tuple(
+            std::tuple<der2::p<1, der2::d<Order, Id>>>{},
+            std::tuple<der2::p<1, der2::d<Order - I - 1, Id>>,
+                       der2::p<1, der2::d<I + 1, Id>>>{}...);
+    }
+}
+
+template <std::size_t Order, class Id>
+constexpr auto expand_tree_bivariate_same(mul_t<Id, Id> /* id */) {
+    constexpr auto seq = std::make_index_sequence<(Order - 1) / 2>{};
+    return generate_operators_mul_same<Order, Id>(seq);
+}
+
 template <class Nodes, template <class, class> class Bivariate, class Id1,
           class Id2, std::size_t Order, std::size_t Power>
 constexpr auto expand_tree_single(
@@ -82,6 +113,10 @@ constexpr auto expand_tree_single(
         return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id2>>>>{};
     } else if constexpr (is_constant_class2_v<Id2>) {
         return std::tuple<std::tuple<der2::p<Power, der2::d<Order, Id1>>>>{};
+    } else if constexpr (std::is_same_v<Id1, Id2>) {
+        constexpr auto expansion =
+            expand_tree_bivariate_same<Order>(Bivariate<Id1, Id2>{});
+        return expand_multinomial<Power>(nodes, expansion);
     } else {
         constexpr auto ordered_bivariate =
             order_bivariate2(nodes, Bivariate<Id1, Id2>{});
@@ -117,14 +152,21 @@ constexpr auto expand_tree_aux(
     return dersout;
 }
 
+template <class Nodes, class FirstOp, class... RestFirstOp>
+constexpr auto expand_single(Nodes nodes,
+                             std::tuple<FirstOp, RestFirstOp...> /* id */) {
+    constexpr auto single_result = expand_tree_single(nodes, FirstOp{});
+    return multiply_ordered_tuple(nodes, single_result,
+                                  std::tuple<RestFirstOp...>{});
+}
+
 template <class Nodes, class DersOut, class FirstOp, class... RestFirstOp,
           class... Ops>
-constexpr auto expand_tree_aux(
-    Nodes nodes, DersOut dersout,
-    std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> /* id */) {
-    constexpr auto single_result = expand_tree_single(nodes, FirstOp{});
-    constexpr auto append_rest = multiply_ordered_tuple(
-        nodes, single_result, std::tuple<RestFirstOp...>{});
+constexpr auto
+expand_tree_aux(Nodes nodes, DersOut dersout,
+                std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> id) {
+    constexpr auto append_rest =
+        expand_single(nodes, std::tuple<FirstOp, RestFirstOp...>{});
     constexpr auto alive_nodes = expand_tree_aux(
         nodes, dersout,
         merge_ordered(nodes, append_rest, std::tuple<Ops...>{}));
