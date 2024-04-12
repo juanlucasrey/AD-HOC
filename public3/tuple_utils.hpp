@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <tuple>
+#include <type_traits>
 
 namespace adhoc3 {
 
@@ -97,5 +98,29 @@ template <typename T, typename... Us>
 constexpr auto contains(std::tuple<Us...> /* tuple */, T /* value */) -> bool {
     return std::disjunction<std::is_same<T, Us>...>::value;
 }
+
+namespace detail {
+
+template <class ThisVal, class RemoveVal>
+constexpr auto remove_aux(ThisVal val, RemoveVal /* rem */) {
+
+    if constexpr (std::is_same_v<ThisVal, RemoveVal>) {
+        return std::tuple<>{};
+    } else {
+        return std::make_tuple(val);
+    }
+}
+
+} // namespace detail
+
+template <typename T, typename... Us>
+constexpr auto remove(std::tuple<Us...> tuple, T value) {
+    return std::apply(
+        [value](auto... val) {
+            return std::tuple_cat(detail::remove_aux(val, value)...);
+        },
+        tuple);
+}
+
 } // namespace adhoc3
 #endif // ADHOC3_TUPLE_UTILS_HPP
