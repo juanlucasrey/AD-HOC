@@ -13,9 +13,6 @@
 #include "select_root_derivatives.hpp"
 #include "tuple_utils.hpp"
 
-#include "../tests3/type_name.hpp"
-#include <type_traits>
-
 namespace adhoc3 {
 
 namespace detail {
