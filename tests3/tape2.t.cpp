@@ -56,4 +56,23 @@ TEST(Tape2, TapeAndTree) {
     t.backpropagate(ct);
 }
 
+// TEST(Tape2, TapeAndTree2) {
+//     auto [x, y] = Init<2>();
+//     auto res = (x * y) * (x * cos(y));
+//     auto res2 = cos(x) * y;
+
+//     auto t = Tape2(res, res2, d(x), d(y), d(y) * d(x), d(res), d(res2));
+//     t.set(x) = 1.0;
+//     t.set(y) = 1.0;
+//     t.calcprimal();
+
+//     t.set(d(res)) = 1.0;
+//     t.set(d(res2)) = 1.0;
+//     t.backpropagate();
+
+//     auto dres1 = t.get(d(x));
+//     auto dres2 = t.get(d(y));
+//     auto dres3 = t.get(d(y) * d(x));
+// }
+
 } // namespace adhoc3

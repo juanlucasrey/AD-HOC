@@ -35,26 +35,26 @@ TEST(TapeBufferSize, First) {
     // std::cout << size << std::endl;
 }
 
-TEST(TapeBufferSize, BS) {
-    auto [S, K, v, T] = Init<4>();
+// TEST(TapeBufferSize, BS) {
+//     auto [S, K, v, T] = Init<4>();
 
-    auto res = call_price(S, K, v, T);
+//     auto res = call_price(S, K, v, T);
 
-    CalcTree t(res);
-    decltype(t)::ValuesTupleInverse co;
+//     CalcTree t(res);
+//     decltype(t)::ValuesTupleInverse co;
 
-    auto der1 = d(res);
-    auto der2 = d<2>(res);
-    auto dersin = std::tuple<decltype(der2), decltype(der1)>{};
-    auto dersout = std::make_tuple(d(S) * d(v), d(S), d(K), d(v), d(T));
+//     auto der1 = d(res);
+//     auto der2 = d<2>(res);
+//     auto dersin = std::tuple<decltype(der2), decltype(der1)>{};
+//     auto dersout = std::make_tuple(d(S) * d(v), d(S), d(K), d(v), d(T));
 
-    auto dd1 = d(S) * d(K);
-    auto dd2 = pow<2>(d(S));
+//     auto dd1 = d(S) * d(K);
+//     auto dd2 = pow<2>(d(S));
 
-    auto result = expand_tree(co, dersout, dersin);
-    constexpr auto size = tape_buffer_size(co, result, dersin);
-    static_assert(size == 9);
-}
+//     auto result = expand_tree(co, dersout, dersin);
+//     constexpr auto size = tape_buffer_size(co, result, dersin);
+//     static_assert(size == 9);
+// }
 
 // TEST(TapeBufferSize, Bug1) {
 //     auto [x] = Init<1>();

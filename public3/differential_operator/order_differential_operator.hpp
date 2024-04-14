@@ -3,9 +3,13 @@
 
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
+#include "../tuple_utils.hpp"
 #include "derivative_non_null.hpp"
 #include "differential_operator.hpp"
 #include "is_ordered.hpp"
+
+#include "less_than.hpp"
+#include <tuple>
 
 namespace adhoc3 {
 
@@ -92,6 +96,66 @@ constexpr auto order_differential_operator(
                     detail::create_single_tuple(args, diff_operator)...);
             },
             nodes);
+    }
+}
+
+namespace detail {
+
+template <class ResultOp, class CandidateOp, class Nodes>
+constexpr auto return_largest(ResultOp res, CandidateOp candidate,
+                              Nodes nodes) {
+    if constexpr (less_than(nodes, candidate, res)) {
+        return res;
+    } else {
+        return candidate;
+    }
+}
+
+template <class ResultOp, class Nodes>
+constexpr auto find_largest_aux(ResultOp res, std::tuple<> /* diff_operators */,
+                                Nodes /* nodes */) {
+    return res;
+}
+
+template <class ResultOp, class Op1, class... Ops, class Nodes>
+constexpr auto find_largest_aux(ResultOp res,
+                                std::tuple<Op1, Ops...> /* diff_operators */,
+                                Nodes nodes) {
+    return find_largest_aux(return_largest(res, Op1{}, nodes),
+                            std::tuple<Ops...>{}, nodes);
+}
+
+template <class Op1, class... Ops, class Nodes>
+constexpr auto find_largest(std::tuple<Op1, Ops...> /* diff_operators */,
+                            Nodes nodes) {
+    return find_largest_aux(Op1{}, std::tuple<Ops...>{}, nodes);
+}
+
+template <class Nodes, class Result>
+constexpr auto
+order_differential_operators_aux(std::tuple<> /* diff_operators */,
+                                 Nodes /* nodes */, Result res) {
+    return res;
+}
+
+template <class Ops, class Nodes, class Result>
+constexpr auto order_differential_operators_aux(Ops diff_operators, Nodes nodes,
+                                                Result res) {
+    constexpr auto largest = find_largest(diff_operators, nodes);
+    constexpr auto rem = remove(diff_operators, largest);
+    return order_differential_operators_aux(
+        rem, nodes, std::tuple_cat(res, std::make_tuple(largest)));
+}
+
+} // namespace detail
+
+template <class Ops, class Nodes>
+constexpr auto order_differential_operators(Ops diff_operators, Nodes nodes) {
+    if constexpr (is_ordered(nodes, diff_operators)) {
+        return diff_operators;
+    } else {
+        return detail::order_differential_operators_aux(diff_operators, nodes,
+                                                        std::tuple<>{});
     }
 }
 
