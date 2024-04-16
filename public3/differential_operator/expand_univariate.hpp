@@ -3,7 +3,7 @@
 
 #include "../partition/integer_partition_index_sequence.hpp"
 #include "../partition/partition_function.hpp"
-#include "ordered_mult.hpp"
+#include <differential_operator/sorted_mult.hpp>
 
 #include <cstddef>
 #include <tuple>

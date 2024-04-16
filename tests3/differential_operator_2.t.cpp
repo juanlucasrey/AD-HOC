@@ -1,10 +1,10 @@
 #include <differential_operator/derivative_non_null.hpp>
 #include <differential_operator/differential_operator.hpp>
-#include <differential_operator/is_ordered.hpp>
+#include <differential_operator/is_sorted.hpp>
 #include <differential_operator/less_than.hpp>
 #include <differential_operator/merge_ordered.hpp>
-#include <differential_operator/order_differential_operator.hpp>
 #include <differential_operator/select_root_derivatives.hpp>
+#include <differential_operator/sort.hpp>
 // #include <differential_operator_util.hpp>
 #include <init.hpp>
 #include <tape2.hpp>

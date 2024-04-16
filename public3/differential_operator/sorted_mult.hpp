@@ -1,11 +1,11 @@
-#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_ORDERED_MULT_HPP
-#define ADHOC3_DIFFERENTIAL_OPERATOR_ORDERED_MULT_HPP
+#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_SORTED_MULT_HPP
+#define ADHOC3_DIFFERENTIAL_OPERATOR_SORTED_MULT_HPP
 
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
 #include "differential_operator.hpp"
-#include "is_ordered.hpp"
 #include "less_than.hpp"
+#include <differential_operator/is_sorted.hpp>
 
 namespace adhoc3 {
 
@@ -116,4 +116,4 @@ constexpr auto multiply_ordered_tuple(Nodes nodes,
 
 } // namespace adhoc3
 
-#endif // ADHOC3_DIFFERENTIAL_OPERATOR_ORDERED_MULT_HPP
+#endif // ADHOC3_DIFFERENTIAL_OPERATOR_SORTED_MULT_HPP

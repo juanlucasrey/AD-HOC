@@ -1,12 +1,12 @@
-#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_ORDER_DIFFERENTIAL_OPERATOR_HPP
-#define ADHOC3_DIFFERENTIAL_OPERATOR_ORDER_DIFFERENTIAL_OPERATOR_HPP
+#ifndef ADHOC3_DIFFERENTIAL_OPERATOR_SORT_HPP
+#define ADHOC3_DIFFERENTIAL_OPERATOR_SORT_HPP
 
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
 #include "../tuple_utils.hpp"
 #include "derivative_non_null.hpp"
 #include "differential_operator.hpp"
-#include "is_ordered.hpp"
+#include <differential_operator/is_sorted.hpp>
 
 #include "less_than.hpp"
 #include <tuple>
@@ -161,4 +161,4 @@ constexpr auto order_differential_operators(Ops diff_operators, Nodes nodes) {
 
 } // namespace adhoc3
 
-#endif // ADHOC3_DIFFERENTIAL_OPERATOR_ORDER_DIFFERENTIAL_OPERATOR_HPP
+#endif // ADHOC3_DIFFERENTIAL_OPERATOR_SORT_HPP

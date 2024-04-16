@@ -5,8 +5,9 @@
 #include <tape_backpropagator.hpp>
 
 #include <differential_operator/expand_tree.hpp>
-#include <differential_operator/order_differential_operator.hpp>
+#include <differential_operator/order.hpp>
 #include <differential_operator/select_root_derivatives.hpp>
+#include <differential_operator/sort.hpp>
 
 #include "../tests3/type_name.hpp"
 
@@ -68,18 +69,27 @@ auto Tape2<OutputsAndDerivatives...>::set(D /* in */) -> double & {
 template <class... OutputsAndDerivatives>
 template <class... Roots>
 void Tape2<OutputsAndDerivatives...>::backpropagate(CalcTree<Roots...> ct) {
-    typename decltype(ct)::ValuesTupleInverse co;
+    using NodesValue = decltype(ct)::ValuesTupleInverse;
+    constexpr auto nodes_value = NodesValue{};
     constexpr auto ordered_derivatives = std::tuple_cat(std::make_tuple(
-        order_differential_operator(OutputsAndDerivatives{}, co))...);
+        order_differential_operator(OutputsAndDerivatives{}, nodes_value))...);
     constexpr auto ordered_roots = select_root_derivatives(ordered_derivatives);
-    constexpr auto ordered_leaves = order_differential_operators(
-        select_non_root_derivatives(ordered_derivatives), co);
+    constexpr auto output_derivatives_ordered = order_differential_operators(
+        select_non_root_derivatives(ordered_derivatives), nodes_value);
+    constexpr auto nodes_derivative =
+        expand_tree(nodes_value, ordered_roots, output_derivatives_ordered);
+    constexpr auto buffer_size = tape_buffer_size(nodes_value, nodes_derivative,
+                                                  output_derivatives_ordered);
 
-    constexpr auto deriv_calc_tree =
-        expand_tree(co, ordered_roots, ordered_leaves);
+    std::array<double, buffer_size> buffer{};
 
-    auto tb = TapeBackpropagator(co, deriv_calc_tree, ordered_leaves);
-    tb.backpropagate(ct, ordered_derivatives, this->m_derivatives);
+    constexpr auto order = max_orders(ordered_derivatives);
+    std::array<double, order> univariate_buffer{};
+
+    detail::backpropagate_aux(
+        nodes_derivative, ct, ordered_derivatives, this->m_derivatives,
+        std::tuple_cat(std::array<detail::available_t, buffer_size>{}), buffer,
+        detail::available_t{}, univariate_buffer);
 }
 
 } // namespace adhoc3

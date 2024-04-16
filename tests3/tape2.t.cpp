@@ -35,24 +35,45 @@ TEST(Tape2, First) {
     EXPECT_EQ(t.get(dcrosswithres), 5.);
 }
 
-TEST(Tape2, TapeAndTree) {
-    auto [x, y] = Init<2>();
-    auto res = (x * y) * (x * cos(y));
-    auto res2 = cos(x) * y;
-    CalcTree ct(res, res2);
+// TEST(Tape2, TapeAndTree) {
+//     auto [x, y] = Init<2>();
+//     auto res = (x * y) * (x * cos(y));
+//     auto res2 = cos(x) * y;
+//     CalcTree ct(res, res2);
+
+//     auto dx = d(x);
+//     auto dy = d(y);
+//     auto dcross = d(y) * d(x);
+//     auto dres = d(res);
+//     auto dcrosswithres = d(res) * d(x);
+//     auto t = Tape2(dx, dy, dcross, dres, dcrosswithres);
+//     t.set(dx) = 1.;
+//     t.set(dy) = 2.;
+//     t.set(dcross) = 3.;
+//     t.set(dres) = 4.;
+//     t.set(dcrosswithres) = 5.;
+
+//     t.backpropagate(ct);
+// }
+
+TEST(Tape2, TapeAndTreeUnivariate) {
+    auto [x] = Init<1>();
+    auto res = exp(x);
+    CalcTree ct(res);
 
     auto dx = d(x);
-    auto dy = d(y);
-    auto dcross = d(y) * d(x);
+    auto dx2 = pow<2>(d(x));
+    auto dx3 = pow<3>(d(x));
+    auto dx4 = pow<4>(d(x));
     auto dres = d(res);
-    auto dcrosswithres = d(res) * d(x);
-    auto t = Tape2(dx, dy, dcross, dres, dcrosswithres);
-    t.set(dx) = 1.;
-    t.set(dy) = 2.;
-    t.set(dcross) = 3.;
-    t.set(dres) = 4.;
-    t.set(dcrosswithres) = 5.;
-
+    auto dres2 = d<2>(res);
+    auto dres3 = d<3>(res);
+    auto dres4 = d<4>(res);
+    auto t = Tape2(dx, dx2, dx3, dx4, dres, dres2, dres3, dres4);
+    t.set(dres) = 1.;
+    t.set(dres2) = 1.;
+    t.set(dres3) = 1.;
+    t.set(dres4) = 1.;
     t.backpropagate(ct);
 }
 

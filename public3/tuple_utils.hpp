@@ -122,5 +122,15 @@ constexpr auto remove(std::tuple<Us...> tuple, T value) {
         tuple);
 }
 
+template <typename First, typename... Rest>
+constexpr auto head(std::tuple<First, Rest...> /* tuple */) {
+    return First{};
+}
+
+template <typename First, typename... Rest>
+constexpr auto tail(std::tuple<First, Rest...> /* tuple */) {
+    return std::tuple<Rest...>{};
+}
+
 } // namespace adhoc3
 #endif // ADHOC3_TUPLE_UTILS_HPP
