@@ -8,10 +8,10 @@
 #include "../tests3/type_name.hpp"
 
 #include <array>
+#include <type_traits>
 
-namespace adhoc3 {
+namespace adhoc3::detail {
 
-namespace detail {
 class available_t {};
 
 template <class NodesDerivativeRest, class InterfaceTypes, class DersActive,
@@ -26,81 +26,59 @@ constexpr auto conditional_node2(NodesDerivativeRest dernodes,
     }
 }
 
-// template <std::size_t Power, std::size_t Order,
-//           template <class> class Univariate, class NodeDerivative,
-//           class FirstNodesDerivativeRest, class NodesDerivativeRest,
-//           class CalcTreeValue, class InterfaceTypes, class InterfaceArray,
-//           class BufferTypes, class BufferArray, class UnivariateType,
-//           class UnivariateArray>
-// void backpropagate_node_sep(
-//     der2::p<Power, der2::d<Order, Univariate<NodeDerivative>>> /* nd */,
-//     FirstNodesDerivativeRest /* fndr */, NodesDerivativeRest /* ndr */,
-//     CalcTreeValue ct, InterfaceTypes it, InterfaceArray ia, BufferTypes bt,
-//     BufferArray ba, UnivariateType /* ut
-//                                     */
-//     ,
-//     UnivariateArray ua) {
-//     using OutId = Univariate<NodeDerivative>;
-//     using InId = NodeDerivative;
-//     constexpr bool is_node_in_interface =
-//         has_type_tuple_v<InId, InterfaceTypes>();
+template <std::size_t... I, class... Ids, class NodeValues>
+constexpr auto get_op(std::index_sequence<I...> /* prev */,
+                      std::tuple<Ids...> /* in */, NodeValues nodes) {
+    return multiply_ordered(nodes, pow<I>(Ids{})...);
+}
 
-//     // constexpr auto position_interface = get_idx_first2<InId>(it);
-//     // constexpr auto position_buffer = get_idx_first2<InId>(bt);
-//     // double &node_val =
-//     //     is_node_in_interface ? ia[position_interface] :
-//     ba[position_buffer];
+template <std::size_t Idx, std::size_t... I>
+constexpr auto get(std::index_sequence<I...>) {
+    return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
+}
 
-//     // constexpr bool is_repeated_univariate =
-//     //     std::is_same_v<OutId, UnivariateType>;
-//     // if constexpr (!is_repeated_univariate) {
-//     //     // we need to calculate derivative values
-//     //     auto univ_ders = OutId::d2<Order>(ct.val(OutId{}),
-//     ct.val(InId{}));
+// template <std::size_t... I, class UnivariateArray>
+// constexpr void mult_univariate(std::index_sequence<> /* is */,
+//                                UnivariateArray const & /* ua */,
+//                                double & /* out */) {}
 
-//     //     std::copy(univ_ders.begin(), univ_ders.end(), ua.begin);
-//     // }
+template <std::size_t I, class PartitionIntegerSequence, class UnivariateArray>
+constexpr void mult_univariate(PartitionIntegerSequence is,
+                               UnivariateArray const &ua, double &out) {
+    if constexpr (I < is.size()) {
+        if constexpr (get<I>(is) == 1) {
+            std::cout << is.size() - 1 - I << std::endl;
+            out *= ua[is.size() - 1 - I];
+        } else if constexpr (get<I>(is) > 1) {
+            std::cout << is.size() - 1 - I << std::endl;
+            out *= std::pow(ua[is.size() - 1 - I], get<I>(is));
+        }
 
-//     // using NodesValue = decltype(ct)::ValuesTupleInverse;
-//     // constexpr auto nodes_value = NodesValue{};
-//     // // constexpr auto expansion_result =
-//     // //     expand_single(nodes_value, Univariate<NodeDerivative>{});
+        mult_univariate<I + 1>(is, ua, out);
+    }
+}
 
-//     // // constexpr auto result_filtered = std::apply(
-//     // //     [nd, ia](auto... single_output) {
-//     // //         return std::tuple_cat(conditional_node2(nd, ia,
-//     // //         single_output)...);
-//     // //     },
-//     // //     expansion_result);
-//     // {
-//     //     constexpr auto in = detail::expand_univariate_initial<InId,
-//     Order>(
-//     //         std::make_index_sequence<Order>{});
-//     //     std::cout << type_name2<decltype(in)>() << std::endl;
-//     // }
-// }
+template <std::size_t N, class PartitionIntegerSequence, class OpExpansion,
+          class NodeValues, class UnivariateArray, class ArrayOut>
+void backpropagate_process_univariate(PartitionIntegerSequence const current,
+                                      OpExpansion in, NodeValues nodes,
+                                      UnivariateArray const &ua,
+                                      ArrayOut &out) {
 
-// template <class FirstNodesDerivative, class... FirstNodesDerivativeRest,
-//           class NodesDerivativeRest, class CalcTreeValue, class
-//           InterfaceTypes, class InterfaceArray, class BufferTypes, class
-//           BufferArray, class UnivariateType, class UnivariateArray>
-// void backpropagate_node(
-//     std::tuple<FirstNodesDerivative, FirstNodesDerivativeRest...> /* nd */,
-//     NodesDerivativeRest ndr, CalcTreeValue ct, InterfaceTypes it,
-//     InterfaceArray ia, BufferTypes bt, BufferArray ba, UnivariateType ut,
-//     UnivariateArray ua) {
-//     backpropagate_node_sep(FirstNodesDerivative{},
-//                            std::tuple<FirstNodesDerivativeRest...>{}, ndr,
-//                            ct, it, ia, bt, ba, ut, ua);
-// }
+    // std::cout << get<N>(current);
+    out[N] = BellCoeff(current);
+    mult_univariate<0>(current, ua, out[N]);
+    std::cout << out[N] << std::endl;
 
-// template <class CalcTreeValue, class InterfaceTypes, class InterfaceArray,
-//           class BufferTypes, class BufferArray, class UnivariateType,
-//           class UnivariateArray>
-// void backpropagate_aux(std::tuple<> /* nd */, CalcTreeValue /* ct */,
-//                        InterfaceTypes /* it */, InterfaceArray /* ia */,
-//                        BufferTypes /* bt */, BufferArray /* ba */,
-//                        UnivariateType /* ut */, UnivariateArray /* ua */) {}
+    constexpr auto this_op = get_op(current, in, nodes);
+    std::cout << type_name2<decltype(this_op)>() << std::endl;
+
+    auto constexpr next = NextPartitionIS(current);
+    if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
+        return backpropagate_process_univariate<N + 1>(next, in, nodes, ua,
+                                                       out);
+    }
+}
 
 template <std::size_t Power, std::size_t Order,
           template <class> class Univariate, class NodeDerivative,
@@ -109,11 +87,9 @@ template <std::size_t Power, std::size_t Order,
           class BufferArray, class UnivariateType, class UnivariateArray>
 void backpropagate_process(
     der2::p<Power, der2::d<Order, Univariate<NodeDerivative>>> /* nd */,
-    FirstNodesDerivativeRest /* ndr */, CalcTreeValue ct, InterfaceTypes it,
-    InterfaceArray ia, BufferTypes bt, BufferArray ba, UnivariateType /* ut
-                                                                       */
-    ,
-    UnivariateArray ua) {
+    FirstNodesDerivativeRest ndr, CalcTreeValue ct, InterfaceTypes it,
+    InterfaceArray ia, BufferTypes bt, BufferArray ba, UnivariateType /* ut*/,
+    UnivariateArray &ua) {
     using OutId = Univariate<NodeDerivative>;
     using InId = NodeDerivative;
     constexpr bool is_node_in_interface =
@@ -124,31 +100,25 @@ void backpropagate_process(
     // double &node_val =
     //     is_node_in_interface ? ia[position_interface] : ba[position_buffer];
 
-    // constexpr bool is_repeated_univariate =
-    //     std::is_same_v<OutId, UnivariateType>;
-    // if constexpr (!is_repeated_univariate) {
-    //     // we need to calculate derivative values
-    //     auto univ_ders = OutId::d2<Order>(ct.val(OutId{}), ct.val(InId{}));
+    constexpr bool is_repeated_univariate =
+        std::is_same_v<OutId, UnivariateType>;
+    if constexpr (!is_repeated_univariate) {
+        // we need to calculate derivative values
+        auto univ_ders =
+            OutId::template d2<Order>(ct.val(OutId{}), ct.val(InId{}));
 
-    //     std::copy(univ_ders.begin(), univ_ders.end(), ua.begin);
-    // }
-
-    // using NodesValue = decltype(ct)::ValuesTupleInverse;
-    // constexpr auto nodes_value = NodesValue{};
-    // // constexpr auto expansion_result =
-    // //     expand_single(nodes_value, Univariate<NodeDerivative>{});
-
-    // // constexpr auto result_filtered = std::apply(
-    // //     [nd, ia](auto... single_output) {
-    // //         return std::tuple_cat(conditional_node2(nd, ia,
-    // //         single_output)...);
-    // //     },
-    // //     expansion_result);
-    {
-        constexpr auto in = detail::expand_univariate_initial<InId, Order>(
-            std::make_index_sequence<Order>{});
-        std::cout << type_name2<decltype(in)>() << std::endl;
+        std::copy(univ_ders.begin(), univ_ders.end(), ua.begin());
     }
+
+    using NodesValue = decltype(ct)::ValuesTupleInverse;
+
+    constexpr auto in = detail::expand_univariate_initial<InId, Order>(
+        std::make_index_sequence<Order>{});
+
+    std::array<double, partition_function(Order)> univariate_expansion;
+
+    backpropagate_process_univariate<0>(FirstPartitionIS<Order>(), in,
+                                        NodesValue{}, ua, univariate_expansion);
 }
 
 template <class NodeDerivatives, class CalcTreeValue, class InterfaceTypes,
@@ -174,8 +144,6 @@ void backpropagate_aux(NodeDerivatives nd, CalcTreeValue ct, InterfaceTypes it,
     }
 }
 
-} // namespace detail
-
-} // namespace adhoc3
+} // namespace adhoc3::detail
 
 #endif // ADHOC3_TAPE_BACKPROPAGATOR_HPP

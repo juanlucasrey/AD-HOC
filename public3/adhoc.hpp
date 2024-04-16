@@ -17,8 +17,8 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
 
     template <std::size_t Order>
     static inline auto d2(double thisv, double /* in */)
-        -> std::array<std::size_t, Order> {
-        std::array<std::size_t, Order> res;
+        -> std::array<double, Order> {
+        std::array<double, Order> res;
         res.fill(thisv);
         return res;
     }

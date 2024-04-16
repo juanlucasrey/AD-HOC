@@ -58,8 +58,10 @@ TEST(Tape2, First) {
 
 TEST(Tape2, TapeAndTreeUnivariate) {
     auto [x] = Init<1>();
-    auto res = exp(x);
+    auto res = log(x);
     CalcTree ct(res);
+    ct.set(x) = 3.2;
+    ct.evaluate();
 
     auto dx = d(x);
     auto dx2 = pow<2>(d(x));

@@ -109,51 +109,6 @@ void printAllUniqueParts(int n) {
 //     return Coeffs;
 // }
 
-template <std::size_t N, std::size_t I>
-constexpr auto innerN(const std::array<std::size_t, N>(&str)) -> std::size_t {
-    if constexpr (I == 0) {
-        return 0;
-    } else {
-        return I * str[N - I] + innerN<N, I - 1>(str);
-    }
-}
-
-template <std::size_t N>
-constexpr auto funcN(const std::array<std::size_t, N>(&str)) -> std::size_t {
-    return innerN<N, N>(str);
-}
-
-constexpr auto factorial(std::size_t n) -> std::size_t {
-    return n <= 1UL ? 1UL : (n * factorial(n - 1UL));
-}
-
-constexpr auto pow(std::size_t x, std::size_t n) -> std::size_t {
-    if (n == 0UL) {
-        return 1UL;
-    }
-
-    if ((n & 1UL) == 0UL) {
-        return pow(x * x, n / 2UL);
-    }
-
-    return x * pow(x * x, (n - 1UL) / 2UL);
-}
-
-template <std::size_t N, std::size_t I>
-constexpr auto BellDenom(std::array<std::size_t, N> const &str) -> std::size_t {
-    if constexpr (I == 0) {
-        return 1UL;
-    } else {
-        return pow(factorial(I), str[I - 1]) * factorial(str[I - 1]) *
-               BellDenom<N, I - 1>(str);
-    }
-}
-
-template <std::size_t N>
-constexpr auto BellCoeff(std::array<std::size_t, N> const &str) -> std::size_t {
-    return factorial(N) / BellDenom<N, N>(str);
-}
-
 TEST(Raw, BellCoeffs) {
     // https://en.wikipedia.org/wiki/Bell_polynomials coefficients
     // order 1

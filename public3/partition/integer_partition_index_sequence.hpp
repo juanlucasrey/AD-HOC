@@ -54,6 +54,12 @@ constexpr auto NextPartitionIS(std::index_sequence<I...> i) {
         i, std::make_index_sequence<sizeof...(I)>{});
 }
 
+template <std::size_t... I>
+constexpr auto BellCoeff(std::index_sequence<I...> i) -> std::size_t {
+    constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
+    return BellCoeff(temp);
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_PARTITION_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
