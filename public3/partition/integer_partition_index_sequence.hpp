@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <tuple>
 
 namespace adhoc3 {
 
