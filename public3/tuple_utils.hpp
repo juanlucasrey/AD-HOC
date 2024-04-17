@@ -94,9 +94,29 @@ struct has_type_tuple<T, std::tuple<Us...>>
 template <typename T, typename Tuple>
 constexpr bool has_type_tuple_v = has_type_tuple<T, Tuple>::value;
 
-template <typename T, typename... Us>
-constexpr auto contains(std::tuple<Us...> /* tuple */, T /* value */) -> bool {
-    return std::disjunction<std::is_same<T, Us>...>::value;
+template <class... Ts, class T>
+constexpr auto contains(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
+    return std::disjunction<std::is_same<Ts, T>...>::value;
+}
+
+template <class... Ts, class T>
+auto constexpr get_idx(std::tuple<Ts...> tuple, T value) -> std::size_t {
+    static_assert(contains(tuple, value));
+    // constexpr std::array<bool, sizeof...(Ts)> a{{std::is_same_v<T, Ts>...}};
+    // return std::distance(a.begin(), std::find(a.begin(), a.end(), true));
+    return detail::get_index<T, Ts...>::value;
+}
+
+template <class... Ts, class Old, class New>
+auto constexpr replace(std::tuple<Ts...> tuple, Old old_value,
+                       New /* new_value */) {
+    if constexpr (contains(tuple, old_value)) {
+        constexpr auto idx_to_replace = get_idx(tuple, old_value);
+        return detail::replace_first_aux<idx_to_replace, New>(
+            std::tuple<Ts...>{});
+    } else {
+        return tuple;
+    }
 }
 
 namespace detail {
@@ -189,6 +209,10 @@ constexpr auto precedent_required(IntegerSequences integer_sequences) {
     return precedent_required_aux<0>(integer_sequences, std::tuple<>{});
 }
 
+template <std::size_t... I>
+constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
+    return (I + ...);
+}
 } // namespace adhoc3
 
 #endif // ADHOC3_TUPLE_UTILS_HPP

@@ -57,10 +57,12 @@ TEST(Tape2, First) {
 // }
 
 TEST(Tape2, TapeAndTreeUnivariate) {
+    double const val = 3.2;
+
     auto [x] = Init<1>();
     auto res = log(x);
     CalcTree ct(res);
-    ct.set(x) = 3.2;
+    ct.set(x) = val;
     ct.evaluate();
 
     auto dx = d(x);
@@ -77,6 +79,11 @@ TEST(Tape2, TapeAndTreeUnivariate) {
     t.set(dres3) = 1.;
     t.set(dres4) = 1.;
     t.backpropagate(ct);
+
+    EXPECT_NEAR(t.get(dx), 1.0 / val, 1e-15);
+    EXPECT_NEAR(t.get(dx2), -1.0 / (val * val), 1e-15);
+    EXPECT_NEAR(t.get(dx3), 2.0 / (val * val * val), 1e-15);
+    EXPECT_NEAR(t.get(dx4), -6.0 / (val * val * val * val), 1e-15);
 }
 
 // TEST(Tape2, TapeAndTree2) {

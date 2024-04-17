@@ -2,6 +2,7 @@
 #define ADHOC3_PARTITION_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP
 
 #include "multinomial_coefficient.hpp"
+#include "tuple_utils.hpp"
 
 #include <array>
 #include <cstddef>
@@ -90,7 +91,7 @@ MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
 template <std::size_t... I>
 constexpr auto MultinomialCoeff2(std::index_sequence<I...> idx_seq)
     -> std::size_t {
-    constexpr auto order = (I + ...);
+    constexpr auto order = sum(idx_seq);
     constexpr auto bins = idx_seq.size();
     constexpr std::array<std::size_t, bins> temp{I...};
 
