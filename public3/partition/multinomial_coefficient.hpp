@@ -43,6 +43,34 @@ constexpr auto NextMultinomial(std::array<std::size_t, Bins> const &prev) {
     return arr;
 }
 
+template <std::size_t Order>
+constexpr auto factorialarr() -> std::array<std::size_t, Order + 1> {
+    std::array<std::size_t, Order + 1> res{};
+    res[0] = 1;
+
+    std::size_t k = 1;
+    while (k <= Order) {
+        res[k] = res[k - 1] * k;
+        k++;
+    }
+
+    return res;
+}
+
+template <std::size_t Order, std::size_t Bins, std::size_t FactorialInputs>
+constexpr auto
+MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
+                 std::array<std::size_t, Bins> const &coeffs) -> std::size_t {
+    std::size_t res = factorials[Order];
+
+    std::size_t k = 0;
+    while (k < Bins) {
+        res /= factorials[coeffs[k]];
+        k++;
+    }
+    return res;
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_PARTITION_MULTINOMIAL_COEFFICIENT_HPP

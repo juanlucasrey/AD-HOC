@@ -1,7 +1,13 @@
 #include <partition/combinations.hpp>
 #include <partition/multinomial_coefficient.hpp>
+#include <partition/multinomial_coefficient_index_sequence.hpp>
+#include <tuple>
+#include <tuple_utils.hpp>
+
+#include "../type_name.hpp"
 
 #include <gtest/gtest.h>
+#include <type_traits>
 
 namespace adhoc3 {
 
@@ -180,4 +186,18 @@ TEST(Partition, Multinomial) {
     }
 }
 
+TEST(Partition, MultinomialSequences) {
+    constexpr auto sequences = MultinomialSequences<4, 2>();
+    constexpr auto flags =
+        std::tuple<std::true_type, std::false_type, std::true_type,
+                   std::true_type, std::false_type, std::false_type,
+                   std::false_type, std::false_type, std::false_type,
+                   std::false_type>{};
+    constexpr auto filtered_sequences = filter(sequences, flags);
+    constexpr auto flags_in = precedent_required(filtered_sequences);
+    constexpr auto result = std::tuple<std::true_type, std::false_type,
+                                       std::true_type, std::true_type>{};
+
+    static_assert(std::is_same_v<decltype(flags_in), decltype(result)>);
+}
 } // namespace adhoc3

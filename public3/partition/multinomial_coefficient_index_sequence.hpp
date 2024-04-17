@@ -58,6 +58,35 @@ constexpr auto NextMultinomialIS(std::index_sequence<I...> i) {
         i, std::make_index_sequence<sizeof...(I)>{});
 }
 
+namespace detail {
+
+template <class CurrentIS, class Output>
+constexpr auto MultinomialSequences_aux(CurrentIS const current, Output out) {
+    auto constexpr next = NextMultinomialIS(current);
+    if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
+        return MultinomialSequences_aux(
+            next, std::tuple_cat(out, std::make_tuple(current)));
+    } else {
+        return std::tuple_cat(out, std::make_tuple(current));
+    }
+}
+
+} // namespace detail
+
+template <std::size_t Bins, std::size_t Balls>
+constexpr auto MultinomialSequences() {
+    constexpr auto first = FirstMultinomialIS<Bins, Balls>();
+    return detail::MultinomialSequences_aux(first, std::tuple<>{});
+}
+
+template <std::size_t Order, std::size_t... I, std::size_t FactorialInputs>
+constexpr auto
+MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
+                 std::index_sequence<I...> /* i */) -> std::size_t {
+    constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
+    return MultinomialCoeff<Order>(factorials, temp);
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_PARTITION_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP

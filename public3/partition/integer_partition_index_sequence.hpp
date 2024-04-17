@@ -54,6 +54,26 @@ constexpr auto NextPartitionIS(std::index_sequence<I...> i) {
         i, std::make_index_sequence<sizeof...(I)>{});
 }
 
+namespace detail {
+
+template <class CurrentIS, class Output>
+constexpr auto PartitionSequences_aux(CurrentIS const current, Output out) {
+    auto constexpr next = NextPartitionIS(current);
+    if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
+        return PartitionSequences_aux(
+            next, std::tuple_cat(out, std::make_tuple(current)));
+    } else {
+        return std::tuple_cat(out, std::make_tuple(current));
+    }
+}
+
+} // namespace detail
+
+template <std::size_t N> constexpr auto PartitionSequences() {
+    constexpr auto first = FirstPartitionIS<N>();
+    return detail::PartitionSequences_aux(first, std::tuple<>{});
+}
+
 template <std::size_t... I>
 constexpr auto BellCoeff(std::index_sequence<I...> i) -> std::size_t {
     constexpr std::array<std::size_t, sizeof...(I)> temp{I...};

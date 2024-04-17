@@ -132,5 +132,63 @@ constexpr auto tail(std::tuple<First, Rest...> /* tuple */) {
     return std::tuple<Rest...>{};
 }
 
+namespace detail {
+
+template <std::size_t N, class UnfilteredTuple, class CalculateFlags,
+          class Output>
+constexpr auto filter_aux(UnfilteredTuple in, CalculateFlags calc_flags,
+                          Output out) {
+    if constexpr (N == std::tuple_size_v<UnfilteredTuple>) {
+        return out;
+    } else {
+        if constexpr (std::get<N>(calc_flags)) {
+            return filter_aux<N + 1>(
+                in, calc_flags,
+                std::tuple_cat(out, std::make_tuple(std::get<N>(in))));
+
+        } else {
+            return filter_aux<N + 1>(in, calc_flags, out);
+        }
+    }
+}
+
+} // namespace detail
+
+template <class UnfilteredTuple, class CalculateFlags>
+constexpr auto filter(UnfilteredTuple in, CalculateFlags calc_flags) {
+    return detail::filter_aux<0>(in, calc_flags, std::tuple<>{});
+}
+
+template <std::size_t Idx, std::size_t... I>
+constexpr auto get(std::index_sequence<I...>) {
+    return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
+}
+
+template <std::size_t N, class IntegerSequences, class Output>
+constexpr auto precedent_required_aux(IntegerSequences integer_sequences,
+                                      Output out) {
+    if constexpr (N == std::get<0>(integer_sequences).size()) {
+        return out;
+    } else {
+        constexpr auto result_filtered = std::apply(
+            [](auto... sequence) { return ((get<N>(sequence) + ...) != 0); },
+            integer_sequences);
+
+        using this_result_type =
+            std::conditional<result_filtered, std::true_type,
+                             std::false_type>::type;
+
+        return precedent_required_aux<N + 1>(
+            integer_sequences,
+            std::tuple_cat(out, std::make_tuple(this_result_type{})));
+    }
+}
+
+template <class IntegerSequences>
+constexpr auto precedent_required(IntegerSequences integer_sequences) {
+    return precedent_required_aux<0>(integer_sequences, std::tuple<>{});
+}
+
 } // namespace adhoc3
+
 #endif // ADHOC3_TUPLE_UTILS_HPP

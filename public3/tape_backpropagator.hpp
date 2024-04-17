@@ -5,6 +5,8 @@
 #include <tuple>
 #include <tuple_utils.hpp>
 
+#include <partition/multinomial_coefficient_index_sequence.hpp>
+
 #include "../tests3/type_name.hpp"
 
 #include <array>
@@ -32,25 +34,18 @@ constexpr auto get_op(std::index_sequence<I...> /* prev */,
     return multiply_ordered(nodes, pow<I>(Ids{})...);
 }
 
-template <std::size_t Idx, std::size_t... I>
-constexpr auto get(std::index_sequence<I...>) {
-    return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
-}
+// template <std::size_t Idx, std::size_t... I>
+// constexpr auto get(std::index_sequence<I...>) {
+//     return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
+// }
 
-// template <std::size_t... I, class UnivariateArray>
-// constexpr void mult_univariate(std::index_sequence<> /* is */,
-//                                UnivariateArray const & /* ua */,
-//                                double & /* out */) {}
-
-template <std::size_t I, class PartitionIntegerSequence, class UnivariateArray>
-constexpr void mult_univariate(PartitionIntegerSequence is,
-                               UnivariateArray const &ua, double &out) {
+template <std::size_t I, class IntegerSequence, class InputArray>
+constexpr void mult_univariate(IntegerSequence is, InputArray const &ua,
+                               double &out) {
     if constexpr (I < is.size()) {
         if constexpr (get<I>(is) == 1) {
-            std::cout << is.size() - 1 - I << std::endl;
             out *= ua[is.size() - 1 - I];
         } else if constexpr (get<I>(is) > 1) {
-            std::cout << is.size() - 1 - I << std::endl;
             out *= std::pow(ua[is.size() - 1 - I], get<I>(is));
         }
 
@@ -58,38 +53,111 @@ constexpr void mult_univariate(PartitionIntegerSequence is,
     }
 }
 
-template <std::size_t N, class PartitionIntegerSequence, class OpExpansion,
-          class NodeValues, class UnivariateArray, class ArrayOut>
-void backpropagate_process_univariate(PartitionIntegerSequence const current,
-                                      OpExpansion in, NodeValues nodes,
-                                      UnivariateArray const &ua,
-                                      ArrayOut &out) {
+// template <std::size_t N, class PartitionIntegerSequence, class OpExpansion,
+//           class NodeValues, class UnivariateArray, class ArrayOut, class
+//           Output>
+// auto backpropagate_process_univariate(PartitionIntegerSequence const current,
+//                                       OpExpansion in, NodeValues nodes,
+//                                       UnivariateArray const &ua,
+//                                       ArrayOut &arrayout, Output out) {
+//     arrayout[N] = BellCoeff(current);
+//     mult_univariate<0>(current, ua, arrayout[N]);
 
-    // std::cout << get<N>(current);
-    out[N] = BellCoeff(current);
-    mult_univariate<0>(current, ua, out[N]);
-    std::cout << out[N] << std::endl;
+//     constexpr auto this_op = get_op(current, in, nodes);
 
-    constexpr auto this_op = get_op(current, in, nodes);
-    std::cout << type_name2<decltype(this_op)>() << std::endl;
+//     auto constexpr next = NextPartitionIS(current);
+//     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
+//         return backpropagate_process_univariate<N + 1>(
+//             next, in, nodes, ua, arrayout,
+//             std::tuple_cat(out, std::make_tuple(this_op)));
+//     } else {
+//         return std::tuple_cat(out, std::make_tuple(this_op));
+//     }
+// }
 
-    auto constexpr next = NextPartitionIS(current);
+template <std::size_t I = 0, class IntegerSequence, class InputArray>
+constexpr void mult_multinomial(IntegerSequence is, InputArray const &in,
+                                double &out) {
+    if constexpr (I < is.size()) {
+        if constexpr (get<I>(is) == 1) {
+            out *= in[I];
+        } else if constexpr (get<I>(is) > 1) {
+            out *= std::pow(in[I], get<I>(is));
+        }
+
+        mult_multinomial<I + 1>(is, in, out);
+    }
+}
+
+template <std::size_t N, std::size_t Power, class PartitionIntegerSequence,
+          class CalculateFlags, class Array, class ArrayOut>
+auto backpropagate_process_power(PartitionIntegerSequence const current,
+                                 CalculateFlags calc_flags, Array const &vals,
+                                 ArrayOut &arrayout) {
+
+    if constexpr (std::get<N>(calc_flags)) {
+        constexpr auto factorials = factorialarr<Power>();
+        arrayout[N] = MultinomialCoeff<Power>(factorials, current);
+        mult_multinomial(current, vals, arrayout[N]);
+    }
+
+    auto constexpr next = NextMultinomialIS(current);
+
     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
-        return backpropagate_process_univariate<N + 1>(next, in, nodes, ua,
-                                                       out);
+        return backpropagate_process_power<N + 1, Power>(next, calc_flags, vals,
+                                                         arrayout);
+    }
+}
+
+template <std::size_t N = 0, class PartitionIntegerSequences,
+          class CalculateFlags, class Array, class ArrayOut>
+auto backpropagate_univariate(PartitionIntegerSequences const sequences,
+                              CalculateFlags const calc_flags,
+                              Array const &vals, ArrayOut &arrayout) {
+    if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
+        if constexpr (std::get<N>(calc_flags)) {
+            constexpr auto current_sequence = std::get<N>(sequences);
+            arrayout[N] = BellCoeff(current_sequence);
+            mult_univariate<0>(current_sequence, vals, arrayout[N]);
+        }
+
+        return backpropagate_univariate<N + 1>(sequences, calc_flags, vals,
+                                               arrayout);
+    }
+}
+
+template <std::size_t N, std::size_t Power, class PartitionIntegerSequence,
+          class CalculateFlags, class Array, class ArrayOut>
+auto backpropagate_process_power2(PartitionIntegerSequence const current,
+                                  CalculateFlags calc_flags, Array const &vals,
+                                  ArrayOut &arrayout) {
+
+    if constexpr (std::get<N>(calc_flags)) {
+        constexpr auto factorials = factorialarr<Power>();
+        arrayout[N] = MultinomialCoeff<Power>(factorials, current);
+        mult_multinomial(current, vals, arrayout[N]);
+    }
+
+    auto constexpr next = NextMultinomialIS(current);
+
+    if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
+        return backpropagate_process_power2<N + 1, Power>(next, calc_flags,
+                                                          vals, arrayout);
     }
 }
 
 template <std::size_t Power, std::size_t Order,
           template <class> class Univariate, class NodeDerivative,
-          class FirstNodesDerivativeRest, class CalcTreeValue,
-          class InterfaceTypes, class InterfaceArray, class BufferTypes,
-          class BufferArray, class UnivariateType, class UnivariateArray>
+          class FirstNodesDerivativeRest, class NextNodesDerivatives,
+          class CalcTreeValue, class InterfaceTypes, class InterfaceArray,
+          class BufferTypes, class BufferArray, class UnivariateType,
+          class UnivariateArray>
 void backpropagate_process(
     der2::p<Power, der2::d<Order, Univariate<NodeDerivative>>> /* nd */,
-    FirstNodesDerivativeRest ndr, CalcTreeValue ct, InterfaceTypes it,
-    InterfaceArray ia, BufferTypes bt, BufferArray ba, UnivariateType /* ut*/,
-    UnivariateArray &ua) {
+    FirstNodesDerivativeRest ndr, NextNodesDerivatives next_derivative_nodes,
+    CalcTreeValue ct, InterfaceTypes it, InterfaceArray ia, BufferTypes bt,
+    BufferArray ba, UnivariateType /* ut*/, UnivariateArray &ua) {
+
     using OutId = Univariate<NodeDerivative>;
     using InId = NodeDerivative;
     constexpr bool is_node_in_interface =
@@ -112,13 +180,52 @@ void backpropagate_process(
 
     using NodesValue = decltype(ct)::ValuesTupleInverse;
 
-    constexpr auto in = detail::expand_univariate_initial<InId, Order>(
-        std::make_index_sequence<Order>{});
+    constexpr auto univariate_size = partition_function(Order);
+    std::array<double, univariate_size> univariate_expansion_values{0};
 
-    std::array<double, partition_function(Order)> univariate_expansion;
+    constexpr auto univariate_expansion_types =
+        expand_univariate<InId, Order>(NodesValue{});
 
-    backpropagate_process_univariate<0>(FirstPartitionIS<Order>(), in,
-                                        NodesValue{}, ua, univariate_expansion);
+    constexpr auto multinomial_expansion_types =
+        expand_multinomial<Power>(NodesValue{}, univariate_expansion_types);
+
+    constexpr auto multinomial_expansion_types_full =
+        multiply_ordered_tuple(NodesValue{}, multinomial_expansion_types, ndr);
+
+    constexpr auto multinomial_calc_flags = std::apply(
+        [next_derivative_nodes, it](auto... type) {
+            return std::tuple_cat(
+                std::conditional_t < contains(next_derivative_nodes, type) ||
+                    contains(it, type),
+                std::tuple<std::true_type>,
+                std::tuple < std::false_type >> {}...);
+        },
+        multinomial_expansion_types_full);
+
+    constexpr auto multinomial_sequences =
+        MultinomialSequences<univariate_size, Power>();
+
+    constexpr auto multinomial_sequences_filtered =
+        filter(multinomial_sequences, multinomial_calc_flags);
+    constexpr auto multinomial_sequences_filtered_size =
+        std::tuple_size_v<decltype(multinomial_sequences_filtered)>;
+
+    constexpr auto univariate_calc_flags =
+        precedent_required(multinomial_sequences_filtered);
+
+    constexpr auto partition_sequences = PartitionSequences<Order>();
+
+    backpropagate_univariate(partition_sequences, univariate_calc_flags, ua,
+                             univariate_expansion_values);
+
+    constexpr auto multinomial_size = combinations(univariate_size, Power);
+    std::array<double, multinomial_size> multinomial_expansion_values{0};
+    backpropagate_process_power<0, Power>(
+        FirstMultinomialIS<univariate_size, Power>(), multinomial_calc_flags,
+        univariate_expansion_values, multinomial_expansion_values);
+
+    std::array<double, multinomial_sequences_filtered_size>
+        multinomial_expansion_values2{0};
 }
 
 template <class NodeDerivatives, class CalcTreeValue, class InterfaceTypes,
@@ -130,17 +237,18 @@ void backpropagate_aux(NodeDerivatives nd, CalcTreeValue ct, InterfaceTypes it,
 
     if constexpr (std::tuple_size_v<NodeDerivatives>) {
         constexpr auto current_derivative_node = head(nd);
+        constexpr auto next_derivative_nodes = tail(nd);
 
         constexpr auto current_derivative_subnode =
             head(current_derivative_node);
         constexpr auto current_derivative_subnode_rest =
             tail(current_derivative_node);
 
-        backpropagate_process(current_derivative_subnode,
-                              current_derivative_subnode_rest, ct, it, ia, bt,
-                              ba, ut, ua);
+        backpropagate_process(
+            current_derivative_subnode, current_derivative_subnode_rest,
+            next_derivative_nodes, ct, it, ia, bt, ba, ut, ua);
 
-        backpropagate_aux(tail(nd), ct, it, ia, bt, ba, ut, ua);
+        backpropagate_aux(next_derivative_nodes, ct, it, ia, bt, ba, ut, ua);
     }
 }
 
