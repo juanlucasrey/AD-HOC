@@ -87,6 +87,25 @@ MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
     return MultinomialCoeff<Order>(factorials, temp);
 }
 
+template <std::size_t... I>
+constexpr auto MultinomialCoeff2(std::index_sequence<I...> /* i */)
+    -> std::size_t {
+    constexpr auto order = (I + ...);
+    constexpr auto bins = sizeof...(I);
+    constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
+
+    constexpr auto factorials = factorialarr<order>();
+
+    std::size_t res = factorials[order];
+
+    std::size_t k = 0;
+    while (k < bins) {
+        res /= factorials[temp[k]];
+        k++;
+    }
+    return res;
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_PARTITION_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP
