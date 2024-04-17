@@ -88,11 +88,11 @@ MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
 }
 
 template <std::size_t... I>
-constexpr auto MultinomialCoeff2(std::index_sequence<I...> /* i */)
+constexpr auto MultinomialCoeff2(std::index_sequence<I...> idx_seq)
     -> std::size_t {
     constexpr auto order = (I + ...);
-    constexpr auto bins = sizeof...(I);
-    constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
+    constexpr auto bins = idx_seq.size();
+    constexpr std::array<std::size_t, bins> temp{I...};
 
     constexpr auto factorials = factorialarr<order>();
 
