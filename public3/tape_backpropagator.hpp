@@ -35,20 +35,6 @@ constexpr auto conditional_node2(NodesDerivativeRest dernodes,
     }
 }
 
-// template <std::size_t I = 0, class IntegerSequence, class InputArray>
-// constexpr void mult_univariate(IntegerSequence is, InputArray const &ua,
-//                                double &out) {
-//     if constexpr (I < is.size()) {
-//         if constexpr (get<I>(is) == 1) {
-//             out *= ua[is.size() - 1 - I];
-//         } else if constexpr (get<I>(is) > 1) {
-//             out *= std::pow(ua[is.size() - 1 - I], get<I>(is));
-//         }
-
-//         mult_univariate<I + 1>(is, ua, out);
-//     }
-// }
-
 template <std::size_t I = 0, class IntegerSequence, class InputArray>
 constexpr void mult_multinomial(IntegerSequence is, InputArray const &in,
                                 double &out) {
@@ -73,8 +59,6 @@ auto backpropagate_univariate(PartitionIntegerSequences const sequences,
             constexpr auto current_sequence = std::get<N>(sequences);
             constexpr auto order = sum(current_sequence);
             arrayout[N] = BellCoeff(current_sequence) * vals[order - 1];
-            // std::cout << type_name2<decltype(current_sequence)>() <<
-            // std::endl; mult_univariate(current_sequence, vals, arrayout[N]);
         }
 
         backpropagate_univariate<N + 1>(sequences, calc_flags, vals, arrayout);
@@ -98,7 +82,7 @@ template <class CurrentNodesDerivatives, class InterfaceTypes,
           class InterfaceArray, class BufferTypes, class BufferArray>
 auto get_differential_operator_value(
     CurrentNodesDerivatives current_derivative_node, InterfaceTypes it,
-    InterfaceArray ia, BufferTypes bt, BufferArray ba) -> double {
+    InterfaceArray const &ia, BufferTypes bt, BufferArray const &ba) -> double {
 
     constexpr bool is_on_interface = contains(it, current_derivative_node);
 
@@ -126,13 +110,16 @@ constexpr auto locate_new_vals_aux(TypesToPlace derivative_nodes,
         constexpr auto current_derivative_node = std::get<N>(derivative_nodes);
         constexpr bool is_on_interface = contains(it, current_derivative_node);
         constexpr bool is_on_buffer = contains(bt, current_derivative_node);
-        static_assert(is_on_interface != is_on_buffer);
 
         using this_result = std::conditional_t<
             is_on_interface, on_interface_t,
             std::conditional_t<is_on_buffer, on_buffer_add_t, on_buffer_new_t>>;
 
-        return std::tuple_cat(out, std::make_tuple(this_result{}));
+        return locate_new_vals_aux<N + 1>(
+            derivative_nodes, it, bt,
+            std::tuple_cat(out, std::make_tuple(this_result{})));
+    } else {
+        return out;
     }
 }
 
@@ -303,7 +290,8 @@ void backpropagate_process(
     write_results(multinomial_expansion_types_full_filtered,
                   multinomial_expansion_values, locations, new_bt, ba, it, ia);
 
-    backpropagate_aux(next_derivative_nodes, ct, it, ia, bt, ba, OutId{}, ua);
+    backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, OutId{},
+                      ua);
 }
 
 template <class NodeDerivatives, class CalcTreeValue, class InterfaceTypes,

@@ -23,6 +23,7 @@ add_executable(
   tape2.t.cpp
   calc_tree.t.cpp
   tape_buffer_size.t.cpp
+  tuple_utils.t.cpp
   partition/binomial_coefficient.t.cpp
   partition/partition_function.t.cpp
   partition/integer_partition.t.cpp
