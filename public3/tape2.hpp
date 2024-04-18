@@ -13,8 +13,16 @@
 
 #include <array>
 #include <tuple>
+#include <utility>
 
 namespace adhoc3 {
+
+template <class... Ids, std::size_t... Orders, std::size_t... Powers>
+constexpr auto
+multiplicity(std::tuple<der2::p<Powers, der2::d<Orders, Ids>>...> /* in */)
+    -> std::size_t {
+    return MultinomialCoeff2(std::index_sequence<Powers...>{});
+}
 
 template <class... OutputsAndDerivatives> class Tape2 {
     //   private:
@@ -36,6 +44,7 @@ template <class... OutputsAndDerivatives> class Tape2 {
     }
 
     template <class D> auto inline get(D var) const -> double;
+    template <class D> auto inline get_d(D var) const -> double;
     template <class D> auto inline set(D var) -> double &;
 
     void inline reset_der() {
@@ -54,6 +63,18 @@ auto Tape2<OutputsAndDerivatives...>::get(D /* in */) const -> double {
 
     return this
         ->m_derivatives[detail::get_index<D, OutputsAndDerivatives...>::value];
+}
+
+template <class... OutputsAndDerivatives>
+template <class D>
+auto Tape2<OutputsAndDerivatives...>::get_d(D in) const -> double {
+    static_assert(has_type<D, OutputsAndDerivatives...>(),
+                  "derivative not on tape");
+
+    constexpr auto mult = multiplicity(in);
+    return this->m_derivatives
+               [detail::get_index<D, OutputsAndDerivatives...>::value] /
+           mult;
 }
 
 template <class... OutputsAndDerivatives>

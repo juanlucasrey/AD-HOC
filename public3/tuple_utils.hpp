@@ -152,6 +152,11 @@ constexpr auto tail(std::tuple<First, Rest...> /* tuple */) {
     return std::tuple<Rest...>{};
 }
 
+template <typename Tuple>
+constexpr auto size(Tuple /* tuple */) -> std::size_t {
+    return std::tuple_size_v<Tuple>;
+}
+
 namespace detail {
 
 template <std::size_t N, class UnfilteredTuple, class CalculateFlags,
