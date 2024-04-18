@@ -385,7 +385,9 @@ auto multiply_multivariate(PartitionIntegerSequences const sequences,
                            ArrayOut &arrayout) {
     if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
         constexpr auto current_sequence = std::get<N>(sequences);
-        arrayout[N] *= MultinomialCoeff2(current_sequence);
+        if constexpr (MultinomialCoeff2(current_sequence) != 1) {
+            arrayout[N] *= MultinomialCoeff2(current_sequence);
+        }
         multiply_multivariate<N + 1>(sequences, arrayout);
     }
 }
@@ -409,10 +411,8 @@ void backpropagate_process(
 
     using NodesValue = decltype(ct)::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
-    // std::cout << type_name2<decltype(new_subnodes)>() << std::endl;
     constexpr auto new_subnodes_full =
         multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
-    // std::cout << type_name2<decltype(new_subnodes)>() << std::endl;
 
     constexpr auto calc_flags = std::apply(
         [next_derivative_nodes, it](auto... type) {
@@ -444,19 +444,18 @@ void backpropagate_process(
     std::array<double, size(new_subnodes_full_filtered)>
         multinomial_expansion_values;
 
-    // static_assert(!same_nodes);
-
     if constexpr (is_constant_class2_v<NodeDerivative1>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
         write_result(std::get<0>(new_subnodes_full_filtered),
                      this_val_derivative, std::get<0>(new_subnodes_locations),
                      new_bt, ba, it, ia);
     } else if constexpr (is_constant_class2_v<NodeDerivative2>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
         write_result(std::get<0>(new_subnodes_full_filtered),
                      this_val_derivative, std::get<0>(new_subnodes_locations),
                      new_bt, ba, it, ia);
     } else if constexpr (same_nodes) {
         static_assert(size(new_subnodes_full_filtered) == 1);
-
         write_result(std::get<0>(new_subnodes_full_filtered),
                      std::pow(2, Power) * this_val_derivative,
                      std::get<0>(new_subnodes_locations), new_bt, ba, it, ia);
@@ -465,6 +464,146 @@ void backpropagate_process(
         constexpr auto multinomial_sequences = MultinomialSequences<2, Power>();
         constexpr auto multinomial_sequences_filtered =
             filter(multinomial_sequences, calc_flags);
+        multiply_multivariate(multinomial_sequences_filtered,
+                              multinomial_expansion_values);
+
+        write_results(new_subnodes_full_filtered, multinomial_expansion_values,
+                      new_subnodes_locations, new_bt, ba, it, ia);
+    }
+
+    backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, ut, ua);
+}
+
+class minus_t {};
+class plus_t {};
+
+template <std::size_t N, std::size_t Total, bool Inverted, class TupleOut>
+constexpr auto create_signs(TupleOut out) {
+    if constexpr (N < Total) {
+        if constexpr (N & 1U) {
+            if constexpr (Inverted) {
+                return create_signs<N + 1, Total, Inverted>(
+                    std::tuple_cat(out, std::make_tuple(plus_t{})));
+
+            } else {
+                return create_signs<N + 1, Total, Inverted>(
+                    std::tuple_cat(out, std::make_tuple(minus_t{})));
+            }
+        } else {
+            if constexpr (Inverted) {
+                return create_signs<N + 1, Total, Inverted>(
+                    std::tuple_cat(out, std::make_tuple(minus_t{})));
+            } else {
+                return create_signs<N + 1, Total, Inverted>(
+                    std::tuple_cat(out, std::make_tuple(plus_t{})));
+            }
+        }
+    } else {
+        return out;
+    }
+}
+
+template <class Nodes, class NodeDerivative1, class NodeDerivative2,
+          std::size_t Power>
+constexpr auto signatures() {
+    constexpr auto size = combinations(2, Power);
+
+    constexpr auto id1_less_than_id2 =
+        static_cast<bool>(get_idx_first2<NodeDerivative1>(Nodes{}) >=
+                          get_idx_first2<NodeDerivative2>(Nodes{}));
+    return create_signs<0, size, id1_less_than_id2>(std::tuple<>{});
+}
+
+template <std::size_t N = 0, class Array, class Signatures>
+auto fill(Array &out, Signatures signs, double val) {
+    if constexpr (N < std::tuple_size_v<Array>) {
+        constexpr auto current_sign = std::get<N>(signs);
+        if constexpr (std::is_same_v<decltype(current_sign), const plus_t>) {
+            out[N] = val;
+        } else {
+            out[N] = -val;
+        }
+        fill<N + 1>(out, signs, val);
+    }
+}
+
+template <std::size_t Power, std::size_t Order, class NodeDerivative1,
+          class NodeDerivative2, class FirstNodesDerivativeRest,
+          class CurrentNodesDerivatives, class NextNodesDerivatives,
+          class CalcTreeValue, class InterfaceTypes, class InterfaceArray,
+          class BufferTypes, class BufferArray, class UnivariateType,
+          class UnivariateArray>
+void backpropagate_process(
+    der2::p<Power, der2::d<Order, sub_t<NodeDerivative1, NodeDerivative2>>> nd,
+    FirstNodesDerivativeRest ndr,
+    CurrentNodesDerivatives current_derivative_node,
+    NextNodesDerivatives next_derivative_nodes, CalcTreeValue ct,
+    InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
+    UnivariateType ut, UnivariateArray &ua) {
+
+    constexpr auto current_node_loc =
+        locate_val(current_derivative_node, it, bt);
+
+    using NodesValue = decltype(ct)::ValuesTupleInverse;
+    constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
+    constexpr auto new_subnodes_full =
+        multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
+
+    constexpr auto calc_flags = std::apply(
+        [next_derivative_nodes, it](auto... type) {
+            return std::tuple_cat(
+                std::conditional_t < contains(next_derivative_nodes, type) ||
+                    contains(it, type),
+                std::tuple<std::true_type>,
+                std::tuple < std::false_type >> {}...);
+        },
+        new_subnodes_full);
+
+    constexpr auto new_subnodes_full_filtered =
+        filter(new_subnodes_full, calc_flags);
+
+    constexpr auto bt_free =
+        replace(bt, current_derivative_node, available_t{});
+    constexpr auto new_subnodes_locations =
+        locate_new_vals(new_subnodes_full_filtered, it, bt_free);
+
+    constexpr auto new_bt = update_buffer_types(
+        new_subnodes_full_filtered, new_subnodes_locations, bt_free);
+
+    constexpr auto same_nodes =
+        std::is_same_v<NodeDerivative1, NodeDerivative2>;
+
+    double const this_val_derivative = get_differential_operator_value(
+        current_derivative_node, it, ia, bt, ba);
+
+    std::array<double, size(new_subnodes_full_filtered)>
+        multinomial_expansion_values;
+
+    if constexpr (is_constant_class2_v<NodeDerivative1>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
+        write_result(std::get<0>(new_subnodes_full_filtered),
+                     -this_val_derivative, std::get<0>(new_subnodes_locations),
+                     new_bt, ba, it, ia);
+    } else if constexpr (is_constant_class2_v<NodeDerivative2>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
+        write_result(std::get<0>(new_subnodes_full_filtered),
+                     this_val_derivative, std::get<0>(new_subnodes_locations),
+                     new_bt, ba, it, ia);
+    } else if constexpr (same_nodes) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
+        write_result(std::get<0>(new_subnodes_full_filtered), 0.,
+                     std::get<0>(new_subnodes_locations), new_bt, ba, it, ia);
+    } else {
+        constexpr auto multinomial_sequences = MultinomialSequences<2, Power>();
+        constexpr auto multinomial_sequences_filtered =
+            filter(multinomial_sequences, calc_flags);
+
+        constexpr auto sign =
+            signatures<NodesValue, NodeDerivative1, NodeDerivative2, Power>();
+
+        constexpr auto sign_filtered = filter(sign, calc_flags);
+        fill(multinomial_expansion_values, sign_filtered, this_val_derivative);
+
         multiply_multivariate(multinomial_sequences_filtered,
                               multinomial_expansion_values);
 
