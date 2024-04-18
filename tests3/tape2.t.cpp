@@ -125,6 +125,45 @@ TEST(Tape2, TapeAndTreeUnivariateLogLog) {
     EXPECT_NEAR(t.get(dx4), -0.2307180116199667, 1e-15);
 }
 
+TEST(Tape2, TapeAndTreeUnivariateLogLogLog) {
+    double const val = 3.2;
+
+    auto [x] = Init<1>();
+    auto res = log(log(log(x)));
+    CalcTree ct(res);
+    ct.set(x) = val;
+    ct.evaluate();
+
+    auto dx = d(x);
+    auto dx2 = pow<2>(d(x));
+    auto dx3 = pow<3>(d(x));
+    auto dx4 = pow<4>(d(x));
+    auto dres = d(res);
+    auto dres2 = d<2>(res);
+    auto dres3 = d<3>(res);
+    auto dres4 = d<4>(res);
+    auto t = Tape2(dx, dx2, dx3, dx4, dres, dres2, dres3, dres4);
+    t.set(dres) = 1.;
+    t.set(dres2) = 1.;
+    t.set(dres3) = 1.;
+    t.set(dres4) = 1.;
+    t.backpropagate(ct);
+
+    // values taken from
+    // from sympy import *
+    // x = Symbol('x')
+    // f = ln(ln(ln(x)))
+    // print(lambdify([x], f.diff(x))(3.2))
+    // print(lambdify([x], f.diff(x).diff(x))(3.2))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x))(3.2))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x))(3.2))
+
+    EXPECT_NEAR(t.get(dx), 1.7776899535583102, 1e-15);
+    EXPECT_NEAR(t.get(dx2), -4.193315943532229, 1e-15);
+    EXPECT_NEAR(t.get(dx3), 17.797018671582318, 5e-14);
+    EXPECT_NEAR(t.get(dx4), -111.30552385962602, 5e-14);
+}
+
 // TEST(Tape2, TapeAndTree2) {
 //     auto [x, y] = Init<2>();
 //     auto res = (x * y) * (x * cos(y));
