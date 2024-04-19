@@ -52,7 +52,7 @@ template <class... OutputsAndDerivatives> class Tape2 {
                   std::end(this->m_derivatives), 0.);
     }
 
-    template <class... Roots> void backpropagate(CalcTree<Roots...> ct);
+    template <class... Roots> void backpropagate(CalcTree<Roots...> const &ct);
 };
 
 template <class... OutputsAndDerivatives>
@@ -89,8 +89,9 @@ auto Tape2<OutputsAndDerivatives...>::set(D /* in */) -> double & {
 
 template <class... OutputsAndDerivatives>
 template <class... Roots>
-void Tape2<OutputsAndDerivatives...>::backpropagate(CalcTree<Roots...> ct) {
-    using NodesValue = decltype(ct)::ValuesTupleInverse;
+void Tape2<OutputsAndDerivatives...>::backpropagate(
+    CalcTree<Roots...> const &ct) {
+    using NodesValue = CalcTree<Roots...>::ValuesTupleInverse;
     constexpr auto nodes_value = NodesValue{};
     constexpr auto ordered_derivatives = std::tuple_cat(std::make_tuple(
         order_differential_operator(OutputsAndDerivatives{}, nodes_value))...);

@@ -638,4 +638,73 @@ TEST(Tape2, TapeAndTreeUnivariateLargeSub) {
     // std::cout << t.get_d(dy3) << std::endl;
 }
 
+TEST(Tape2, TapeAndTreeUnivariateLargeMult) {
+    double const valx = 3.2;
+    double const valy = 0.44;
+
+    auto [x, y] = Init<2>();
+    auto res = log(log(x * y));
+    CalcTree ct(res);
+    ct.set(x) = valx;
+    ct.set(y) = valy;
+    ct.evaluate();
+
+    auto dx = d(x);
+    auto dy = d(y);
+    auto dx2 = pow<2>(d(x));
+    auto dy2 = pow<2>(d(y));
+    auto dxy = d(x) * d(y);
+
+    auto dx3 = pow<3>(d(x));
+    auto dx2y1 = pow<2>(d(x)) * d(y);
+    auto dx1y2 = d(x) * pow<2>(d(y));
+    auto dy3 = pow<3>(d(y));
+
+    auto dres = d(res);
+    auto dres2 = d<2>(res);
+    auto dres3 = d<3>(res);
+
+    auto t = Tape2(dx3, dx2y1, dx1y2, dy3, dx2, dx, dy2, dxy, dy, dres, dres2,
+                   dres3);
+    t.set(dres) = 1.;
+    t.set(dres2) = 1.;
+    t.set(dres3) = 1.;
+    t.backpropagate(ct);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // f = log(log(x * y))
+    // print(lambdify([x, y], f.diff(x))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(y))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(x).diff(x))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(y).diff(y))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(y).diff(x))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(x).diff(x).diff(x))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(x).diff(x).diff(y))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(x).diff(y).diff(y))(3.2, 0.44))
+    // print(lambdify([x, y], f.diff(y).diff(y).diff(y))(3.2, 0.44))
+
+    EXPECT_NEAR(t.get_d(dx), 0.9132880282109275, 1e-15);
+    EXPECT_NEAR(t.get_d(dy), 6.642094750624928, 1e-15);
+    EXPECT_NEAR(t.get_d(dx2), -1.1194975312893185, 1e-15);
+    EXPECT_NEAR(t.get_d(dy2), -59.213092564063146, 1e-14);
+    EXPECT_NEAR(t.get_d(dxy), -6.066145617988392, 1e-15);
+    EXPECT_NEAR(t.get_d(dx3), 2.483878648409331, 1e-15);
+    EXPECT_NEAR(t.get_d(dx2y1), 12.975946846207323, 5e-14);
+    EXPECT_NEAR(t.get_d(dx1y2), 94.37052251787145, 5e-14);
+    EXPECT_NEAR(t.get_d(dy3), 955.4814936029886, 5e-13);
+
+    // std::cout.precision(std::numeric_limits<double>::max_digits10);
+    // std::cout << t.get_d(dx) << std::endl;
+    // std::cout << t.get_d(dy) << std::endl;
+    // std::cout << t.get_d(dx2) << std::endl;
+    // std::cout << t.get_d(dy2) << std::endl;
+    // std::cout << t.get_d(dxy) << std::endl;
+    // std::cout << t.get_d(dx3) << std::endl;
+    // std::cout << t.get_d(dx2y1) << std::endl;
+    // std::cout << t.get_d(dx1y2) << std::endl;
+    // std::cout << t.get_d(dy3) << std::endl;
+}
+
 } // namespace adhoc3

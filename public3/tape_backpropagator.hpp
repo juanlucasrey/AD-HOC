@@ -17,9 +17,9 @@ namespace adhoc3::detail {
 template <class NodeDerivatives, class CalcTreeValue, class InterfaceTypes,
           class InterfaceArray, class BufferTypes, class BufferArray,
           class UnivariateType, class UnivariateArray>
-void backpropagate_aux(NodeDerivatives nd, CalcTreeValue ct, InterfaceTypes it,
-                       InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
-                       UnivariateType ut, UnivariateArray &ua);
+void backpropagate_aux(NodeDerivatives nd, CalcTreeValue const &ct,
+                       InterfaceTypes it, InterfaceArray &ia, BufferTypes bt,
+                       BufferArray &ba, UnivariateType ut, UnivariateArray &ua);
 
 class available_t {};
 
@@ -250,7 +250,7 @@ void backpropagate_process(
     der2::p<Power, der2::d<Order, Univariate<NodeDerivative>>> /* nd */,
     FirstNodesDerivativeRest ndr,
     CurrentNodesDerivatives current_derivative_node,
-    NextNodesDerivatives next_derivative_nodes, CalcTreeValue ct,
+    NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType /* ut */, UnivariateArray &ua) {
 
@@ -267,7 +267,7 @@ void backpropagate_process(
         std::copy(univ_ders.begin(), univ_ders.end(), ua.begin());
     }
 
-    using NodesValue = decltype(ct)::ValuesTupleInverse;
+    using NodesValue = CalcTreeValue::ValuesTupleInverse;
 
     constexpr auto univariate_size = partition_function(Order);
     std::array<double, univariate_size> univariate_expansion_values;
@@ -402,14 +402,14 @@ void backpropagate_process(
     der2::p<Power, der2::d<Order, add_t<NodeDerivative1, NodeDerivative2>>> nd,
     FirstNodesDerivativeRest ndr,
     CurrentNodesDerivatives current_derivative_node,
-    NextNodesDerivatives next_derivative_nodes, CalcTreeValue ct,
+    NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType ut, UnivariateArray &ua) {
 
     constexpr auto current_node_loc =
         locate_val(current_derivative_node, it, bt);
 
-    using NodesValue = decltype(ct)::ValuesTupleInverse;
+    using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
     constexpr auto new_subnodes_full =
         multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
@@ -515,7 +515,7 @@ constexpr auto signatures() {
 }
 
 template <std::size_t N = 0, class Array, class Signatures>
-auto fill(Array &out, Signatures signs, double val) {
+auto fill_with_signatures(Array &out, Signatures signs, double val) {
     if constexpr (N < std::tuple_size_v<Array>) {
         constexpr auto current_sign = std::get<N>(signs);
         if constexpr (std::is_same_v<decltype(current_sign), const plus_t>) {
@@ -523,7 +523,7 @@ auto fill(Array &out, Signatures signs, double val) {
         } else {
             out[N] = -val;
         }
-        fill<N + 1>(out, signs, val);
+        fill_with_signatures<N + 1>(out, signs, val);
     }
 }
 
@@ -537,14 +537,14 @@ void backpropagate_process(
     der2::p<Power, der2::d<Order, sub_t<NodeDerivative1, NodeDerivative2>>> nd,
     FirstNodesDerivativeRest ndr,
     CurrentNodesDerivatives current_derivative_node,
-    NextNodesDerivatives next_derivative_nodes, CalcTreeValue ct,
+    NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType ut, UnivariateArray &ua) {
 
     constexpr auto current_node_loc =
         locate_val(current_derivative_node, it, bt);
 
-    using NodesValue = decltype(ct)::ValuesTupleInverse;
+    using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
     constexpr auto new_subnodes_full =
         multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
@@ -602,7 +602,8 @@ void backpropagate_process(
             signatures<NodesValue, NodeDerivative1, NodeDerivative2, Power>();
 
         constexpr auto sign_filtered = filter(sign, calc_flags);
-        fill(multinomial_expansion_values, sign_filtered, this_val_derivative);
+        fill_with_signatures(multinomial_expansion_values, sign_filtered,
+                             this_val_derivative);
 
         multiply_multivariate(multinomial_sequences_filtered,
                               multinomial_expansion_values);
@@ -614,12 +615,201 @@ void backpropagate_process(
     backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, ut, ua);
 }
 
+// class mult_node1_t {};
+// class mult_node2_t {};
+// class mult_no_t {};
+
+// template <std::size_t N, std::size_t Total, bool Inverted, class TupleOut>
+// constexpr auto create_multiplication_flags(TupleOut out) {
+//     if constexpr (N < Total) {
+//         if constexpr (N == 0) {
+//             if constexpr (Inverted) {
+//                 return create_multiplication_flags<N + 1, Total, Inverted>(
+//                     std::tuple_cat(out, std::make_tuple(mult_node1_t{})));
+//             } else {
+//                 return create_multiplication_flags<N + 1, Total, Inverted>(
+//                     std::tuple_cat(out, std::make_tuple(mult_node2_t{})));
+//             }
+//         } else if constexpr (N == (Total - 1)) {
+//             if constexpr (Inverted) {
+//                 return create_multiplication_flags<N + 1, Total, Inverted>(
+//                     std::tuple_cat(out, std::make_tuple(mult_node2_t{})));
+//             } else {
+//                 return create_multiplication_flags<N + 1, Total, Inverted>(
+//                     std::tuple_cat(out, std::make_tuple(mult_node1_t{})));
+//             }
+
+//         } else {
+//             return create_multiplication_flags<N + 1, Total, Inverted>(
+//                 std::tuple_cat(out, std::make_tuple(mult_no_t{})));
+//         }
+//     } else {
+//         return out;
+//     }
+// }
+
+// template <class Nodes, class NodeDerivative1, class NodeDerivative2,
+//           std::size_t Order>
+// constexpr auto multiplication_flags() {
+//     // constexpr auto size = combinations(2, Power);
+
+//     constexpr auto id1_less_than_id2 =
+//         static_cast<bool>(get_idx_first2<NodeDerivative1>(Nodes{}) >=
+//                           get_idx_first2<NodeDerivative2>(Nodes{}));
+//     return create_multiplication_flags<0, Order + 1, id1_less_than_id2>(
+//         std::tuple<>{});
+// }
+
+template <std::size_t... Seq, std::size_t... Coeffs>
+constexpr auto
+binomial_mult(std::index_sequence<Seq...> /* sequence */,
+              std::index_sequence<Coeffs...> /* binomail_coeffs */)
+    -> std::size_t {
+    return (pow(Coeffs, Seq) * ...);
+}
+
+template <std::size_t N = 0, class PartitionIntegerSequences, class ArrayOut,
+          class BinomialCoeffs>
+auto fill_with_mult(PartitionIntegerSequences const sequences,
+                    ArrayOut &arrayout, BinomialCoeffs binomail_coeffs,
+                    double value_derivative_node, double value_input_1,
+                    double value_input_2) {
+    if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
+        constexpr auto current_sequence = std::get<N>(sequences);
+        arrayout[N] = value_derivative_node;
+
+        constexpr auto coeff = MultinomialCoeff2(current_sequence) *
+                               binomial_mult(current_sequence, binomail_coeffs);
+        if constexpr (coeff != 1) {
+            arrayout[N] *= coeff;
+        }
+
+        constexpr auto first_power = get<0>(current_sequence);
+        if constexpr (first_power != 0) {
+            arrayout[N] *= std::pow(value_input_2, first_power);
+        }
+
+        constexpr auto last_power =
+            get<current_sequence.size() - 1>(current_sequence);
+        if constexpr (last_power != 0) {
+            arrayout[N] *= std::pow(value_input_1, last_power);
+        }
+
+        fill_with_mult<N + 1>(sequences, arrayout, binomail_coeffs,
+                              value_derivative_node, value_input_1,
+                              value_input_2);
+    }
+}
+
+template <std::size_t Power, std::size_t Order, class NodeDerivative1,
+          class NodeDerivative2, class FirstNodesDerivativeRest,
+          class CurrentNodesDerivatives, class NextNodesDerivatives,
+          class CalcTreeValue, class InterfaceTypes, class InterfaceArray,
+          class BufferTypes, class BufferArray, class UnivariateType,
+          class UnivariateArray>
+void backpropagate_process(
+    der2::p<Power, der2::d<Order, mul_t<NodeDerivative1, NodeDerivative2>>> nd,
+    FirstNodesDerivativeRest ndr,
+    CurrentNodesDerivatives current_derivative_node,
+    NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
+    InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
+    UnivariateType ut, UnivariateArray &ua) {
+
+    constexpr auto current_node_loc =
+        locate_val(current_derivative_node, it, bt);
+
+    using NodesValue = CalcTreeValue::ValuesTupleInverse;
+    constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
+    // std::cout << type_name2<decltype(new_subnodes)>() << std::endl;
+    // std::cout << Order << std::endl;
+    // static_assert(size(new_subnodes) == Order + 1);
+    constexpr auto new_subnodes_full =
+        multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
+
+    constexpr auto calc_flags = std::apply(
+        [next_derivative_nodes, it](auto... type) {
+            return std::tuple_cat(
+                std::conditional_t < contains(next_derivative_nodes, type) ||
+                    contains(it, type),
+                std::tuple<std::true_type>,
+                std::tuple < std::false_type >> {}...);
+        },
+        new_subnodes_full);
+
+    constexpr auto new_subnodes_full_filtered =
+        filter(new_subnodes_full, calc_flags);
+
+    constexpr auto bt_free =
+        replace(bt, current_derivative_node, available_t{});
+    constexpr auto new_subnodes_locations =
+        locate_new_vals(new_subnodes_full_filtered, it, bt_free);
+
+    constexpr auto new_bt = update_buffer_types(
+        new_subnodes_full_filtered, new_subnodes_locations, bt_free);
+
+    constexpr auto same_nodes =
+        std::is_same_v<NodeDerivative1, NodeDerivative2>;
+
+    double const this_val_derivative = get_differential_operator_value(
+        current_derivative_node, it, ia, bt, ba);
+
+    std::array<double, size(new_subnodes_full_filtered)>
+        multinomial_expansion_values;
+
+    static_assert(!is_constant_class2_v<NodeDerivative1>);
+    static_assert(!is_constant_class2_v<NodeDerivative2>);
+    static_assert(!same_nodes);
+    // if constexpr (is_constant_class2_v<NodeDerivative1>) {
+    //     static_assert(size(new_subnodes_full_filtered) == 1);
+    //     write_result(std::get<0>(new_subnodes_full_filtered),
+    //                  this_val_derivative,
+    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
+    //                  ia);
+    // } else if constexpr (is_constant_class2_v<NodeDerivative2>) {
+    //     static_assert(size(new_subnodes_full_filtered) == 1);
+    //     write_result(std::get<0>(new_subnodes_full_filtered),
+    //                  this_val_derivative,
+    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
+    //                  ia);
+    // } else if constexpr (same_nodes) {
+    //     static_assert(size(new_subnodes_full_filtered) == 1);
+    //     write_result(std::get<0>(new_subnodes_full_filtered),
+    //                  std::pow(2, Power) * this_val_derivative,
+    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
+    //                  ia);
+    // } else {
+    constexpr auto multinomial_sequences =
+        MultinomialSequences<Order + 1, Power>();
+    constexpr auto multinomial_sequences_filtered =
+        filter(multinomial_sequences, calc_flags);
+
+    double const val1 = ct.val(NodeDerivative1{});
+    double const val2 = ct.val(NodeDerivative2{});
+
+    constexpr auto inverted =
+        static_cast<bool>(get_idx_first2<NodeDerivative1>(NodesValue{}) >=
+                          get_idx_first2<NodeDerivative2>(NodesValue{}));
+
+    constexpr auto binomail_coeffs = BinomialCoefficients<Order>();
+
+    fill_with_mult(multinomial_sequences_filtered, multinomial_expansion_values,
+                   binomail_coeffs, this_val_derivative, inverted ? val2 : val1,
+                   inverted ? val1 : val2);
+
+    write_results(new_subnodes_full_filtered, multinomial_expansion_values,
+                  new_subnodes_locations, new_bt, ba, it, ia);
+    // }
+
+    backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, ut, ua);
+}
+
 template <class NodeDerivatives, class CalcTreeValue, class InterfaceTypes,
           class InterfaceArray, class BufferTypes, class BufferArray,
           class UnivariateType, class UnivariateArray>
-void backpropagate_aux(NodeDerivatives nd, CalcTreeValue ct, InterfaceTypes it,
-                       InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
-                       UnivariateType ut, UnivariateArray &ua) {
+void backpropagate_aux(NodeDerivatives nd, CalcTreeValue const &ct,
+                       InterfaceTypes it, InterfaceArray &ia, BufferTypes bt,
+                       BufferArray &ba, UnivariateType ut,
+                       UnivariateArray &ua) {
 
     if constexpr (std::tuple_size_v<NodeDerivatives>) {
         constexpr auto current_derivative_node = head(nd);

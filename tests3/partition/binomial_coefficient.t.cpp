@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <utility>
+
 namespace adhoc3 {
 
 TEST(Partition, BinomialCoefficient) {
@@ -24,6 +26,23 @@ TEST(Partition, BinomialCoefficient) {
     static_assert(binomial_coefficient(4, 2) == 6);
     static_assert(binomial_coefficient(4, 3) == 4);
     static_assert(binomial_coefficient(4, 4) == 1);
+}
+
+TEST(Partition, BinomialCoefficients) {
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<0>()),
+                                 std::index_sequence<1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<1>()),
+                                 std::index_sequence<1, 1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<2>()),
+                                 std::index_sequence<1, 2, 1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<3>()),
+                                 std::index_sequence<1, 3, 3, 1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<4>()),
+                                 std::index_sequence<1, 4, 6, 4, 1>>);
 }
 
 } // namespace adhoc3
