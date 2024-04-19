@@ -43,6 +43,29 @@ TEST(Partition, BinomialCoefficients) {
 
     static_assert(std::is_same_v<decltype(BinomialCoefficients<4>()),
                                  std::index_sequence<1, 4, 6, 4, 1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficients<5>()),
+                                 std::index_sequence<1, 5, 10, 10, 5, 1>>);
+}
+
+TEST(Partition, BinomialCoefficientsSquare) {
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<0>()),
+                                 std::index_sequence<1>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<1>()),
+                                 std::index_sequence<2>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<2>()),
+                                 std::index_sequence<2, 2>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<3>()),
+                                 std::index_sequence<2, 6>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<4>()),
+                                 std::index_sequence<2, 8, 6>>);
+
+    static_assert(std::is_same_v<decltype(BinomialCoefficientsSquare<5>()),
+                                 std::index_sequence<2, 10, 20>>);
 }
 
 } // namespace adhoc3

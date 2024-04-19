@@ -35,6 +35,28 @@ template <std::size_t Balls> constexpr auto BinomialCoefficients() {
         std::make_index_sequence<Balls + 1>{});
 }
 
+namespace detail {
+
+template <std::size_t Balls, bool IsEven, std::size_t... I>
+constexpr auto
+BinomialCoefficientsSquare_aux(std::index_sequence<I...> /* in */) {
+    if constexpr (IsEven) {
+        constexpr auto size = sizeof...(I);
+        return std::index_sequence<2 * binomial_coefficient(Balls, I)...,
+                                   binomial_coefficient(Balls, size)>{};
+    } else {
+        return std::index_sequence<2 * binomial_coefficient(Balls, I)...>{};
+    }
+}
+
+} // namespace detail
+
+template <std::size_t Balls> constexpr auto BinomialCoefficientsSquare() {
+    constexpr bool is_even = (Balls / 2) * 2 == Balls;
+    constexpr auto seq = std::make_index_sequence<(Balls + 1) / 2>{};
+    return detail::BinomialCoefficientsSquare_aux<Balls, is_even>(seq);
+}
+
 } // namespace adhoc3
 
 #endif // ADHOC3_PARTITION_BINOMIAL_COEFFICIENT_HPP
