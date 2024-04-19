@@ -615,51 +615,6 @@ void backpropagate_process(
     backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, ut, ua);
 }
 
-// class mult_node1_t {};
-// class mult_node2_t {};
-// class mult_no_t {};
-
-// template <std::size_t N, std::size_t Total, bool Inverted, class TupleOut>
-// constexpr auto create_multiplication_flags(TupleOut out) {
-//     if constexpr (N < Total) {
-//         if constexpr (N == 0) {
-//             if constexpr (Inverted) {
-//                 return create_multiplication_flags<N + 1, Total, Inverted>(
-//                     std::tuple_cat(out, std::make_tuple(mult_node1_t{})));
-//             } else {
-//                 return create_multiplication_flags<N + 1, Total, Inverted>(
-//                     std::tuple_cat(out, std::make_tuple(mult_node2_t{})));
-//             }
-//         } else if constexpr (N == (Total - 1)) {
-//             if constexpr (Inverted) {
-//                 return create_multiplication_flags<N + 1, Total, Inverted>(
-//                     std::tuple_cat(out, std::make_tuple(mult_node2_t{})));
-//             } else {
-//                 return create_multiplication_flags<N + 1, Total, Inverted>(
-//                     std::tuple_cat(out, std::make_tuple(mult_node1_t{})));
-//             }
-
-//         } else {
-//             return create_multiplication_flags<N + 1, Total, Inverted>(
-//                 std::tuple_cat(out, std::make_tuple(mult_no_t{})));
-//         }
-//     } else {
-//         return out;
-//     }
-// }
-
-// template <class Nodes, class NodeDerivative1, class NodeDerivative2,
-//           std::size_t Order>
-// constexpr auto multiplication_flags() {
-//     // constexpr auto size = combinations(2, Power);
-
-//     constexpr auto id1_less_than_id2 =
-//         static_cast<bool>(get_idx_first2<NodeDerivative1>(Nodes{}) >=
-//                           get_idx_first2<NodeDerivative2>(Nodes{}));
-//     return create_multiplication_flags<0, Order + 1, id1_less_than_id2>(
-//         std::tuple<>{});
-// }
-
 template <std::size_t... Seq, std::size_t... Coeffs>
 constexpr auto
 binomial_mult(std::index_sequence<Seq...> /* sequence */,
@@ -720,9 +675,6 @@ void backpropagate_process(
 
     using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
-    // std::cout << type_name2<decltype(new_subnodes)>() << std::endl;
-    // std::cout << Order << std::endl;
-    // static_assert(size(new_subnodes) == Order + 1);
     constexpr auto new_subnodes_full =
         multiply_ordered_tuple(NodesValue{}, new_subnodes, ndr);
 
@@ -756,49 +708,50 @@ void backpropagate_process(
     std::array<double, size(new_subnodes_full_filtered)>
         multinomial_expansion_values;
 
-    static_assert(!is_constant_class2_v<NodeDerivative1>);
-    static_assert(!is_constant_class2_v<NodeDerivative2>);
-    static_assert(!same_nodes);
-    // if constexpr (is_constant_class2_v<NodeDerivative1>) {
-    //     static_assert(size(new_subnodes_full_filtered) == 1);
-    //     write_result(std::get<0>(new_subnodes_full_filtered),
-    //                  this_val_derivative,
-    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
-    //                  ia);
-    // } else if constexpr (is_constant_class2_v<NodeDerivative2>) {
-    //     static_assert(size(new_subnodes_full_filtered) == 1);
-    //     write_result(std::get<0>(new_subnodes_full_filtered),
-    //                  this_val_derivative,
-    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
-    //                  ia);
-    // } else if constexpr (same_nodes) {
-    //     static_assert(size(new_subnodes_full_filtered) == 1);
-    //     write_result(std::get<0>(new_subnodes_full_filtered),
-    //                  std::pow(2, Power) * this_val_derivative,
-    //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
-    //                  ia);
-    // } else {
-    constexpr auto multinomial_sequences =
-        MultinomialSequences<Order + 1, Power>();
-    constexpr auto multinomial_sequences_filtered =
-        filter(multinomial_sequences, calc_flags);
+    // static_assert(!is_constant_class2_v<NodeDerivative1>);
+    // static_assert(!is_constant_class2_v<NodeDerivative2>);
+    // static_assert(!same_nodes);
+    if constexpr (is_constant_class2_v<NodeDerivative2>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
+        double const val2 = std::pow(ct.val(NodeDerivative2{}), Power);
+        write_result(std::get<0>(new_subnodes_full_filtered),
+                     this_val_derivative * val2,
+                     std::get<0>(new_subnodes_locations), new_bt, ba, it, ia);
+    } else if constexpr (is_constant_class2_v<NodeDerivative1>) {
+        static_assert(size(new_subnodes_full_filtered) == 1);
+        double const val1 = std::pow(ct.val(NodeDerivative1{}), Power);
+        write_result(std::get<0>(new_subnodes_full_filtered),
+                     this_val_derivative * val1,
+                     std::get<0>(new_subnodes_locations), new_bt, ba, it, ia);
+    } else if constexpr (same_nodes) {
+        //     static_assert(size(new_subnodes_full_filtered) == 1);
+        //     write_result(std::get<0>(new_subnodes_full_filtered),
+        //                  std::pow(2, Power) * this_val_derivative,
+        //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
+        //                  ia);
+    } else {
+        constexpr auto multinomial_sequences =
+            MultinomialSequences<Order + 1, Power>();
+        constexpr auto multinomial_sequences_filtered =
+            filter(multinomial_sequences, calc_flags);
 
-    double const val1 = ct.val(NodeDerivative1{});
-    double const val2 = ct.val(NodeDerivative2{});
+        double const val1 = ct.val(NodeDerivative1{});
+        double const val2 = ct.val(NodeDerivative2{});
 
-    constexpr auto inverted =
-        static_cast<bool>(get_idx_first2<NodeDerivative1>(NodesValue{}) >=
-                          get_idx_first2<NodeDerivative2>(NodesValue{}));
+        constexpr auto inverted =
+            static_cast<bool>(get_idx_first2<NodeDerivative1>(NodesValue{}) >=
+                              get_idx_first2<NodeDerivative2>(NodesValue{}));
 
-    constexpr auto binomail_coeffs = BinomialCoefficients<Order>();
+        constexpr auto binomail_coeffs = BinomialCoefficients<Order>();
 
-    fill_with_mult(multinomial_sequences_filtered, multinomial_expansion_values,
-                   binomail_coeffs, this_val_derivative, inverted ? val2 : val1,
-                   inverted ? val1 : val2);
+        fill_with_mult(multinomial_sequences_filtered,
+                       multinomial_expansion_values, binomail_coeffs,
+                       this_val_derivative, inverted ? val2 : val1,
+                       inverted ? val1 : val2);
 
-    write_results(new_subnodes_full_filtered, multinomial_expansion_values,
-                  new_subnodes_locations, new_bt, ba, it, ia);
-    // }
+        write_results(new_subnodes_full_filtered, multinomial_expansion_values,
+                      new_subnodes_locations, new_bt, ba, it, ia);
+    }
 
     backpropagate_aux(next_derivative_nodes, ct, it, ia, new_bt, ba, ut, ua);
 }
