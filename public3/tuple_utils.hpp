@@ -6,6 +6,7 @@
 #include <iostream>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace adhoc3 {
 
@@ -187,6 +188,32 @@ constexpr auto filter(UnfilteredTuple in, CalculateFlags calc_flags) {
 template <std::size_t Idx, std::size_t... I>
 constexpr auto get(std::index_sequence<I...>) {
     return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
+}
+
+namespace detail {
+
+template <std::size_t N, class UnfilteredIS, class CalculateFlags,
+          std::size_t... Out>
+constexpr auto filter_is_aux(UnfilteredIS in, CalculateFlags calc_flags,
+                             std::index_sequence<Out...> out) {
+    if constexpr (N == in.size()) {
+        return out;
+    } else {
+        if constexpr (std::get<N>(calc_flags)) {
+            return filter_is_aux<N + 1>(
+                in, calc_flags, std::index_sequence<Out..., get<N>(in)>{});
+
+        } else {
+            return filter_is_aux<N + 1>(in, calc_flags, out);
+        }
+    }
+}
+
+} // namespace detail
+
+template <class UnfilteredIS, class CalculateFlags>
+constexpr auto filter_is(UnfilteredIS in, CalculateFlags calc_flags) {
+    return detail::filter_is_aux<0>(in, calc_flags, std::index_sequence<>{});
 }
 
 template <std::size_t N, class IntegerSequences, class Output>

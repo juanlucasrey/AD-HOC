@@ -656,6 +656,31 @@ auto fill_with_mult(PartitionIntegerSequences const sequences,
     }
 }
 
+template <std::size_t N = 0, class PartitionIntegerSequences, class ArrayOut,
+          class BinomialCoeffs>
+auto fill_with_mult_same(PartitionIntegerSequences const sequences,
+                         ArrayOut &arrayout, BinomialCoeffs binomail_coeffs,
+                         double value_derivative_node, double value_input) {
+    if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
+        constexpr auto current_sequence = std::get<N>(sequences);
+        arrayout[N] = value_derivative_node;
+
+        constexpr auto coeff = MultinomialCoeff2(current_sequence) *
+                               binomial_mult(current_sequence, binomail_coeffs);
+        if constexpr (coeff != 1) {
+            arrayout[N] *= coeff;
+        }
+
+        constexpr auto first_power = get<0>(current_sequence);
+        if constexpr (first_power != 0) {
+            arrayout[N] *= std::pow(value_input, first_power);
+        }
+
+        fill_with_mult_same<N + 1>(sequences, arrayout, binomail_coeffs,
+                                   value_derivative_node, value_input);
+    }
+}
+
 template <std::size_t Power, std::size_t Order, class NodeDerivative1,
           class NodeDerivative2, class FirstNodesDerivativeRest,
           class CurrentNodesDerivatives, class NextNodesDerivatives,
@@ -708,9 +733,6 @@ void backpropagate_process(
     std::array<double, size(new_subnodes_full_filtered)>
         multinomial_expansion_values;
 
-    // static_assert(!is_constant_class2_v<NodeDerivative1>);
-    // static_assert(!is_constant_class2_v<NodeDerivative2>);
-    // static_assert(!same_nodes);
     if constexpr (is_constant_class2_v<NodeDerivative2>) {
         static_assert(size(new_subnodes_full_filtered) == 1);
         double const val2 = std::pow(ct.val(NodeDerivative2{}), Power);
@@ -724,11 +746,21 @@ void backpropagate_process(
                      this_val_derivative * val1,
                      std::get<0>(new_subnodes_locations), new_bt, ba, it, ia);
     } else if constexpr (same_nodes) {
-        //     static_assert(size(new_subnodes_full_filtered) == 1);
-        //     write_result(std::get<0>(new_subnodes_full_filtered),
-        //                  std::pow(2, Power) * this_val_derivative,
-        //                  std::get<0>(new_subnodes_locations), new_bt, ba, it,
-        //                  ia);
+        constexpr auto binomial_coeffs = BinomialCoefficientsSquare<Order>();
+
+        constexpr auto multinomial_sequences =
+            MultinomialSequences<binomial_coeffs.size(), Power>();
+        constexpr auto multinomial_sequences_filtered =
+            filter(multinomial_sequences, calc_flags);
+
+        double const val = ct.val(NodeDerivative1{});
+
+        fill_with_mult_same(multinomial_sequences_filtered,
+                            multinomial_expansion_values, binomial_coeffs,
+                            this_val_derivative, val);
+
+        write_results(new_subnodes_full_filtered, multinomial_expansion_values,
+                      new_subnodes_locations, new_bt, ba, it, ia);
     } else {
         constexpr auto multinomial_sequences =
             MultinomialSequences<Order + 1, Power>();
@@ -742,10 +774,10 @@ void backpropagate_process(
             static_cast<bool>(get_idx_first2<NodeDerivative1>(NodesValue{}) >=
                               get_idx_first2<NodeDerivative2>(NodesValue{}));
 
-        constexpr auto binomail_coeffs = BinomialCoefficients<Order>();
+        constexpr auto binomial_coeffs = BinomialCoefficients<Order>();
 
         fill_with_mult(multinomial_sequences_filtered,
-                       multinomial_expansion_values, binomail_coeffs,
+                       multinomial_expansion_values, binomial_coeffs,
                        this_val_derivative, inverted ? val2 : val1,
                        inverted ? val1 : val2);
 

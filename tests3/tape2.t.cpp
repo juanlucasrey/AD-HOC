@@ -874,6 +874,56 @@ TEST(Tape2, TapeAndTreeUnivariateLargeMultConstLeft) {
     // std::cout << t.get_d(dx4) << std::endl;
 }
 
+TEST(Tape2, TapeAndTreeUnivariateLargeMultSame) {
+    using constants::CD;
+    using constants::encode;
+    double const valx = 0.44;
+
+    auto [x] = Init<1>();
+    auto res = log(cos(x) * cos(x));
+    CalcTree ct(res);
+    ct.set(x) = valx;
+    ct.evaluate();
+
+    auto dx = d(x);
+    auto dx2 = pow<2>(d(x));
+    auto dx3 = pow<3>(d(x));
+    auto dx4 = pow<4>(d(x));
+
+    auto dres = d(res);
+    auto dres2 = d<2>(res);
+    auto dres3 = d<3>(res);
+    auto dres4 = d<4>(res);
+
+    auto t = Tape2(dx4, dx3, dx2, dx, dres, dres2, dres3, dres4);
+    t.set(dres) = 1.;
+    t.set(dres2) = 1.;
+    t.set(dres3) = 1.;
+    t.set(dres4) = 1.;
+    t.backpropagate(ct);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // f = log(cos(x) * cos(x))
+    // valx = 0.44
+
+    // print(lambdify([x], f.diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x))(valx))
+
+    EXPECT_NEAR(t.get_d(dx), -0.9415610545552435, 1e-15);
+    EXPECT_NEAR(t.get_d(dx2), -2.443268609727591, 1e-15);
+    EXPECT_NEAR(t.get_d(dx3), -2.3004865687368343, 1e-15);
+    EXPECT_NEAR(t.get_d(dx4), -8.135610058930222, 1e-15);
+
+    // std::cout.precision(std::numeric_limits<double>::max_digits10);
+    // std::cout << t.get_d(dx) << std::endl;
+    // std::cout << t.get_d(dx2) << std::endl;
+    // std::cout << t.get_d(dx3) << std::endl;
+    // std::cout << t.get_d(dx4) << std::endl;
+}
+
 // TEST(Tape2, TestJoan) {
 //     auto [x, y, z] = Init<3>();
 //     auto res = sin(sin(x) * log(x) * sin(y) + cos(z));
