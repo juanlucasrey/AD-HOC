@@ -14,20 +14,11 @@ add_executable(
   tape_size_bwd.t.cpp
   mcsim.t.cpp
   BS.t.cpp
+  yc_test.cpp
+  vector.cpp
   # opencl only for clang at the moment
   # opencl.t.cpp
 )
-
-# googletest should be installed via brew, but it only works with clang compiled code
-# To ensure it works with other compilers (mostly GCC), I need to download and statically link.
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG main
-)
-
-FetchContent_MakeAvailable(googletest)
 
 # fo coverage
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping")
@@ -36,15 +27,12 @@ FetchContent_MakeAvailable(googletest)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wconversion -Wdouble-promotion -Wundef -Wdelete-non-virtual-dtor -Wnon-virtual-dtor -Wparentheses -Wcast-align -Wwrite-strings -Wredundant-decls -Wunused-parameter")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unsafe-loop-optimizations -Wuseless-cast -Wlogical-op")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unsafe-loop-optimizations -Wuseless-cast -Wlogical-op -Wno-psabi")
 endif()
 
-# if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#   # apple silicon seems to be quite loose with FMA on doubles
-#   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
-# endif()
 
-target_include_directories(adhoc_test PUBLIC ../public)
+target_include_directories(adhoc_test SYSTEM PUBLIC /usr/local/include  ../public)
+target_link_directories(adhoc_test PUBLIC /usr/local/lib)
 
 find_package(OpenCL REQUIRED)
 target_link_libraries(

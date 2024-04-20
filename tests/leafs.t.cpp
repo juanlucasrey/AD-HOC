@@ -1,8 +1,6 @@
 #include <init.hpp>
 #include <leafs.hpp>
 
-#include "type_name.hpp"
-
 #include <gtest/gtest.h>
 
 namespace adhoc {
