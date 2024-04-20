@@ -1,3 +1,23 @@
+/*
+ * AD-HOC, Automatic Differentiation for High Order Calculations
+ *
+ * This file is part of the AD-HOC distribution
+ * (https://github.com/juanlucasrey/adhoc2).
+ * Copyright (c) 2024 Juan Lucas Rey
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef ADHOC3_STRICT_ORDER_HPP
 #define ADHOC3_STRICT_ORDER_HPP
 
@@ -71,7 +91,9 @@ template <class... Types> struct sort_list;
 
 template <class... Ts> using sorted_list_t = typename sort_list<Ts...>::type;
 
-template <class A> struct sort_list<list<A>> { using type = list<A>; };
+template <class A> struct sort_list<list<A>> {
+    using type = list<A>;
+};
 
 template <class Left, class Right>
 static constexpr bool less_than = type_name<Left>() < type_name<Right>();
