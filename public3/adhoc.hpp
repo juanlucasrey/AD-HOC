@@ -38,6 +38,7 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
     template <std::size_t Order>
     static inline auto d2(double thisv, double /* in */)
         -> std::array<double, Order> {
+        // we use f'(x) - f(x) = 0
         std::array<double, Order> res;
         res.fill(thisv);
         return res;
@@ -69,6 +70,7 @@ template <class Input> struct cos_t : public Base<cos_t<Input>> {
     template <std::size_t Order>
     static inline auto d2(double thisv, double in)
         -> std::array<double, Order> {
+        // we use f''(x) + f(x) = 0
         std::array<double, Order> res;
 
         if constexpr (Order >= 1) {
@@ -100,6 +102,7 @@ template <class Input> struct sin_t : public Base<sin_t<Input>> {
     template <std::size_t Order>
     static inline auto d2(double thisv, double in)
         -> std::array<double, Order> {
+        // we use f''(x) + f(x) = 0
         std::array<double, Order> res;
 
         if constexpr (Order >= 1) {
@@ -122,6 +125,19 @@ template <class Derived> auto sin(Base<Derived> /* in */) {
     return sin_t<Derived>{};
 }
 
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void sqrt_aux(std::array<double, Order> &res, double one_over_in) {
+    constexpr double coeff = -static_cast<double>(N * 2 - 1) / 2.;
+    res[N] = res[N - 1] * one_over_in * coeff;
+    if constexpr ((N + 1) < Order) {
+        sqrt_aux<N + 1>(res, one_over_in);
+    }
+}
+
+} // namespace detail
+
 template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
     static inline auto v(double in) -> double { return std::sqrt(in); }
     // option 1
@@ -131,6 +147,31 @@ template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
     // option 2
     static inline auto d(double thisv, double /* in */) -> double {
         return 0.5 / thisv;
+    }
+
+    template <std::size_t Order>
+    static inline auto d2(double thisv, double in)
+        -> std::array<double, Order> {
+        // we use 2 * x * f'(x) - f(x) = 0
+        // => 2 * (x + e) * f'(x + e) - f(x + e) = 0
+        // => 2 * (x + e) * sum(e^n * f(n+1)(x)/n!) - sum(e^n * f(n)(x)/n!) = 0
+        // => 2*x*sum(e^n * f(n+1)(x)/n!) + 2*sum(e^n * f(n)(x)/(n-1)!) -
+        // sum(e^n * f(n)(x)/n!) = 0
+        // => 2*x*f(n+1)(x) + 2*n*f(n)(x) - f(n)(x) = 0
+        // => f(n+1)(x) = (1/2 - n)*f(n)(x)/x = ((1 - 2n)/2)*f(n)(x)/x
+        std::array<double, Order> res;
+
+        double const one_over_in = 1.0 / in;
+
+        if constexpr (Order >= 1) {
+            res[0] = 0.5 * thisv * one_over_in;
+        }
+
+        if constexpr (Order >= 2) {
+            detail::sqrt_aux<1>(res, one_over_in);
+        }
+
+        return res;
     }
 };
 

@@ -53,4 +53,21 @@ TEST(Base, LogDer) {
     EXPECT_EQ(ders[3], -96);
 }
 
+TEST(Base, SqrtDer) {
+    double in = 0.35;
+    double lnin = std::sqrt(in);
+    auto ders = sqrt_t<double>::d2<5>(lnin, in);
+
+    std::cout << ders[0] << std::endl;
+    std::cout << ders[1] << std::endl;
+    std::cout << ders[2] << std::endl;
+    std::cout << ders[3] << std::endl;
+    std::cout << ders[4] << std::endl;
+
+    // EXPECT_EQ(ders[0], 2.);
+    // EXPECT_EQ(ders[1], -4);
+    // EXPECT_EQ(ders[2], 16);
+    // EXPECT_EQ(ders[3], -96);
+}
+
 } // namespace adhoc3
