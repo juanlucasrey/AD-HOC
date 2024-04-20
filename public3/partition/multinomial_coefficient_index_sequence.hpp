@@ -2,7 +2,7 @@
  * AD-HOC, Automatic Differentiation for High Order Calculations
  *
  * This file is part of the AD-HOC distribution
- * (https://github.com/juanlucasrey/adhoc2).
+ * (https://github.com/juanlucasrey/AD-HOC).
  * Copyright (c) 2024 Juan Lucas Rey
  *
  * This program is free software: you can redistribute it and/or modify
