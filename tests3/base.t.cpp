@@ -58,16 +58,22 @@ TEST(Base, SqrtDer) {
     double lnin = std::sqrt(in);
     auto ders = sqrt_t<double>::d2<5>(lnin, in);
 
-    std::cout << ders[0] << std::endl;
-    std::cout << ders[1] << std::endl;
-    std::cout << ders[2] << std::endl;
-    std::cout << ders[3] << std::endl;
-    std::cout << ders[4] << std::endl;
+    // from sympy import *
+    // x = Symbol('x')
+    // f = sqrt(x)
+    // valx = 0.35
 
-    // EXPECT_EQ(ders[0], 2.);
-    // EXPECT_EQ(ders[1], -4);
-    // EXPECT_EQ(ders[2], 16);
-    // EXPECT_EQ(ders[3], -96);
+    // print(lambdify([x], f.diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+
+    EXPECT_NEAR(ders[0], 0.8451542547285166, 1e-13);
+    EXPECT_NEAR(ders[1], -1.2073632210407381, 1e-13);
+    EXPECT_NEAR(ders[2], 5.174413804460307, 1e-13);
+    EXPECT_NEAR(ders[3], -36.9600986032879, 1e-13);
+    EXPECT_NEAR(ders[4], 369.60098603287906, 1e-12);
 }
 
 } // namespace adhoc3
