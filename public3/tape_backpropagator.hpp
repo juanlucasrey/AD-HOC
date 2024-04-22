@@ -158,7 +158,7 @@ constexpr auto locate_val(Node node, InterfaceNodesTuple interface_nodes_tuple,
         return on_interface_t{};
     } else {
         constexpr bool is_on_buffer = contains(buffer_nodes_tuple, node);
-        if constexpr (is_on_interface) {
+        if constexpr (is_on_buffer) {
             return on_buffer_add_t{};
         } else {
             return on_buffer_new_t{};
