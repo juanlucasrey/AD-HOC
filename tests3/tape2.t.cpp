@@ -1,10 +1,11 @@
-#include "type_name.hpp"
+#include <calc_tree.hpp>
 #include <differential_operator/differential_operator.hpp>
 #include <differential_operator/select_root_derivatives.hpp>
 #include <init.hpp>
 #include <tape2.hpp>
 
-#include <calc_tree.hpp>
+#include "call_price.hpp"
+#include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
@@ -743,16 +744,19 @@ TEST(Tape2, TapeAndTreeUnivariateLargeMult2) {
     // from sympy import *
     // x = Symbol('x')
     // y = Symbol('y')
-    // f = log(log(x * y))
-    // print(lambdify([x, y], f.diff(x))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(y))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(x).diff(x))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(y).diff(y))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(y).diff(x))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(x).diff(x).diff(x))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(x).diff(x).diff(y))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(x).diff(y).diff(y))(3.2, 0.44))
-    // print(lambdify([x, y], f.diff(y).diff(y).diff(y))(3.2, 0.44))
+    // f = log(log(cos(x) * sin(y)))
+    // valx = 0.5
+    // valy = 0.44
+
+    // print(lambdify([x, y], f.diff(x))(valx, valy))
+    // print(lambdify([x, y], f.diff(y))(valx, valy))
+    // print(lambdify([x, y], f.diff(x).diff(x))(valx, valy))
+    // print(lambdify([x, y], f.diff(y).diff(y))(valx, valy))
+    // print(lambdify([x, y], f.diff(y).diff(x))(valx, valy))
+    // print(lambdify([x, y], f.diff(x).diff(x).diff(x))(valx, valy))
+    // print(lambdify([x, y], f.diff(x).diff(x).diff(y))(valx, valy))
+    // print(lambdify([x, y], f.diff(x).diff(y).diff(y))(valx, valy))
+    // print(lambdify([x, y], f.diff(y).diff(y).diff(y))(valx, valy))
 
     EXPECT_NEAR(t.get_d(dx), 0.5551616009854359, 1e-15);
     EXPECT_NEAR(t.get_d(dy), -2.158578010960933, 1e-15);
@@ -988,5 +992,169 @@ TEST(Tape2, TapeAndTreeUnivariateLargeMultSame) {
 //     // std::cout << t.get_d(dx1y2) << std::endl;
 //     // std::cout << t.get_d(dy3) << std::endl;
 // }
+
+// TEST(Tape2, ClangBreaking) {
+//     auto [x, y, z] = Init<3>();
+//     // auto res = sin(sin(x) * log(x) * sin(y) + cos(z));
+//     auto res = sin(sin(x) * log(x) * sin(y) + cos(z));
+
+//     CalcTree ct(res);
+//     // // ct.set(x) = 0.3;
+//     // // ct.set(y) = 0.52;
+//     // ct.set(z) = 1.5;
+//     // ct.evaluate();
+
+//     // auto dx = d(x);
+//     // auto dy = d(y);
+//     // auto dz = d(z);
+//     // auto dx2 = d(x) * d(x);
+//     // auto dy2 = d(y) * d(y);
+//     // auto dz2 = d(z) * d(z);
+//     // auto dxy = d(x) * d(y);
+//     // auto dxz = d(x) * d(z);
+//     // auto dyz = d(y) * d(z);
+
+//     auto dz3 = d(z) * d(z) * d(z);
+//     // auto dx3 = d(x) * d(x) * d(x);
+//     // auto darb = pow<2>(d(x)) * d(z);
+
+//     // auto dres = d(res);
+//     // auto dres2 = d<2>(res);
+//     auto dres3 = d<3>(res);
+
+//     // auto t = Tape2(dx, dy, dz, dres, dz3, dx3, darb, dres3);
+//     // auto t = Tape2(dx, dy, dz, dx2, dy2, dz2, dxy, dxz, dyz, dz3, dres,
+//     // dres2,
+//     //                dres3);
+//     auto t = Tape2(dz3, dres3);
+
+//     // t.set(dres) = 1.;
+//     // t.set(dres3) = 1.;
+//     t.backpropagate(ct);
+
+//     // from sympy import *
+//     // x = Symbol('x')
+//     // y = Symbol('y')
+//     // z = Symbol('z')
+//     // f = sin(sin(x) * log(x) * sin(y) + cos(z))
+//     // valx = 0.3
+//     // valy = 0.52
+//     // valz = 1.5
+
+//     // print(lambdify([x, y, z], f.diff(x))(valx, valy, valz))
+//     // print(lambdify([x, y, z], f.diff(y))(valx, valy, valz))
+//     // print(lambdify([x, y, z], f.diff(z))(valx, valy, valz))
+//     // print(lambdify([x, y, z], f.diff(z).diff(z).diff(z))(valx, valy,
+//     // valz))
+//     // print(lambdify([x, y, z], f.diff(x).diff(x).diff(x))(valx, valy,
+//     // valz))
+//     // print(lambdify([x, y, z], f.diff(x).diff(x).diff(z))(valx, valy,
+//     // valz))
+
+//     // EXPECT_NEAR(t.get_d(dx), -0.0815897296146379, 1e-15);
+//     // EXPECT_NEAR(t.get_d(dy), -0.3070338475892694, 1e-15);
+//     // EXPECT_NEAR(t.get_d(dz), -0.9918908259808428, 1e-15);
+//     // EXPECT_NEAR(t.get_d(dz3), 2.0012254874538344, 1e-15);
+//     // EXPECT_NEAR(t.get_d(dx3), -5.854071971576513, 1e-15);
+//     // EXPECT_NEAR(t.get_d(darb), -0.1738608795967254, 1e-15);
+
+//     // std::cout.precision(std::numeric_limits<double>::max_digits10);
+//     // std::cout << t.get_d(dx) << std::endl;
+//     // std::cout << t.get_d(dy) << std::endl;
+//     // std::cout << t.get_d(dz) << std::endl;
+//     // std::cout << t.get_d(dz3) << std::endl;
+//     // std::cout << t.get_d(dx3) << std::endl;
+//     // std::cout << t.get_d(darb) << std::endl;
+// }
+
+TEST(Tape2, BSDerivatives) {
+    auto [S, K, v, T] = Init<4>();
+
+    auto res = call_price(S, K, v, T);
+
+    CalcTree ct(res);
+    ct.set(S) = 100.0;
+    ct.set(K) = 102.0;
+    ct.set(v) = 0.15;
+    ct.set(T) = 0.5;
+    ct.evaluate();
+
+    auto dS = d(S);
+    auto dK = d(K);
+    auto dv = d(v);
+    auto dT = d(T);
+    auto d2S = pow<2>(d(S));
+    auto d2K = pow<2>(d(K));
+    auto d2v = pow<2>(d(v));
+    auto d2T = pow<2>(d(T));
+    auto dSK = d(S) * d(K);
+    auto dSv = d(S) * d(v);
+    auto dST = d(S) * d(T);
+    auto dKv = d(K) * d(v);
+    auto dKT = d(K) * d(T);
+    auto dvT = d(v) * d(T);
+
+    auto dr1 = d(res);
+    auto dr2 = d<2>(res);
+    auto dr22 = pow<2>(d(res));
+
+    auto t = Tape2(dS, dK, dv, dT, d2S, d2K, d2v, d2T, dSK, dSv, dST, dKv, dKT,
+                   dvT, dr1, dr2);
+
+    t.set(dr1) = 1.;
+    t.set(dr2) = 1.;
+    t.backpropagate(ct);
+
+    /*from sympy import *
+    S = Symbol('S')
+    K = Symbol('K')
+    v = Symbol('v')
+    T = Symbol('T')
+
+    totalvol = v * sqrt(T)
+    d1 = log(S / K) / totalvol + totalvol * 0.5
+    d2 = d1 + totalvol
+
+    minus_one_over_root_two =-1.0 / sqrt(2.0)
+    cdf_n_d1 = 0.5 * erfc(d1 * minus_one_over_root_two)
+    cdf_n_d2 = 0.5 * erfc(d2 * minus_one_over_root_two)
+
+    f = S * cdf_n_d1 - K * cdf_n_d2
+
+    valS = 100.0
+    valK = 102.0
+    valv = 0.15
+    valT = 0.5
+
+    print(lambdify([S, K, v, T], f.diff(S))(valS, valK, valv, valT))
+    print(lambdify([S, K, v, T], f.diff(K))(valS, valK, valv, valT))
+    print(lambdify([S, K, v, T], f.diff(v))(valS, valK, valv, valT))
+    print(lambdify([S, K, v, T], f.diff(T))(valS, valK, valv, valT))
+    print(lambdify([S, K, v, T], f.diff(S).diff(S))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(K).diff(K))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(v).diff(v))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(T).diff(T))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(S).diff(K))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(S).diff(v))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(S).diff(T))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(K).diff(v))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(K).diff(T))(valS, valK, valv,valT))
+    print(lambdify([S, K, v, T], f.diff(v).diff(T))(valS, valK, valv,valT))*/
+
+    EXPECT_NEAR(t.get_d(dS), 0.33961663008862164, 1e-15);
+    EXPECT_NEAR(t.get_d(dK), -0.3838761485986675, 1e-14);
+    EXPECT_NEAR(t.get_d(dv), -30.580208040388406, 1e-13);
+    EXPECT_NEAR(t.get_d(dT), -4.587031206058272, 1e-14);
+    EXPECT_NEAR(t.get_d(d2S), 0.11262750926223955, 1e-15);
+    EXPECT_NEAR(t.get_d(d2K), 0.10825404581145669, 1e-15);
+    EXPECT_NEAR(t.get_d(d2v), 26.405582264938744, 5e-13);
+    EXPECT_NEAR(t.get_d(d2T), 5.181156807019395, 5e-14);
+    EXPECT_NEAR(t.get_d(dSK), -0.11041912672768583, 5e-13);
+    EXPECT_NEAR(t.get_d(dSv), 1.8990518775466825, 5e-13);
+    EXPECT_NEAR(t.get_d(dST), 0.28485778163200237, 5e-13);
+    EXPECT_NEAR(t.get_d(dKv), -2.161621527402506, 5e-13);
+    EXPECT_NEAR(t.get_d(dKT), -0.3242432291103765, 5e-13);
+    EXPECT_NEAR(t.get_d(dvT), -26.61937070064767, 5e-13);
+}
 
 } // namespace adhoc3
