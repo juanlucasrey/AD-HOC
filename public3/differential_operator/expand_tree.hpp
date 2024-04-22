@@ -179,9 +179,9 @@ constexpr auto expand_single(Nodes nodes,
 
 template <class Nodes, class DersOut, class FirstOp, class... RestFirstOp,
           class... Ops>
-constexpr auto
-expand_tree_aux(Nodes nodes, DersOut dersout,
-                std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> id) {
+constexpr auto expand_tree_aux(
+    Nodes nodes, DersOut dersout,
+    std::tuple<std::tuple<FirstOp, RestFirstOp...>, Ops...> /* id */) {
     constexpr auto append_rest =
         expand_single(nodes, std::tuple<FirstOp, RestFirstOp...>{});
     constexpr auto alive_nodes = expand_tree_aux(

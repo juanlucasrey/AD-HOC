@@ -53,7 +53,7 @@ constexpr auto NextMultinomial(std::array<std::size_t, Bins> const &prev) {
 
     std::size_t rem_val = arr.back();
     arr.back() = 0;
-    std::size_t k = static_cast<std::size_t>(Bins) - 2;
+    std::size_t k = Bins - 2;
     while (arr[k] == 0 && k > 0) {
         k--;
     }

@@ -92,9 +92,15 @@ auto Tape2<OutputsAndDerivatives...>::get_d(D in) const -> double {
                   "derivative not on tape");
 
     constexpr auto mult = multiplicity(in);
-    return this->m_derivatives
-               [detail::get_index<D, OutputsAndDerivatives...>::value] /
-           mult;
+    if constexpr (mult == 1) {
+        return this->m_derivatives
+            [detail::get_index<D, OutputsAndDerivatives...>::value];
+    } else {
+        constexpr auto coeff = 1.0 / mult;
+        return this->m_derivatives
+                   [detail::get_index<D, OutputsAndDerivatives...>::value] *
+               coeff;
+    }
 }
 
 template <class... OutputsAndDerivatives>

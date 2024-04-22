@@ -406,7 +406,8 @@ auto multiply_multivariate(PartitionIntegerSequences const sequences,
     if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
         constexpr auto current_sequence = std::get<N>(sequences);
         if constexpr (MultinomialCoeff2(current_sequence) != 1) {
-            arrayout[N] *= MultinomialCoeff2(current_sequence);
+            arrayout[N] *=
+                static_cast<double>(MultinomialCoeff2(current_sequence));
         }
         multiply_multivariate<N + 1>(sequences, arrayout);
     }
@@ -425,9 +426,6 @@ void backpropagate_process(
     NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType ut, UnivariateArray &ua) {
-
-    constexpr auto current_node_loc =
-        locate_val(current_derivative_node, it, bt);
 
     using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
@@ -561,9 +559,6 @@ void backpropagate_process(
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType ut, UnivariateArray &ua) {
 
-    constexpr auto current_node_loc =
-        locate_val(current_derivative_node, it, bt);
-
     using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);
     constexpr auto new_subnodes_full =
@@ -656,7 +651,7 @@ auto fill_with_mult(PartitionIntegerSequences const sequences,
         constexpr auto coeff = MultinomialCoeff2(current_sequence) *
                                binomial_mult(current_sequence, binomail_coeffs);
         if constexpr (coeff != 1) {
-            arrayout[N] *= coeff;
+            arrayout[N] *= static_cast<double>(coeff);
         }
 
         constexpr auto first_power = get<0>(current_sequence);
@@ -688,7 +683,7 @@ auto fill_with_mult_same(PartitionIntegerSequences const sequences,
         constexpr auto coeff = MultinomialCoeff2(current_sequence) *
                                binomial_mult(current_sequence, binomail_coeffs);
         if constexpr (coeff != 1) {
-            arrayout[N] *= coeff;
+            arrayout[N] *= static_cast<double>(coeff);
         }
 
         constexpr auto first_power = get<0>(current_sequence);
@@ -714,9 +709,6 @@ void backpropagate_process(
     NextNodesDerivatives next_derivative_nodes, CalcTreeValue const &ct,
     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
     UnivariateType ut, UnivariateArray &ua) {
-
-    constexpr auto current_node_loc =
-        locate_val(current_derivative_node, it, bt);
 
     using NodesValue = CalcTreeValue::ValuesTupleInverse;
     constexpr auto new_subnodes = expand_tree_single(NodesValue{}, nd);

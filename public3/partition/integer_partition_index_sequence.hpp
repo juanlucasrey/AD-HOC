@@ -96,7 +96,7 @@ template <std::size_t N> constexpr auto PartitionSequences() {
 }
 
 template <std::size_t... I>
-constexpr auto BellCoeff(std::index_sequence<I...> i) -> std::size_t {
+constexpr auto BellCoeff(std::index_sequence<I...> /* i */) -> std::size_t {
     constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
     return BellCoeff(temp);
 }
