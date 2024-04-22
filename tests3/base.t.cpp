@@ -76,4 +76,34 @@ TEST(Base, SqrtDer) {
     EXPECT_NEAR(ders[4], 369.60098603287906, 1e-12);
 }
 
+TEST(Base, ErfcDer) {
+    double in = 0.35;
+    double lnin = std::erfc(in);
+    auto ders = erfc_t<double>::d2<5>(lnin, in);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // f = sqrt(x)
+    // valx = 0.35
+
+    // print(lambdify([x], f.diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], f.diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+
+    // EXPECT_NEAR(ders[0], 0.8451542547285166, 1e-13);
+    // EXPECT_NEAR(ders[1], -1.2073632210407381, 1e-13);
+    // EXPECT_NEAR(ders[2], 5.174413804460307, 1e-13);
+    // EXPECT_NEAR(ders[3], -36.9600986032879, 1e-13);
+    // EXPECT_NEAR(ders[4], 369.60098603287906, 1e-12);
+
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
+    std::cout << ders[0] << std::endl;
+    std::cout << ders[1] << std::endl;
+    std::cout << ders[2] << std::endl;
+    std::cout << ders[3] << std::endl;
+    std::cout << ders[4] << std::endl;
+}
+
 } // namespace adhoc3

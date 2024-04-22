@@ -200,6 +200,7 @@ template <class Input> struct log_t : public Base<log_t<Input>> {
     template <std::size_t Order>
     static inline auto d2(double /* thisv */, double in)
         -> std::array<double, Order> {
+        // we use x * f'(x) - 1 = 0
         std::array<double, Order> res;
 
         if constexpr (Order >= 1) {
@@ -222,12 +223,50 @@ template <class Derived> auto log(Base<Derived> /* in */) {
     return log_t<Derived>{};
 }
 
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void erfc_ders(std::array<double, Order> &res, double in) {
+    static_assert(N > 0);
+    res[N] =
+        -2 * in * res[N - 1] - static_cast<double>(2 * (N - 1)) * res[N - 2];
+
+    if constexpr ((N + 1) < Order) {
+        erfc_ders<N + 1>(res, in);
+    }
+}
+
+} // namespace detail
+
 template <class Input> struct erfc_t : public Base<erfc_t<Input>> {
     static inline auto v(double in) -> double { return std::erfc(in); }
     static inline auto d(double /* thisv */, double in) -> double {
         constexpr double two_over_root_pi =
             2.0 / constexpression::sqrt(constexpression::pi<double>());
         return -std::exp(-in * in) * two_over_root_pi;
+    }
+
+    template <std::size_t Order>
+    static inline auto d2(double /* thisv */, double in)
+        -> std::array<double, Order> {
+        // we use f''(x) + 2 * x * f'(x) = 0
+        std::array<double, Order> res;
+
+        if constexpr (Order >= 1) {
+            constexpr double minus_two_over_root_pi =
+                2. / constexpression::sqrt(constexpression::pi<double>());
+            res[0] = -std::exp(-in * in) * minus_two_over_root_pi;
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -2.0 * in * res[0];
+        }
+
+        if constexpr (Order >= 3) {
+            detail::erfc_ders<2>(res, in);
+        }
+
+        return res;
     }
 };
 
