@@ -123,17 +123,6 @@ struct PiecewiseFuction {
 };
 
 TEST(YC, CurveReplication) {
-    // int start(2019, 1, 1);
-    // bsl::vector<bdlt::Date> dates{ bdlt::Date(2020, 1, 1), bdlt::Date(2021,
-    // 1, 1) }; icsu::DblVector dfs{ 0.9, 0.8 }; auto curve =
-    // icpsc::StdPointSpotCurve::makeStd(start,
-    //                                                icsk::EmbeddingTime::ET_ACT_365_25,
-    //                                                ifte::InterpMethod::Type::STEP_FORWARD,
-    //                                                dates,
-    //                                                dfs,
-    //                                                icsu::DblVector{},
-    //                                                "");
-
     mycurve temp;
     temp.m_values.emplace_back(0, 1.0);
     // temp.m_values.emplace_back(1, 1.0);
