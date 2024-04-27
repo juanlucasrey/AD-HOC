@@ -21,15 +21,12 @@
 #ifndef ADHOC3_TAPE_BACKPROPAGATOR_HPP
 #define ADHOC3_TAPE_BACKPROPAGATOR_HPP
 
-#include <tape_buffer_size.hpp>
-#include <tuple>
-#include <tuple_utils.hpp>
-
-#include <partition/multinomial_coefficient_index_sequence.hpp>
-
-#include "../tests3/type_name.hpp"
+#include "partition/multinomial_coefficient_index_sequence.hpp"
+#include "tape_buffer_size.hpp"
+#include "tuple_utils.hpp"
 
 #include <array>
+#include <tuple>
 #include <type_traits>
 
 namespace adhoc3::detail {

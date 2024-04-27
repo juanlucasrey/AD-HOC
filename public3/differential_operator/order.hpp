@@ -21,7 +21,7 @@
 #ifndef ADHOC3_DIFFERENTIAL_OPERATOR_ORDER_HPP
 #define ADHOC3_DIFFERENTIAL_OPERATOR_ORDER_HPP
 
-#include <differential_operator/differential_operator.hpp>
+#include "differential_operator.hpp"
 
 namespace adhoc3 {
 

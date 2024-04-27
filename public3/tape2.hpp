@@ -21,15 +21,13 @@
 #ifndef ADHOC3_TAPE2_HPP
 #define ADHOC3_TAPE2_HPP
 
-#include <calc_tree.hpp>
-#include <tape_backpropagator.hpp>
+#include "calc_tree.hpp"
+#include "tape_backpropagator.hpp"
 
-#include <differential_operator/expand_tree.hpp>
-#include <differential_operator/order.hpp>
-#include <differential_operator/select_root_derivatives.hpp>
-#include <differential_operator/sort.hpp>
-
-#include "../tests3/type_name.hpp"
+#include "differential_operator/expand_tree.hpp"
+#include "differential_operator/order.hpp"
+#include "differential_operator/select_root_derivatives.hpp"
+#include "differential_operator/sort.hpp"
 
 #include <array>
 #include <tuple>

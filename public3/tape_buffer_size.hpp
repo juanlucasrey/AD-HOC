@@ -21,7 +21,7 @@
 #ifndef ADHOC3_TAPE_BUFFER_SIZE_HPP
 #define ADHOC3_TAPE_BUFFER_SIZE_HPP
 
-#include <differential_operator/expand_tree.hpp>
+#include "differential_operator/expand_tree.hpp"
 
 #include <cstddef>
 #include <tuple>

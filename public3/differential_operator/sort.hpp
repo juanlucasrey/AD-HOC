@@ -26,7 +26,7 @@
 #include "../tuple_utils.hpp"
 #include "derivative_non_null.hpp"
 #include "differential_operator.hpp"
-#include <differential_operator/is_sorted.hpp>
+#include "is_sorted.hpp"
 
 #include "less_than.hpp"
 #include <tuple>

@@ -23,8 +23,8 @@
 
 #include "../partition/combinations.hpp"
 #include "../partition/multinomial_coefficient_index_sequence.hpp"
-#include <differential_operator/is_sorted.hpp>
-#include <differential_operator/sorted_mult.hpp>
+#include "differential_operator/is_sorted.hpp"
+#include "differential_operator/sorted_mult.hpp"
 
 #include <cstddef>
 #include <tuple>

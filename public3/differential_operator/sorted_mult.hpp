@@ -24,8 +24,8 @@
 #include "../adhoc.hpp"
 #include "../dependency.hpp"
 #include "differential_operator.hpp"
+#include "is_sorted.hpp"
 #include "less_than.hpp"
-#include <differential_operator/is_sorted.hpp>
 
 namespace adhoc3 {
 
