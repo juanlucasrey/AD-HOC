@@ -9,6 +9,9 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <random>
+
 namespace adhoc3 {
 
 TEST(Tape2, TapeAndTreeUnivariateLog) {
