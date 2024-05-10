@@ -22,6 +22,8 @@
 #define ADHOC4_UNIVARIATE_TAN_HPP
 
 #include "../base.hpp"
+#include "../combinatorics/pascal.hpp"
+#include "../utils/index_sequence.hpp"
 
 #include <array>
 #include <cmath>
@@ -30,42 +32,8 @@ namespace adhoc4 {
 
 namespace detail {
 
-template <std::size_t N>
-constexpr auto NextPascal(std::array<std::size_t, N> const &prev) {
-    std::array<std::size_t, N + 1> arr;
-    arr.fill(0);
-
-    arr[0] = prev[1];
-
-    for (std::size_t i = 1; i < (prev.size() - 1); i++) {
-        arr[i] = prev[i - 1] * (i - 1) + prev[i + 1] * (i + 1);
-    }
-
-    arr.back() = prev.back() * (prev.size() - 1);
-    return arr;
-}
-
-template <std::size_t... I, std::size_t... I2>
-constexpr auto NextPascal_aux(std::index_sequence<I...> /* i */,
-                              std::index_sequence<I2...> /* i2 */) {
-    constexpr std::array<std::size_t, sizeof...(I)> temp{I...};
-    constexpr auto next = NextPascal(temp);
-    return std::index_sequence<next[I2]...>{};
-}
-
-template <std::size_t... I>
-constexpr auto NextPascal(std::index_sequence<I...> i) {
-    return NextPascal_aux(i, std::make_index_sequence<sizeof...(I) + 1>{});
-}
-
-template <std::size_t Idx, std::size_t... I>
-constexpr auto get(std::index_sequence<I...>) {
-    return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
-}
-
-template <std::size_t Idx, std::size_t... I>
-constexpr auto Multiply_aux(double &result, double tan2,
-                            std::index_sequence<I...> i) {
+template <std::size_t Idx, class IndexSequence>
+constexpr auto Multiply_aux(double &result, double tan2, IndexSequence i) {
     result *= tan2;
     result += static_cast<double>(get<Idx - 1>(i));
 
@@ -103,7 +71,7 @@ inline void tan_aux(double tan, double tan2, std::array<double, Output> &res,
 template <class Input> struct tan_t : public Base<tan_t<Input>> {
     static inline auto v(double in) -> double { return std::tan(in); }
     template <std::size_t Order, std::size_t Output>
-    static inline void d(double thisv, double in,
+    static inline void d(double thisv, double /* in */,
                          std::array<double, Output> &res) {
         // we use f''(x) + f(x) = 0
         static_assert(Order <= Output);
