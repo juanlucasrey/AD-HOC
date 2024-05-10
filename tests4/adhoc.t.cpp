@@ -307,6 +307,46 @@ TEST(UnivariateFunctions, InverseSine) {
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
 
+TEST(UnivariateFunctions, InverseCosine) {
+
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = acos_t<double>::v(val);
+    acos_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::acos(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-13);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[2], results2[2], 5e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-5);
+    EXPECT_NEAR(results1[5], results2[5], 1e-2);
+}
+
+TEST(UnivariateFunctions, InverseTangent) {
+
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = atan_t<double>::v(val);
+    atan_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::atan(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-13);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[2], results2[2], 5e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-5);
+    EXPECT_NEAR(results1[5], results2[5], 1e-2);
+}
+
 TEST(UnivariateFunctions, HyperbolicSine) {
 
     std::array<double, 6> results1;
@@ -384,6 +424,66 @@ TEST(UnivariateFunctions, HyperbolicTangent) {
     EXPECT_NEAR(results1[3], -0.43791315708639567, 1e-14);
     EXPECT_NEAR(results1[4], -1.5967929450597538, 1e-14);
     EXPECT_NEAR(results1[5], 9.234671156165486, 1e-13);
+}
+
+TEST(UnivariateFunctions, InverseHyperbolicSine) {
+
+    std::array<double, 6> results1;
+    double val = 1.32;
+    double res = asinh_t<double>::v(val);
+    asinh_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::asinh(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-14);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[2], results2[2], 1e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-5);
+    EXPECT_NEAR(results1[5], results2[5], 3e-2);
+}
+
+TEST(UnivariateFunctions, InverseHyperbolicCosine) {
+
+    std::array<double, 6> results1;
+    double val = 1.32;
+    double res = acosh_t<double>::v(val);
+    acosh_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::acosh(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-10);
+    EXPECT_NEAR(results1[1], results2[1], 1e-10);
+    EXPECT_NEAR(results1[2], results2[2], 1e-5);
+    EXPECT_NEAR(results1[3], results2[3], 1e-4);
+    EXPECT_NEAR(results1[4], results2[4], 1e-2);
+    EXPECT_NEAR(results1[5], results2[5], 3e-1);
+}
+
+TEST(UnivariateFunctions, InverseHyperbolicTangent) {
+
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = atanh_t<double>::v(val);
+    atanh_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::atanh(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-10);
+    EXPECT_NEAR(results1[1], results2[1], 1e-10);
+    EXPECT_NEAR(results1[2], results2[2], 1e-5);
+    EXPECT_NEAR(results1[3], results2[3], 1e-4);
+    EXPECT_NEAR(results1[4], results2[4], 1e-2);
+    EXPECT_NEAR(results1[5], results2[5], 3e-1);
 }
 
 TEST(UnivariateFunctions, ErrorFunction) {

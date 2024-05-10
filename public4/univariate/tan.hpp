@@ -76,7 +76,7 @@ template <class Input> struct tan_t : public Base<tan_t<Input>> {
         // we use f'(x) - (f(x))^2 - 1 = 0
         static_assert(Order <= Output);
 
-        double const tan2 = thisv * thisv;
+        const double tan2 = thisv * thisv;
 
         // equivalent to
         // detail::tan_aux<false, 0, Order>(thisv, tan2, res,

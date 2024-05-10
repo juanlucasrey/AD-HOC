@@ -132,7 +132,7 @@ template <class Input> struct asin_t : public Base<asin_t<Input>> {
         // we use (x^2 - 1)f''(x) + x * f'(x) = 0
         static_assert(Order <= Output);
 
-        double denominator = 1. / (1. - in * in);
+        const double denominator = 1. / (1. - in * in);
         if constexpr (Order >= 1) {
             res[0] = std::sqrt(denominator);
         }
@@ -153,6 +153,79 @@ template <class Input> struct asin_t : public Base<asin_t<Input>> {
 
 template <class Derived> auto asin(Base<Derived> /* in */) {
     return asin_t<Derived>{};
+}
+
+template <class Input> struct acos_t : public Base<acos_t<Input>> {
+    static inline auto v(double in) -> double { return std::acos(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        const double denominator = 1. / (1. - in * in);
+        if constexpr (Order >= 1) {
+            res[0] = -std::sqrt(denominator);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            res[2] = (3. * in * res[1] + res[0]) * denominator;
+        }
+
+        if constexpr (Order >= 4) {
+            detail::asin_aux<3>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto acos(Base<Derived> /* in */) {
+    return acos_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void atan_aux(std::array<double, Order> &res, double in,
+                     double denominator) {
+    auto constexpr coeff1 = static_cast<double>(2 * N);
+    auto constexpr coeff2 = static_cast<double>(N * (N - 1));
+    res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
+    if constexpr ((N + 1) < Order) {
+        atan_aux<N + 1>(res, in, denominator);
+    }
+}
+
+} // namespace detail
+
+template <class Input> struct atan_t : public Base<atan_t<Input>> {
+    static inline auto v(double in) -> double { return std::atan(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        const double denominator = 1. / (1. + in * in);
+        if constexpr (Order >= 1) {
+            res[0] = denominator;
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -2. * in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::atan_aux<2>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto atan(Base<Derived> /* in */) {
+    return atan_t<Derived>{};
 }
 
 namespace detail {
@@ -217,6 +290,110 @@ template <class Input> struct cosh_t : public Base<cosh_t<Input>> {
 
 template <class Derived> auto cosh(Base<Derived> /* in */) {
     return cosh_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void asinh_aux(std::array<double, Order> &res, double in,
+                      double denominator) {
+    auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
+    auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
+    res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
+    if constexpr ((N + 1) < Order) {
+        asinh_aux<N + 1>(res, in, denominator);
+    }
+}
+
+} // namespace detail
+
+template <class Input> struct asinh_t : public Base<asinh_t<Input>> {
+    static inline auto v(double in) -> double { return std::asinh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        const double denominator = 1. / (1. + in * in);
+        if constexpr (Order >= 1) {
+            res[0] = std::sqrt(denominator);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            res[2] = -(3. * in * res[1] + res[0]) * denominator;
+        }
+
+        if constexpr (Order >= 4) {
+            detail::asinh_aux<3>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto asinh(Base<Derived> /* in */) {
+    return asinh_t<Derived>{};
+}
+
+template <class Input> struct acosh_t : public Base<acosh_t<Input>> {
+    static inline auto v(double in) -> double { return std::acosh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        const double denominator = 1. / (in * in - 1.);
+        if constexpr (Order >= 1) {
+            res[0] = std::sqrt(denominator);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            res[2] = -(3. * in * res[1] + res[0]) * denominator;
+        }
+
+        if constexpr (Order >= 4) {
+            detail::asinh_aux<3>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto acosh(Base<Derived> /* in */) {
+    return acosh_t<Derived>{};
+}
+
+template <class Input> struct atanh_t : public Base<atanh_t<Input>> {
+    static inline auto v(double in) -> double { return std::atanh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        const double denominator = 1. / (in * in - 1.);
+        if constexpr (Order >= 1) {
+            res[0] = -denominator;
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -2. * in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::atan_aux<2>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto atanh(Base<Derived> /* in */) {
+    return atanh_t<Derived>{};
 }
 
 namespace detail {
