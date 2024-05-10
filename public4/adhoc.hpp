@@ -112,6 +112,52 @@ template <class Derived> auto cos(Base<Derived> /* in */) {
 namespace detail {
 
 template <std::size_t N, std::size_t Order>
+inline void asin_aux(std::array<double, Order> &res, double in,
+                     double denominator) {
+    auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
+    auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
+    res[N] = (coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
+    if constexpr ((N + 1) < Order) {
+        asin_aux<N + 1>(res, in, denominator);
+    }
+}
+
+} // namespace detail
+
+template <class Input> struct asin_t : public Base<asin_t<Input>> {
+    static inline auto v(double in) -> double { return std::asin(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double /* thisv */, double in,
+                         std::array<double, Output> &res) {
+        // we use (x^2 - 1)f''(x) + x * f'(x) = 0
+        static_assert(Order <= Output);
+
+        double denominator = 1. / (1. - in * in);
+        if constexpr (Order >= 1) {
+            res[0] = std::sqrt(denominator);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = in * res[0] * denominator;
+        }
+
+        if constexpr (Order >= 3) {
+            res[2] = (3. * in * res[1] + res[0]) * denominator;
+        }
+
+        if constexpr (Order >= 4) {
+            detail::asin_aux<3>(res, in, denominator);
+        }
+    }
+};
+
+template <class Derived> auto asin(Base<Derived> /* in */) {
+    return asin_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
 inline void cossinh(std::array<double, Order> &res) {
     res[N] = res[N - 2];
     if constexpr ((N + 1) < Order) {

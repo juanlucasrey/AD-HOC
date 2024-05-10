@@ -287,6 +287,26 @@ TEST(UnivariateFunctions, Tangent) {
     EXPECT_NEAR(results1[5], 11536771.351260751, 1e-8);
 }
 
+TEST(UnivariateFunctions, InverseSine) {
+
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = asin_t<double>::v(val);
+    asin_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::asin(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-13);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[2], results2[2], 5e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-5);
+    EXPECT_NEAR(results1[5], results2[5], 1e-2);
+}
+
 TEST(UnivariateFunctions, HyperbolicSine) {
 
     std::array<double, 6> results1;
