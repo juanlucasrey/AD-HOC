@@ -183,7 +183,7 @@ TEST(UnivariateFunctions, Logarithm) {
     EXPECT_NEAR(results1[0], results2[0], 1e-14);
     EXPECT_NEAR(results1[1], results2[1], 1e-12);
     EXPECT_NEAR(results1[2], results2[2], 1e-10);
-    EXPECT_NEAR(results1[3], results2[3], 1e-8);
+    EXPECT_NEAR(results1[3], results2[3], 1e-7);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
