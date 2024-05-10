@@ -26,9 +26,9 @@
 
 namespace adhoc4 {
 
-template <std::size_t Idx, std::size_t... I>
-constexpr auto get(std::index_sequence<I...> /* i */) {
-    return std::array<std::size_t, sizeof...(I)>{I...}[Idx];
+template <std::size_t Idx, class T, T... I>
+constexpr auto get(std::integer_sequence<T, I...> /* i */) {
+    return std::array<T, sizeof...(I)>{I...}[Idx];
 }
 
 } // namespace adhoc4

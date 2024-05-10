@@ -42,9 +42,9 @@ constexpr auto Multiply_aux(double &result, double tan2, IndexSequence i) {
     }
 }
 
-template <std::size_t First, std::size_t... I>
+template <int First, int... I>
 inline auto Multiply(double tan, double tan2,
-                     std::index_sequence<First, I...> i) {
+                     std::integer_sequence<int, First, I...> i) {
     auto result = static_cast<double>(get<i.size() - 1>(i));
     if constexpr (First != 0) {
         Multiply_aux<i.size() - 2>(result, tan2, i);
@@ -55,14 +55,14 @@ inline auto Multiply(double tan, double tan2,
     return result;
 }
 
-template <std::size_t Idx, std::size_t Order, std::size_t Output,
+template <bool Diff, std::size_t Idx, std::size_t Order, std::size_t Output,
           class IndexSequence>
 inline void tan_aux(double tan, double tan2, std::array<double, Output> &res,
                     IndexSequence i) {
-    constexpr auto next_i = NextPascal(i);
+    constexpr auto next_i = NextPascal<Diff>(i);
     res[Idx] = Multiply(tan, tan2, next_i);
     if constexpr (Idx < Order) {
-        tan_aux<Idx + 1, Order>(tan, tan2, res, next_i);
+        tan_aux<Diff, Idx + 1, Order>(tan, tan2, res, next_i);
     }
 }
 
@@ -73,28 +73,57 @@ template <class Input> struct tan_t : public Base<tan_t<Input>> {
     template <std::size_t Order, std::size_t Output>
     static inline void d(double thisv, double /* in */,
                          std::array<double, Output> &res) {
-        // we use f''(x) + f(x) = 0
+        // we use f'(x) - (f(x))^2 - 1 = 0
         static_assert(Order <= Output);
 
         double const tan2 = thisv * thisv;
 
         // equivalent to
-        // detail::tan_aux<0, Order>(thisv, tan2, res, std::index_sequence<0U,
-        // 1U>{});
+        // detail::tan_aux<false, 0, Order>(thisv, tan2, res,
+        //                                  std::integer_sequence<int, 0, 1>{});
 
         if constexpr (Order >= 1) {
-            res[0] = tan2 + 1;
+            res[0] = 1 + tan2;
         }
 
         if constexpr (Order >= 2) {
-            detail::tan_aux<1, Order>(thisv, tan2, res,
-                                      std::index_sequence<1U, 0U, 1U>{});
+            detail::tan_aux<false, 1, Order>(
+                thisv, tan2, res, std::integer_sequence<int, 1, 0, 1>{});
         }
     }
 };
 
 template <class Derived> auto tan(Base<Derived> /* in */) {
     return tan_t<Derived>{};
+}
+
+template <class Input> struct tanh_t : public Base<tanh_t<Input>> {
+    static inline auto v(double in) -> double { return std::tanh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double /* in */,
+                         std::array<double, Output> &res) {
+        // we use f'(x) + (f(x))^2 - 1 = 0
+        static_assert(Order <= Output);
+
+        double const tan2 = thisv * thisv;
+
+        // equivalent to
+        // detail::tan_aux<true, 0, Order>(thisv, tan2, res,
+        //                                 std::integer_sequence<int, 0, 1>{});
+
+        if constexpr (Order >= 1) {
+            res[0] = 1 - tan2;
+        }
+
+        if constexpr (Order >= 2) {
+            detail::tan_aux<true, 1, Order>(
+                thisv, tan2, res, std::integer_sequence<int, 1, 0, -1>{});
+        }
+    }
+};
+
+template <class Derived> auto tanh(Base<Derived> /* in */) {
+    return tanh_t<Derived>{};
 }
 
 } // namespace adhoc4

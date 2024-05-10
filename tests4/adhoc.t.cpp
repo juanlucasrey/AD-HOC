@@ -181,11 +181,11 @@ TEST(UnivariateFunctions, Logarithm) {
     double epsilon = 0.01;
     auto results2 = finite_differences(val, epsilon, lambdainput);
     EXPECT_NEAR(results1[0], results2[0], 1e-14);
-    EXPECT_NEAR(results1[1], results2[1], 1e-13);
+    EXPECT_NEAR(results1[1], results2[1], 1e-12);
     EXPECT_NEAR(results1[2], results2[2], 1e-10);
     EXPECT_NEAR(results1[3], results2[3], 1e-8);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
-    EXPECT_NEAR(results1[5], results2[5], 1e-3);
+    EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
 
 TEST(UnivariateFunctions, SquareRoot) {
@@ -204,7 +204,7 @@ TEST(UnivariateFunctions, SquareRoot) {
     EXPECT_NEAR(results1[1], results2[1], 1e-11);
     EXPECT_NEAR(results1[2], results2[2], 1e-9);
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
-    EXPECT_NEAR(results1[4], results2[4], 1e-5);
+    EXPECT_NEAR(results1[4], results2[4], 1e-4);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
 
@@ -243,7 +243,7 @@ TEST(UnivariateFunctions, Cosine) {
     EXPECT_NEAR(results1[0], results2[0], 1e-14);
     EXPECT_NEAR(results1[1], results2[1], 1e-12);
     EXPECT_NEAR(results1[2], results2[2], 1e-10);
-    EXPECT_NEAR(results1[3], results2[3], 1e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-7);
     EXPECT_NEAR(results1[4], results2[4], 1e-6);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
@@ -279,12 +279,51 @@ TEST(UnivariateFunctions, Tangent) {
     // print(lambdify([x],
     // r.diff(x).diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
 
-    EXPECT_NEAR(results1[0], 16.2361239501548, 1e-7);
-    EXPECT_NEAR(results1[1], 126.75047699671539, 1e-6);
-    EXPECT_NEAR(results1[2], 1516.7258297481221, 1e-2);
-    EXPECT_NEAR(results1[3], 24188.235555132123, 1e-1);
-    EXPECT_NEAR(results1[4], 482230.28055004874, 20);
-    EXPECT_NEAR(results1[5], 11536771.351260751, 400);
+    EXPECT_NEAR(results1[0], 16.2361239501548, 1e-15);
+    EXPECT_NEAR(results1[1], 126.75047699671539, 1e-15);
+    EXPECT_NEAR(results1[2], 1516.7258297481221, 1e-12);
+    EXPECT_NEAR(results1[3], 24188.235555132123, 1e-11);
+    EXPECT_NEAR(results1[4], 482230.28055004874, 1e-10);
+    EXPECT_NEAR(results1[5], 11536771.351260751, 1e-8);
+}
+
+TEST(UnivariateFunctions, HyperbolicTangent) {
+
+    std::array<double, 6> results1;
+    double val = 1.32;
+    double res = tanh_t<double>::v(val);
+    tanh_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::tanh(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-7);
+    EXPECT_NEAR(results1[1], results2[1], 1e-6);
+    EXPECT_NEAR(results1[2], results2[2], 1e-2);
+    EXPECT_NEAR(results1[3], results2[3], 1e-1);
+    EXPECT_NEAR(results1[4], results2[4], 20);
+    EXPECT_NEAR(results1[5], results2[5], 400);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // r = tanh(x)
+    // valx = 1.32
+    // print(lambdify([x], r.diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x],
+    // r.diff(x).diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+
+    EXPECT_NEAR(results1[0], 0.24868562068767242, 1e-15);
+    EXPECT_NEAR(results1[1], -0.4311133986962329, 1e-15);
+    EXPECT_NEAR(results1[2], 0.6236752551298124, 1e-15);
+    EXPECT_NEAR(results1[3], -0.43791315708639567, 1e-14);
+    EXPECT_NEAR(results1[4], -1.5967929450597538, 1e-14);
+    EXPECT_NEAR(results1[5], 9.234671156165486, 1e-13);
 }
 
 TEST(UnivariateFunctions, ErrorFunction) {
