@@ -112,6 +112,70 @@ template <class Derived> auto cos(Base<Derived> /* in */) {
 namespace detail {
 
 template <std::size_t N, std::size_t Order>
+inline void cossinh(std::array<double, Order> &res) {
+    res[N] = res[N - 2];
+    if constexpr ((N + 1) < Order) {
+        cossinh<N + 1>(res);
+    }
+}
+
+} // namespace detail
+
+template <class Input> struct sinh_t : public Base<sinh_t<Input>> {
+    static inline auto v(double in) -> double { return std::sinh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double in,
+                         std::array<double, Output> &res) {
+        // we use f''(x) + f(x) = 0
+        static_assert(Order <= Output);
+
+        if constexpr (Order >= 1) {
+            res[0] = std::cosh(in);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = thisv;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::cossinh<2>(res);
+        }
+    }
+};
+
+template <class Derived> auto sinh(Base<Derived> /* in */) {
+    return sinh_t<Derived>{};
+}
+
+template <class Input> struct cosh_t : public Base<cosh_t<Input>> {
+    static inline auto v(double in) -> double { return std::cosh(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double in,
+                         std::array<double, Output> &res) {
+        // we use f''(x) + f(x) = 0
+        static_assert(Order <= Output);
+
+        if constexpr (Order >= 1) {
+            res[0] = std::sinh(in);
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = thisv;
+        }
+
+        if constexpr (Order >= 3) {
+            detail::cossinh<2>(res);
+        }
+    }
+};
+
+template <class Derived> auto cosh(Base<Derived> /* in */) {
+    return cosh_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
 inline void sqrt_aux(std::array<double, Order> &res, double one_over_in) {
     constexpr double coeff = -static_cast<double>(N * 2 - 1) / 2.;
     res[N] = res[N - 1] * one_over_in * coeff;
