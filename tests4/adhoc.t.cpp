@@ -8,69 +8,7 @@
 
 namespace adhoc4 {
 
-// we use f' = 1 + f^2
-void TE_tan(const double &value, std::vector<double> &output,
-            std::size_t loc = 0) {
-    if (loc == 0) {
-        output[loc] = tan(value);
-        loc++;
-    }
-
-    double fval = output[0];
-    double fval_sq = fval * fval;
-
-    std::vector<int> fval_coeffs(output.size() + 1, 0);
-    fval_coeffs[1] = 1;
-
-    // highest coefficient (1 at the moment) is an odd power
-    bool odd = true;
-    while (loc != output.size()) {
-        for (std::size_t i = odd; i <= (loc + 1); i += 2) {
-            int current_coeff = fval_coeffs[i];
-            fval_coeffs[i] = 0;
-            if (i) {
-                int temp = current_coeff * (int)i;
-                fval_coeffs[i - 1] += temp;
-                fval_coeffs[i + 1] += temp;
-            }
-        }
-        odd = !odd;
-
-        double fval_der = 0;
-        for (std::size_t i = (loc + 1); i > (std::size_t)odd; i -= 2) {
-            fval_der += fval_coeffs[i];
-            fval_der *= fval_sq;
-        }
-
-        fval_der += fval_coeffs[odd];
-
-        if (odd)
-            fval_der *= fval;
-
-        output[loc] = fval_der;
-        loc++;
-    }
-}
-
-TEST(Base, Tan) {
-    std::cout.precision(std::numeric_limits<double>::max_digits10);
-    double in = 0.35;
-    double lnin = std::tan(in);
-
-    // std::cout << lnin << std::endl;
-
-    std::vector<double> output(6);
-    TE_tan(in, output, 0);
-
-    std::cout << output[0] << std::endl;
-    std::cout << output[1] << std::endl;
-    std::cout << output[2] << std::endl;
-    std::cout << output[3] << std::endl;
-    std::cout << output[4] << std::endl;
-    std::cout << output[5] << std::endl;
-}
-
-double der1_1(double x, double epsilon) {
+/*double der1_1(double x, double epsilon) {
     double f1 = std::comp_ellint_1(x + epsilon);
     double f2 = std::comp_ellint_1(x - epsilon);
     return 0.5 * (f1 - f2) / epsilon;
@@ -129,7 +67,7 @@ TEST(Base, CompEllint1) {
     //           << "s,\n"
     //              "whereas the linear approximation gives ≈ "
     //           << 2 * π * std::sqrt(1 / 9.80665) << '\n';
-}
+}*/
 
 std::array<double, 6> finite_differences(double x, double epsilon,
                                          std::function<double(double)> func) {
@@ -308,6 +246,45 @@ TEST(UnivariateFunctions, Cosine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-9);
     EXPECT_NEAR(results1[4], results2[4], 1e-6);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+}
+
+TEST(UnivariateFunctions, Tangent) {
+
+    std::array<double, 6> results1;
+    double val = 1.32;
+    double res = tan_t<double>::v(val);
+    tan_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::tan(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-7);
+    EXPECT_NEAR(results1[1], results2[1], 1e-6);
+    EXPECT_NEAR(results1[2], results2[2], 1e-2);
+    EXPECT_NEAR(results1[3], results2[3], 1e-1);
+    EXPECT_NEAR(results1[4], results2[4], 20);
+    EXPECT_NEAR(results1[5], results2[5], 400);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // r = tan(x)
+    // valx = 1.32
+    // print(lambdify([x], r.diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x], r.diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+    // print(lambdify([x],
+    // r.diff(x).diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
+
+    EXPECT_NEAR(results1[0], 16.2361239501548, 1e-7);
+    EXPECT_NEAR(results1[1], 126.75047699671539, 1e-6);
+    EXPECT_NEAR(results1[2], 1516.7258297481221, 1e-2);
+    EXPECT_NEAR(results1[3], 24188.235555132123, 1e-1);
+    EXPECT_NEAR(results1[4], 482230.28055004874, 20);
+    EXPECT_NEAR(results1[5], 11536771.351260751, 400);
 }
 
 TEST(UnivariateFunctions, ErrorFunction) {
