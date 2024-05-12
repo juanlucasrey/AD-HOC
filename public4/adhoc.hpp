@@ -37,7 +37,7 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
                          std::array<double, Output> &res) {
         static_assert(Order <= Output);
         // we use f'(x) - f(x) = 0
-        res.fill(thisv);
+        std::fill_n(res.begin(), Order, thisv);
     }
 };
 
@@ -424,7 +424,7 @@ template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
         // => f(n+1)(x) = (1/2 - n)*f(n)(x)/x = ((1 - 2n)/2)*f(n)(x)/x
         static_assert(Order <= Output);
 
-        double const one_over_in = 1.0 / in;
+        double const one_over_in = 1. / in;
 
         if constexpr (Order >= 1) {
             res[0] = 0.5 * thisv * one_over_in;
@@ -461,7 +461,7 @@ template <class Input> struct log_t : public Base<log_t<Input>> {
         static_assert(Order <= Output);
 
         if constexpr (Order >= 1) {
-            res[0] = 1.0 / in;
+            res[0] = 1. / in;
         }
 
         if constexpr (Order >= 2) {
@@ -484,7 +484,7 @@ template <std::size_t N, std::size_t Order>
 inline void erfc_ders(std::array<double, Order> &res, double in) {
     static_assert(N > 0);
     res[N] =
-        -2 * in * res[N - 1] - static_cast<double>(2 * (N - 1)) * res[N - 2];
+        -2. * in * res[N - 1] - static_cast<double>(2 * (N - 1)) * res[N - 2];
 
     if constexpr ((N + 1) < Order) {
         erfc_ders<N + 1>(res, in);
@@ -509,7 +509,7 @@ template <class Input> struct erfc_t : public Base<erfc_t<Input>> {
         }
 
         if constexpr (Order >= 2) {
-            res[1] = -2.0 * in * res[0];
+            res[1] = -2. * in * res[0];
         }
 
         if constexpr (Order >= 3) {

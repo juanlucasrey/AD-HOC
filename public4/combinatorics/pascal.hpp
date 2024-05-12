@@ -30,8 +30,7 @@ namespace detail {
 
 template <bool Diff, std::size_t N>
 constexpr auto NextPascalArray(std::array<int, N> const &prev) {
-    std::array<int, N + 1> arr;
-    arr.fill(0);
+    std::array<int, N + 1> arr{};
 
     arr[0] = prev[1];
 

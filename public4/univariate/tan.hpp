@@ -83,7 +83,7 @@ template <class Input> struct tan_t : public Base<tan_t<Input>> {
         //                                  std::integer_sequence<int, 0, 1>{});
 
         if constexpr (Order >= 1) {
-            res[0] = 1 + tan2;
+            res[0] = 1. + tan2;
         }
 
         if constexpr (Order >= 2) {
@@ -112,7 +112,7 @@ template <class Input> struct tanh_t : public Base<tanh_t<Input>> {
         //                                 std::integer_sequence<int, 0, 1>{});
 
         if constexpr (Order >= 1) {
-            res[0] = 1 - tan2;
+            res[0] = 1. - tan2;
         }
 
         if constexpr (Order >= 2) {
