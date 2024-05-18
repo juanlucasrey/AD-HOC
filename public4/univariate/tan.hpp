@@ -55,14 +55,14 @@ inline auto Multiply(double tan, double tan2,
     return result;
 }
 
-template <bool Diff, std::size_t Idx, std::size_t Order, std::size_t Output,
+template <bool Diff, std::size_t N, std::size_t Order, std::size_t Output,
           class IndexSequence>
 inline void tan_aux(double tan, double tan2, std::array<double, Output> &res,
                     IndexSequence i) {
     constexpr auto next_i = NextPascal<Diff>(i);
-    res[Idx] = Multiply(tan, tan2, next_i);
-    if constexpr (Idx < Order) {
-        tan_aux<Diff, Idx + 1, Order>(tan, tan2, res, next_i);
+    res[N] = Multiply(tan, tan2, next_i);
+    if constexpr ((N + 1) < Order) {
+        tan_aux<Diff, N + 1, Order>(tan, tan2, res, next_i);
     }
 }
 

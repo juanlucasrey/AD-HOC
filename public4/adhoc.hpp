@@ -47,11 +47,11 @@ template <class Derived> auto exp(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void cossin(std::array<double, Order> &res) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void cossin(std::array<double, Output> &res) {
     res[N] = -res[N - 2];
     if constexpr ((N + 1) < Order) {
-        cossin<N + 1>(res);
+        cossin<N + 1, Order>(res);
     }
 }
 
@@ -74,7 +74,7 @@ template <class Input> struct sin_t : public Base<sin_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::cossin<2>(res);
+            detail::cossin<2, Order>(res);
         }
     }
 };
@@ -100,7 +100,7 @@ template <class Input> struct cos_t : public Base<cos_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::cossin<2>(res);
+            detail::cossin<2, Order>(res);
         }
     }
 };
@@ -111,14 +111,14 @@ template <class Derived> auto cos(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void asin_aux(std::array<double, Order> &res, double in,
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void asin_aux(std::array<double, Output> &res, double in,
                      double denominator) {
     auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
     auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
     res[N] = (coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
-        asin_aux<N + 1>(res, in, denominator);
+        asin_aux<N + 1, Order>(res, in, denominator);
     }
 }
 
@@ -146,7 +146,7 @@ template <class Input> struct asin_t : public Base<asin_t<Input>> {
         }
 
         if constexpr (Order >= 4) {
-            detail::asin_aux<3>(res, in, denominator);
+            detail::asin_aux<3, Order>(res, in, denominator);
         }
     }
 };
@@ -177,7 +177,7 @@ template <class Input> struct acos_t : public Base<acos_t<Input>> {
         }
 
         if constexpr (Order >= 4) {
-            detail::asin_aux<3>(res, in, denominator);
+            detail::asin_aux<3, Order>(res, in, denominator);
         }
     }
 };
@@ -188,14 +188,14 @@ template <class Derived> auto acos(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void atan_aux(std::array<double, Order> &res, double in,
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void atan_aux(std::array<double, Output> &res, double in,
                      double denominator) {
     auto constexpr coeff1 = static_cast<double>(2 * N);
     auto constexpr coeff2 = static_cast<double>(N * (N - 1));
     res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
-        atan_aux<N + 1>(res, in, denominator);
+        atan_aux<N + 1, Order>(res, in, denominator);
     }
 }
 
@@ -219,7 +219,7 @@ template <class Input> struct atan_t : public Base<atan_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::atan_aux<2>(res, in, denominator);
+            detail::atan_aux<2, Order>(res, in, denominator);
         }
     }
 };
@@ -230,11 +230,11 @@ template <class Derived> auto atan(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void cossinh(std::array<double, Order> &res) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void cossinh(std::array<double, Output> &res) {
     res[N] = res[N - 2];
     if constexpr ((N + 1) < Order) {
-        cossinh<N + 1>(res);
+        cossinh<N + 1, Order>(res);
     }
 }
 
@@ -257,7 +257,7 @@ template <class Input> struct sinh_t : public Base<sinh_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::cossinh<2>(res);
+            detail::cossinh<2, Order>(res);
         }
     }
 };
@@ -283,7 +283,7 @@ template <class Input> struct cosh_t : public Base<cosh_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::cossinh<2>(res);
+            detail::cossinh<2, Order>(res);
         }
     }
 };
@@ -294,14 +294,14 @@ template <class Derived> auto cosh(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void asinh_aux(std::array<double, Order> &res, double in,
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void asinh_aux(std::array<double, Output> &res, double in,
                       double denominator) {
     auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
     auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
     res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
-        asinh_aux<N + 1>(res, in, denominator);
+        asinh_aux<N + 1, Order>(res, in, denominator);
     }
 }
 
@@ -329,7 +329,7 @@ template <class Input> struct asinh_t : public Base<asinh_t<Input>> {
         }
 
         if constexpr (Order >= 4) {
-            detail::asinh_aux<3>(res, in, denominator);
+            detail::asinh_aux<3, Order>(res, in, denominator);
         }
     }
 };
@@ -360,7 +360,7 @@ template <class Input> struct acosh_t : public Base<acosh_t<Input>> {
         }
 
         if constexpr (Order >= 4) {
-            detail::asinh_aux<3>(res, in, denominator);
+            detail::asinh_aux<3, Order>(res, in, denominator);
         }
     }
 };
@@ -387,7 +387,7 @@ template <class Input> struct atanh_t : public Base<atanh_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::atan_aux<2>(res, in, denominator);
+            detail::atan_aux<2, Order>(res, in, denominator);
         }
     }
 };
@@ -398,12 +398,12 @@ template <class Derived> auto atanh(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void sqrt_aux(std::array<double, Order> &res, double one_over_in) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void sqrt_aux(std::array<double, Output> &res, double one_over_in) {
     constexpr double coeff = -static_cast<double>(N * 2 - 1) / 2.;
     res[N] = res[N - 1] * one_over_in * coeff;
     if constexpr ((N + 1) < Order) {
-        sqrt_aux<N + 1>(res, one_over_in);
+        sqrt_aux<N + 1, Order>(res, one_over_in);
     }
 }
 
@@ -431,7 +431,7 @@ template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
         }
 
         if constexpr (Order >= 2) {
-            detail::sqrt_aux<1>(res, one_over_in);
+            detail::sqrt_aux<1, Order>(res, one_over_in);
         }
     }
 };
@@ -442,11 +442,11 @@ template <class Derived> auto sqrt(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void lnders(std::array<double, Order> &res) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void lnders(std::array<double, Output> &res) {
     res[N] = -static_cast<double>(N) * res[N - 1] * res[0];
     if constexpr ((N + 1) < Order) {
-        lnders<N + 1>(res);
+        lnders<N + 1, Order>(res);
     }
 }
 
@@ -469,7 +469,7 @@ template <class Input> struct log_t : public Base<log_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::lnders<2>(res);
+            detail::lnders<2, Order>(res);
         }
     }
 };
@@ -480,14 +480,14 @@ template <class Derived> auto log(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void erfc_ders(std::array<double, Order> &res, double in) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void erfc_ders(std::array<double, Output> &res, double in) {
     static_assert(N > 0);
     res[N] =
         -2. * in * res[N - 1] - static_cast<double>(2 * (N - 1)) * res[N - 2];
 
     if constexpr ((N + 1) < Order) {
-        erfc_ders<N + 1>(res, in);
+        erfc_ders<N + 1, Order>(res, in);
     }
 }
 
@@ -513,7 +513,7 @@ template <class Input> struct erfc_t : public Base<erfc_t<Input>> {
         }
 
         if constexpr (Order >= 3) {
-            detail::erfc_ders<2>(res, in);
+            detail::erfc_ders<2, Order>(res, in);
         }
     }
 };
@@ -524,8 +524,8 @@ template <class Derived> auto erfc(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void comp_ellint_1_ders(std::array<double, Order> &res, double in,
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void comp_ellint_1_ders(std::array<double, Output> &res, double in,
                                double coeff, double denominator) {
     static_assert(N > 0);
     auto constexpr coeff1 = static_cast<double>(N);
@@ -537,7 +537,7 @@ inline void comp_ellint_1_ders(std::array<double, Order> &res, double in,
              denominator;
 
     if constexpr ((N + 1) < Order) {
-        comp_ellint_1_ders<N + 1>(res, in, coeff, denominator);
+        comp_ellint_1_ders<N + 1, Order>(res, in, coeff, denominator);
     }
 }
 
@@ -569,7 +569,8 @@ struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
             }
 
             if constexpr (Order >= 4) {
-                detail::comp_ellint_1_ders<3>(res, in, coeff, denominator);
+                detail::comp_ellint_1_ders<3, Order>(res, in, coeff,
+                                                     denominator);
             }
         }
     }
@@ -581,8 +582,8 @@ template <class Derived> auto comp_ellint_1(Base<Derived> /* in */) {
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void comp_ellint_2_ders(std::array<double, Order> &res, double in,
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void comp_ellint_2_ders(std::array<double, Output> &res, double in,
                                double in_sq, double denominator) {
     static_assert(N > 0);
     auto constexpr coeff1 = static_cast<double>((N - 1) * (N - 1) * (N - 1) -
@@ -594,7 +595,7 @@ inline void comp_ellint_2_ders(std::array<double, Order> &res, double in,
              denominator;
 
     if constexpr ((N + 1) < Order) {
-        comp_ellint_2_ders<N + 1>(res, in, in_sq, denominator);
+        comp_ellint_2_ders<N + 1, Order>(res, in, in_sq, denominator);
     }
 }
 
@@ -625,7 +626,8 @@ struct comp_ellint_2_t : public Base<comp_ellint_2_t<Input>> {
             }
 
             if constexpr (Order >= 4) {
-                detail::comp_ellint_2_ders<3>(res, in, in_sq, denominator);
+                detail::comp_ellint_2_ders<3, Order>(res, in, in_sq,
+                                                     denominator);
             }
         }
     }

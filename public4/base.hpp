@@ -35,11 +35,11 @@ template <class Derived> struct Base;
 
 namespace detail {
 
-template <std::size_t N, std::size_t Order>
-inline void invders(std::array<double, Order> &res, double val) {
+template <std::size_t N, std::size_t Order, std::size_t Output>
+inline void invders(std::array<double, Output> &res, double val) {
     res[N] = -static_cast<double>(N + 1) * res[N - 1] * val;
     if constexpr ((N + 1) < Order) {
-        invders<N + 1>(res, val);
+        invders<N + 1, Order>(res, val);
     }
 }
 
@@ -52,13 +52,14 @@ template <class Input> struct inv_t : public Base<inv_t<Input>> {
     static inline void d(double thisv, double /* in */,
                          std::array<double, Output> &res) {
         static_assert(Order <= Output);
+        // we use x * f(x) - 1 = 0
 
         if constexpr (Order >= 1) {
             res[0] = -thisv * thisv;
         }
 
         if constexpr (Order >= 2) {
-            detail::invders<1>(res, thisv);
+            detail::invders<1, Order>(res, thisv);
         }
     }
 };

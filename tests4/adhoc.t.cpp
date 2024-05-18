@@ -70,8 +70,8 @@ std::array<double, 6> finite_differences(double x, double epsilon,
 }
 
 TEST(UnivariateFunctions, Inverse) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 100.0;
     double res = inv_t<double>::v(val);
     inv_t<double>::d<6>(res, val, results1);
@@ -85,11 +85,15 @@ TEST(UnivariateFunctions, Inverse) {
     EXPECT_NEAR(results1[3], results2[3], 2e-13);
     EXPECT_NEAR(results1[4], results2[4], 1e-12);
     EXPECT_NEAR(results1[5], results2[5], 1e-10);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, Exponential) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = .32;
     double res = exp_t<double>::v(val);
     exp_t<double>::d<6>(res, val, results1);
@@ -105,11 +109,15 @@ TEST(UnivariateFunctions, Exponential) {
     EXPECT_NEAR(results1[3], results2[3], 1e-8);
     EXPECT_NEAR(results1[4], results2[4], 1e-7);
     EXPECT_NEAR(results1[5], results2[5], 1e-8);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, Logarithm) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = log_t<double>::v(val);
     log_t<double>::d<6>(res, val, results1);
@@ -125,11 +133,15 @@ TEST(UnivariateFunctions, Logarithm) {
     EXPECT_NEAR(results1[3], results2[3], 1e-7);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, SquareRoot) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = sqrt_t<double>::v(val);
     sqrt_t<double>::d<6>(res, val, results1);
@@ -145,11 +157,15 @@ TEST(UnivariateFunctions, SquareRoot) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-4);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, Sine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = sin_t<double>::v(val);
     sin_t<double>::d<6>(res, val, results1);
@@ -165,11 +181,15 @@ TEST(UnivariateFunctions, Sine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, Cosine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = cos_t<double>::v(val);
     cos_t<double>::d<6>(res, val, results1);
@@ -185,11 +205,15 @@ TEST(UnivariateFunctions, Cosine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-7);
     EXPECT_NEAR(results1[4], results2[4], 1e-6);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, Tangent) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = tan_t<double>::v(val);
     tan_t<double>::d<6>(res, val, results1);
@@ -205,6 +229,10 @@ TEST(UnivariateFunctions, Tangent) {
     EXPECT_NEAR(results1[3], results2[3], 1e-1);
     EXPECT_NEAR(results1[4], results2[4], 20);
     EXPECT_NEAR(results1[5], results2[5], 400);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 
     // from sympy import *
     // x = Symbol('x')
@@ -224,11 +252,15 @@ TEST(UnivariateFunctions, Tangent) {
     EXPECT_NEAR(results1[3], 24188.235555132123, 1e-11);
     EXPECT_NEAR(results1[4], 482230.28055004874, 1e-10);
     EXPECT_NEAR(results1[5], 11536771.351260751, 1e-8);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, InverseSine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = asin_t<double>::v(val);
     asin_t<double>::d<6>(res, val, results1);
@@ -244,11 +276,15 @@ TEST(UnivariateFunctions, InverseSine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, InverseCosine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = acos_t<double>::v(val);
     acos_t<double>::d<6>(res, val, results1);
@@ -264,11 +300,15 @@ TEST(UnivariateFunctions, InverseCosine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, InverseTangent) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = atan_t<double>::v(val);
     atan_t<double>::d<6>(res, val, results1);
@@ -284,11 +324,15 @@ TEST(UnivariateFunctions, InverseTangent) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, HyperbolicSine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = sinh_t<double>::v(val);
     sinh_t<double>::d<6>(res, val, results1);
@@ -304,11 +348,15 @@ TEST(UnivariateFunctions, HyperbolicSine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 3e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, HyperbolicCosine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = cosh_t<double>::v(val);
     cosh_t<double>::d<6>(res, val, results1);
@@ -324,11 +372,15 @@ TEST(UnivariateFunctions, HyperbolicCosine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 3e-5);
     EXPECT_NEAR(results1[5], results2[5], 3e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, HyperbolicTangent) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = tanh_t<double>::v(val);
     tanh_t<double>::d<6>(res, val, results1);
@@ -344,6 +396,10 @@ TEST(UnivariateFunctions, HyperbolicTangent) {
     EXPECT_NEAR(results1[3], results2[3], 1e-1);
     EXPECT_NEAR(results1[4], results2[4], 20);
     EXPECT_NEAR(results1[5], results2[5], 400);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 
     // from sympy import *
     // x = Symbol('x')
@@ -366,8 +422,8 @@ TEST(UnivariateFunctions, HyperbolicTangent) {
 }
 
 TEST(UnivariateFunctions, InverseHyperbolicSine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = asinh_t<double>::v(val);
     asinh_t<double>::d<6>(res, val, results1);
@@ -383,11 +439,15 @@ TEST(UnivariateFunctions, InverseHyperbolicSine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 3e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, InverseHyperbolicCosine) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = acosh_t<double>::v(val);
     acosh_t<double>::d<6>(res, val, results1);
@@ -403,11 +463,15 @@ TEST(UnivariateFunctions, InverseHyperbolicCosine) {
     EXPECT_NEAR(results1[3], results2[3], 1e-4);
     EXPECT_NEAR(results1[4], results2[4], 1e-2);
     EXPECT_NEAR(results1[5], results2[5], 3e-1);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, InverseHyperbolicTangent) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = atanh_t<double>::v(val);
     atanh_t<double>::d<6>(res, val, results1);
@@ -423,11 +487,15 @@ TEST(UnivariateFunctions, InverseHyperbolicTangent) {
     EXPECT_NEAR(results1[3], results2[3], 1e-4);
     EXPECT_NEAR(results1[4], results2[4], 1e-2);
     EXPECT_NEAR(results1[5], results2[5], 3e-1);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, ErrorFunction) {
-
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 1.32;
     double res = erfc_t<double>::v(val);
     erfc_t<double>::d<6>(res, val, results1);
@@ -443,10 +511,15 @@ TEST(UnivariateFunctions, ErrorFunction) {
     EXPECT_NEAR(results1[3], results2[3], 1e-7);
     EXPECT_NEAR(results1[4], results2[4], 1e-5);
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, CompEllint1) {
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = comp_ellint_1_t<double>::v(val);
     comp_ellint_1_t<double>::d<6>(res, val, results1);
@@ -462,10 +535,15 @@ TEST(UnivariateFunctions, CompEllint1) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-4);
     EXPECT_NEAR(results1[5], results2[5], 1e-1);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 TEST(UnivariateFunctions, CompEllint2) {
-    std::array<double, 6> results1;
+    std::array<double, 10> results1;
+    results1.fill(0.);
     double val = 0.32;
     double res = comp_ellint_2_t<double>::v(val);
     comp_ellint_2_t<double>::d<6>(res, val, results1);
@@ -481,6 +559,10 @@ TEST(UnivariateFunctions, CompEllint2) {
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-4);
     EXPECT_NEAR(results1[5], results2[5], 1e-1);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
 }
 
 } // namespace adhoc4
