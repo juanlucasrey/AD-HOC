@@ -1108,41 +1108,41 @@ TEST(Tape2, BSDerivatives) {
     t.set(dr2) = 1.;
     t.backpropagate(ct);
 
-    /*from sympy import *
-    S = Symbol('S')
-    K = Symbol('K')
-    v = Symbol('v')
-    T = Symbol('T')
+    // from sympy import *
+    // S = Symbol('S')
+    // K = Symbol('K')
+    // v = Symbol('v')
+    // T = Symbol('T')
 
-    totalvol = v * sqrt(T)
-    d1 = log(S / K) / totalvol + totalvol * 0.5
-    d2 = d1 + totalvol
+    // totalvol = v * sqrt(T)
+    // d1 = log(S / K) / totalvol + totalvol * 0.5
+    // d2 = d1 + totalvol
 
-    minus_one_over_root_two =-1.0 / sqrt(2.0)
-    cdf_n_d1 = 0.5 * erfc(d1 * minus_one_over_root_two)
-    cdf_n_d2 = 0.5 * erfc(d2 * minus_one_over_root_two)
+    // minus_one_over_root_two =-1.0 / sqrt(2.0)
+    // cdf_n_d1 = 0.5 * erfc(d1 * minus_one_over_root_two)
+    // cdf_n_d2 = 0.5 * erfc(d2 * minus_one_over_root_two)
 
-    f = S * cdf_n_d1 - K * cdf_n_d2
+    // f = S * cdf_n_d1 - K * cdf_n_d2
 
-    valS = 100.0
-    valK = 102.0
-    valv = 0.15
-    valT = 0.5
+    // valS = 100.0
+    // valK = 102.0
+    // valv = 0.15
+    // valT = 0.5
 
-    print(lambdify([S, K, v, T], f.diff(S))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(K))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(v))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(T))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(S))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(K))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(v).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(T).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(K))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(v).diff(T))(valS, valK, valv,valT))*/
+    // print(lambdify([S, K, v, T], f.diff(S))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(K))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(v))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(T))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(S))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(K))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(v).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(T).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(K))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(v).diff(T))(valS, valK, valv,valT))
 
     EXPECT_NEAR(t.get_d(dS), 0.33961663008862164, 1e-15);
     EXPECT_NEAR(t.get_d(dK), -0.3838761485986675, 1e-14);
@@ -1312,41 +1312,41 @@ TEST(Tape2, BSDerivatives2Time) {
 
     acc /= static_cast<double>(iters);
     std::cout << acc << std::endl;
-    /*from sympy import *
-    S = Symbol('S')
-    K = Symbol('K')
-    v = Symbol('v')
-    T = Symbol('T')
+    // from sympy import *
+    // S = Symbol('S')
+    // K = Symbol('K')
+    // v = Symbol('v')
+    // T = Symbol('T')
 
-    totalvol = v * sqrt(T)
-    d1 = log(S / K) / totalvol + totalvol * 0.5
-    d2 = d1 + totalvol
+    // totalvol = v * sqrt(T)
+    // d1 = log(S / K) / totalvol + totalvol * 0.5
+    // d2 = d1 + totalvol
 
-    minus_one_over_root_two =-1.0 / sqrt(2.0)
-    cdf_n_d1 = 0.5 * erfc(d1 * minus_one_over_root_two)
-    cdf_n_d2 = 0.5 * erfc(d2 * minus_one_over_root_two)
+    // minus_one_over_root_two =-1.0 / sqrt(2.0)
+    // cdf_n_d1 = 0.5 * erfc(d1 * minus_one_over_root_two)
+    // cdf_n_d2 = 0.5 * erfc(d2 * minus_one_over_root_two)
 
-    f = S * cdf_n_d1 - K * cdf_n_d2
+    // f = S * cdf_n_d1 - K * cdf_n_d2
 
-    valS = 100.0
-    valK = 102.0
-    valv = 0.15
-    valT = 0.5
+    // valS = 100.0
+    // valK = 102.0
+    // valv = 0.15
+    // valT = 0.5
 
-    print(lambdify([S, K, v, T], f.diff(S))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(K))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(v))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(T))(valS, valK, valv, valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(S))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(K))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(v).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(T).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(K))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(S).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(v))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(K).diff(T))(valS, valK, valv,valT))
-    print(lambdify([S, K, v, T], f.diff(v).diff(T))(valS, valK, valv,valT))*/
+    // print(lambdify([S, K, v, T], f.diff(S))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(K))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(v))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(T))(valS, valK, valv, valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(S))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(K))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(v).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(T).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(K))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(S).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(v))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(K).diff(T))(valS, valK, valv,valT))
+    // print(lambdify([S, K, v, T], f.diff(v).diff(T))(valS, valK, valv,valT))
 
     // EXPECT_NEAR(t.get_d(dS), 0.33961663008862164, 1e-15);
     // EXPECT_NEAR(t.get_d(dK), -0.3838761485986675, 1e-14);

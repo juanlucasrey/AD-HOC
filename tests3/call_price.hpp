@@ -26,7 +26,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::sqrt;
     auto totalvol = v * sqrt(T);
     auto d1 = log(S / K) / totalvol + totalvol * CD<encode(0.5)>();
-    auto d2 = d1 + totalvol;
+    auto d2 = d1 - totalvol;
     return S * cdf_n(d1) - K * cdf_n(d2);
 }
 
@@ -38,7 +38,7 @@ auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using std::sqrt;
     auto totalvol = v * sqrt(T);
     auto d1 = log(S / K) / totalvol + totalvol * CD<encode(0.5)>();
-    auto d2 = d1 + totalvol;
+    auto d2 = d1 - totalvol;
     return K * cdf_n(-d2) - S * cdf_n(-d1);
 }
 
