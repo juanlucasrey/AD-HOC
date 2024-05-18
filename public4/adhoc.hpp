@@ -522,6 +522,119 @@ template <class Derived> auto erfc(Base<Derived> /* in */) {
     return erfc_t<Derived>{};
 }
 
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void comp_ellint_1_ders(std::array<double, Order> &res, double in,
+                               double coeff, double denominator) {
+    static_assert(N > 0);
+    auto constexpr coeff1 = static_cast<double>(N);
+    auto constexpr coeff2 =
+        static_cast<double>(3 * (N - 1) * (N - 1) + 3 * (N - 1) + 1);
+    auto constexpr coeff3 = static_cast<double>((N - 1) * (N - 1) * (N - 1));
+    res[N] = (coeff3 * res[N - 3] + coeff2 * in * res[N - 2] -
+              coeff1 * coeff * res[N - 1]) *
+             denominator;
+
+    if constexpr ((N + 1) < Order) {
+        comp_ellint_1_ders<N + 1>(res, in, coeff, denominator);
+    }
+}
+
+} // namespace detail
+
+template <class Input>
+struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
+    static inline auto v(double in) -> double { return std::comp_ellint_1(in); }
+
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double in,
+                         std::array<double, Output> &res) {
+        // we use x * (1 - x^2) f''(x) + (1 - 3 * x^2) * f'(x) - x * f(x) = 0
+        static_assert(Order <= Output);
+
+        const double in_sq = in * in;
+        const double temp1 = (1. - in_sq);
+        const double denominator = 1. / (in * temp1);
+        if constexpr (Order >= 1) {
+            res[0] = (std::comp_ellint_2(in) - temp1 * thisv) * denominator;
+        }
+
+        if constexpr (Order >= 2) {
+            const double coeff = (1. - 3 * in_sq);
+            res[1] = (in * thisv - coeff * res[0]) * denominator;
+            if constexpr (Order >= 3) {
+                res[2] = (thisv + 7. * in * res[0] - 2. * coeff * res[1]) *
+                         denominator;
+            }
+
+            if constexpr (Order >= 4) {
+                detail::comp_ellint_1_ders<3>(res, in, coeff, denominator);
+            }
+        }
+    }
+};
+
+template <class Derived> auto comp_ellint_1(Base<Derived> /* in */) {
+    return comp_ellint_1_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t N, std::size_t Order>
+inline void comp_ellint_2_ders(std::array<double, Order> &res, double in,
+                               double in_sq, double denominator) {
+    static_assert(N > 0);
+    auto constexpr coeff1 = static_cast<double>((N - 1) * (N - 1) * (N - 1) -
+                                                2 * (N - 1) * (N - 1));
+    auto constexpr coeff2 = static_cast<double>(3 * (N - 1) * (N - 1) - N);
+    auto constexpr coeff3 = static_cast<double>(3 * N - 2);
+    res[N] = (coeff1 * res[N - 3] + coeff2 * in * res[N - 2] -
+              (static_cast<double>(N) - coeff3 * in_sq) * res[N - 1]) *
+             denominator;
+
+    if constexpr ((N + 1) < Order) {
+        comp_ellint_2_ders<N + 1>(res, in, in_sq, denominator);
+    }
+}
+
+} // namespace detail
+
+template <class Input>
+struct comp_ellint_2_t : public Base<comp_ellint_2_t<Input>> {
+    static inline auto v(double in) -> double { return std::comp_ellint_2(in); }
+
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double in,
+                         std::array<double, Output> &res) {
+        // we use x * (1 - x^2) f''(x) + (1 - x^2) * f'(x) + x * f(x) = 0
+        static_assert(Order <= Output);
+
+        const double in_sq = in * in;
+        const double temp1 = (1. - in_sq);
+        const double denominator = 1. / (in * temp1);
+        if constexpr (Order >= 1) {
+            res[0] = (thisv - std::comp_ellint_1(in)) / in;
+        }
+
+        if constexpr (Order >= 2) {
+            res[1] = -(in * thisv + temp1 * res[0]) * denominator;
+            if constexpr (Order >= 3) {
+                res[2] = (-thisv + in * res[0] - (2. - 4. * in_sq) * res[1]) *
+                         denominator;
+            }
+
+            if constexpr (Order >= 4) {
+                detail::comp_ellint_2_ders<3>(res, in, in_sq, denominator);
+            }
+        }
+    }
+};
+
+template <class Derived> auto comp_ellint_2(Base<Derived> /* in */) {
+    return comp_ellint_2_t<Derived>{};
+}
+
 template <class Input> struct minus_t : public Base<minus_t<Input>> {
     static inline auto v(double in) -> double { return -in; }
 };

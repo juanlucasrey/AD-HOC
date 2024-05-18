@@ -506,4 +506,42 @@ TEST(UnivariateFunctions, ErrorFunction) {
     EXPECT_NEAR(results1[5], results2[5], 1e-2);
 }
 
+TEST(UnivariateFunctions, CompEllint1) {
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = comp_ellint_1_t<double>::v(val);
+    comp_ellint_1_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::comp_ellint_1(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-12);
+    EXPECT_NEAR(results1[1], results2[1], 1e-12);
+    EXPECT_NEAR(results1[2], results2[2], 1e-8);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-4);
+    EXPECT_NEAR(results1[5], results2[5], 1e-1);
+}
+
+TEST(UnivariateFunctions, CompEllint2) {
+    std::array<double, 6> results1;
+    double val = 0.32;
+    double res = comp_ellint_2_t<double>::v(val);
+    comp_ellint_2_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return std::comp_ellint_2(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+    EXPECT_NEAR(results1[0], results2[0], 1e-14);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[2], results2[2], 1e-9);
+    EXPECT_NEAR(results1[3], results2[3], 1e-6);
+    EXPECT_NEAR(results1[4], results2[4], 1e-4);
+    EXPECT_NEAR(results1[5], results2[5], 1e-1);
+}
+
 } // namespace adhoc4
