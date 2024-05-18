@@ -8,67 +8,6 @@
 
 namespace adhoc4 {
 
-/*double der1_1(double x, double epsilon) {
-    double f1 = std::comp_ellint_1(x + epsilon);
-    double f2 = std::comp_ellint_1(x - epsilon);
-    return 0.5 * (f1 - f2) / epsilon;
-}
-
-double der1_2(double x, double epsilon) {
-    double f1 = std::comp_ellint_2(x + epsilon);
-    double f2 = std::comp_ellint_2(x - epsilon);
-    return 0.5 * (f1 - f2) / epsilon;
-}
-
-double der2_1(double x, double epsilon) {
-    double f1 = std::comp_ellint_1(x + epsilon);
-    double f = std::comp_ellint_1(x);
-    double f2 = std::comp_ellint_1(x - epsilon);
-    return 0.5 * (f1 + f2 - 2 * f) / (epsilon * epsilon);
-}
-
-double der1c_1(double x) {
-    double e = std::comp_ellint_2(x);
-    double f = std::comp_ellint_1(x);
-    double num = (x * x - 1) * f + e;
-    double den = x * (1 - x * x);
-    return num / den;
-}
-
-double der1c_2(double x) {
-    double num = std::comp_ellint_2(x) - std::comp_ellint_1(x);
-    double den = x;
-    return num / den;
-}
-
-TEST(Base, CompEllint1) {
-    double x1 = 0.02;
-    double epsilon = 0.00001;
-    double val = std::comp_ellint_1(x1);
-    std::cout.precision(std::numeric_limits<double>::max_digits10);
-    std::cout << val << std::endl;
-
-    std::cout << der1_1(x1, epsilon) << std::endl;
-    std::cout << der1c_1(x1) << std::endl;
-
-    std::cout << der1_2(x1, epsilon) << std::endl;
-    std::cout << der1c_2(x1) << std::endl;
-    // std::cout << der2(x1, epsilon) << std::endl;
-    // std::cout << std::comp_ellint_1(0) << std::endl;
-    // constexpr double π{std::numbers::pi};
-
-    // std::cout << "K(0) ≈ " << std::comp_ellint_1(0) << '\n'
-    //           << "π/2 ≈ " << π / 2 << '\n'
-    //           << "K(0.5) ≈ " << std::comp_ellint_1(0.5) << '\n'
-    //           << "F(0.5, π/2) ≈ " << std::ellint_1(0.5, π / 2) << '\n'
-    //           << "The period of a pendulum length 1m at 10° initial angle ≈ "
-    //           << 4 * std::sqrt(1 / 9.80665) *
-    //                  std::comp_ellint_1(std::sin(π / 18 / 2))
-    //           << "s,\n"
-    //              "whereas the linear approximation gives ≈ "
-    //           << 2 * π * std::sqrt(1 / 9.80665) << '\n';
-}*/
-
 std::array<double, 6> finite_differences(double x, double epsilon,
                                          std::function<double(double)> func) {
     std::vector<double> fvals{
