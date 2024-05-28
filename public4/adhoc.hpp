@@ -544,6 +544,7 @@ inline void comp_ellint_1_ders(std::array<double, Output> &res, double in,
 
 } // namespace detail
 
+#ifndef __clang__
 template <class Input>
 struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
     static inline auto v(double in) -> double { return std::comp_ellint_1(in); }
@@ -637,6 +638,7 @@ struct comp_ellint_2_t : public Base<comp_ellint_2_t<Input>> {
 template <class Derived> auto comp_ellint_2(Base<Derived> /* in */) {
     return comp_ellint_2_t<Derived>{};
 }
+#endif
 
 template <class Input> struct minus_t : public Base<minus_t<Input>> {
     static inline auto v(double in) -> double { return -in; }

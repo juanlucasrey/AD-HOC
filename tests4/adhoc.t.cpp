@@ -519,6 +519,7 @@ TEST(UnivariateFunctions, ErrorFunction) {
     EXPECT_EQ(results1[9], 0.);
 }
 
+#ifndef __clang__
 TEST(UnivariateFunctions, CompEllint1) {
     std::array<double, 10> results1;
     results1.fill(0.);
@@ -566,6 +567,7 @@ TEST(UnivariateFunctions, CompEllint2) {
     EXPECT_EQ(results1[8], 0.);
     EXPECT_EQ(results1[9], 0.);
 }
+#endif
 
 TEST(UnivariateFunctions, LGamma) {
     {

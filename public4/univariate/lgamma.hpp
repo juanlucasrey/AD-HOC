@@ -24,6 +24,7 @@
 #include "../base.hpp"
 #include "../combinatorics/factorial.hpp"
 #include "../combinatorics/pascal.hpp"
+#include "../combinatorics/pow.hpp"
 #include "../utils/index_sequence.hpp"
 #include "tan.hpp"
 
@@ -94,13 +95,13 @@ template <std::size_t N> double inline zeta(double x) {
     constexpr double convergence = std::numeric_limits<double>::epsilon() * 0.5;
 
     // Euler-Maclaurin summation formula
-    double result = pow(x, -static_cast<double>(N));
+    double result = std::pow(x, -static_cast<double>(N));
     double b = 0.0;
     std::size_t i = 0;
     while ((i < 9) || (x <= 9.0)) {
         i++;
         x += 1.0;
-        b = pow(x, -static_cast<double>(N));
+        b = std::pow(x, -static_cast<double>(N));
         result += b;
         if (fabs(b / result) < convergence) {
             return result;
@@ -141,7 +142,7 @@ template <std::size_t Order, std::size_t N, std::size_t Output>
 inline void polygamma_aux_negative(double x, std::array<double, Output> &res,
                                    std::array<double, Order> const &cotd) {
     constexpr double coeff1 = -factorial(static_cast<unsigned int>(N));
-    constexpr double coeff2 = -pow(std::numbers::pi_v<double>, N + 1);
+    constexpr double coeff2 = -pow<N + 1>(std::numbers::pi_v<double>);
     res[N] = coeff1 * zeta<N + 1>(1 - x) + coeff2 * cotd[N - 1];
 
     if constexpr ((N + 1) < Order) {
