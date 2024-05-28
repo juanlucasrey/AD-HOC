@@ -23,6 +23,7 @@
 
 #include "base.hpp"
 #include "constants_constexpr.hpp"
+#include "univariate/lgamma.hpp"
 #include "univariate/tan.hpp"
 
 #include <array>

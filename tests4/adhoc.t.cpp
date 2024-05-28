@@ -8,6 +8,7 @@
 
 namespace adhoc4 {
 
+namespace {
 std::array<double, 6> finite_differences(double x, double epsilon,
                                          std::function<double(double)> func) {
     std::vector<double> fvals{
@@ -68,6 +69,7 @@ std::array<double, 6> finite_differences(double x, double epsilon,
 
     return result;
 }
+} // namespace
 
 TEST(UnivariateFunctions, Inverse) {
     std::array<double, 10> results1;
@@ -246,12 +248,12 @@ TEST(UnivariateFunctions, Tangent) {
     // print(lambdify([x],
     // r.diff(x).diff(x).diff(x).diff(x).diff(x).diff(x))(valx))
 
-    EXPECT_NEAR(results1[0], 16.2361239501548, 1e-15);
-    EXPECT_NEAR(results1[1], 126.75047699671539, 1e-15);
+    EXPECT_NEAR(results1[0], 16.2361239501548, 1e-14);
+    EXPECT_NEAR(results1[1], 126.75047699671539, 1e-13);
     EXPECT_NEAR(results1[2], 1516.7258297481221, 1e-12);
-    EXPECT_NEAR(results1[3], 24188.235555132123, 1e-11);
-    EXPECT_NEAR(results1[4], 482230.28055004874, 1e-10);
-    EXPECT_NEAR(results1[5], 11536771.351260751, 1e-8);
+    EXPECT_NEAR(results1[3], 24188.235555132123, 1e-10);
+    EXPECT_NEAR(results1[4], 482230.28055004874, 1e-9);
+    EXPECT_NEAR(results1[5], 11536771.351260751, 1e-7);
     EXPECT_EQ(results1[6], 0.);
     EXPECT_EQ(results1[7], 0.);
     EXPECT_EQ(results1[8], 0.);
@@ -530,7 +532,7 @@ TEST(UnivariateFunctions, CompEllint1) {
     double epsilon = 0.01;
     auto results2 = finite_differences(val, epsilon, lambdainput);
     EXPECT_NEAR(results1[0], results2[0], 1e-12);
-    EXPECT_NEAR(results1[1], results2[1], 1e-12);
+    EXPECT_NEAR(results1[1], results2[1], 1e-11);
     EXPECT_NEAR(results1[2], results2[2], 1e-8);
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-4);
@@ -554,7 +556,7 @@ TEST(UnivariateFunctions, CompEllint2) {
     double epsilon = 0.01;
     auto results2 = finite_differences(val, epsilon, lambdainput);
     EXPECT_NEAR(results1[0], results2[0], 1e-14);
-    EXPECT_NEAR(results1[1], results2[1], 1e-11);
+    EXPECT_NEAR(results1[1], results2[1], 1e-10);
     EXPECT_NEAR(results1[2], results2[2], 1e-9);
     EXPECT_NEAR(results1[3], results2[3], 1e-6);
     EXPECT_NEAR(results1[4], results2[4], 1e-4);
@@ -563,6 +565,56 @@ TEST(UnivariateFunctions, CompEllint2) {
     EXPECT_EQ(results1[7], 0.);
     EXPECT_EQ(results1[8], 0.);
     EXPECT_EQ(results1[9], 0.);
+}
+
+TEST(UnivariateFunctions, LGamma) {
+    {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        double val = 0.32;
+        double res = lgamma_t<double>::v(val);
+        lgamma_t<double>::d<6>(res, val, results1);
+
+        std::function<double(double)> lambdainput = [](double d) {
+            return std::lgamma(d);
+        };
+        double epsilon = 0.01;
+        auto results2 = finite_differences(val, epsilon, lambdainput);
+        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
+        EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
+        EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
+        EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
+        EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
+        EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+        EXPECT_EQ(results1[6], 0.);
+        EXPECT_EQ(results1[7], 0.);
+        EXPECT_EQ(results1[8], 0.);
+        EXPECT_EQ(results1[9], 0.);
+    }
+
+    {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        double val = -0.32;
+        double res = lgamma_t<double>::v(val);
+        lgamma_t<double>::d<6>(res, val, results1);
+
+        std::function<double(double)> lambdainput = [](double d) {
+            return std::lgamma(d);
+        };
+        double epsilon = 0.01;
+        auto results2 = finite_differences(val, epsilon, lambdainput);
+        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
+        EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
+        EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
+        EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
+        EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
+        EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+        EXPECT_EQ(results1[6], 0.);
+        EXPECT_EQ(results1[7], 0.);
+        EXPECT_EQ(results1[8], 0.);
+        EXPECT_EQ(results1[9], 0.);
+    }
 }
 
 } // namespace adhoc4

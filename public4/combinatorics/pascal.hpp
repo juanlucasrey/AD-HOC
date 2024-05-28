@@ -28,42 +28,34 @@ namespace adhoc4 {
 
 namespace detail {
 
-template <bool Diff, std::size_t N>
+template <bool PrevPlus, bool NextPlus, std::size_t N>
 constexpr auto NextPascalArray(std::array<int, N> const &prev) {
+    constexpr int next_c = NextPlus ? 1 : -1;
+    constexpr int prev_c = PrevPlus ? 1 : -1;
+
     std::array<int, N + 1> arr{};
-
-    arr[0] = prev[1];
-
-    if constexpr (Diff) {
-        for (std::size_t i = 1; i < (prev.size() - 1); i++) {
-            arr[i] = prev[i + 1] * static_cast<int>(i + 1) -
-                     prev[i - 1] * static_cast<int>(i - 1);
-        }
-        arr.back() = -prev.back() * (prev.size() - 1);
-    } else {
-        for (std::size_t i = 1; i < (prev.size() - 1); i++) {
-            arr[i] = prev[i + 1] * static_cast<int>(i + 1) +
-                     prev[i - 1] * static_cast<int>(i - 1);
-        }
-        arr.back() = prev.back() * (prev.size() - 1);
+    arr[0] = next_c * prev[1];
+    for (std::size_t i = 1; i < (prev.size() - 1); i++) {
+        arr[i] = next_c * prev[i + 1] * static_cast<int>(i + 1) +
+                 prev_c * prev[i - 1] * static_cast<int>(i - 1);
     }
-
+    arr.back() = prev_c * prev.back() * (static_cast<int>(prev.size()) - 1);
     return arr;
 }
 
-template <bool Diff, int... I, std::size_t... I2>
+template <bool PrevPlus, bool NextPlus, int... I, std::size_t... I2>
 constexpr auto NextPascal_aux(std::integer_sequence<int, I...> /* i */,
                               std::index_sequence<I2...> /* i2 */) {
     constexpr std::array<int, sizeof...(I)> temp{I...};
-    constexpr auto next = NextPascalArray<Diff>(temp);
+    constexpr auto next = NextPascalArray<PrevPlus, NextPlus>(temp);
     return std::integer_sequence<int, next[I2]...>{};
 }
 
 } // namespace detail
 
-template <bool Diff, int... I>
+template <bool PrevPlus, bool NextPlus, int... I>
 constexpr auto NextPascal(std::integer_sequence<int, I...> i) {
-    return detail::NextPascal_aux<Diff>(
+    return detail::NextPascal_aux<PrevPlus, NextPlus>(
         i, std::make_index_sequence<i.size() + 1>{});
 }
 

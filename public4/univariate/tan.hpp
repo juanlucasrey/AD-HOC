@@ -55,14 +55,14 @@ inline auto Multiply(double tan, double tan2,
     return result;
 }
 
-template <bool Diff, std::size_t N, std::size_t Order, std::size_t Output,
-          class IndexSequence>
+template <bool PrevPlus, bool NextPlus, std::size_t Order, std::size_t N = 0,
+          std::size_t Output, class IndexSequence>
 inline void tan_aux(double tan, double tan2, std::array<double, Output> &res,
                     IndexSequence i) {
-    constexpr auto next_i = NextPascal<Diff>(i);
+    constexpr auto next_i = NextPascal<PrevPlus, NextPlus>(i);
     res[N] = Multiply(tan, tan2, next_i);
     if constexpr ((N + 1) < Order) {
-        tan_aux<Diff, N + 1, Order>(tan, tan2, res, next_i);
+        tan_aux<PrevPlus, NextPlus, Order, N + 1>(tan, tan2, res, next_i);
     }
 }
 
@@ -77,19 +77,8 @@ template <class Input> struct tan_t : public Base<tan_t<Input>> {
         static_assert(Order <= Output);
 
         const double tan2 = thisv * thisv;
-
-        // equivalent to
-        // detail::tan_aux<false, 0, Order>(thisv, tan2, res,
-        //                                  std::integer_sequence<int, 0, 1>{});
-
-        if constexpr (Order >= 1) {
-            res[0] = 1. + tan2;
-        }
-
-        if constexpr (Order >= 2) {
-            detail::tan_aux<false, 1, Order>(
-                thisv, tan2, res, std::integer_sequence<int, 1, 0, 1>{});
-        }
+        detail::tan_aux<true, true, Order>(thisv, tan2, res,
+                                           std::integer_sequence<int, 0, 1>{});
     }
 };
 
@@ -106,19 +95,8 @@ template <class Input> struct tanh_t : public Base<tanh_t<Input>> {
         static_assert(Order <= Output);
 
         double const tan2 = thisv * thisv;
-
-        // equivalent to
-        // detail::tan_aux<true, 0, Order>(thisv, tan2, res,
-        //                                 std::integer_sequence<int, 0, 1>{});
-
-        if constexpr (Order >= 1) {
-            res[0] = 1. - tan2;
-        }
-
-        if constexpr (Order >= 2) {
-            detail::tan_aux<true, 1, Order>(
-                thisv, tan2, res, std::integer_sequence<int, 1, 0, -1>{});
-        }
+        detail::tan_aux<false, true, Order>(thisv, tan2, res,
+                                            std::integer_sequence<int, 0, 1>{});
     }
 };
 
