@@ -22,6 +22,7 @@
 #define ADHOC4_UNIVARIATE_LGAMMA_HPP
 
 #include "../base.hpp"
+#include "../combinatorics/combinations.hpp"
 #include "../combinatorics/factorial.hpp"
 #include "../combinatorics/pascal.hpp"
 #include "../combinatorics/pow.hpp"
@@ -232,6 +233,63 @@ template <class Input> struct lgamma_t : public Base<lgamma_t<Input>> {
 
 template <class Derived> auto lgamma(Base<Derived> /* in */) {
     return lgamma_t<Derived>{};
+}
+
+namespace detail {
+
+template <std::size_t Current, std::size_t CoeffIdx = 0, std::size_t Order,
+          std::size_t Output>
+constexpr auto tgamma_calc(double thisv,
+                           std::array<double, Order> const &lgamma,
+                           std::array<double, Output> &res) {
+
+    if constexpr (CoeffIdx == 0) {
+        res[Current] = thisv * lgamma[Current];
+
+    } else {
+        constexpr auto coeff = binomial_coefficient(Current, CoeffIdx);
+        if constexpr (coeff == 1) {
+            res[Current] += res[CoeffIdx - 1] * lgamma[Current - CoeffIdx];
+
+        } else {
+            res[Current] +=
+                coeff * res[CoeffIdx - 1] * lgamma[Current - CoeffIdx];
+        }
+    }
+
+    if constexpr (CoeffIdx < Current) {
+        tgamma_calc<Current, CoeffIdx + 1>(thisv, lgamma, res);
+    }
+}
+
+template <std::size_t Idx = 0, std::size_t Order, std::size_t Output>
+constexpr auto tgamma_aux(double thisv, std::array<double, Order> const &lgamma,
+                          std::array<double, Output> &res) {
+
+    tgamma_calc<Idx>(thisv, lgamma, res);
+
+    if constexpr ((Idx + 1) < Order) {
+        tgamma_aux<Idx + 1>(thisv, lgamma, res);
+    }
+}
+
+} // namespace detail
+
+template <class Input> struct tgamma_t : public Base<tgamma_t<Input>> {
+    static inline auto v(double in) -> double { return std::tgamma(in); }
+    template <std::size_t Order, std::size_t Output>
+    static inline void d(double thisv, double in,
+                         std::array<double, Output> &res) {
+        static_assert(Order <= Output);
+
+        std::array<double, Order> lgamma;
+        lgamma_t<double>::d<Order>(0., in, lgamma);
+        detail::tgamma_aux(thisv, lgamma, res);
+    }
+};
+
+template <class Derived> auto tgamma(Base<Derived> /* in */) {
+    return tgamma_t<Derived>{};
 }
 
 } // namespace adhoc4
