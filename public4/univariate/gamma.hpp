@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UNIVARIATE_LGAMMA_HPP
-#define ADHOC4_UNIVARIATE_LGAMMA_HPP
+#ifndef ADHOC4_UNIVARIATE_GAMMA_HPP
+#define ADHOC4_UNIVARIATE_GAMMA_HPP
 
 #include "../base.hpp"
 #include "../combinatorics/combinations.hpp"
@@ -294,4 +294,4 @@ template <class Derived> auto tgamma(Base<Derived> /* in */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UNIVARIATE_LGAMMA_HPP
+#endif // ADHOC4_UNIVARIATE_GAMMA_HPP
