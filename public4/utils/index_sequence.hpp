@@ -21,6 +21,8 @@
 #ifndef ADHOC4_UTILS_INDEX_SEQUENCE_HPP
 #define ADHOC4_UTILS_INDEX_SEQUENCE_HPP
 
+#include "../combinatorics/pow.hpp"
+
 #include <array>
 #include <cmath>
 
@@ -34,6 +36,29 @@ constexpr auto get(std::integer_sequence<T, I...> /* i */) {
 template <std::size_t... I>
 constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
     return (I + ...);
+}
+
+namespace detail {
+template <std::size_t Idx = 0, std::size_t Size, class IS>
+auto inner_product_power_aux(double &res, IS current,
+                             std::array<double, Size> const &in) {
+    constexpr auto current_pow = get<Idx>(current);
+    if constexpr (current_pow > 0) {
+        res *= pow<current_pow>(in[Idx]);
+    }
+
+    if constexpr ((Idx + 1) < current.size()) {
+        inner_product_power_aux<Idx + 1>(res, current, in);
+    }
+}
+} // namespace detail
+
+template <std::size_t Size, class IS>
+auto inner_product_power(IS current, std::array<double, Size> const &in) {
+    static_assert(current.size() <= Size);
+    double res = 1.;
+    detail::inner_product_power_aux(res, current, in);
+    return res;
 }
 
 } // namespace adhoc4
