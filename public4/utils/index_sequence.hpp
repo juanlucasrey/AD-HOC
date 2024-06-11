@@ -39,6 +39,7 @@ constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
 }
 
 namespace detail {
+
 template <std::size_t Idx = 0, std::size_t Size, class IS>
 auto inner_product_power_aux(double &res, IS current,
                              std::array<double, Size> const &in) {
@@ -51,6 +52,7 @@ auto inner_product_power_aux(double &res, IS current,
         inner_product_power_aux<Idx + 1>(res, current, in);
     }
 }
+
 } // namespace detail
 
 template <std::size_t Size, class IS>
