@@ -18,24 +18,35 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_INDEX_SEQUENCE_HPP
-#define ADHOC4_UTILS_INDEX_SEQUENCE_HPP
-
-#include <array>
-#include <cmath>
+#ifndef ADHOC4_PARTITION_PARTITION_FUNCTION_HPP
+#define ADHOC4_PARTITION_PARTITION_FUNCTION_HPP
 
 namespace adhoc4 {
 
-template <std::size_t Idx, class T, T... I>
-constexpr auto get(std::integer_sequence<T, I...> /* i */) {
-    return std::array<T, sizeof...(I)>{I...}[Idx];
-}
+namespace detail {
+constexpr auto partition_function_aux(int n, int k) -> int {
+    if (k == 0) {
+        return 0;
+    }
+    if (n == 0) {
+        return 1;
+    }
+    if (n < 0) {
+        return 0;
+    }
 
-template <std::size_t... I>
-constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
-    return (I + ...);
+    return partition_function_aux(n, k - 1) + partition_function_aux(n - k, k);
+}
+} // namespace detail
+
+constexpr auto partition_function(int n) -> int {
+    // convention
+    if (n == 0) {
+        return 1;
+    }
+    return detail::partition_function_aux(n, n);
 }
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_INDEX_SEQUENCE_HPP
+#endif // ADHOC4_PARTITION_PARTITION_FUNCTION_HPP

@@ -18,24 +18,27 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_INDEX_SEQUENCE_HPP
-#define ADHOC4_UTILS_INDEX_SEQUENCE_HPP
+#ifndef ADHOC4_UTILS_POW_HPP
+#define ADHOC4_UTILS_POW_HPP
 
 #include <array>
 #include <cmath>
 
-namespace adhoc4 {
+namespace adhoc4::detail {
 
-template <std::size_t Idx, class T, T... I>
-constexpr auto get(std::integer_sequence<T, I...> /* i */) {
-    return std::array<T, sizeof...(I)>{I...}[Idx];
-}
+template <std::size_t N, class T> inline auto pow(T base) -> T {
+    if constexpr (N == 1) {
+        return base;
+    } else if constexpr (N % 2 == 0) {
+        T power = pow<N / 2>(base);
+        return power * power;
 
-template <std::size_t... I>
-constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
-    return (I + ...);
-}
+    } else {
+        T power = pow<N / 2>(base);
+        return base * power * power;
+    }
+};
 
-} // namespace adhoc4
+} // namespace adhoc4::detail
 
-#endif // ADHOC4_UTILS_INDEX_SEQUENCE_HPP
+#endif // ADHOC4_UTILS_POW_HPP
