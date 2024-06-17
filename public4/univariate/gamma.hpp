@@ -205,7 +205,7 @@ template <class Input> struct lgamma_t : public Base<lgamma_t<Input>> {
         static_assert(Order <= Output);
 
         if (in < 0) {
-            double cotarg = std::numbers::pi_v<double> * (in - floor(in + 0.5));
+            double cotarg = std::numbers::pi_v<double> * std::remainder(in, 1.);
             double thisv = std::cos(cotarg) / std::sin(cotarg);
 
             if constexpr (Order >= 1) {

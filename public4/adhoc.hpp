@@ -24,7 +24,9 @@
 #include "base.hpp"
 #include "constants_constexpr.hpp"
 #include "univariate/gamma.hpp"
+#include "univariate/sincos.hpp"
 #include "univariate/tan.hpp"
+#include "univariate/zeta.hpp"
 
 #include <array>
 #include <cmath>
@@ -44,70 +46,6 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
 
 template <class Derived> auto exp(Base<Derived> /* in */) {
     return exp_t<Derived>{};
-}
-
-namespace detail {
-
-template <std::size_t N, std::size_t Order, std::size_t Output>
-inline void cossin(std::array<double, Output> &res) {
-    res[N] = -res[N - 2];
-    if constexpr ((N + 1) < Order) {
-        cossin<N + 1, Order>(res);
-    }
-}
-
-} // namespace detail
-
-template <class Input> struct sin_t : public Base<sin_t<Input>> {
-    static inline auto v(double in) -> double { return std::sin(in); }
-    template <std::size_t Order, std::size_t Output>
-    static inline void d(double thisv, double in,
-                         std::array<double, Output> &res) {
-        // we use f''(x) + f(x) = 0
-        static_assert(Order <= Output);
-
-        if constexpr (Order >= 1) {
-            res[0] = std::cos(in);
-        }
-
-        if constexpr (Order >= 2) {
-            res[1] = -thisv;
-        }
-
-        if constexpr (Order >= 3) {
-            detail::cossin<2, Order>(res);
-        }
-    }
-};
-
-template <class Derived> auto sin(Base<Derived> /* in */) {
-    return sin_t<Derived>{};
-}
-
-template <class Input> struct cos_t : public Base<cos_t<Input>> {
-    static inline auto v(double in) -> double { return std::cos(in); }
-    template <std::size_t Order, std::size_t Output>
-    static inline void d(double thisv, double in,
-                         std::array<double, Output> &res) {
-        // we use f''(x) + f(x) = 0
-        static_assert(Order <= Output);
-
-        if constexpr (Order >= 1) {
-            res[0] = -std::sin(in);
-        }
-
-        if constexpr (Order >= 2) {
-            res[1] = -thisv;
-        }
-
-        if constexpr (Order >= 3) {
-            detail::cossin<2, Order>(res);
-        }
-    }
-};
-
-template <class Derived> auto cos(Base<Derived> /* in */) {
-    return cos_t<Derived>{};
 }
 
 namespace detail {

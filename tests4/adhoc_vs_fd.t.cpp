@@ -573,7 +573,7 @@ TEST(UnivariateFunctions, LGamma) {
     {
         std::array<double, 10> results1;
         results1.fill(0.);
-        double val = 0.32;
+        double val = 1.1;
         double res = lgamma_t<double>::v(val);
         lgamma_t<double>::d<6>(res, val, results1);
 
@@ -662,6 +662,56 @@ TEST(UnivariateFunctions, TGamma) {
         EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
         EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
         EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+        EXPECT_EQ(results1[6], 0.);
+        EXPECT_EQ(results1[7], 0.);
+        EXPECT_EQ(results1[8], 0.);
+        EXPECT_EQ(results1[9], 0.);
+    }
+}
+
+TEST(UnivariateFunctions, RiemannZeta) {
+    {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        double val = 0.32;
+        double res = riemann_zeta_t<double>::v(val);
+        riemann_zeta_t<double>::d<6>(res, val, results1);
+
+        std::function<double(double)> lambdainput = [](double d) {
+            return std::riemann_zeta(d);
+        };
+        double epsilon = 0.01;
+        auto results2 = finite_differences(val, epsilon, lambdainput);
+        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-11);
+        EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-13);
+        EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-8);
+        EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-8);
+        EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-7);
+        EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+        EXPECT_EQ(results1[6], 0.);
+        EXPECT_EQ(results1[7], 0.);
+        EXPECT_EQ(results1[8], 0.);
+        EXPECT_EQ(results1[9], 0.);
+    }
+
+    {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        double val = -0.32;
+        double res = riemann_zeta_t<double>::v(val);
+        riemann_zeta_t<double>::d<6>(res, val, results1);
+
+        std::function<double(double)> lambdainput = [](double d) {
+            return std::riemann_zeta(d);
+        };
+        double epsilon = 0.01;
+        auto results2 = finite_differences(val, epsilon, lambdainput);
+        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-13);
+        EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-11);
+        EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-9);
+        EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-7);
+        EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-6);
+        EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-4);
         EXPECT_EQ(results1[6], 0.);
         EXPECT_EQ(results1[7], 0.);
         EXPECT_EQ(results1[8], 0.);

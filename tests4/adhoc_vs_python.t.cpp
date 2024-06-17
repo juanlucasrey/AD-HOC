@@ -1,14 +1,20 @@
 
 #include <base.hpp>
+#include <boost/math/special_functions/zeta.hpp>
 #include <combinatorics/combinations.hpp>
+#include <combinatorics/factorial.hpp>
 #include <combinatorics/integer_partition_index_sequence.hpp>
 #include <combinatorics/partition_function.hpp>
+#include <combinatorics/pow.hpp>
 #include <utils/index_sequence.hpp>
+
+#include <adhoc.hpp>
 
 #include <gtest/gtest.h>
 
 #include <chrono>
 #include <complex>
+#include <fstream>
 #include <random>
 
 namespace adhoc4 {
@@ -502,184 +508,6 @@ static inline void zetad(double /* thisv */, double in,
     zeta4dd<Order>(in, res);
 }
 
-TEST(UnivariateFunctions, ZettaD) {
-    std::array<double, 10> results1;
-    results1.fill(0.);
-    // double val = 0.32;
-    // double res = zeta4(val);
-    // zetad<6>(res, val, results1);
-
-    std::function<double(double)> lambdainput = [](double d) {
-        // return zeta4(d);
-        return std::riemann_zeta(d);
-    };
-    double epsilon = 0.001;
-
-    double val = -3.;
-    // double val = 0.5;
-    double increment = 0.01;
-    while (val < 0.98) {
-        // double res = zeta4(val);
-        double res = std::riemann_zeta(val);
-        zetad<6>(res, val, results1);
-
-        auto results2 = finite_differences(val, epsilon, lambdainput);
-
-        double const reldiff =
-            std::abs((results2[0] - results1[0]) / results2[0]);
-
-        // if (reldiff > 1.) {
-        // std::cout << val << ", " << res << ", " << results2[0] << ", "
-        //           << results1[0] << std::endl;
-        // }
-        // EXPECT_NEAR(results1[0], results2[0], 1e-4);
-        // EXPECT_LT(reldiff, 1e-1);
-
-        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
-        // EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-8);
-        // EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-5);
-        // EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-1);
-        // EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
-        // EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
-
-        val += increment;
-    }
-
-    val = 1.02;
-    while (val < 3.) {
-        // double res = zeta4(val);
-        double res = std::riemann_zeta(val);
-        zetad<6>(res, val, results1);
-
-        auto results2 = finite_differences(val, epsilon, lambdainput);
-
-        double const reldiff =
-            std::abs((results2[0] - results1[0]) / results2[0]);
-
-        // if (reldiff > 1.) {
-        //     std::cout << val << std::endl;
-        // std::cout << val << ", " << res << ", " << results2[0] << ", "
-        //           << results1[0] << std::endl;
-        // }
-        // EXPECT_NEAR(results1[0], results2[0], 1e-11);
-        // EXPECT_LT(reldiff, 1e-3);
-        EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
-        // EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-8);
-        // EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-5);
-        // EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-1);
-        // EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
-        // EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
-        val += increment;
-    }
-    // EXPECT_NEAR(results1[1], results2[1], 1e-11);
-    // EXPECT_NEAR(results1[2], results2[2], 1e-9);
-    // EXPECT_NEAR(results1[3], results2[3], 1e-6);
-    // EXPECT_NEAR(results1[4], results2[4], 1e-4);
-    // EXPECT_NEAR(results1[5], results2[5], 1e-1);
-    // EXPECT_EQ(results1[6], 0.);
-    // EXPECT_EQ(results1[7], 0.);
-    // EXPECT_EQ(results1[8], 0.);
-    // EXPECT_EQ(results1[9], 0.);
-}
-
-TEST(UnivariateFunctions, Zetta) {
-    {
-        std::cout.precision(std::numeric_limits<double>::max_digits10);
-        double x = -3.;
-        double increment = 0.01;
-        while (x < 3.0) {
-            std::cout << x << ", ";
-            std::cout << std::riemann_zeta(x) << ", ";
-            // std::cout << zeta(x, 1.0) << std::endl;
-            std::cout << zeta(x) << ", ";
-            // std::cout << boost::math::zeta(x) << ", ";
-            std::cout << zeta4(x) << std::endl;
-            // std::cout << zeta3(x) << std::endl;
-            // double val1 = std::riemann_zeta(x);
-            // double val2 = zeta4(x);
-
-            // double relerror = std::abs((val1 - val2) / val1);
-            // double abserror = std::abs(val1 - val2);
-
-            // if (abserror > 1e-7) {
-
-            //     if (std::abs(val1) < 1e10) {
-            //         EXPECT_LT(relerror, 1e-2);
-            //     }
-            // }
-
-            x += increment;
-        }
-
-        // std::cout.precision(std::numeric_limits<double>::max_digits10);
-        // double val = 1.32;
-
-        // std::cout << std::riemann_zeta(val) << std::endl;
-        // std::cout << zeta(val, 1.0) << std::endl;
-        // std::cout << boost::math::zeta(val) << std::endl;
-        // std::cout << zeta2(val) << std::endl;
-
-        // val = 1.;
-
-        // std::cout << std::riemann_zeta(val) << std::endl;
-        // std::cout << zeta(val, 1.0) << std::endl;
-        // std::cout << zeta2(val) << std::endl;
-        // // std::cout << boost::math::zeta(val) << std::endl;
-
-        // val = 0.8;
-
-        // std::cout << std::riemann_zeta(val) << std::endl;
-        // std::cout << zeta(val, 1.0) << std::endl;
-        // std::cout << boost::math::zeta(val) << std::endl;
-        // std::cout << zeta2(val) << std::endl;
-        // std::array<double, 10> results1;
-        // results1.fill(0.);
-        // double val = 0.32;
-        // double res = tgamma_t<double>::v(val);
-        // tgamma_t<double>::d<6>(res, val, results1);
-
-        // std::function<double(double)> lambdainput = [](double d) {
-        //     return std::riemann_zeta(d);
-        // };
-        // double epsilon = 0.01;
-        // auto results2 = finite_differences(val, epsilon, lambdainput);
-        // EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
-        // EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
-        // EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
-        // EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
-        // EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
-        // EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
-        // EXPECT_EQ(results1[6], 0.);
-        // EXPECT_EQ(results1[7], 0.);
-        // EXPECT_EQ(results1[8], 0.);
-        // EXPECT_EQ(results1[9], 0.);
-    }
-
-    // {
-    //     std::array<double, 10> results1;
-    //     results1.fill(0.);
-    //     double val = -0.32;
-    //     double res = tgamma_t<double>::v(val);
-    //     tgamma_t<double>::d<6>(res, val, results1);
-
-    //     std::function<double(double)> lambdainput = [](double d) {
-    //         return std::tgamma(d);
-    //     };
-    //     double epsilon = 0.01;
-    //     auto results2 = finite_differences(val, epsilon, lambdainput);
-    //     EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
-    //     EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
-    //     EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
-    //     EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
-    //     EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
-    //     EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
-    //     EXPECT_EQ(results1[6], 0.);
-    //     EXPECT_EQ(results1[7], 0.);
-    //     EXPECT_EQ(results1[8], 0.);
-    //     EXPECT_EQ(results1[9], 0.);
-    // }
-}
-
 TEST(UnivariateFunctions, ZettaTimingOverOne) {
     std::uniform_real_distribution<double> d(1.1, 10.0);
     auto starttime = std::chrono::steady_clock::now();
@@ -801,6 +629,586 @@ TEST(UnivariateFunctions, ZettaTimingUnderOne) {
                   << " µs" << std::endl;
         acc /= static_cast<double>(iters);
         std::cout << acc << std::endl;
+    }
+}
+
+inline auto zeta_borwein_positive(double x, std::size_t n) -> double {
+    std::vector<double> d(n + 1, 0.);
+    double prev = 0;
+    for (std::size_t i = 0; i < (n + 1); i++) {
+        // double numerator =
+        //     std::pow(4, i) * factorial(static_cast<unsigned>(n + i - 1));
+        // double denominateur = factorial(static_cast<unsigned>(n - i)) *
+        //                       factorial(static_cast<unsigned>(2 * i));
+        auto combinations = binomial_coefficient(n + i, 2 * i);
+        // double temp1 = numerator / denominateur;
+        double temp2 =
+            static_cast<double>(combinations) / static_cast<double>(n + i);
+        // double coeff = std::pow(4, i) *
+        //                factorial(static_cast<unsigned>(n + i - 1)) /
+        //                (factorial(static_cast<unsigned>(n - i)) *
+        //                 factorial(static_cast<unsigned>(2 * i)));
+
+        double coeff2 = std::pow(4, i) * temp2;
+        d[i] = prev + coeff2;
+        prev = d[i];
+    }
+
+    // for (std::size_t i = 0; i <= n; i++) {
+    //     std::cout << d[i] << ", ";
+    // }
+    // std::cout << std::endl;
+
+    double result = 0;
+    for (std::size_t i = 0; i < n; i++) {
+        double const_coeff = std::pow(-1., i) * (d[i] - d[n]);
+        double const_coeff2 = const_coeff / d[n];
+        double coeff = const_coeff2 * std::pow(i + 1, -x);
+        result += coeff;
+    }
+
+    // result *= -1. / (d[n] * (1 - std::pow(2, 1 - x)));
+    result *= -1. / (1 - std::pow(2, 1 - x));
+
+    return result;
+}
+
+inline auto zeta_borwein(double x, std::size_t n) -> double {
+    if (x < 0.) {
+        double oneminuss = 1. - x;
+
+        double sinpi = std::sin(0.5 * std::numbers::pi_v<double> * x);
+        double pow = std::pow(2. * std::numbers::pi_v<double>, -oneminuss);
+        double tgamm = std::tgamma(oneminuss);
+        double zetatemp = zeta_borwein_positive(oneminuss, n);
+
+        double result = sinpi * 2.0 * pow * tgamm * zetatemp;
+        return result;
+    }
+
+    return zeta_borwein_positive(x, n);
+}
+
+TEST(UnivariateFunctions, ZetaPrecision) {
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+    std::vector<double> in;
+    std::vector<std::array<double, 7>> out;
+    in.reserve(10000);
+    out.reserve(10000);
+
+    std::ifstream valuesfile;
+    valuesfile.open("data/zeta.csv");
+    ASSERT_TRUE(valuesfile.is_open());
+    std::string line;
+    std::string value;
+    while (getline(valuesfile, line)) {
+        std::istringstream tokenStream(line);
+        std::getline(tokenStream, value, ',');
+        in.push_back(std::stod(value));
+
+        std::array<double, 7> results;
+
+        std::getline(tokenStream, value, ',');
+        results[0] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[1] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[2] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[3] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[4] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[5] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[6] = std::stod(value);
+
+        out.push_back(results);
+    }
+    valuesfile.close();
+
+    auto print_statistics = [&in, &out](auto &function) {
+        double rel_average = 0.;
+        double abs_rel_average = 0.;
+        double rel_max = 0.;
+        double abs_rel_max = 0.;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < in.size(); i++) {
+            double const reference_out = out[i][0];
+            double const reference_in = in[i];
+            double const candidate_out = function(reference_in);
+            double const error = candidate_out - reference_out;
+
+            // double denom = reference_out;
+            // if (denom == 0) {
+            //     denom = candidate_out;
+            // }
+
+            if (reference_out != 0) {
+                double const rel_error = error / reference_out;
+                double const abs_rel_error = std::abs(rel_error);
+                rel_average += rel_error;
+                abs_rel_average += abs_rel_error;
+                rel_max = std::max(rel_max, rel_error);
+                abs_rel_max = std::max(abs_rel_max, abs_rel_error);
+                count++;
+            }
+        }
+
+        rel_average /= static_cast<double>(count);
+        abs_rel_average /= static_cast<double>(count);
+
+        std::cout << rel_average << std::endl;
+        std::cout << abs_rel_average << std::endl;
+        std::cout << rel_max << std::endl;
+        std::cout << abs_rel_max << std::endl;
+    };
+
+    for (std::size_t i = 3; i < 25; i++) {
+        std::cout << i << std::endl;
+        std::function<double(double)> function = [i](double d) {
+            return zeta_borwein(d, i);
+        };
+        print_statistics(function);
+    }
+
+    std::cout << "boost" << std::endl;
+    std::function<double(double)> functionboost = [](double d) {
+        return boost::math::zeta(d);
+    };
+    print_statistics(functionboost);
+
+    std::cout << "std" << std::endl;
+    std::function<double(double)> functionstd = [](double d) {
+        return std::riemann_zeta(d);
+    };
+    print_statistics(functionstd);
+}
+
+template <std::size_t n>
+inline auto zeta_borwein_positive_der(double x) -> double {
+    std::vector<double> d(n + 1, 0.);
+    double prev = 0;
+    for (std::size_t i = 0; i < (n + 1); i++) {
+        auto combinations = binomial_coefficient(n + i, 2 * i);
+        double temp =
+            static_cast<double>(combinations) / static_cast<double>(n + i);
+
+        double coeff2 = std::pow(4, i) * temp;
+        d[i] = prev + coeff2;
+        prev = d[i];
+    }
+
+    double result = 0;
+    for (std::size_t i = 0; i < n; i++) {
+        double const_coeff = std::pow(-1., i) * (d[i] - d[n]);
+        double const_coeff2 = const_coeff / d[n];
+        double coeff = const_coeff2 * std::pow(i + 1, -x);
+        result += coeff;
+    }
+
+    result *= -1. / (1 - std::pow(2, 1 - x));
+
+    return result;
+}
+
+template <std::size_t Order, std::size_t n, std::size_t Output>
+inline auto zeta_borwein_positive_der(double x, std::array<double, Output> &res)
+    -> double {
+    std::vector<double> d(n + 1, 0.);
+    double prev = 0;
+    for (std::size_t i = 0; i < (n + 1); i++) {
+        auto combinations = binomial_coefficient(n + i, 2 * i);
+        double temp =
+            static_cast<double>(combinations) / static_cast<double>(n + i);
+
+        double coeff2 = std::pow(4, i) * temp;
+        d[i] = prev + coeff2;
+        prev = d[i];
+    }
+
+    // double result = 1;
+    std::array<double, Order> res1;
+    res1.fill(0);
+    double result = 0;
+    // res[0] = 0;
+    for (std::size_t i = 0; i < n; i++) {
+        double const_coeff = std::pow(-1., i) * (d[i] - d[n]);
+        double const_coeff2 = const_coeff / d[n];
+        // double coeff = const_coeff2 / std::pow(i + 1, x);
+        double coeff = const_coeff2 * std::pow(i + 1, -x);
+        result += coeff;
+
+        if (i != 0) {
+            double temp = coeff;
+            for (std::size_t j = 0; j < Order; j++) {
+                temp *= -std::log(i + 1);
+                res1[j] += temp;
+            }
+        }
+    }
+
+    std::array<double, Order> buffer;
+    double const powval = std::pow(2.0, (1.0 - x));
+
+    buffer[0] = powval * std::numbers::ln2_v<double>;
+    for (std::size_t k = 1; k < Order; k++) {
+        buffer[k] = buffer[k - 1] * -std::numbers::ln2_v<double>;
+    }
+
+    double const frac = 1.0 / (1.0 - powval);
+
+    std::array<double, Order> buffer2;
+    inv_t<double>::d<Order>(frac, frac, buffer2);
+
+    std::array<double, Order> res2;
+    zeta4dd_aux(res2, buffer, buffer2);
+
+    for (std::size_t j = 0; j < Order; j++) {
+        res2[j] *= -1.;
+    }
+    double result2 = -1. / (1 - std::pow(2, 1 - x));
+
+    std::array<double, Order> resfinal;
+    mult(resfinal, result2, res2, result, res1);
+    result *= result2;
+
+    for (std::size_t j = 0; j < Order; j++) {
+        res[j] = resfinal[j];
+    }
+
+    return result;
+}
+
+TEST(UnivariateFunctions, ZetaBorweinDeriv) {
+
+    std::array<double, 10> results1;
+    results1.fill(0.);
+    double val = 0.32;
+    double res = zeta_borwein_positive_der<20>(val);
+
+    zeta_borwein_positive_der<6, 20>(val, results1);
+    // tgamma_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return zeta_borwein_positive_der<20>(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+
+    EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
+    EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
+    EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
+    EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
+    EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
+    EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
+}
+
+TEST(UnivariateFunctions, ZetaPrecisionDer) {
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+    std::vector<double> in;
+    std::vector<std::array<double, 7>> out;
+    in.reserve(10000);
+    out.reserve(10000);
+
+    std::ifstream valuesfile;
+    valuesfile.open("data/zeta.csv");
+    ASSERT_TRUE(valuesfile.is_open());
+    std::string line;
+    std::string value;
+    while (getline(valuesfile, line)) {
+        std::istringstream tokenStream(line);
+        std::getline(tokenStream, value, ',');
+        in.push_back(std::stod(value));
+
+        std::array<double, 7> results;
+
+        std::getline(tokenStream, value, ',');
+        results[0] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[1] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[2] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[3] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[4] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[5] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[6] = std::stod(value);
+
+        out.push_back(results);
+    }
+    valuesfile.close();
+
+    auto print_statistics = [&in, &out](auto &function, std::size_t n) {
+        double rel_average = 0.;
+        double abs_rel_average = 0.;
+        double rel_max = 0.;
+        double abs_rel_max = 0.;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < in.size(); i++) {
+            double const reference_out = out[i][n];
+            double const reference_in = in[i];
+            double const candidate_out = function(reference_in, n);
+            double const error = candidate_out - reference_out;
+
+            // double denom = reference_out;
+            // if (denom == 0) {
+            //     denom = candidate_out;
+            // }
+
+            if (reference_out != 0) {
+                double const rel_error = error / reference_out;
+                double const abs_rel_error = std::abs(rel_error);
+                rel_average += rel_error;
+                abs_rel_average += abs_rel_error;
+                rel_max = std::max(rel_max, rel_error);
+                abs_rel_max = std::max(abs_rel_max, abs_rel_error);
+                count++;
+            }
+        }
+
+        rel_average /= static_cast<double>(count);
+        abs_rel_average /= static_cast<double>(count);
+
+        std::cout << rel_average << std::endl;
+        std::cout << abs_rel_average << std::endl;
+        std::cout << rel_max << std::endl;
+        std::cout << abs_rel_max << std::endl;
+    };
+
+    std::function<double(double, std::size_t)> function = [](double d,
+                                                             std::size_t i) {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        zeta_borwein_positive_der<6, 20>(d, results1);
+
+        return results1[i - 1];
+    };
+
+    for (std::size_t i = 1; i < 5; i++) {
+        print_statistics(function, i);
+    }
+}
+
+template <std::size_t n> inline auto zeta_borwein2(double x) -> double {
+    if (x < 0.) {
+        double oneminuss = 1. - x;
+
+        double sinpi = std::sin(0.5 * std::numbers::pi_v<double> * x);
+        double pow = std::pow(2. * std::numbers::pi_v<double>, -oneminuss);
+        double tgamm = std::tgamma(oneminuss);
+        double zetatemp = zeta_borwein_positive_der<n>(oneminuss);
+
+        double result = sinpi * 2.0 * pow * tgamm * zetatemp;
+        // double result = sinpi * pow * tgamm * zetatemp;
+        return result;
+    }
+
+    return zeta_borwein_positive_der<n>(x);
+}
+
+template <std::size_t Order, std::size_t n, std::size_t Output>
+inline auto zeta_borwein2_der(double x, std::array<double, Output> &res)
+    -> double {
+    if (x < 0.) {
+        double oneminuss = 1. - x;
+
+        constexpr double coeff = 0.5 * std::numbers::pi_v<double>;
+        // double val = coeff * x;
+        double xrem = std::remainder(x, 4);
+        double val = coeff * xrem;
+        double sinpi = std::sin(val);
+
+        // double res = sin_t<double>::v(val);
+        std::array<double, Order> sinders;
+        sin_t<double>::d<Order>(sinpi, val, sinders);
+        double multcoeff = coeff;
+        for (std::size_t j = 0; j < Order; j++) {
+            sinders[j] *= multcoeff;
+            multcoeff *= coeff;
+        }
+
+        double pow = std::pow(2. * std::numbers::pi_v<double>, -oneminuss);
+
+        std::array<double, Order> powders;
+        const double ln2pi = std::log(2.0 * std::numbers::pi_v<double>);
+
+        double multpow = ln2pi * pow;
+        for (std::size_t j = 0; j < Order; j++) {
+            powders[j] = multpow;
+            multpow *= ln2pi;
+        }
+
+        std::array<double, Order> gammaders;
+        double tgamm = std::tgamma(oneminuss);
+        tgamma_t<double>::d<Order>(tgamm, oneminuss, gammaders);
+        for (std::size_t j = 0; j < Order; j++) {
+            gammaders[j] *= std::pow(-1., j + 1);
+        }
+
+        std::array<double, Order> zetaders;
+        double zetatemp = zeta_borwein_positive_der<n>(oneminuss);
+        zeta_borwein_positive_der<Order, n>(oneminuss, zetaders);
+        for (std::size_t j = 0; j < Order; j++) {
+            zetaders[j] *= std::pow(-1., j + 1);
+        }
+
+        std::array<double, Order> temp1;
+        double val1 = tgamm * zetatemp;
+        mult(temp1, zetatemp, zetaders, tgamm, gammaders);
+
+        std::array<double, Order> temp2;
+        double val2 = pow * val1;
+        mult(temp2, val1, temp1, pow, powders);
+
+        std::array<double, Order> temp3;
+        double val3 = sinpi * val2;
+        mult(temp3, val2, temp2, sinpi, sinders);
+
+        for (std::size_t j = 0; j < Order; j++) {
+            temp3[j] *= 2.0;
+        }
+
+        // double result = sinpi * 2.0 * pow * tgamm * zetatemp;
+        double result = val3;
+        for (std::size_t j = 0; j < Order; j++) {
+            // res[j] = sinders[j];
+            // res[j] = powders[j];
+            res[j] = temp3[j];
+        }
+        return result;
+    }
+
+    return zeta_borwein_positive_der<Order, n>(x, res);
+}
+
+TEST(UnivariateFunctions, ZetaBorweinDerivNegative) {
+
+    std::array<double, 10> results1;
+    results1.fill(0.);
+    double val = -0.32;
+    double res = zeta_borwein2<20>(val);
+
+    zeta_borwein2_der<6, 20>(val, results1);
+    // tgamma_t<double>::d<6>(res, val, results1);
+
+    std::function<double(double)> lambdainput = [](double d) {
+        return zeta_borwein2<20>(d);
+    };
+    double epsilon = 0.01;
+    auto results2 = finite_differences(val, epsilon, lambdainput);
+
+    EXPECT_LT(std::abs((results2[0] - results1[0]) / results2[0]), 1e-9);
+    EXPECT_LT(std::abs((results2[1] - results1[1]) / results2[1]), 1e-9);
+    EXPECT_LT(std::abs((results2[2] - results1[2]) / results2[2]), 1e-6);
+    EXPECT_LT(std::abs((results2[3] - results1[3]) / results2[3]), 1e-6);
+    EXPECT_LT(std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
+    EXPECT_LT(std::abs((results2[5] - results1[5]) / results2[5]), 1e-3);
+    EXPECT_EQ(results1[6], 0.);
+    EXPECT_EQ(results1[7], 0.);
+    EXPECT_EQ(results1[8], 0.);
+    EXPECT_EQ(results1[9], 0.);
+}
+
+TEST(UnivariateFunctions, ZetaPrecisionDerNegative) {
+    std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+    std::vector<double> in;
+    std::vector<std::array<double, 7>> out;
+    in.reserve(10000);
+    out.reserve(10000);
+
+    std::ifstream valuesfile;
+    valuesfile.open("data/zeta.csv");
+    ASSERT_TRUE(valuesfile.is_open());
+    std::string line;
+    std::string value;
+    while (getline(valuesfile, line)) {
+        std::istringstream tokenStream(line);
+        std::getline(tokenStream, value, ',');
+        in.push_back(std::stod(value));
+
+        std::array<double, 7> results;
+
+        std::getline(tokenStream, value, ',');
+        results[0] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[1] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[2] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[3] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[4] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[5] = std::stod(value);
+        std::getline(tokenStream, value, ',');
+        results[6] = std::stod(value);
+
+        out.push_back(results);
+    }
+    valuesfile.close();
+
+    auto print_statistics = [&in, &out](auto &function, std::size_t n) {
+        double rel_average = 0.;
+        double abs_rel_average = 0.;
+        double rel_max = 0.;
+        double abs_rel_max = 0.;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < in.size(); i++) {
+            double const reference_out = out[i][n];
+            double const reference_in = in[i];
+            double const candidate_out = function(reference_in, n);
+
+            // double temp = zeta_borwein2<20>(reference_in);
+
+            double const error = candidate_out - reference_out;
+
+            // double denom = reference_out;
+            // if (denom == 0) {
+            //     denom = candidate_out;
+            // }
+
+            if (reference_out != 0) {
+                double const rel_error = error / reference_out;
+                double const abs_rel_error = std::abs(rel_error);
+                rel_average += rel_error;
+                abs_rel_average += abs_rel_error;
+                rel_max = std::max(rel_max, rel_error);
+                abs_rel_max = std::max(abs_rel_max, abs_rel_error);
+                count++;
+            }
+        }
+
+        rel_average /= static_cast<double>(count);
+        abs_rel_average /= static_cast<double>(count);
+
+        std::cout << rel_average << std::endl;
+        std::cout << abs_rel_average << std::endl;
+        std::cout << rel_max << std::endl;
+        std::cout << abs_rel_max << std::endl;
+    };
+
+    std::function<double(double, std::size_t)> function = [](double d,
+                                                             std::size_t i) {
+        std::array<double, 10> results1;
+        results1.fill(0.);
+        zeta_borwein2_der<6, 20>(d, results1);
+
+        return results1[i - 1];
+    };
+
+    for (std::size_t i = 1; i < 5; i++) {
+        print_statistics(function, i);
     }
 }
 

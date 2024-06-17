@@ -3,8 +3,8 @@ mpmath.mp.dps = 40
 
 f = open('zeta.csv', 'w+')
 f.truncate()
-start = -3.
-end = 3.
+start = -110
+end = -100
 increment = 0.01
 
 val = start

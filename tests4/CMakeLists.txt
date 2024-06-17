@@ -3,7 +3,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(
   adhoc_test4
-  adhoc.t.cpp
+  adhoc_vs_fd.t.cpp
+  adhoc_vs_python.t.cpp
 )
 
 # fo coverage
@@ -29,6 +30,8 @@ target_link_libraries(
   gtest_main
   "-framework OpenCL"
 )
+
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 include(GoogleTest)
 gtest_discover_tests(adhoc_test4)
