@@ -61,6 +61,34 @@ template <std::size_t n> constexpr inline auto zeta_borwein_coeffs() -> auto {
     return res;
 }
 
+template <std::size_t n> inline auto zeta_borwein_positive(double x) -> double {
+    constexpr auto coeffs = zeta_borwein_coeffs<n>();
+
+    double result = 0;
+    for (std::size_t i = 0; i < n; i++) {
+        double coeff = coeffs[i] * std::pow(i + 1, -x);
+        result += coeff;
+    }
+
+    result *= -1. / (1 - std::pow(2, 1 - x));
+
+    return result;
+}
+
+template <std::size_t n> inline auto zeta_borwein(double x) -> double {
+    if (x < 0.) {
+        double const oneminuss = 1. - x;
+
+        double sinpi = std::sin(0.5 * std::numbers::pi_v<double> * x);
+        double pow = std::pow(2. * std::numbers::pi_v<double>, -oneminuss);
+        double tgamm = std::tgamma(oneminuss);
+        double zetatemp = zeta_borwein_positive<n>(oneminuss);
+        return sinpi * 2.0 * pow * tgamm * zetatemp;
+    }
+
+    return zeta_borwein_positive<n>(x);
+}
+
 template <std::size_t End, std::size_t CoeffIdx = 0, std::size_t Order,
           std::size_t... I>
 void zeta4dd_aux3(std::index_sequence<I...> current, double &res,
@@ -183,7 +211,7 @@ inline auto zeta_borwein_positive_der(double x, std::array<double, Output> &res)
 }
 
 template <std::size_t Order, std::size_t n, std::size_t Output>
-inline void zeta_borwein(double x, std::array<double, Output> &res) {
+inline void zeta_borwein_der(double x, std::array<double, Output> &res) {
     if (x < 0.) {
         double const oneminuss = 1. - x;
 
@@ -244,9 +272,9 @@ inline void zeta_borwein(double x, std::array<double, Output> &res) {
         for (std::size_t j = 0; j < Order; j++) {
             res[j] = temp3[j];
         }
+    } else {
+        zeta_borwein_positive_der<Order, n>(x, res);
     }
-
-    zeta_borwein_positive_der<Order, n>(x, res);
 }
 
 } // namespace detail
@@ -259,7 +287,7 @@ struct riemann_zeta_t : public Base<riemann_zeta_t<Input>> {
                          std::array<double, Output> &res) {
         static_assert(Order <= Output);
 
-        detail::zeta_borwein<Order, 20>(in, res);
+        detail::zeta_borwein_der<Order, 20>(in, res);
     }
 };
 

@@ -1,10 +1,10 @@
 import mpmath
 mpmath.mp.dps = 40
 
-f = open('zeta.csv', 'w+')
+f = open('zeta_pos_large.csv', 'w+')
 f.truncate()
-start = -2
-end = 2
+start = 100
+end = 110
 increment = 0.01
 
 val = start
