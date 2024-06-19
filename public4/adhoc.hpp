@@ -22,7 +22,6 @@
 #define ADHOC4_ADHOC_HPP
 
 #include "base.hpp"
-#include "constants_constexpr.hpp"
 #include "univariate/gamma.hpp"
 #include "univariate/sincos.hpp"
 #include "univariate/tan.hpp"
@@ -30,6 +29,7 @@
 
 #include <array>
 #include <cmath>
+#include <numbers>
 
 namespace adhoc4 {
 
@@ -443,7 +443,7 @@ template <class Input> struct erfc_t : public Base<erfc_t<Input>> {
 
         if constexpr (Order >= 1) {
             constexpr double minus_two_over_root_pi =
-                2. / constexpression::sqrt(constexpression::pi<double>());
+                2. * std::numbers::inv_sqrtpi_v<double>;
             res[0] = -std::exp(-in * in) * minus_two_over_root_pi;
         }
 
