@@ -3,8 +3,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(
   adhoc_test4
-  adhoc_vs_fd.t.cpp
-  adhoc_vs_python.t.cpp
+  adhoc.t.cpp
+  univariate_vs_fd.t.cpp
+  univariate_vs_python.t.cpp
+  saturation_arithmetic.t.cpp
 )
 
 # fo coverage

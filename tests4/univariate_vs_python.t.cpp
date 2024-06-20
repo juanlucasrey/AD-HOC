@@ -1,13 +1,6 @@
 
-#include <base.hpp>
-#include <combinatorics/combinations.hpp>
-#include <combinatorics/factorial.hpp>
-#include <combinatorics/integer_partition_index_sequence.hpp>
-#include <combinatorics/partition_function.hpp>
-#include <combinatorics/pow.hpp>
-#include <utils/index_sequence.hpp>
-
 #include <adhoc.hpp>
+#include <base.hpp>
 
 #include <gtest/gtest.h>
 

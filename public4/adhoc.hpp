@@ -27,6 +27,7 @@
 #include "univariate/tan.hpp"
 #include "univariate/zeta.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <numbers>
@@ -356,7 +357,8 @@ template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
                          std::array<double, Output> &res) {
         // we use 2 * x * f'(x) - f(x) = 0
         // => 2 * (x + e) * f'(x + e) - f(x + e) = 0
-        // => 2 * (x + e) * sum(e^n * f(n+1)(x)/n!) - sum(e^n * f(n)(x)/n!) = 0
+        // => 2 * (x + e) * sum(e^n * f(n+1)(x)/n!) - sum(e^n * f(n)(x)/n!)
+        // = 0
         // => 2*x*sum(e^n * f(n+1)(x)/n!) + 2*sum(e^n * f(n)(x)/(n-1)!) -
         // sum(e^n * f(n)(x)/n!) = 0
         // => 2*x*f(n+1)(x) + 2*n*f(n)(x) - f(n)(x) = 0
@@ -490,7 +492,8 @@ struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
     template <std::size_t Order, std::size_t Output>
     static inline void d(double thisv, double in,
                          std::array<double, Output> &res) {
-        // we use x * (1 - x^2) f''(x) + (1 - 3 * x^2) * f'(x) - x * f(x) = 0
+        // we use x * (1 - x^2) f''(x) + (1 - 3 * x^2) * f'(x) - x * f(x) =
+        // 0
         static_assert(Order <= Output);
 
         const double in_sq = in * in;
@@ -606,7 +609,21 @@ struct div_t : public Base<div_t<Input1, Input2>> {
     static inline auto v(double in1, double in2) -> double { return in1 / in2; }
 };
 
-template <std::size_t N> struct double_t : public Base<double_t<N>> {};
+namespace detail {
+template <size_t N> struct StringLiteral {
+    constexpr StringLiteral(const char (&str)[N]) {
+        std::copy_n(str, N, value);
+    }
+
+    char value[N]{};
+};
+
+} // namespace detail
+
+template <detail::StringLiteral literal>
+struct double_t : public Base<double_t<literal>> {};
+
+#define ADHOC(x) double_t<#x> x
 
 } // namespace adhoc4
 
