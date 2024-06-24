@@ -4,9 +4,11 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(
   adhoc_test4
   adhoc.t.cpp
+  differential_operator.t.cpp
   univariate_vs_fd.t.cpp
   univariate_vs_python.t.cpp
   saturation_arithmetic.t.cpp
+  name.t.cpp
 )
 
 # fo coverage
