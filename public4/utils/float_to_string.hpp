@@ -28,10 +28,6 @@
 #include <array>
 #include <cmath>
 
-#include <format>
-#include <sstream>
-#include <type_traits>
-
 namespace adhoc4 {
 
 namespace detail {
@@ -162,7 +158,7 @@ template <class C> constexpr inline auto value_string_aux(C val) {
     constexpr auto min_diff =
         std::nextafter(valin, std::numeric_limits<double>::max()) - valin;
 
-    constexpr std::size_t max_size = 18;
+    constexpr std::size_t max_size = 19;
     constexpr std::size_t size = value_string_aux_size<max_size>(
         constants::CD<valin>(), constants::CD<min_diff>());
 
@@ -195,7 +191,9 @@ template <class C> constexpr inline auto name_positive(C val) {
 template <constants::ArgType N>
 constexpr inline auto name(constants::CD<N> val) {
     constexpr auto valin = val.v();
-    if constexpr (valin >= 0) {
+    if constexpr (valin == 0) {
+        return std::array<char, 1>{'0'};
+    } else if constexpr (valin >= 0) {
         return detail::name_positive(val);
     } else {
         constexpr auto val_inv = constants::CD<-valin>();
