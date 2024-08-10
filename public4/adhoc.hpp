@@ -25,7 +25,10 @@
 #include "univariate/gamma.hpp"
 #include "univariate/sincos.hpp"
 #include "univariate/tan.hpp"
+
+#ifndef __clang__
 #include "univariate/zeta.hpp"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -463,6 +466,7 @@ template <class Derived> auto erfc(Base<Derived> /* in */) {
     return erfc_t<Derived>{};
 }
 
+#ifndef __clang__
 namespace detail {
 
 template <std::size_t N, std::size_t Order, std::size_t Output>
@@ -484,7 +488,6 @@ inline void comp_ellint_1_ders(std::array<double, Output> &res, double in,
 
 } // namespace detail
 
-#ifndef __clang__
 template <class Input>
 struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
     static inline auto v(double in) -> double { return std::comp_ellint_1(in); }

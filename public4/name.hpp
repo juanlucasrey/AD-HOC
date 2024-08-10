@@ -79,9 +79,11 @@ AD_DEFINE_UNIOP_NAME(tgamma_t, tgamma)
 AD_DEFINE_UNIOP_NAME(lgamma_t, lgamma)
 
 // Mathematical special functions
+#ifndef __clang__
 AD_DEFINE_UNIOP_NAME(comp_ellint_1_t, comp_ellint_1)
 AD_DEFINE_UNIOP_NAME(comp_ellint_2_t, comp_ellint_2)
 AD_DEFINE_UNIOP_NAME(riemann_zeta_t, riemann_zeta)
+#endif
 
 template <template <class> class Univariate, class Input>
 inline constexpr auto name(Base<Univariate<Input>> t) {
