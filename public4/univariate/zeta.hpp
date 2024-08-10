@@ -231,7 +231,12 @@ inline void zeta_borwein_der(double x, std::array<double, Output> &res) {
             std::pow(2. * std::numbers::pi_v<double>, -oneminuss);
 
         std::array<double, Order> powders;
+#ifndef __clang__
+        // in GCC, std::log can be called as a constexpr function!
         constexpr double ln2pi = std::log(2.0 * std::numbers::pi_v<double>);
+#else
+        constexpr double ln2pi = 1.8378770664093453;
+#endif
 
         double multpow = ln2pi * pow;
         for (std::size_t j = 0; j < Order; j++) {
