@@ -6,6 +6,27 @@
 
 namespace adhoc4 {
 
+TEST(SaturationArithmetic, Inverse) {
+
+    constexpr auto max = std::numeric_limits<std::size_t>::max();
+    constexpr auto min = std::numeric_limits<std::size_t>::min();
+
+    constexpr auto a = detail::add_sat(static_cast<std::size_t>(3),
+                                       static_cast<std::size_t>(4));
+    static_assert(a == 7);
+
+    constexpr auto b = detail::add_sat(max, static_cast<std::size_t>(4));
+    static_assert(b == max);
+
+    constexpr auto c = detail::add_sat(max, max, max);
+    static_assert(c == max);
+
+    constexpr auto d = detail::add_sat(static_cast<std::size_t>(3),
+                                       static_cast<std::size_t>(3),
+                                       static_cast<std::size_t>(3));
+    static_assert(d == 9);
+}
+
 TEST(Order, Const) {
     using constants::CD;
 

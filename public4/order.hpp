@@ -86,6 +86,9 @@ concept is_all_same = (... && std::is_same<T, Types>::value);
 
 constexpr auto add_sat(std::size_t lhs) { return lhs; }
 
+// constexpr version of saturation arithmetic
+// https://en.cppreference.com/w/cpp/numeric/add_sat
+// while we wait for C++26
 template <is_all_same<std::size_t>... Types>
 constexpr auto add_sat(std::size_t lhs, Types... args) {
     auto const rhs = add_sat(args...);
