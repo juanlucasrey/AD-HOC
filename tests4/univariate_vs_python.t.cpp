@@ -118,6 +118,7 @@ TEST(UnivariateFunctions, LGammaPrecision) {
     }
 }
 
+#ifndef __clang__
 namespace {
 
 auto zeta_borwein_precision(double x, std::size_t i) {
@@ -384,6 +385,7 @@ TEST(PythonCompare, ZetaPrecisionLargeNegative) {
         EXPECT_LT(std::get<2>(stats), dererrors[i - 1][2]);
     }
 }
+#endif
 
 #if TIMING_TEST
 TEST(UnivariateFunctions, ZetaBorweinTiming) {

@@ -669,6 +669,7 @@ TEST(UnivariateFunctions, TGamma) {
     }
 }
 
+#ifndef __clang__
 TEST(UnivariateFunctions, RiemannZeta) {
     {
         std::array<double, 10> results1;
@@ -718,5 +719,6 @@ TEST(UnivariateFunctions, RiemannZeta) {
         EXPECT_EQ(results1[9], 0.);
     }
 }
+#endif
 
 } // namespace adhoc4

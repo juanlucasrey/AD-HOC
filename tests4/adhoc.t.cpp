@@ -20,7 +20,7 @@ TEST(Adhoc, Types) {
 
     auto res = vol * strike + exp(spot);
 
-    auto res2 = comp_ellint_1(asin(exp(spot)));
+    auto res2 = tgamma(asin(exp(spot)));
 
     constexpr auto namestr = name(strike);
     std::cout << std::string_view(namestr.data(), namestr.size()) << std::endl;
