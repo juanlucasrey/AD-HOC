@@ -5,10 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 # find_package(Eigen3 REQUIRED)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    # without this parameter loops will not be vectorised
-    # set_source_files_properties(random/tools/scrambler.cpp PROPERTIES COMPILE_FLAGS "$<$<CONFIG:Release,RelWithDebInfo>:--param vect-max-version-for-alias-checks=100>")
-    # set_source_files_properties(random/tools/scrambler.cpp PROPERTIES COMPILE_FLAGS "$<$<CONFIG:Release,RelWithDebInfo>:-fopt-info-vec-all --param vect-max-version-for-alias-checks=100>")
-    # set_source_files_properties(least_squares.t.cpp PROPERTIES COMPILE_FLAGS "-Wno-useless-cast")
+    set_source_files_properties(paper2024/section5.cpp PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-ignored-qualifiers -DCODI_ChunkSize=64")
 endif()
 
 add_executable(
@@ -20,20 +17,26 @@ add_executable(
   raw.t.cpp
   differential_operator.t.cpp
   differential_operator_2.t.cpp
-  tape.t.cpp
-  tape2.t.cpp
-  calc_tree.t.cpp
-  tape_buffer_size.t.cpp
-  tuple_utils.t.cpp
-  partition/binomial_coefficient.t.cpp
-  partition/partition_function.t.cpp
-  partition/integer_partition.t.cpp
-  partition/multinomial_coefficient.t.cpp
-  differential_operator/ordered_mult.t.cpp
-  differential_operator/expand_multinomial.t.cpp
-  differential_operator/expand_univariate.t.cpp
-  differential_operator/expand_tree.t.cpp
-  differential_operator/order_differential_operator.t.cpp
+  # tape.t.cpp
+  # tape2.t.cpp
+  # calc_tree.t.cpp
+  # tape_buffer_size.t.cpp
+  # tuple_utils.t.cpp
+  # partition/binomial_coefficient.t.cpp
+  # partition/partition_function.t.cpp
+  # partition/integer_partition.t.cpp
+  # partition/multinomial_coefficient.t.cpp
+  # differential_operator/ordered_mult.t.cpp
+  # differential_operator/expand_multinomial.t.cpp
+  # differential_operator/expand_univariate.t.cpp
+  # differential_operator/expand_tree.t.cpp
+  # differential_operator/order_differential_operator.t.cpp
+  paper2024/section4.cpp
+  paper2024/section5.cpp
+  paper2024/digital1.cpp
+  # slow compilation!!!!
+  paper2024/digital2.cpp
+  paper2024/digital3.cpp
 )
 
 # fo coverage
