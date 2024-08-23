@@ -4,3 +4,4 @@ build
 .project
 .DS_Store
 benchmark
+tests3/packages
