@@ -26,59 +26,9 @@
 
 namespace adhoc4 {
 
-//  order<First, Second>::call() gives the highest order for which
-//  d^n(First)/d(Second)^n is non-null
-template <class First, class Second> struct order;
-
-template <constants::ArgType N, class Second>
-struct order<constants::CD<N>, Second> {
-    // why 0? Because Second has to be a variable and therefore could never be a
-    // constant
-    constexpr static auto call() noexcept -> std::size_t { return 0; }
-};
-
-template <detail::StringLiteral literal, class Second>
-struct order<double_t<literal>, Second> {
-    // we can't drill down further here, so it's either the variable or it isn't
-    constexpr static auto call() noexcept -> std::size_t {
-        return std::is_same_v<double_t<literal>, Second> ? 1UL : 0UL;
-    }
-};
-
-template <template <class> class Univariate, class Input, class Second>
-struct order<Univariate<Input>, Second> {
-    constexpr static auto call() noexcept -> std::size_t {
-        return std::is_same_v<Univariate<Input>, Second> ? 1UL
-               : order<Input, Second>::call()
-                   ? std::numeric_limits<std::size_t>::max()
-                   : 0UL;
-    }
-};
-
-template <class Input1, class Input2, class Second>
-struct order<add_t<Input1, Input2>, Second> {
-    constexpr static auto call() noexcept -> std::size_t {
-        static_assert(std::is_convertible_v<add_t<Input1, Input2>,
-                                            Base<add_t<Input1, Input2>>>);
-        return std::is_same_v<add_t<Input1, Input2>, Second>
-                   ? 1UL
-                   : std::max(order<Input1, Second>::call(),
-                              order<Input2, Second>::call());
-    }
-};
-
-template <class Input1, class Input2, class Second>
-struct order<sub_t<Input1, Input2>, Second> {
-    constexpr static auto call() noexcept -> std::size_t {
-        static_assert(std::is_convertible_v<add_t<Input1, Input2>,
-                                            Base<add_t<Input1, Input2>>>);
-        return std::is_same_v<add_t<Input1, Input2>, Second>
-                   ? 1UL
-                   : std::max(order<Input1, Second>::call(),
-                              order<Input2, Second>::call());
-    }
-};
-
+// constexpr version of saturation arithmetic
+// https://en.cppreference.com/w/cpp/numeric/add_sat
+// while we wait for C++26
 namespace detail {
 
 template <typename T, typename... Types>
@@ -86,9 +36,6 @@ concept is_all_same = (... && std::is_same<T, Types>::value);
 
 constexpr auto add_sat(std::size_t lhs) { return lhs; }
 
-// constexpr version of saturation arithmetic
-// https://en.cppreference.com/w/cpp/numeric/add_sat
-// while we wait for C++26
 template <is_all_same<std::size_t>... Types>
 constexpr auto add_sat(std::size_t lhs, Types... args) {
     auto const rhs = add_sat(args...);
@@ -106,32 +53,74 @@ constexpr auto add_sat(std::size_t lhs, Types... args) {
 
 } // namespace detail
 
-template <class Input1, class Input2, class Second>
-struct order<mul_t<Input1, Input2>, Second> {
-    constexpr static auto call() noexcept -> std::size_t {
-        static_assert(std::is_convertible_v<add_t<Input1, Input2>,
-                                            Base<add_t<Input1, Input2>>>);
-        return std::is_same_v<add_t<Input1, Input2>, Second>
-                   ? 1UL
-                   : detail::add_sat(order<Input1, Second>::call(),
-                                     order<Input2, Second>::call());
-    }
+//  order(Numerator, Denominator) gives the highest order for which
+//  d^n(First)/d(Second)^n is non-null
+template <constants::ArgType N, class Denominator>
+constexpr auto order(constants::CD<N> /* num */, Denominator /* den */)
+    -> std::size_t {
+    // why 0? Because Second has to be a variable and therefore could never be a
+    // constant
+    return 0;
 };
 
-template <class Input1, class Input2, class Second>
-struct order<div_t<Input1, Input2>, Second> {
-    constexpr static auto call() noexcept -> std::size_t {
-        static_assert(std::is_convertible_v<add_t<Input1, Input2>,
-                                            Base<add_t<Input1, Input2>>>);
+template <detail::StringLiteral literal, class Denominator>
+constexpr auto order(double_t<literal> /* num */, Denominator /* den */)
+    -> std::size_t {
+    // we can't drill down further here, so it's either the variable or it isn't
+    return std::is_same_v<double_t<literal>, Denominator> ? 1UL : 0UL;
+};
 
-        // we treat a/b as a * inv(b), inv being a typical univariate operator.
-        // since inv_t does not exist, we use exp_t which would return the same
-        // order.
-        return std::is_same_v<add_t<Input1, Input2>, Second>
-                   ? 1UL
-                   : detail::add_sat(order<Input1, Second>::call(),
-                                     order<exp_t<Input2>, Second>::call());
-    }
+template <template <class> class Univariate, class Input, class Denominator>
+constexpr auto order(Univariate<Input> /* num */, Denominator den)
+    -> std::size_t {
+    return std::is_same_v<Univariate<Input>, Denominator> ? 1UL
+           : order(Input{}, den) ? std::numeric_limits<std::size_t>::max()
+                                 : 0UL;
+};
+
+template <class Input1, class Input2, class Denominator>
+constexpr auto order(add_t<Input1, Input2> /* num */, Denominator den)
+    -> std::size_t {
+    static_assert(std::is_convertible_v<add_t<Input1, Input2>,
+                                        Base<add_t<Input1, Input2>>>);
+    return std::is_same_v<add_t<Input1, Input2>, Denominator>
+               ? 1UL
+               : std::max(order(Input1{}, den), order(Input2{}, den));
+};
+
+template <class Input1, class Input2, class Denominator>
+constexpr auto order(sub_t<Input1, Input2> /* num */, Denominator den)
+    -> std::size_t {
+    static_assert(std::is_convertible_v<add_t<Input1, Input2>,
+                                        Base<add_t<Input1, Input2>>>);
+    return std::is_same_v<add_t<Input1, Input2>, Denominator>
+               ? 1UL
+               : std::max(order(Input1{}, den), order(Input2{}, den));
+};
+
+template <class Input1, class Input2, class Denominator>
+constexpr auto order(mul_t<Input1, Input2> /* num */, Denominator den)
+    -> std::size_t {
+    static_assert(std::is_convertible_v<add_t<Input1, Input2>,
+                                        Base<add_t<Input1, Input2>>>);
+    return std::is_same_v<add_t<Input1, Input2>, Denominator>
+               ? 1UL
+               : detail::add_sat(order(Input1{}, den), order(Input2{}, den));
+};
+
+template <class Input1, class Input2, class Denominator>
+constexpr auto order(div_t<Input1, Input2> /* num */, Denominator den)
+    -> std::size_t {
+    static_assert(std::is_convertible_v<add_t<Input1, Input2>,
+                                        Base<add_t<Input1, Input2>>>);
+
+    // we treat a/b as a * inv(b), inv being a typical univariate operator.
+    // since inv_t does not exist, we use exp_t which would return the same
+    // order.
+    return std::is_same_v<add_t<Input1, Input2>, Denominator>
+               ? 1UL
+               : detail::add_sat(order(Input1{}, den),
+                                 order(exp_t<Input2>{}, den));
 };
 
 } // namespace adhoc4
