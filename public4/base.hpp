@@ -69,23 +69,29 @@ template <class Input> struct inv_t : public Base<inv_t<Input>> {
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1045r1.html
 // https://github.com/cplusplus/papers/issues/603
 template <class Derived> struct Base {
-    template <class Derived2> auto operator+(Base<Derived2> /* rhs */) const {
+    template <class Derived2>
+    constexpr auto operator+(Base<Derived2> /* rhs */) const {
         return add_t<Derived, Derived2>{};
     }
 
-    template <class Derived2> auto operator-(Base<Derived2> /* rhs */) const {
+    template <class Derived2>
+    constexpr auto operator-(Base<Derived2> /* rhs */) const {
         return sub_t<Derived, Derived2>{};
     }
 
-    template <class Derived2> auto operator*(Base<Derived2> /* rhs */) const {
+    template <class Derived2>
+    constexpr auto operator*(Base<Derived2> /* rhs */) const {
         return mul_t<Derived, Derived2>{};
     }
 
-    // template <class Derived2> auto operator/(Base<Derived2> /* rhs */) const
+    // template <class Derived2> constexpr auto operator/(Base<Derived2> /* rhs
+    // */) const
     // {
     //     return div_t<Derived, Derived2>{};
     // }
-    template <class Derived2> auto operator/(Base<Derived2> /* rhs */) const {
+
+    template <class Derived2>
+    constexpr auto operator/(Base<Derived2> /* rhs */) const {
         return mul_t<Derived, inv_t<Derived2>>{};
     }
 };

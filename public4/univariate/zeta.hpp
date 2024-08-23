@@ -296,7 +296,7 @@ struct riemann_zeta_t : public Base<riemann_zeta_t<Input>> {
     }
 };
 
-template <class Derived> auto riemann_zeta(Base<Derived> /* in */) {
+template <class Derived> constexpr auto riemann_zeta(Base<Derived> /* in */) {
     return riemann_zeta_t<Derived>{};
 }
 

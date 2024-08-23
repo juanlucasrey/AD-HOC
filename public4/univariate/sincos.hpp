@@ -62,7 +62,7 @@ template <class Input> struct sin_t : public Base<sin_t<Input>> {
     }
 };
 
-template <class Derived> auto sin(Base<Derived> /* in */) {
+template <class Derived> constexpr auto sin(Base<Derived> /* in */) {
     return sin_t<Derived>{};
 }
 
@@ -88,7 +88,7 @@ template <class Input> struct cos_t : public Base<cos_t<Input>> {
     }
 };
 
-template <class Derived> auto cos(Base<Derived> /* in */) {
+template <class Derived> constexpr auto cos(Base<Derived> /* in */) {
     return cos_t<Derived>{};
 }
 

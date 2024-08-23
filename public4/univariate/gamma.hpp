@@ -231,7 +231,7 @@ template <class Input> struct lgamma_t : public Base<lgamma_t<Input>> {
     }
 };
 
-template <class Derived> auto lgamma(Base<Derived> /* in */) {
+template <class Derived> constexpr auto lgamma(Base<Derived> /* in */) {
     return lgamma_t<Derived>{};
 }
 
@@ -288,7 +288,7 @@ template <class Input> struct tgamma_t : public Base<tgamma_t<Input>> {
     }
 };
 
-template <class Derived> auto tgamma(Base<Derived> /* in */) {
+template <class Derived> constexpr auto tgamma(Base<Derived> /* in */) {
     return tgamma_t<Derived>{};
 }
 

@@ -48,7 +48,7 @@ template <class Input> struct exp_t : public Base<exp_t<Input>> {
     }
 };
 
-template <class Derived> auto exp(Base<Derived> /* in */) {
+template <class Derived> constexpr auto exp(Base<Derived> /* in */) {
     return exp_t<Derived>{};
 }
 
@@ -94,7 +94,7 @@ template <class Input> struct asin_t : public Base<asin_t<Input>> {
     }
 };
 
-template <class Derived> auto asin(Base<Derived> /* in */) {
+template <class Derived> constexpr auto asin(Base<Derived> /* in */) {
     return asin_t<Derived>{};
 }
 
@@ -125,7 +125,7 @@ template <class Input> struct acos_t : public Base<acos_t<Input>> {
     }
 };
 
-template <class Derived> auto acos(Base<Derived> /* in */) {
+template <class Derived> constexpr auto acos(Base<Derived> /* in */) {
     return acos_t<Derived>{};
 }
 
@@ -167,7 +167,7 @@ template <class Input> struct atan_t : public Base<atan_t<Input>> {
     }
 };
 
-template <class Derived> auto atan(Base<Derived> /* in */) {
+template <class Derived> constexpr auto atan(Base<Derived> /* in */) {
     return atan_t<Derived>{};
 }
 
@@ -205,7 +205,7 @@ template <class Input> struct sinh_t : public Base<sinh_t<Input>> {
     }
 };
 
-template <class Derived> auto sinh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto sinh(Base<Derived> /* in */) {
     return sinh_t<Derived>{};
 }
 
@@ -231,7 +231,7 @@ template <class Input> struct cosh_t : public Base<cosh_t<Input>> {
     }
 };
 
-template <class Derived> auto cosh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto cosh(Base<Derived> /* in */) {
     return cosh_t<Derived>{};
 }
 
@@ -277,7 +277,7 @@ template <class Input> struct asinh_t : public Base<asinh_t<Input>> {
     }
 };
 
-template <class Derived> auto asinh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto asinh(Base<Derived> /* in */) {
     return asinh_t<Derived>{};
 }
 
@@ -308,7 +308,7 @@ template <class Input> struct acosh_t : public Base<acosh_t<Input>> {
     }
 };
 
-template <class Derived> auto acosh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto acosh(Base<Derived> /* in */) {
     return acosh_t<Derived>{};
 }
 
@@ -335,7 +335,7 @@ template <class Input> struct atanh_t : public Base<atanh_t<Input>> {
     }
 };
 
-template <class Derived> auto atanh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto atanh(Base<Derived> /* in */) {
     return atanh_t<Derived>{};
 }
 
@@ -380,7 +380,7 @@ template <class Input> struct sqrt_t : public Base<sqrt_t<Input>> {
     }
 };
 
-template <class Derived> auto sqrt(Base<Derived> /* in */) {
+template <class Derived> constexpr auto sqrt(Base<Derived> /* in */) {
     return sqrt_t<Derived>{};
 }
 
@@ -418,7 +418,7 @@ template <class Input> struct log_t : public Base<log_t<Input>> {
     }
 };
 
-template <class Derived> auto log(Base<Derived> /* in */) {
+template <class Derived> constexpr auto log(Base<Derived> /* in */) {
     return log_t<Derived>{};
 }
 
@@ -462,7 +462,7 @@ template <class Input> struct erfc_t : public Base<erfc_t<Input>> {
     }
 };
 
-template <class Derived> auto erfc(Base<Derived> /* in */) {
+template <class Derived> constexpr auto erfc(Base<Derived> /* in */) {
     return erfc_t<Derived>{};
 }
 
@@ -522,7 +522,7 @@ struct comp_ellint_1_t : public Base<comp_ellint_1_t<Input>> {
     }
 };
 
-template <class Derived> auto comp_ellint_1(Base<Derived> /* in */) {
+template <class Derived> constexpr auto comp_ellint_1(Base<Derived> /* in */) {
     return comp_ellint_1_t<Derived>{};
 }
 
@@ -579,7 +579,7 @@ struct comp_ellint_2_t : public Base<comp_ellint_2_t<Input>> {
     }
 };
 
-template <class Derived> auto comp_ellint_2(Base<Derived> /* in */) {
+template <class Derived> constexpr auto comp_ellint_2(Base<Derived> /* in */) {
     return comp_ellint_2_t<Derived>{};
 }
 #endif
@@ -588,7 +588,7 @@ template <class Input> struct minus_t : public Base<minus_t<Input>> {
     static inline auto v(double in) -> double { return -in; }
 };
 
-template <class Derived> auto operator-(Base<Derived> /* in */) {
+template <class Derived> constexpr auto operator-(Base<Derived> /* in */) {
     return minus_t<Derived>{};
 }
 
@@ -626,7 +626,7 @@ template <size_t N> struct StringLiteral {
 template <detail::StringLiteral literal>
 struct double_t : public Base<double_t<literal>> {};
 
-#define ADHOC(x) double_t<#x> x
+#define ADHOC(x) constexpr double_t<#x> x
 
 } // namespace adhoc4
 

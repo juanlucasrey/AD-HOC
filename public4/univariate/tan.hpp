@@ -82,7 +82,7 @@ template <class Input> struct tan_t : public Base<tan_t<Input>> {
     }
 };
 
-template <class Derived> auto tan(Base<Derived> /* in */) {
+template <class Derived> constexpr auto tan(Base<Derived> /* in */) {
     return tan_t<Derived>{};
 }
 
@@ -100,7 +100,7 @@ template <class Input> struct tanh_t : public Base<tanh_t<Input>> {
     }
 };
 
-template <class Derived> auto tanh(Base<Derived> /* in */) {
+template <class Derived> constexpr auto tanh(Base<Derived> /* in */) {
     return tanh_t<Derived>{};
 }
 
