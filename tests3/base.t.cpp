@@ -170,6 +170,7 @@ TEST(Base, Tan) {
     std::cout << output[5] << std::endl;
 }
 
+#ifndef __clang__
 double der1_1(double x, double epsilon) {
     double f1 = std::comp_ellint_1(x + epsilon);
     double f2 = std::comp_ellint_1(x - epsilon);
@@ -230,4 +231,6 @@ TEST(Base, CompEllint1) {
     //              "whereas the linear approximation gives ≈ "
     //           << 2 * π * std::sqrt(1 / 9.80665) << '\n';
 }
+#endif
+
 } // namespace adhoc3
