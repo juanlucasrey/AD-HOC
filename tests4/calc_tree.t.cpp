@@ -3,6 +3,7 @@
 #include <adhoc.hpp>
 #include <dependency.hpp>
 
+#include "call_price.hpp"
 #include "type_name.hpp"
 
 #include <gtest/gtest.h>
@@ -144,6 +145,27 @@ TEST(CalcTree, EvaluateFwdDivision2) {
 
     double result = t.val(temp);
     EXPECT_NEAR(result, 1.0 / 2.0, 1e-10);
+}
+
+TEST(CalcTree, CallPrice) {
+    ADHOC(S);
+    ADHOC(K);
+    ADHOC(v);
+    ADHOC(T);
+
+    auto res = call_price(S, K, v, T);
+
+    CalcTree ct(res);
+    ct.set(S) = 100.0;
+    ct.set(K) = 102.0;
+    ct.set(v) = 0.15;
+    ct.set(T) = 0.5;
+    ct.evaluate();
+
+    double const result_calctree = ct.val(res);
+
+    double const result_double = call_price(100.0, 102.0, 0.15, 0.5);
+    EXPECT_EQ(result_calctree, result_double);
 }
 
 } // namespace adhoc4
