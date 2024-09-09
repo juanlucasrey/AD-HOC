@@ -9,6 +9,7 @@ add_executable(
   univariate_vs_fd.t.cpp
   univariate_vs_python.t.cpp
   order.t.cpp
+  calc_tree.t.cpp
 )
 
 # fo coverage

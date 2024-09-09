@@ -23,55 +23,13 @@
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
+#include "dependency.hpp"
 #include "differential_operator.hpp"
 #include "order.hpp"
 
 #include <tuple>
 
 namespace adhoc4 {
-
-template <detail::StringLiteral literal1, detail::StringLiteral literal2>
-constexpr auto operator==(double_t<literal1> /* lhs */,
-                          double_t<literal2> /* rhs */) -> bool {
-    constexpr auto var1 = std::to_array(literal1.value);
-    constexpr auto var2 = std::to_array(literal2.value);
-
-    if constexpr (var1.size() != var2.size()) {
-        return false;
-    } else {
-        return var1 == var2;
-    }
-}
-
-template <detail::StringLiteral literal1, detail::StringLiteral literal2>
-constexpr auto operator!=(double_t<literal1> lhs, double_t<literal2> rhs)
-    -> bool {
-    return !(lhs == rhs);
-}
-
-template <constants::ArgType N, class Denominator>
-constexpr auto depends(constants::CD<N> /* num */, Denominator /* den */)
-    -> bool {
-    // why false? Because a constant dos not depend on any variable
-    return false;
-};
-
-template <detail::StringLiteral literal1, class Denominator>
-constexpr auto depends(double_t<literal1> num, Denominator den) -> bool {
-    return num == den;
-};
-
-template <template <class> class Univariate, class Input, class Denominator>
-constexpr auto depends(Univariate<Input> /* num */, Denominator den) -> bool {
-    return depends(Input{}, den);
-};
-
-template <template <class, class> class Bivariate, class Input1, class Input2,
-          class Denominator>
-constexpr auto depends(Bivariate<Input1, Input2> /* num */, Denominator den)
-    -> bool {
-    return depends(Input1{}, den) || depends(Input2{}, den);
-};
 
 template <constants::ArgType N, class Denominator>
 constexpr auto order_var(constants::CD<N> /* num */, Denominator /* den */)
