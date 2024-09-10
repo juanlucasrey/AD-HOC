@@ -82,7 +82,7 @@ TEST(CalcTree, EvaluateFwdUni2) {
     // t.set(temp) = 1.0; // fails because it's not an input
     t.evaluate();
 
-    double result = t.val(temp);
+    double const result = t.get(temp);
     EXPECT_EQ(result, std::exp(1.0));
 }
 
@@ -98,7 +98,7 @@ TEST(CalcTree, EvaluateFwdBi2) {
     // t.set(temp) = 3.0; // fails because it's not an input
     t.evaluate();
 
-    double result = t.val(temp);
+    double const result = t.get(temp);
     EXPECT_EQ(result, 6.0);
 }
 
@@ -112,7 +112,7 @@ TEST(CalcTree, EvaluateFwdConst2) {
     // t.set(temp) = 1.0; // fails because it's not an input
     t.evaluate();
 
-    double result = t.val(temp);
+    double const result = t.get(temp);
     EXPECT_EQ(result, 0.5);
 }
 
@@ -127,8 +127,8 @@ TEST(CalcTree, EvaluateFwdTwoVals2) {
     t.set(val1) = 2.0;
     t.evaluate();
 
-    double result = t.val(temp);
-    double result2 = t.val(temp2);
+    double const result = t.get(temp);
+    double const result2 = t.get(temp2);
     EXPECT_NEAR(result, 2., 1e-10);
     EXPECT_NEAR(result2, 1.0806046117362795, 1e-10);
 }
@@ -143,7 +143,7 @@ TEST(CalcTree, EvaluateFwdDivision2) {
     t.set(val1) = 2.0;
     t.evaluate();
 
-    double result = t.val(temp);
+    double const result = t.get(temp);
     EXPECT_NEAR(result, 1.0 / 2.0, 1e-10);
 }
 
@@ -162,7 +162,7 @@ TEST(CalcTree, CallPrice) {
     ct.set(T) = 0.5;
     ct.evaluate();
 
-    double const result_calctree = ct.val(res);
+    double const result_calctree = ct.get(res);
 
     double const result_double = call_price(100.0, 102.0, 0.15, 0.5);
     EXPECT_EQ(result_calctree, result_double);

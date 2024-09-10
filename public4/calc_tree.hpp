@@ -23,6 +23,7 @@
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
+#include "dependency.hpp"
 #include "utils/tuple.hpp"
 
 #include <array>
@@ -47,39 +48,55 @@ constexpr auto get_dependents(Xvariate<Node...> /* in*/) {
     return std::tuple<Node...>{};
 }
 
-template <class Res>
-constexpr auto calc_tree_t_aux(Res res, std::tuple<> /* nodes */) {
-    return res;
+template <class Result, class ResultInputs>
+constexpr auto calc_tree_t_aux(Result result, ResultInputs result_inputs,
+                               std::tuple<> /* nodes */) {
+    // we make sure inputs are first in the calculation tree
+    return std::tuple_cat(result_inputs, result);
 }
 
-template <class... Res, class Node, class... Nodes>
-constexpr auto calc_tree_t_aux(std::tuple<Res...> res,
+template <class... NonInputNodes, class... InputNodes, class Node,
+          class... Nodes>
+constexpr auto calc_tree_t_aux(std::tuple<NonInputNodes...> res1,
+                               std::tuple<InputNodes...> res2,
                                std::tuple<Node, Nodes...> /* nodes */) {
 
-    constexpr bool other_types_depend_on_this =
+    constexpr bool other_nodes_depend_on_this_node =
         (depends(Nodes{}, Node{}) || ...);
 
     constexpr bool is_const = is_constant(Node{});
 
-    if constexpr (other_types_depend_on_this || is_const) {
-        // this_type will come up again because it is included on Nodes
-        return calc_tree_t_aux(res, std::tuple<Nodes...>{});
+    if constexpr (other_nodes_depend_on_this_node || is_const) {
+        // this node will come up again because it is included on the Nodes
+        return calc_tree_t_aux(res1, res2, std::tuple<Nodes...>{});
     } else {
         constexpr auto deps = get_dependents(Node{});
         constexpr auto new_nodes = std::tuple_cat(deps, std::tuple<Nodes...>{});
-        return calc_tree_t_aux(std::tuple<Node, Res...>{}, new_nodes);
+        if constexpr (is_input(Node{})) {
+            // we add it to the input nodes
+            return calc_tree_t_aux(std::tuple<NonInputNodes...>{},
+                                   std::tuple<Node, InputNodes...>{},
+                                   new_nodes);
+        } else {
+            // we add it to the non-input nodes
+            return calc_tree_t_aux(std::tuple<Node, NonInputNodes...>{},
+                                   std::tuple<InputNodes...>{}, new_nodes);
+        }
     }
 }
 
 template <class... Outputs> constexpr auto calc_tree_t(Outputs... /* o */) {
-    return calc_tree_t_aux(std::tuple<>{}, std::tuple<Outputs...>{});
+    return calc_tree_t_aux(std::tuple<>{}, std::tuple<>{},
+                           std::tuple<Outputs...>{});
 }
 
 } // namespace detail
 
 template <class... Outputs> class CalcTree {
-  private:
+  public:
     using ValuesTuple = decltype(detail::calc_tree_t(Outputs{}...));
+
+  private:
     std::array<double, std::tuple_size<ValuesTuple>{}> m_values{};
 
     inline void evaluate_aux(std::tuple<> /* nodes */) {}
@@ -97,7 +114,7 @@ template <class... Outputs> class CalcTree {
     evaluate_aux(std::tuple<Xvariate<Inputs...>, NodesToCalc...> /* nodes */) {
         using CurrentNode = Xvariate<Inputs...>;
         constexpr auto idx = get_first_type_idx(ValuesTuple{}, CurrentNode{});
-        this->m_values[idx] = CurrentNode::v(this->val(Inputs{})...);
+        this->m_values[idx] = CurrentNode::v(this->get(Inputs{})...);
         this->evaluate_aux(std::tuple<NodesToCalc...>{});
     }
 
@@ -107,7 +124,7 @@ template <class... Outputs> class CalcTree {
         std::tuple<mul_t<Node1, inv_t<Node2>>, NodesToCalc...> /* nodes */) {
         using CurrentNode = mul_t<Node1, inv_t<Node2>>;
         constexpr auto idx = get_first_type_idx(ValuesTuple{}, CurrentNode{});
-        this->m_values[idx] = this->val(Node1{}) / this->val(Node2{});
+        this->m_values[idx] = this->get(Node1{}) / this->get(Node2{});
         this->evaluate_aux(std::tuple<NodesToCalc...>{});
     }
 
@@ -116,11 +133,11 @@ template <class... Outputs> class CalcTree {
     explicit CalcTree(Outputs... /* out */) {}
 
     template <constants::ArgType D>
-    auto inline val(constants::CD<D> /* in */) const -> double {
+    auto inline get(constants::CD<D> /* in */) const -> double {
         return constants::CD<D>::v();
     }
 
-    template <class Input> auto inline val(Input in) const -> double {
+    template <class Input> auto inline get(Input in) const -> double {
         constexpr auto idx = get_first_type_idx(ValuesTuple{}, in);
         return this->m_values[idx];
     }
