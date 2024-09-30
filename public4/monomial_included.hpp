@@ -26,6 +26,7 @@
 #include "dependency.hpp"
 #include "differential_operator.hpp"
 #include "order.hpp"
+#include "utils/flatten.hpp"
 
 #include <tuple>
 
@@ -274,76 +275,6 @@ constexpr auto expand(DiffOptOut diff_op_out, Inputs inputs) {
     return expand_aux(std::tuple<>{}, diff_op_out, inputs);
 }
 
-template <class Res>
-constexpr auto flatten_aux(Res res, std::tuple<> /* idx_seqs */) {
-    return res;
-}
-
-template <class TupleRes, class... IndexSequence>
-constexpr auto flatten_aux3(TupleRes in1,
-                            std::tuple<IndexSequence...> /* in2 */) {
-    return std::make_tuple(
-        std::tuple_cat(in1, std::make_tuple(IndexSequence{}))...);
-}
-
-template <class... TupleRes, class... IndexSequence>
-constexpr auto flatten_aux2(std::tuple<TupleRes...> /* res */,
-                            std::tuple<IndexSequence...> newinputs) {
-    return std::tuple_cat(flatten_aux3(TupleRes{}, newinputs)...);
-}
-
-template <class Res, class... IndexSequences, class... TupleIndexSequences>
-constexpr auto flatten_aux(Res res,
-                           std::tuple<std::tuple<IndexSequences...>,
-                                      TupleIndexSequences...> /* idx_seqs */) {
-    if constexpr (std::tuple_size_v<Res> == 0) {
-        constexpr auto new_res =
-            std::make_tuple(std::tuple<IndexSequences...>{});
-        return flatten_aux(new_res, std::tuple<TupleIndexSequences...>{});
-    } else {
-        constexpr auto new_res =
-            flatten_aux2(res, std::tuple<IndexSequences...>{});
-        return flatten_aux(new_res, std::tuple<TupleIndexSequences...>{});
-    }
-}
-
-template <class... IndexSequences, class... TupleIndexSequences>
-constexpr auto
-flatten(std::tuple<std::tuple<IndexSequences...>, TupleIndexSequences...>
-            idx_seqs) {
-    return flatten_aux(std::tuple<>{}, idx_seqs);
-}
-
-template <class Input>
-constexpr auto order_input_aux2(std::tuple<> /* diff_op */, Input /* input */)
-    -> std::size_t {
-    return 0;
-}
-
-template <class DiffOp, class Input>
-constexpr auto order_input_aux2(DiffOp diff_op, Input input) -> std::size_t {
-    constexpr auto first = head(diff_op);
-    constexpr auto last = tail(diff_op);
-
-    if constexpr (get_id(first) == input) {
-        return get_power(first);
-    } else {
-        return order_input_aux2(last, input);
-    }
-}
-
-template <class DiffOp, class... Inputs>
-constexpr auto order_input(DiffOp diff_op, std::tuple<Inputs...> /* input */)
-    -> auto {
-    return std::index_sequence<order_input_aux2(diff_op, Inputs{})...>{};
-}
-
-template <class... DiffOpInputs, class... Inputs>
-constexpr auto order_inputs(std::tuple<DiffOpInputs...> /* diff_op_inputs */,
-                            std::tuple<Inputs...> input) -> auto {
-    return std::make_tuple(order_input(DiffOpInputs{}, input)...);
-}
-
 template <std::size_t N, std::size_t... I>
 constexpr auto AllZeroIS_aux(std::index_sequence<I...> /* i */) {
     constexpr auto first = std::array<std::size_t, N>{0};
@@ -376,6 +307,36 @@ constexpr auto element_wise_sum(std::tuple<> /* idx_seqs */) {
 template <class First, class... IS>
 constexpr auto element_wise_sum(std::tuple<First, IS...> idx_seqs) {
     return element_wise_sum_aux(AllZeroIS<First{}.size()>(), idx_seqs);
+}
+
+template <class Input>
+constexpr auto order_input_aux2(std::tuple<> /* diff_op */, Input /* input */)
+    -> std::size_t {
+    return 0;
+}
+
+template <class DiffOp, class Input>
+constexpr auto order_input_aux2(DiffOp diff_op, Input input) -> std::size_t {
+    constexpr auto first = head(diff_op);
+    constexpr auto last = tail(diff_op);
+
+    if constexpr (get_id(first) == input) {
+        return get_power(first);
+    } else {
+        return order_input_aux2(last, input);
+    }
+}
+
+template <class DiffOp, class... Inputs>
+constexpr auto order_input(DiffOp diff_op, std::tuple<Inputs...> /* input */)
+    -> auto {
+    return std::index_sequence<order_input_aux2(diff_op, Inputs{})...>{};
+}
+
+template <class... DiffOpInputs, class... Inputs>
+constexpr auto order_inputs(std::tuple<DiffOpInputs...> /* diff_op_inputs */,
+                            std::tuple<Inputs...> input) -> auto {
+    return std::make_tuple(order_input(DiffOpInputs{}, input)...);
 }
 
 template <std::size_t Size, std::size_t Pos>
@@ -552,18 +513,6 @@ constexpr auto check_included(
                               diff_op_input);
     }
 }
-
-// template <class... Ids, std::size_t... Orders, class... DiffOpInputs>
-// constexpr auto
-// monomial_included(const std::tuple<der::d<Orders, Ids>...> diff_op_out,
-//                   const std::tuple<DiffOpInputs...> diff_op_inputs) -> bool {
-//     constexpr auto inputs = get_vars(diff_op_inputs);
-//     constexpr auto orders = expand(diff_op_out, inputs);
-//     constexpr auto flat_orders_output = flatten(orders);
-
-//     constexpr auto order_inputs_vals = order_inputs(diff_op_inputs, inputs);
-//     return check_included(flat_orders_output, order_inputs_vals);
-// }
 
 template <class Single, class Many>
 constexpr auto monomial_included(Single diff_op_out, Many diff_op_inputs)

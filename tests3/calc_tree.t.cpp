@@ -84,6 +84,27 @@ TEST(CalcTree, EvaluateFwdDivision) {
     EXPECT_NEAR(result, 1.0 / 2.0, 1e-10);
 }
 
+TEST(CalcTree, IsInput2) {
+    auto [vol, strike, spot] = Init<3>();
+
+    auto res = vol * strike + exp(spot);
+    CalcTree t(res);
+    decltype(t)::ValuesTuple temp;
+
+    std::cout << type_name2<decltype(temp)>() << std::endl;
+}
+
+TEST(CalcTree, Repeat2) {
+    auto [var1, var2] = Init<2>();
+
+    auto res1 = var1 * var2;
+    auto res2 = var2 * var1;
+    CalcTree t(res1, res2);
+    decltype(t)::ValuesTuple temp;
+
+    std::cout << type_name2<decltype(temp)>() << std::endl;
+}
+
 // TEST(CalcTree, BSAdhoc) {
 //     double result = 0;
 
