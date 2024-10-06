@@ -236,12 +236,9 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
 
-        using PrimalNodes = CalcTree::ValuesTuple;
-        constexpr auto nodes_size = std::tuple_size_v<PrimalNodes>;
-
-        detail::backpropagate_aux2<nodes_size>(
-            node_derivative_location, outputs_sorted, ct, ordered_derivatives,
-            this->m_derivatives, buffer_types, buffer, inputs);
+        detail::backpropagate_aux2(node_derivative_location, outputs_sorted, ct,
+                                   ordered_derivatives, this->m_derivatives,
+                                   buffer_types, buffer, inputs);
     }
 };
 

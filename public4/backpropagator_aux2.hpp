@@ -631,17 +631,17 @@ auto treat_node(PrimalNode nd, DerivativeNodeLocation dnl, DerivativeNodes dn,
     return std::make_tuple(bt_new, dnl_new, dn_new_and_remaining);
 }
 
-template <std::size_t N, class DerivativeNodeLocation, class DerivativeNodes,
-          class CalcTree, class InterfaceTypes, class InterfaceArray,
-          class BufferTypes, class BufferArray, class DerivativeNodeInputs>
+template <std::size_t N = 0, class DerivativeNodeLocation,
+          class DerivativeNodes, class CalcTree, class InterfaceTypes,
+          class InterfaceArray, class BufferTypes, class BufferArray,
+          class DerivativeNodeInputs>
 void backpropagate_aux2(DerivativeNodeLocation const dnl, DerivativeNodes dn,
                         CalcTree const &ct, InterfaceTypes it,
                         InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
                         DerivativeNodeInputs dnin) {
 
-    constexpr std::size_t currentN = N - 1;
-    using PrimalNodes = CalcTree::ValuesTuple;
-    constexpr auto current_primal_node = std::get<currentN>(PrimalNodes{});
+    using PrimalNodes = CalcTree::ValuesTupleInverse;
+    constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {
         if constexpr (LOG_LEVEL > 0) {
@@ -657,41 +657,8 @@ void backpropagate_aux2(DerivativeNodeLocation const dnl, DerivativeNodes dn,
         constexpr typename std::tuple_element<1, decltype(res)>::type dnl_new;
         constexpr typename std::tuple_element<2, decltype(res)>::type dn_new;
 
-        // std::cout << type_name2<ThisNode>() << std::endl;
-
-        // backpropagate_aux2<currentN>(dnl_new, dnl_new, ct, it, ia, bt_new,
-        // ba,
-        //                              dnin);
-
-        backpropagate_aux2<currentN>(dnl_new, dn_new, ct, it, ia, bt_new, ba,
-                                     dnin);
-
-        // std::cout << currentN << std::endl;
-        // if constexpr (currentN == 2) {
-        //     std::cout << "currentN == 2" << std::endl;
-        //     std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dnl_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dn_new)>() << std::endl;
-
-        //     backpropagate_aux2<currentN>(dnl_new, dn_new, ct, it, ia, bt_new,
-        //                                  ba, dnin);
-        // } else if constexpr (currentN == 1) {
-        //     std::cout << "currentN == 1" << std::endl;
-        //     std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dnl_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dn_new)>() << std::endl;
-
-        //     backpropagate_aux2<currentN>(dnl_new, dn_new, ct, it, ia, bt_new,
-        //                                  ba, dnin);
-        // } else {
-        //     std::cout << "else" << std::endl;
-        //     std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dnl_new)>() << std::endl;
-        //     std::cout << type_name2<decltype(dn_new)>() << std::endl;
-
-        //     backpropagate_aux2<currentN>(dnl_new, dn_new, ct, it, ia, bt_new,
-        //                                  ba, dnin);
-        // }
+        backpropagate_aux2<N + 1>(dnl_new, dn_new, ct, it, ia, bt_new, ba,
+                                  dnin);
     }
 }
 
