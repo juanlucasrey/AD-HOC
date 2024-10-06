@@ -4,12 +4,19 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(
   adhoc_test4
+  utils/univariate.t.cpp
+  utils/index_sequence.t.cpp
+  combinatorics/multinomial_coefficient.t.cpp
+  monomial_included.t.cpp
   adhoc.t.cpp
   differential_operator.t.cpp
   univariate_vs_fd.t.cpp
   univariate_vs_python.t.cpp
   order.t.cpp
   calc_tree.t.cpp
+  backpropagator.t.cpp
+  backpropagator2.t.cpp
+  backpropagator_tools.t.cpp
 )
 
 # fo coverage

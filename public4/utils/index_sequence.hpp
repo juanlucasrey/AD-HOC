@@ -63,6 +63,32 @@ auto inner_product_power(IS current, std::array<double, Size> const &in) {
     return res;
 }
 
+namespace detail {
+
+template <std::size_t Add, std::size_t... I>
+constexpr auto make_index_sequence_aux(std::index_sequence<I...> /* i */) {
+    return std::index_sequence<(Add + I)...>{};
+}
+
+template <std::size_t Add, std::size_t... I>
+constexpr auto
+make_index_sequence_inverse_aux(std::index_sequence<I...> /* i */) {
+    return std::index_sequence<(Add - I)...>{};
+}
+
+} // namespace detail
+
+template <std::size_t From, std::size_t To>
+constexpr auto make_index_sequence() {
+    if constexpr (From <= To) {
+        return detail::make_index_sequence_aux<From>(
+            std::make_index_sequence<1 + To - From>{});
+    } else {
+        return detail::make_index_sequence_inverse_aux<From>(
+            std::make_index_sequence<1 + From - To>{});
+    }
+}
+
 } // namespace adhoc4
 
 #endif // ADHOC4_UTILS_INDEX_SEQUENCE_HPP

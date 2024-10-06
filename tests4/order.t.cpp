@@ -308,43 +308,50 @@ TEST(Order, MinimumPolys) {
     std::cout << type_name2<decltype(result_exp)>() << std::endl;
 }
 
-TEST(Order, MonomialIncluded) {
-    ADHOC(var1);
-    ADHOC(var2);
-    ADHOC(var3);
-    ADHOC(var4);
-    auto res = d<2>(var1) * d(var2);
-    auto res2 = d<2>(var1) * d(var3);
+// TEST(Order, EqualVars) {
+//     ADHOC(var1);
+//     ADHOC(var2);
+//     ADHOC(var3);
+//     ADHOC(var4);
+//     auto res1 = var1 * var2;
+//     static_assert(var1==var1);
 
-    auto res3 = std::tuple(res, res2);
+// }
 
-    // auto var = d((var1 + (var3 * var4)) * (var3 + (var3 * var4)) *
-    // exp(var1));
-    // auto var = d(var1 + (var3 * var4)) * d<2>(var1);
-    auto var = d<2>(var1) * d(var1 + (var3 * var4));
+// TEST(Order, MonomialIncluded) {
+//     ADHOC(var1);
+//     ADHOC(var2);
+//     ADHOC(var3);
+//     ADHOC(var4);
+//     auto res = d<2>(var1) * d(var2);
+//     auto res2 = d<2>(var1) * d(var3);
 
-    constexpr auto resbool = monomial_included(var, res3);
-    static_assert(resbool);
-}
+//     auto res3 = std::tuple(res, res2);
 
-TEST(Order, MonomialNotIncluded) {
-    ADHOC(var1);
-    ADHOC(var2);
+//     auto var = d<2>(var1) * d(var1 + (var3 * var4));
 
-    auto res = d<2>(var1);
-    auto res2 = d<2>(var2);
-    auto res_t = std::tuple(res, res2);
-    auto out1 = d(exp(var1)) * d(exp(var2));
-    constexpr auto resbool = monomial_included(out1, res_t);
-    static_assert(!resbool);
+//     constexpr auto resbool = monomial_included(var, res3);
+//     static_assert(resbool);
+// }
 
-    ADHOC(var3);
+// TEST(Order, MonomialNotIncluded) {
+//     ADHOC(var1);
+//     ADHOC(var2);
 
-    auto res3 = d<2>(var3) * d<2>(var1);
-    auto res2_t = std::tuple(res2, res3);
-    auto out2 = d(exp(var1)) * d(exp(var3));
-    constexpr auto resbool2 = monomial_included(out2, res2_t);
-    static_assert(resbool2);
-}
+//     auto res = d<2>(var1);
+//     auto res2 = d<2>(var2);
+//     auto res_t = std::tuple(res, res2);
+//     auto out1 = d(exp(var1)) * d(exp(var2));
+//     constexpr auto resbool = monomial_included(out1, res_t);
+//     static_assert(!resbool);
+
+//     ADHOC(var3);
+
+//     auto res3 = d<2>(var3) * d<2>(var1);
+//     auto res2_t = std::tuple(res2, res3);
+//     auto out2 = d(exp(var1)) * d(exp(var3));
+//     constexpr auto resbool2 = monomial_included(out2, res2_t);
+//     static_assert(resbool2);
+// }
 
 } // namespace adhoc4

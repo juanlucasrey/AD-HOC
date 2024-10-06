@@ -38,7 +38,7 @@ constexpr auto get_dependents(constants::CD<N> /* in*/) {
     return std::tuple<>{};
 }
 
-template <detail::StringLiteral literal>
+template <StringLiteral literal>
 constexpr auto get_dependents(double_t<literal> /* in*/) {
     return std::tuple<>{};
 }
@@ -95,6 +95,7 @@ template <class... Outputs> constexpr auto calc_tree_t(Outputs... /* o */) {
 template <class... Outputs> class CalcTree {
   public:
     using ValuesTuple = decltype(detail::calc_tree_t(Outputs{}...));
+    using ValuesTupleInverse = decltype(invert(ValuesTuple{}));
 
   private:
     std::array<double, std::tuple_size<ValuesTuple>{}> m_values{};

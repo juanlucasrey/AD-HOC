@@ -40,6 +40,11 @@ constexpr inline auto binomial_coefficient(std::size_t n,
                    (n - k); //  path to k=n-1 is faster
 }
 
+constexpr inline auto combinations(std::size_t bins, std::size_t balls) noexcept
+    -> std::size_t {
+    return binomial_coefficient(bins + balls - 1, bins - 1);
+}
+
 } // namespace adhoc4
 
 #endif // ADHOC4_COMBINATORICS_COMBINATIONS_HPP

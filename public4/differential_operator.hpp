@@ -35,7 +35,11 @@ template <std::size_t Order, class Id> struct d {};
 } // namespace der
 
 template <std::size_t Order = 1UL, class Id> constexpr auto d(Id /* id */) {
-    return std::tuple<der::d<Order, Id>>{};
+    if constexpr (Order == 0) {
+        return std::tuple<>{};
+    } else {
+        return std::tuple<der::d<Order, Id>>{};
+    }
 }
 
 namespace detail {
@@ -49,7 +53,7 @@ constexpr auto add_duplicate(der::d<Order1, Id> /* in1 */,
 template <class Id1, std::size_t Order1, class... Ids2, std::size_t... Orders2>
 constexpr auto add_duplicates(der::d<Order1, Id1> in,
                               std::tuple<der::d<Orders2, Ids2>...> id2) {
-    constexpr auto idx = get_first_type_idx(id2, in);
+    constexpr auto idx = get_first_type_idx(std::tuple<Ids2...>{}, Id1{});
 
     if constexpr (idx < sizeof...(Orders2)) {
         constexpr auto v = std::get<idx>(id2);
@@ -61,10 +65,10 @@ constexpr auto add_duplicates(der::d<Order1, Id1> in,
 };
 
 template <class Id1, std::size_t Order1, class... Ids2, std::size_t... Orders2>
-constexpr auto remove_duplicates(der::d<Order1, Id1> in,
-                                 std::tuple<der::d<Orders2, Ids2>...> id2) {
-
-    constexpr auto idx = get_first_type_idx(id2, in);
+constexpr auto
+remove_duplicates(der::d<Order1, Id1> in,
+                  std::tuple<der::d<Orders2, Ids2>...> /* id2 */) {
+    constexpr auto idx = get_first_type_idx(std::tuple<Ids2...>{}, Id1{});
 
     if constexpr (idx < sizeof...(Orders2)) {
         return std::tuple{};
@@ -93,6 +97,33 @@ constexpr auto operator*(std::tuple<der::d<Orders1, Ids1>...> id1,
 
     return std::tuple_cat(augmented_in1, reduced_in2);
 }
+
+template <std::size_t Order, class Id>
+constexpr auto get_power(der::d<Order, Id> /* in */) -> std::size_t {
+    return Order;
+}
+
+template <std::size_t Order, class Id>
+constexpr auto get_id(der::d<Order, Id> /* in */) {
+    return Id{};
+}
+
+template <std::size_t P, class... Ids1, std::size_t... Orders1>
+constexpr auto power(std::tuple<der::d<Orders1, Ids1>...> /* id1 */) {
+    if constexpr (P == 0) {
+        return std::tuple<>{};
+    } else {
+        return std::tuple<der::d<Orders1 * P, Ids1>...>{};
+    }
+}
+
+template <class... DiffOps, std::size_t... I>
+constexpr auto
+create_differential_operator(std::tuple<DiffOps...> /* vars */,
+                             std::index_sequence<I...> /* is */) {
+    return (power<I>(DiffOps{}) * ...);
+}
+
 } // namespace adhoc4
 
 #endif // ADHOC4_DIFFERENTIAL_OPERATOR_HPP
