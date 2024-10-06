@@ -148,30 +148,24 @@ TEST(BackPropagator2, MulSingle2) {
     EXPECT_NEAR(bp.get(d<5>(x)), -0.000136899199787365, 1e-14);
 }
 
-// TEST(BackPropagator2, DivSingle) {
-//     ADHOC(x);
-//     ADHOC(y);
-//     auto res = erfc(x / y);
+TEST(BackPropagator2, DivSingle) {
+    ADHOC(x);
+    ADHOC(y);
+    auto res = erfc(x / y);
 
-//     CalcTree ct(res);
-//     ct.set(x) = 1.2;
-//     ct.set(y) = 0.4;
-//     ct.evaluate();
+    CalcTree ct(res);
+    ct.set(x) = 1.2;
+    ct.set(y) = 0.4;
+    ct.evaluate();
 
-//     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
-//     bp.set(d(res)) = 1.;
-//     bp.backpropagate2(ct);
+    BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
+    bp.set(d(res)) = 1.;
+    bp.backpropagate2(ct);
 
-//     // std::cout.precision(std::numeric_limits<double>::max_digits10);
-//     // std::cout << bp.get(d(x)) << std::endl;
-//     // std::cout << bp.get(d(y)) << std::endl;
-//     // std::cout << bp.get(d(x) * d(y)) << std::endl;
-//     // std::cout << bp.get(d<5>(x)) << std::endl;
-
-//     // EXPECT_NEAR(bp.get(d(x)), -0.358470648907805, 1e-14);
-//     // EXPECT_NEAR(bp.get(d(y)), -1.07541194672341, 1e-14);
-//     // EXPECT_NEAR(bp.get(d(x) * d(y)), -0.483218434727721, 1e-14);
-//     // EXPECT_NEAR(bp.get(d<5>(x)), -0.000136899199787365, 1e-14);
-// }
+    EXPECT_NEAR(bp.get(d(x)), -0.000348132629866870, 1e-14);
+    EXPECT_NEAR(bp.get(d(y)), 0.00104439788960061, 1e-14);
+    EXPECT_NEAR(bp.get(d(x) * d(y)), -0.0147956367693420, 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), -0.0992721952354747, 1e-14);
+}
 
 } // namespace adhoc4

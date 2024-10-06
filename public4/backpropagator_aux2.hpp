@@ -109,6 +109,11 @@ constexpr auto is_sorted2(Tuple in, Nodes nodes) {
     }
 }
 
+template <class I1, class I2>
+constexpr auto are_same(I1 /* lhs */, I2 /* rhs */) -> bool {
+    return std::is_same_v<I1, I2>;
+}
+
 template <class Tuple1, class Tuple2, class Out, class Nodes>
 constexpr auto merge_sorted_aux2(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
     if constexpr (size(in2) == 0) {
@@ -118,15 +123,18 @@ constexpr auto merge_sorted_aux2(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
     } else {
         constexpr auto first1 = head(in1);
         constexpr auto first2 = head(in2);
-        if constexpr (first1 == first2) {
-            return merge_sorted_aux2(tail(in1), tail(in2),
-                                     std::tuple_cat(out, first1), nodes);
+        if constexpr (are_same(first1, first2)) {
+            return merge_sorted_aux2(
+                tail(in1), tail(in2),
+                std::tuple_cat(out, std::make_tuple(first1)), nodes);
         } else if constexpr (less_than2(first1, first2, nodes)) {
-            return merge_sorted_aux2(in1, tail(in2),
-                                     std::tuple_cat(out, first2), nodes);
+            return merge_sorted_aux2(
+                in1, tail(in2), std::tuple_cat(out, std::make_tuple(first2)),
+                nodes);
         } else {
-            return merge_sorted_aux2(tail(in1), in2,
-                                     std::tuple_cat(out, first1), nodes);
+            return merge_sorted_aux2(
+                tail(in1), in2, std::tuple_cat(out, std::make_tuple(first1)),
+                nodes);
         }
     }
 }
@@ -269,7 +277,7 @@ auto treat_nodes_mul(
             filter(next_derivatives_filtered, flags_only_new);
 
         constexpr auto dnn_new =
-            merge_sorted(next_derivatives_new, dnn, NodesValue{});
+            merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
         return treat_nodes_mul<N + 1>(pn, dnl, dn, ct, it, ia, bt_new, ba,
                                       powers1, powers2, dnn_new, dnin);
@@ -399,7 +407,7 @@ auto treat_nodes_add(
             filter(next_derivatives_filtered, flags_only_new);
 
         constexpr auto dnn_new =
-            merge_sorted(next_derivatives_new, dnn, NodesValue{});
+            merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
         return treat_nodes_add<N + 1>(pn, dnl, dn, ct, it, ia, bt_new, ba,
                                       dnn_new, dnin);
