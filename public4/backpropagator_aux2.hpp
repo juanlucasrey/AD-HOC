@@ -41,7 +41,7 @@
 #include "../tests4/type_name.hpp"
 #include <iostream>
 
-#define LOG_LEVEL 1
+#define LOG_LEVEL 0
 
 namespace adhoc4::detail {
 
@@ -77,8 +77,10 @@ constexpr auto less_than_check_first2(In1 in1, In2 in2, Nodes nodes) {
 
 template <class Op1, class Op2, class Nodes>
 constexpr auto less_than_check_empty2(Op1 in1, Op2 in2, Nodes nodes) {
+    // if constexpr (size(in2) == 0) {
     if constexpr (std::is_same_v<const Op2, const std::tuple<>>) {
         return false;
+        // } else if constexpr (size(in1) == 0) {
     } else if constexpr (std::is_same_v<const Op1, const std::tuple<>>) {
         return true;
     } else {
@@ -172,6 +174,66 @@ auto calc_mul(std::array<double, OutSize> &arrayout,
     }
 }
 
+template <class DerOp1, class DerOp2, class Result, class Nodes>
+constexpr auto multiply_ordered_aux(DerOp1 const in1, DerOp2 const in2,
+                                    Result res, Nodes nodes) {
+    if constexpr (size(in2) == 0) {
+        return std::tuple_cat(res, in1);
+    } else if constexpr (size(in1) == 0) {
+        return std::tuple_cat(res, in2);
+    } else {
+        constexpr auto in1_first = head(in1);
+        constexpr auto in2_first = head(in2);
+        constexpr auto id1 = get_id(in1_first);
+        constexpr auto id2 = get_id(in2_first);
+        constexpr auto idx1 = get_first_type_idx(nodes, id1);
+        constexpr auto idx2 = get_first_type_idx(nodes, id2);
+
+        if constexpr (idx1 < idx2) {
+            constexpr std::size_t power = get_power(in1_first);
+            return multiply_ordered_aux(
+                tail(in1), in2, std::tuple_cat(res, d<power>(id1)), nodes);
+        } else if constexpr (idx1 > idx2) {
+            constexpr std::size_t power = get_power(in2_first);
+            return multiply_ordered_aux(
+                in1, tail(in2), std::tuple_cat(res, d<power>(id2)), nodes);
+        } else {
+            constexpr std::size_t power =
+                get_power(in1_first) + get_power(in2_first);
+            return multiply_ordered_aux(tail(in1), tail(in2),
+                                        std::tuple_cat(res, d<power>(id1)),
+                                        nodes);
+        }
+    }
+}
+
+template <class Tuple, class Nodes>
+constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) {
+    if constexpr (size(in) <= 1) {
+        return true;
+    } else {
+        constexpr auto in_first = std::get<0>(in);
+        constexpr auto in_second = std::get<1>(in);
+        constexpr auto id1 = get_id(in_first);
+        constexpr auto id2 = get_id(in_second);
+        constexpr auto idx1 = get_first_type_idx(nodes, id1);
+        constexpr auto idx2 = get_first_type_idx(nodes, id2);
+        if constexpr (idx1 < idx2) {
+            return true;
+        } else {
+            return is_sorted_diff_op(tail(in), nodes);
+        }
+    }
+}
+
+template <class DerOp1, class DerOp2, class Nodes>
+constexpr auto multiply_ordered(DerOp1 const in1, DerOp2 const in2,
+                                Nodes nodes) {
+    static_assert(is_sorted_diff_op(in1, nodes));
+    static_assert(is_sorted_diff_op(in2, nodes));
+    return multiply_ordered_aux(in1, in2, std::tuple<>{}, nodes);
+}
+
 template <std::size_t N = 0, class PrimalSubNodeOrdered1,
           class PrimalSubNodeOrdered2, class DerivativeNodeLocations,
           class DerivativeNodes, class CalcTree, class InterfaceTypes,
@@ -210,7 +272,7 @@ auto treat_nodes_mul(
 
         constexpr auto next_derivatives = std::apply(
             [current_derivative_subnode_rest, diff_ops](const auto... seq) {
-                return std::make_tuple(multiply_ordered_tuple(
+                return std::make_tuple(multiply_ordered(
                     create_differential_operator(diff_ops, seq),
                     current_derivative_subnode_rest, NodesValue{})...);
             },
@@ -341,7 +403,7 @@ auto treat_nodes_add(
 
         constexpr auto next_derivatives = std::apply(
             [current_derivative_subnode_rest, diff_ops](const auto... seq) {
-                return std::make_tuple(multiply_ordered_tuple(
+                return std::make_tuple(multiply_ordered(
                     create_differential_operator(diff_ops, seq),
                     current_derivative_subnode_rest, NodesValue{})...);
             },
@@ -462,6 +524,11 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto pow = get_power(current_derivative_subnode);
         constexpr auto expansion_types =
             expand_univariate<PrimalSubNode, MaxOrder, pow>();
+
+        if constexpr (LOG_LEVEL > 1) {
+            std::cout << "expansion_types" << std::endl;
+            std::cout << type_name2<decltype(expansion_types)>() << std::endl;
+        }
 
         using NodesValue = CalcTree::ValuesTupleInverse;
 

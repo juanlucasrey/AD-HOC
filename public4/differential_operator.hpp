@@ -99,12 +99,12 @@ constexpr auto operator*(std::tuple<der::d<Orders1, Ids1>...> id1,
 }
 
 template <std::size_t Order, class Id>
-constexpr auto get_power(der::d<Order, Id> /* in */) -> std::size_t {
+constexpr auto get_power(const der::d<Order, Id> /* in */) -> std::size_t {
     return Order;
 }
 
 template <std::size_t Order, class Id>
-constexpr auto get_id(der::d<Order, Id> /* in */) {
+constexpr auto get_id(const der::d<Order, Id> /* in */) {
     return Id{};
 }
 
