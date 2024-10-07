@@ -552,7 +552,7 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives, flags_next_derivatives);
 
-        if constexpr (LOG_LEVEL > 0) {
+        if constexpr (LOG_LEVEL > 1) {
             std::cout << "next_derivatives_filtered" << std::endl;
             std::cout << type_name2<decltype(next_derivatives_filtered)>()
                       << std::endl;
@@ -562,7 +562,7 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto next_derivatives_size =
             std::tuple_size_v<decltype(next_derivatives_filtered)>;
 
-        std::array<double, next_derivatives_size> next_derivatives_values{0};
+        std::array<double, next_derivatives_size> next_derivatives_values;
 
         if constexpr (pow > PrevOrder) {
             elevate_univariate<PrevOrder, pow>(ua, ua_elevated);
