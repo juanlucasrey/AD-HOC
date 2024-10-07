@@ -21,37 +21,11 @@
 #ifndef ADHOC4_ORDER_HPP
 #define ADHOC4_ORDER_HPP
 
+#include "add_sat.hpp"
 #include "adhoc.hpp"
 #include "constants_type.hpp"
 
 namespace adhoc4 {
-
-// constexpr version of saturation arithmetic
-// https://en.cppreference.com/w/cpp/numeric/add_sat
-// while we wait for C++26
-namespace detail {
-
-template <typename T, typename... Types>
-concept is_all_same = (... && std::is_same<T, Types>::value);
-
-constexpr auto add_sat(std::size_t lhs) { return lhs; }
-
-template <is_all_same<std::size_t>... Types>
-constexpr auto add_sat(std::size_t lhs, Types... args) {
-    auto const rhs = add_sat(args...);
-
-    if (std::numeric_limits<std::size_t>::max() - lhs < rhs) {
-        return std::numeric_limits<std::size_t>::max();
-    }
-
-    if (std::numeric_limits<std::size_t>::max() - rhs < lhs) {
-        return std::numeric_limits<std::size_t>::max();
-    }
-
-    return lhs + rhs;
-}
-
-} // namespace detail
 
 //  order(Numerator, Denominator) gives the highest order for which
 //  d^n(First)/d(Second)^n is non-null

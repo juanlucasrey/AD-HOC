@@ -87,4 +87,60 @@ TEST(MonomialIncluded, SumOrder2) {
     static_assert(resbool);
 }
 
+TEST(MonomialIncluded, ErrorFix2) {
+    ADHOC(S);
+    ADHOC(K);
+    ADHOC(v);
+
+    {
+        auto res = K * S * sqrt(v);
+
+        constexpr auto d1 = d(K * S) * d(sqrt(v));
+        constexpr auto in = d<2>(v);
+
+        constexpr auto resbool = monomial_included(d1, std::make_tuple(in));
+        // EXPECT_FALSE(resbool);
+        static_assert(!resbool);
+    }
+
+    {
+        // auto res = K * S * sqrt(S * sqrt(v));
+        auto res = K /* * S */ * sqrt(v);
+
+        constexpr auto d1 = d(K /* * S */) * d(v * v);
+        constexpr auto in = d<2>(v);
+
+        constexpr auto resbool = monomial_included(d1, std::make_tuple(in));
+        // EXPECT_FALSE(resbool);
+        static_assert(!resbool);
+    }
+
+    {
+        auto res = K * v;
+
+        constexpr auto d1 = d(K * K) * d(v * v);
+        constexpr auto in = d<2>(v);
+        constexpr auto in2 = d<2>(K);
+
+        constexpr auto resbool =
+            monomial_included(d1, std::make_tuple(in, in2));
+        // EXPECT_FALSE(resbool);
+        static_assert(!resbool);
+    }
+}
+
+TEST(MonomialIncluded, ErrorFix3) {
+
+    ADHOC(x);
+    ADHOC(y);
+    auto res = erfc(x / y);
+
+    auto inputs_do = std::make_tuple(d(x), d(y));
+
+    auto d1 = d(x / y);
+
+    constexpr auto resbool = monomial_included(d1, inputs_do);
+    static_assert(resbool);
+}
+
 } // namespace adhoc4

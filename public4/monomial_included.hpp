@@ -438,10 +438,16 @@ constexpr auto get_minimum_polys(std::tuple<IndexSequences...> /* poly */) {
 }
 
 template <class... IndexSequences, class IndexSequence>
-constexpr auto compare_aginst_input(std::tuple<IndexSequences...> /* poly */,
-                                    IndexSequence diff_op_input) {
+constexpr auto compare_against_input(std::tuple<IndexSequences...> /* poly */,
+                                     IndexSequence diff_op_input) {
 
     return ((IndexSequences{} <= diff_op_input) || ...);
+}
+
+template <class... IndexSequences>
+constexpr auto any_sequence_is_zero(std::tuple<IndexSequences...> /* poly */)
+    -> bool {
+    return ((sum_sat(IndexSequences{}) == 0) || ...);
 }
 
 template <class TupleIndexSequence, class IndexSequence>
@@ -461,11 +467,16 @@ constexpr auto check_included_final(TupleIndexSequence poly,
         if constexpr (!smallerthan) {
             return false;
         } else {
-            constexpr auto min_poly = get_minimum_polys(poly);
+            if constexpr (any_sequence_is_zero(poly)) {
+                // is any sequence has sum 0 it means there is a monomial
+                // variable outside the inputs, so it can't be included
+                return false;
+            } else {
+                constexpr auto min_poly = get_minimum_polys(poly);
 
-            return compare_aginst_input(min_poly, diff_op_input);
-            // analyse all polynomials have at least one
-            // return true;
+                return compare_against_input(min_poly, diff_op_input);
+                // analyse all polynomials have at least one
+            }
         }
     }
 }

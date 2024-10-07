@@ -21,6 +21,7 @@
 #ifndef ADHOC4_UTILS_INDEX_SEQUENCE_HPP
 #define ADHOC4_UTILS_INDEX_SEQUENCE_HPP
 
+#include "../add_sat.hpp"
 #include "../combinatorics/pow.hpp"
 
 #include <array>
@@ -36,6 +37,11 @@ constexpr auto get(std::integer_sequence<T, I...> /* i */) {
 template <std::size_t... I>
 constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
     return (I + ...);
+}
+
+template <std::size_t... I>
+constexpr auto sum_sat(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
+    return detail::add_sat(I...);
 }
 
 namespace detail {
