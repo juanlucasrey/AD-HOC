@@ -42,6 +42,7 @@
 #include <iostream>
 
 #define LOG_LEVEL 0
+#define LOG_VALS 0
 
 namespace adhoc4::detail {
 
@@ -65,7 +66,8 @@ less_than_single2(der::d<Order1, Id1> /* in1 */, der::d<Order2, Id2> /* in2 */,
     } else if constexpr (Order1 > Order2) {
         return false;
     } else {
-        static_assert(std::is_same_v<der::d<Order1, Id1>, der::d<Order2, Id2>>);
+        static_assert(std::is_same_v<der::d<Order1, const Id1>,
+                                     der::d<Order2, const Id2>>);
         return less_than_check_empty2(id1rem, id2rem, nodes);
     }
 }
@@ -325,6 +327,22 @@ auto treat_nodes_mul(
         write_results(next_derivatives_filtered, next_derivatives_values,
                       locations, bt_new, ba, it, ia);
 
+        if constexpr (LOG_VALS > 0) {
+            std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+            std::cout << "buffer" << std::endl;
+            for (std::size_t i = 0; i < ba.size(); i++) {
+                std::cout << ba[i] << ", ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "interface" << std::endl;
+            for (std::size_t i = 0; i < ia.size(); i++) {
+                std::cout << ia[i] << ", ";
+            }
+            std::cout << std::endl;
+        }
+
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
                 return std::tuple_cat(
@@ -455,6 +473,22 @@ auto treat_nodes_add(
         write_results(next_derivatives_filtered, next_derivatives_values,
                       locations, bt_new, ba, it, ia);
 
+        if constexpr (LOG_VALS > 0) {
+            std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+            std::cout << "buffer" << std::endl;
+            for (std::size_t i = 0; i < ba.size(); i++) {
+                std::cout << ba[i] << ", ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "interface" << std::endl;
+            for (std::size_t i = 0; i < ia.size(); i++) {
+                std::cout << ia[i] << ", ";
+            }
+            std::cout << std::endl;
+        }
+
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
                 return std::tuple_cat(
@@ -582,15 +616,28 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
 
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
-        // std::cout << "locations" << std::endl;
-        // std::cout << type_name2<decltype(locations)>() << std::endl;
+
         constexpr auto bt_new =
             update_buffer_types(next_derivatives_filtered, locations, bt_free);
-        // std::cout << "bt_new" << std::endl;
-        // std::cout << type_name2<decltype(bt_new)>() << std::endl;
 
         write_results(next_derivatives_filtered, next_derivatives_values,
                       locations, bt_new, ba, it, ia);
+
+        if constexpr (LOG_VALS > 0) {
+            std::cout.precision(std::numeric_limits<double>::max_digits10);
+
+            std::cout << "buffer" << std::endl;
+            for (std::size_t i = 0; i < ba.size(); i++) {
+                std::cout << ba[i] << ", ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "interface" << std::endl;
+            for (std::size_t i = 0; i < ia.size(); i++) {
+                std::cout << ia[i] << ", ";
+            }
+            std::cout << std::endl;
+        }
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -605,28 +652,8 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto next_derivatives_new =
             filter(next_derivatives_filtered, flags_only_new);
 
-        // std::cout << "next_derivatives_new" << std::endl;
-        // std::cout << type_name2<decltype(next_derivatives_new)>() <<
-        // std::endl;
-
-        // std::cout << "dnn" << std::endl;
-        // std::cout << type_name2<decltype(dnn)>() << std::endl;
-
-        // constexpr auto dnn_new = dnn;
-        // static_assert(is_sorted2(next_derivatives_new, NodesValue{}));
-        // static_assert(is_sorted2(dnn, NodesValue{}));
-        // std::cout << is_sorted2(next_derivatives_new, NodesValue{})
-        //           << std::endl;
-        // std::cout << is_sorted(dnn, NodesValue{}) << std::endl;
-
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
-
-        // std::cout << "bt_new" << std::endl;
-        // std::cout << type_name2<decltype(bt_new)>() << std::endl;
-
-        // std::cout << "dnn_new" << std::endl;
-        // std::cout << type_name2<decltype(dnn_new)>() << std::endl;
 
         return treat_nodes_univariate<currentN, pow>(
             pn, dnl, dn, ct, it, ia, bt_new, ba, ua, ua_elevated, dnn_new,

@@ -224,7 +224,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         //     expand_tree(nodes_value, ordered_roots,
         //     output_derivatives_ordered);
 
-        constexpr auto buffer_size = 20;
+        constexpr auto buffer_size = 30;
         // constexpr auto buffer_size = tape_buffer_size(
         //     output_derivatives_ordered, ordered_inputs, primal_nodes);
 
