@@ -143,4 +143,13 @@ TEST(MonomialIncluded, ErrorFix3) {
     static_assert(resbool);
 }
 
+TEST(MonomialIncluded, OldTest) {
+    ADHOC(x);
+    ADHOC(y);
+    constexpr auto dnin = std::make_tuple(d(x), d(y), d(x) * d(y));
+    constexpr auto node = d(x) * d<2>(y);
+    constexpr auto resbool = monomial_included(node, dnin);
+    static_assert(!resbool);
+}
+
 } // namespace adhoc4

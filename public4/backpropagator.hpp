@@ -22,7 +22,6 @@
 #define ADHOC4_BACKPROPAGATOR_HPP
 
 #include "adhoc.hpp"
-#include "backpropagator_aux.hpp"
 #include "backpropagator_aux2.hpp"
 #include "backpropagator_tools.hpp"
 #include "calc_tree.hpp"
@@ -157,50 +156,6 @@ template <class... InputsAndOutputsDers> class BackPropagator {
     void inline reset() {
         std::fill(std::begin(this->m_derivatives),
                   std::end(this->m_derivatives), 0.);
-    }
-
-    template <class CalcTree> inline void backpropagate(CalcTree const &ct) {
-
-        using PrimalNodes = CalcTree::ValuesTupleInverse;
-        constexpr auto primal_nodes_inverted = PrimalNodes{};
-
-        constexpr auto ordered_derivatives =
-            std::tuple_cat(std::make_tuple(detail::order_differential_operator(
-                InputsAndOutputsDers{}, primal_nodes_inverted))...);
-        constexpr auto inputs =
-            detail::select_root_derivatives(ordered_derivatives);
-        constexpr auto outputs =
-            detail::select_non_root_derivatives(ordered_derivatives);
-
-        constexpr auto outputs_sorted =
-            sort_differential_operators(outputs, primal_nodes_inverted);
-
-        // constexpr auto nodes_derivative =
-        //     expand_tree(nodes_value, ordered_roots,
-        //     output_derivatives_ordered);
-
-        constexpr auto buffer_size = 20;
-        // constexpr auto buffer_size = tape_buffer_size(
-        //     output_derivatives_ordered, ordered_inputs, primal_nodes);
-
-        // std::cout << buffer_size << std::endl;
-
-        std::array<double, buffer_size> buffer{};
-
-        constexpr auto order =
-            detail::max_orders(std::tuple<InputsAndOutputsDers...>{});
-        std::array<double, order> univariate_buffer{};
-
-        constexpr auto buffer_types =
-            std::tuple_cat(std::array<detail::available_t, buffer_size>{});
-
-        constexpr auto node_derivative_location = std::tuple_cat(
-            std::array<detail::on_interface_t, size(outputs_sorted)>{});
-
-        detail::backpropagate_aux(
-            primal_nodes_inverted, node_derivative_location, outputs_sorted, ct,
-            ordered_derivatives, this->m_derivatives, buffer_types, buffer,
-            univariate_buffer, inputs);
     }
 
     template <class CalcTree> inline void backpropagate2(CalcTree const &ct) {

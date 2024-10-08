@@ -8,11 +8,68 @@
 
 #include <sort.hpp>
 
+#include "call_price.hpp"
+
 #include "type_name.hpp"
 
 #include <gtest/gtest.h>
 
+#include <random>
+#include <utility>
+
 namespace adhoc4 {
+
+TEST(BackPropagator, UnivariateLogExp) {
+    ADHOC(x);
+    auto res = log(exp(x));
+
+    CalcTree ct(res);
+
+    const std::size_t evals = 100;
+    std::mt19937 gen;
+    std::uniform_real_distribution<> dis(-3., 3.);
+
+    for (std::size_t i = 0; i < evals; i++) {
+        ct.set(x) = dis(gen);
+        ct.evaluate();
+
+        BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x), d<4>(x), d<5>(x));
+        bp.set(d(res)) = 1.;
+        bp.backpropagate2(ct);
+
+        EXPECT_NEAR(bp.get(d(x)), 1., 1e-14);
+        EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<3>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<4>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-14);
+    }
+}
+
+TEST(BackPropagator, UnivariateExpLog) {
+    ADHOC(x);
+    auto res = exp(log(x));
+
+    CalcTree ct(res);
+
+    const std::size_t evals = 100;
+    std::mt19937 gen;
+    std::uniform_real_distribution<> dis(0.1, 3.);
+
+    for (std::size_t i = 0; i < evals; i++) {
+        ct.set(x) = dis(gen);
+        ct.evaluate();
+
+        BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x), d<4>(x), d<5>(x));
+        bp.set(d(res)) = 1.;
+        bp.backpropagate2(ct);
+
+        EXPECT_NEAR(bp.get(d(x)), 1., 1e-14);
+        EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<3>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<4>(x)), 0., 1e-13);
+        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-12);
+    }
+}
 
 TEST(BackPropagator2, UnivariateSingle) {
     ADHOC(x);
@@ -166,6 +223,111 @@ TEST(BackPropagator2, DivSingle) {
     EXPECT_NEAR(bp.get(d(y)), 0.00104439788960061, 1e-14);
     EXPECT_NEAR(bp.get(d(x) * d(y)), -0.0147956367693420, 1e-14);
     EXPECT_NEAR(bp.get(d<5>(x)), -0.0992721952354747, 1e-14);
+}
+
+TEST(BackPropagator2, MulConstant) {
+    ADHOC(x);
+    using constants::CD;
+    auto res = log(x * CD<0.4>());
+
+    CalcTree ct(res);
+    ct.set(x) = 1.2;
+    ct.evaluate();
+
+    BackPropagator bp(d(res), d(x), d<5>(x));
+    bp.set(d(res)) = 1.;
+    bp.backpropagate2(ct);
+
+    EXPECT_NEAR(bp.get(d(x)), 0.833333333333333, 1e-14);
+    // EXPECT_NEAR(bp.get(d(y)), 2.5, 1e-14);
+    // EXPECT_NEAR(bp.get(d(x) * d(y)), 0., 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), 0.0803755144032922, 1e-14);
+}
+
+namespace detail {
+
+template <class I1, class I2>
+constexpr auto equal(I1 /* lhs */, I2 /* rhs */) -> bool {
+    return std::is_same_v<I1, I2>;
+}
+
+} // namespace detail
+
+TEST(BackPropagator2, MultiplyOrdered) {
+    using constants::CD;
+    ADHOC(S);
+    ADHOC(K);
+    ADHOC(v);
+    ADHOC(T);
+
+    auto res = call_price(S, K, v, T);
+
+    CalcTree ct(res);
+    using NodesValue = decltype(ct)::ValuesTupleInverse;
+
+    {
+        constexpr auto dS = d(S);
+        constexpr auto diffop1mul =
+            detail::multiply_ordered(dS, dS, NodesValue{});
+
+        constexpr auto result = d<2>(S);
+        static_assert(detail::equal(diffop1mul, result));
+    }
+
+    {
+        constexpr auto dS = d(S);
+        constexpr auto dK = d(K);
+        constexpr auto diffop1mul =
+            detail::multiply_ordered(dS, dK, NodesValue{});
+
+        constexpr auto result = d(S) * d(K);
+        static_assert(detail::equal(diffop1mul, result));
+    }
+
+    {
+        constexpr auto dS = d(S);
+        constexpr auto dK = d(K) * d(T);
+        constexpr auto diffop1mul =
+            detail::multiply_ordered(dS, dK, NodesValue{});
+
+        constexpr auto result = d(S) * d(K) * d(T);
+        static_assert(detail::equal(diffop1mul, result));
+    }
+
+    {
+        constexpr auto dS = d(S) * d(v);
+        constexpr auto dK = d(K) * d(T);
+        constexpr auto diffop1mul =
+            detail::multiply_ordered(dS, dK, NodesValue{});
+
+        constexpr auto result = d(S) * d(K) * d(v) * d(T);
+        static_assert(detail::equal(diffop1mul, result));
+    }
+
+    {
+        constexpr auto dS = d(S) * d<2>(K) * d(v);
+        constexpr auto dK = d(K) * d(T);
+        constexpr auto diffop1mul =
+            detail::multiply_ordered(dS, dK, NodesValue{});
+
+        constexpr auto result = d(S) * d<3>(K) * d(v) * d(T);
+        static_assert(detail::equal(diffop1mul, result));
+    }
+}
+
+TEST(BackPropagator, IsInputDer) {
+    ADHOC(var);
+    ADHOC(var2);
+    auto calc = exp(var);
+    auto res = d(var) * d<2>(var2);
+
+    constexpr auto resb1 = detail::is_derivative_input(res);
+    static_assert(resb1);
+
+    auto res2 = d(calc) * d<2>(var2);
+
+    constexpr auto resb2 = detail::is_derivative_input(res2);
+    static_assert(!resb2);
 }
 
 } // namespace adhoc4

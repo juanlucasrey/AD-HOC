@@ -14,8 +14,12 @@ add_executable(
   univariate_vs_python.t.cpp
   order.t.cpp
   calc_tree.t.cpp
-  backpropagator.t.cpp
+  sort.t.cpp
+  utils/tuple.t.cpp
   backpropagator2.t.cpp
+  black_scholes1.t.cpp
+  black_scholes2.t.cpp
+  # black_scholes3.t.cpp
   backpropagator_tools.t.cpp
 )
 
