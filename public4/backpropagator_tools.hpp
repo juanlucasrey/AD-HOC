@@ -200,14 +200,16 @@ constexpr auto update_buffer_types(TypesToPlace derivative_nodes,
 }
 
 template <std::size_t N = 0, class ResultsTypes, class ResultsArray,
-          class LocationIndicators, class BufferTypes, class BufferArray,
-          class InterfaceTypes, class InterfaceArray>
+          class LocationIndicators, class BufferTypes,
+          std::size_t BufferArraySize, class InterfaceTypes,
+          std::size_t InterfaceArraySize>
 auto write_results(ResultsTypes derivatives_nodes,
                    ResultsArray const &results_array,
                    LocationIndicators location_indicators,
-                   BufferTypes buffer_types_updated, BufferArray &buffer_array,
+                   BufferTypes buffer_types_updated,
+                   std::array<double, BufferArraySize> &buffer_array,
                    InterfaceTypes interface_types,
-                   InterfaceArray &interface_array) {
+                   std::array<double, InterfaceArraySize> &interface_array) {
     if constexpr (N < std::tuple_size_v<LocationIndicators>) {
 
         constexpr auto current_indicator = std::get<N>(location_indicators);
@@ -218,11 +220,14 @@ auto write_results(ResultsTypes derivatives_nodes,
             constexpr auto idx =
                 get_first_type_idx(interface_types, current_derivative_node);
 
+            static_assert(idx < InterfaceArraySize);
+
             // we always add on the interface
             interface_array[idx] += results_array[N];
         } else {
             constexpr auto idx = get_first_type_idx(buffer_types_updated,
                                                     current_derivative_node);
+            static_assert(idx < BufferArraySize);
 
             if constexpr (std::is_same_v<const on_buffer_new_t,
                                          decltype(current_indicator)>) {
