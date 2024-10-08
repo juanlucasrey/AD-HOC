@@ -35,7 +35,7 @@ TEST(BackPropagator, UnivariateLogExp) {
 
         BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x), d<4>(x), d<5>(x));
         bp.set(d(res)) = 1.;
-        bp.backpropagate2(ct);
+        bp.backpropagate(ct);
 
         EXPECT_NEAR(bp.get(d(x)), 1., 1e-14);
         EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
@@ -61,7 +61,7 @@ TEST(BackPropagator, UnivariateExpLog) {
 
         BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x), d<4>(x), d<5>(x));
         bp.set(d(res)) = 1.;
-        bp.backpropagate2(ct);
+        bp.backpropagate(ct);
 
         EXPECT_NEAR(bp.get(d(x)), 1., 1e-14);
         EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
@@ -81,7 +81,7 @@ TEST(BackPropagator2, UnivariateSingle) {
 
     BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     // from sympy import *
     // x = Symbol('x')
@@ -115,7 +115,7 @@ TEST(BackPropagator2, UnivariateDouble) {
 
     BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     // from sympy import *
     // x = Symbol('x')
@@ -152,7 +152,7 @@ TEST(BackPropagator2, SumSingle) {
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     EXPECT_NEAR(bp.get(d(x)), 0.625, 1e-13);
     EXPECT_NEAR(bp.get(d(y)), 0.625, 1e-13);
@@ -171,7 +171,7 @@ TEST(BackPropagator2, MulSingle) {
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     EXPECT_NEAR(bp.get(d(x)), 0.833333333333333, 1e-14);
     EXPECT_NEAR(bp.get(d(y)), 2.5, 1e-14);
@@ -191,7 +191,7 @@ TEST(BackPropagator2, MulSingle2) {
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     // std::cout.precision(std::numeric_limits<double>::max_digits10);
     // std::cout << bp.get(d(x)) << std::endl;
@@ -217,7 +217,7 @@ TEST(BackPropagator2, DivSingle) {
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     EXPECT_NEAR(bp.get(d(x)), -0.000348132629866870, 1e-14);
     EXPECT_NEAR(bp.get(d(y)), 0.00104439788960061, 1e-14);
@@ -236,7 +236,7 @@ TEST(BackPropagator2, MulConstant) {
 
     BackPropagator bp(d(res), d(x), d<5>(x));
     bp.set(d(res)) = 1.;
-    bp.backpropagate2(ct);
+    bp.backpropagate(ct);
 
     EXPECT_NEAR(bp.get(d(x)), 0.833333333333333, 1e-14);
     // EXPECT_NEAR(bp.get(d(y)), 2.5, 1e-14);

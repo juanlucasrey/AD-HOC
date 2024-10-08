@@ -158,7 +158,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
                   std::end(this->m_derivatives), 0.);
     }
 
-    template <class CalcTree> inline void backpropagate2(CalcTree const &ct) {
+    template <class CalcTree> inline void backpropagate(CalcTree const &ct) {
 
         using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
         constexpr auto primal_nodes_inverted = PrimalNodesInverse{};

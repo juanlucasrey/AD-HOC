@@ -88,7 +88,7 @@ TEST(BlackScholes, BS3) {
                      dSvT, dKvT, dres);
 
     t.set(dres) = 1.;
-    t.backpropagate2(ct);
+    t.backpropagate(ct);
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     std::cout << ct.get(res) << std::endl;
