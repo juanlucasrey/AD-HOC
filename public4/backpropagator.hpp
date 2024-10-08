@@ -22,7 +22,7 @@
 #define ADHOC4_BACKPROPAGATOR_HPP
 
 #include "adhoc.hpp"
-#include "backpropagator_aux2.hpp"
+#include "backpropagator_aux.hpp"
 #include "backpropagator_tools.hpp"
 #include "calc_tree.hpp"
 #include "dependency.hpp"

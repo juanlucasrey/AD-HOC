@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BACKPROPAGATOR_AUX2_HPP
-#define ADHOC4_BACKPROPAGATOR_AUX2_HPP
+#ifndef ADHOC4_BACKPROPAGATOR_AUX_HPP
+#define ADHOC4_BACKPROPAGATOR_AUX_HPP
 
 // #include "combinatorics/combinations.hpp"
 // #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
