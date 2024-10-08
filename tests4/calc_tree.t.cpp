@@ -165,7 +165,8 @@ TEST(CalcTree, CallPrice) {
     double const result_calctree = ct.get(res);
 
     double const result_double = call_price(100.0, 102.0, 0.15, 0.5);
-    EXPECT_EQ(result_calctree, result_double);
+    // inlining and fma CAN create differences
+    EXPECT_NEAR(result_calctree, result_double, 1e-14);
 }
 
 } // namespace adhoc4

@@ -16,7 +16,7 @@ add_executable(
   calc_tree.t.cpp
   sort.t.cpp
   utils/tuple.t.cpp
-  backpropagator2.t.cpp
+  backpropagator.t.cpp
   black_scholes1.t.cpp
   black_scholes2.t.cpp
   # black_scholes3.t.cpp

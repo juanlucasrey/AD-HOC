@@ -103,7 +103,8 @@ TEST(UtilsUnivariate, ToTaylorCoeff) {
     std::array<double, MaxOrder> ua = {0.1, 0.2, 0.3, 0.5, 0.7};
     derivative_to_taylor(ua);
 
-    std::array<double, MaxOrder> res = {0.1, 0.4, 1.8, 12., 84.};
+    std::array<double, MaxOrder> res = {0.1, 0.2 / 2., 0.3 / 6., 0.5 / 24.,
+                                        0.7 / 120.};
     compare_array(ua, res, 1e-14);
 }
 
