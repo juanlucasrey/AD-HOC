@@ -23,6 +23,7 @@
 
 #include "adhoc.hpp"
 #include "backpropagator_aux.hpp"
+#include "backpropagator_buffer_size.hpp"
 #include "backpropagator_tools.hpp"
 #include "calc_tree.hpp"
 #include "dependency.hpp"
@@ -158,6 +159,30 @@ template <class... InputsAndOutputsDers> class BackPropagator {
                   std::end(this->m_derivatives), 0.);
     }
 
+    template <class CalcTree> constexpr std::size_t buffer_size() {
+        using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
+        constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
+
+        constexpr auto ordered_derivatives =
+            std::tuple_cat(std::make_tuple(detail::order_differential_operator(
+                InputsAndOutputsDers{}, primal_nodes_inverted))...);
+
+        constexpr auto inputs =
+            detail::select_root_derivatives(ordered_derivatives);
+        constexpr auto outputs =
+            detail::select_non_root_derivatives(ordered_derivatives);
+
+        constexpr auto outputs_sorted =
+            sort_differential_operators(outputs, primal_nodes_inverted);
+
+        constexpr auto node_derivative_location = std::tuple_cat(
+            std::array<detail::on_interface_t, size(outputs_sorted)>{});
+
+        return detail::backpropagate_buffer_size<CalcTree>(
+            node_derivative_location, outputs_sorted, ordered_derivatives,
+            inputs);
+    }
+
     template <class CalcTree> inline void backpropagate(CalcTree const &ct) {
 
         using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
@@ -191,9 +216,9 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
 
-        detail::backpropagate_aux2(node_derivative_location, outputs_sorted, ct,
-                                   ordered_derivatives, this->m_derivatives,
-                                   buffer_types, buffer, inputs);
+        detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
+                                  ordered_derivatives, this->m_derivatives,
+                                  buffer_types, buffer, inputs);
     }
 };
 

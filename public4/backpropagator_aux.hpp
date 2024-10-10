@@ -547,10 +547,10 @@ template <std::size_t N = 0, class DerivativeNodeLocation,
           class DerivativeNodes, class CalcTree, class InterfaceTypes,
           class InterfaceArray, class BufferTypes, class BufferArray,
           class DerivativeNodeInputs>
-void backpropagate_aux2(DerivativeNodeLocation const dnl, DerivativeNodes dn,
-                        CalcTree const &ct, InterfaceTypes it,
-                        InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
-                        DerivativeNodeInputs dnin) {
+void backpropagate_aux(DerivativeNodeLocation dnl, DerivativeNodes dn,
+                       CalcTree const &ct, InterfaceTypes it,
+                       InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
+                       DerivativeNodeInputs dnin) {
 
     using PrimalNodes = CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
@@ -569,8 +569,7 @@ void backpropagate_aux2(DerivativeNodeLocation const dnl, DerivativeNodes dn,
         constexpr typename std::tuple_element<1, decltype(res)>::type dnl_new;
         constexpr typename std::tuple_element<2, decltype(res)>::type dn_new;
 
-        backpropagate_aux2<N + 1>(dnl_new, dn_new, ct, it, ia, bt_new, ba,
-                                  dnin);
+        backpropagate_aux<N + 1>(dnl_new, dn_new, ct, it, ia, bt_new, ba, dnin);
     }
 }
 
