@@ -141,6 +141,20 @@ auto constexpr free_on_buffer(DerivativeNodeLoc current_node_der_loc,
     }
 }
 
+template <class DerivativeNodeLoc, class DerivativeNode, class BufferTypes>
+auto constexpr free_on_buffer_size(DerivativeNodeLoc current_node_der_loc,
+                                   DerivativeNode current_node_der,
+                                   BufferTypes bt) {
+    if constexpr (std::is_same_v<decltype(current_node_der_loc), on_buffer_t>) {
+        constexpr auto newtuple = remove(bt, current_node_der);
+        return newtuple;
+    } else {
+        static_assert(
+            std::is_same_v<decltype(current_node_der_loc), on_interface_t>);
+        return bt;
+    }
+}
+
 class on_buffer_add_t {};
 class on_buffer_new_t {};
 class on_interface_add_t {};
@@ -193,6 +207,33 @@ constexpr auto update_buffer_types(TypesToPlace derivative_nodes,
         } else {
             return update_buffer_types<N + 1>(derivative_nodes,
                                               location_indicators, bt);
+        }
+    } else {
+        return bt;
+    }
+}
+
+template <std::size_t N = 0, class TypesToPlace, class LocationIndicators,
+          class BufferTypes>
+constexpr auto update_buffer_types_size(TypesToPlace derivative_nodes,
+                                        LocationIndicators location_indicators,
+                                        BufferTypes bt) {
+    if constexpr (N < std::tuple_size_v<LocationIndicators>) {
+        constexpr auto current_indicator = std::get<N>(location_indicators);
+
+        if constexpr (std::is_same_v<const on_buffer_new_t,
+                                     decltype(current_indicator)>) {
+
+            constexpr auto current_derivative_node =
+                std::get<N>(derivative_nodes);
+            constexpr auto new_buffer_type =
+                std::tuple_cat(bt, std::make_tuple(current_derivative_node));
+
+            return update_buffer_types_size<N + 1>(
+                derivative_nodes, location_indicators, new_buffer_type);
+        } else {
+            return update_buffer_types_size<N + 1>(derivative_nodes,
+                                                   location_indicators, bt);
         }
     } else {
         return bt;
