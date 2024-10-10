@@ -63,7 +63,7 @@ auto constexpr contains(std::tuple<Ts...> tuple, T value) -> bool {
 template <typename T, typename... Us>
 constexpr auto remove(std::tuple<Us...> /* tuple */, T /* value */) {
     return std::tuple_cat(
-        std::conditional_t<std::is_same_v<T, Us>, std::tuple<>,
+        std::conditional_t<std::is_same_v<const T, const Us>, std::tuple<>,
                            std::tuple<Us>>{}...);
 }
 
