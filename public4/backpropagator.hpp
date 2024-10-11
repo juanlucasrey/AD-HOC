@@ -159,7 +159,8 @@ template <class... InputsAndOutputsDers> class BackPropagator {
                   std::end(this->m_derivatives), 0.);
     }
 
-    template <class CalcTree> constexpr std::size_t buffer_size() {
+  public:
+    template <class CalcTree> constexpr auto buffer_size() -> std::size_t {
         using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
         constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
 
@@ -183,6 +184,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             inputs);
     }
 
+  public:
     template <class CalcTree> inline void backpropagate(CalcTree const &ct) {
 
         using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
@@ -200,11 +202,20 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto outputs_sorted =
             sort_differential_operators(outputs, primal_nodes_inverted);
 
+        constexpr auto node_derivative_location = std::tuple_cat(
+            std::array<detail::on_interface_t, size(outputs_sorted)>{});
         // constexpr auto nodes_derivative =
         //     expand_tree(nodes_value, ordered_roots,
         //     output_derivatives_ordered);
 
-        constexpr auto buffer_size = 30;
+        // constexpr auto buffer_size = 30;
+
+        constexpr auto buffer_size =
+            detail::backpropagate_buffer_size<CalcTree>(
+                node_derivative_location, outputs_sorted, ordered_derivatives,
+                inputs);
+
+        // constexpr auto buffer_size = 40;
         // constexpr auto buffer_size = tape_buffer_size(
         //     output_derivatives_ordered, ordered_inputs, primal_nodes);
 
@@ -213,8 +224,6 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         std::array<double, buffer_size> buffer{};
         constexpr auto buffer_types =
             std::tuple_cat(std::array<detail::available_t, buffer_size>{});
-        constexpr auto node_derivative_location = std::tuple_cat(
-            std::array<detail::on_interface_t, size(outputs_sorted)>{});
 
         detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
                                   ordered_derivatives, this->m_derivatives,

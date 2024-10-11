@@ -169,6 +169,11 @@ auto treat_nodes_mul(
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
+        if constexpr (LOG_LEVEL > 0) {
+            std::cout << "dnn_new" << std::endl;
+            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+        }
+
         return treat_nodes_mul<N + 1>(pn, dnl, dn, ct, it, ia, bt_new, ba,
                                       powers1, powers2, dnn_new, dnin);
     }
@@ -459,11 +464,27 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
             },
             locations);
 
+        if constexpr (LOG_LEVEL > 1) {
+            std::cout << "flags_only_new" << std::endl;
+            std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
+        }
+
         constexpr auto next_derivatives_new =
             filter(next_derivatives_filtered, flags_only_new);
 
+        if constexpr (LOG_LEVEL > 1) {
+            std::cout << "next_derivatives_new" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives_new)>()
+                      << std::endl;
+        }
+
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
+
+        if constexpr (LOG_LEVEL > 1) {
+            std::cout << "dnn_new" << std::endl;
+            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+        }
 
         return treat_nodes_univariate<currentN, pow>(
             pn, dnl, dn, ct, it, ia, bt_new, ba, ua, ua_elevated, dnn_new,
@@ -568,6 +589,14 @@ void backpropagate_aux(DerivativeNodeLocation dnl, DerivativeNodes dn,
         constexpr typename std::tuple_element<0, decltype(res)>::type bt_new;
         constexpr typename std::tuple_element<1, decltype(res)>::type dnl_new;
         constexpr typename std::tuple_element<2, decltype(res)>::type dn_new;
+
+        if constexpr (LOG_LEVEL > 0) {
+            std::cout << "dnl_new" << std::endl;
+            std::cout << type_name2<decltype(dnl_new)>() << std::endl;
+
+            std::cout << "dn_new" << std::endl;
+            std::cout << type_name2<decltype(dn_new)>() << std::endl;
+        }
 
         backpropagate_aux<N + 1>(dnl_new, dn_new, ct, it, ia, bt_new, ba, dnin);
     }

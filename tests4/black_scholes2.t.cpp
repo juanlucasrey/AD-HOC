@@ -64,9 +64,15 @@ TEST(BlackScholes, BS2) {
     t.set(dres) = 1.;
     t.backpropagate(ct);
 
-    std::cout.precision(std::numeric_limits<double>::max_digits10);
-    std::cout << ct.get(res) << std::endl;
-    std::cout << t.get(dS) << std::endl;
+    EXPECT_NEAR(ct.get(res), 1.8890465506626162, 1e-14);
+    EXPECT_NEAR(t.get(dS), 6.0454412443913581, 1e-14);
+    EXPECT_NEAR(t.get(dK), 3.3740304502248355, 1e-14);
+    EXPECT_NEAR(t.get(dv), -1.9089022751421003, 1e-14);
+    EXPECT_NEAR(t.get(dT), -0.28633534127131505, 1e-14);
+
+    // std::cout.precision(std::numeric_limits<double>::max_digits10);
+    // std::cout << ct.get(res) << std::endl;
+    // std::cout << t.get(dS) << std::endl;
 }
 
 } // namespace adhoc4

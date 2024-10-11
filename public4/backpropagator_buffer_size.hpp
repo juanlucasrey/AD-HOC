@@ -45,328 +45,314 @@
 
 namespace adhoc4::detail {
 
-// template <std::size_t N = 0, class PrimalSubNodeOrdered1,
-//           class PrimalSubNodeOrdered2, class DerivativeNodeLocations,
-//           class DerivativeNodes, class CalcTree, class InterfaceTypes,
-//           class InterfaceArray, class BufferTypes, class BufferArray,
-//           std::size_t MaxOrder, class DerivativeNodeNew,
-//           class DerivativeNodeInputs>
-// auto treat_nodes_mul(
-//     std::tuple<PrimalSubNodeOrdered1, PrimalSubNodeOrdered2> pn,
-//     DerivativeNodeLocations dnl, DerivativeNodes dn, CalcTree const &ct,
-//     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
-//     std::array<double, MaxOrder> const &powers1,
-//     std::array<double, MaxOrder> const &powers2, DerivativeNodeNew dnn,
-//     DerivativeNodeInputs dnin) {
+template <class CalcTree, std::size_t Result, class BufferTypes,
+          std::size_t MaxOrder, std::size_t N = 0, class PrimalSubNodeOrdered1,
+          class PrimalSubNodeOrdered2, class DerivativeNodeLocations,
+          class DerivativeNodes, class InterfaceTypes, class DerivativeNodeNew,
+          class DerivativeNodeInputs>
+constexpr auto treat_nodes_mul_buffer_size(
+    std::tuple<PrimalSubNodeOrdered1, PrimalSubNodeOrdered2> pn,
+    DerivativeNodeLocations dnl, DerivativeNodes dn, InterfaceTypes it,
+    DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
 
-//     if constexpr (N == std::tuple_size_v<DerivativeNodeLocations>) {
-//         return std::make_tuple(bt, dnn);
-//     } else {
-//         constexpr auto current_node_der = std::get<N>(dn);
+    if constexpr (N == std::tuple_size_v<DerivativeNodeLocations>) {
+        return std::make_tuple(BufferTypes{}, dnn,
+                               std::integral_constant<std::size_t, Result>{});
+    } else {
+        constexpr auto current_node_der = std::get<N>(dn);
 
-//         if constexpr (LOG_LEVEL > 0) {
-//             std::cout << "treating derivative tree node" << std::endl;
-//             std::cout << type_name2<decltype(current_node_der)>() <<
-//             std::endl;
-//         }
+        if constexpr (LOG) {
+            std::cout << "treating derivative tree node" << std::endl;
+            std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+        }
 
-//         constexpr auto current_node_der_loc = std::get<N>(dnl);
-//         constexpr auto current_derivative_subnode_rest =
-//         tail(current_node_der); constexpr auto pow =
-//         get_power(head(current_node_der));
+        constexpr auto current_node_der_loc = std::get<N>(dnl);
+        constexpr auto current_derivative_subnode_rest = tail(current_node_der);
+        constexpr auto pow = get_power(head(current_node_der));
 
-//         constexpr auto multinomial_sequences =
-//             TrinomialSequencesMult<pow, MaxOrder>();
+        constexpr auto multinomial_sequences =
+            TrinomialSequencesMult<pow, MaxOrder>();
 
-//         using NodesValue = CalcTree::ValuesTupleInverse;
-//         constexpr auto diff_ops = std::make_tuple(
-//             d(PrimalSubNodeOrdered1{}) * d(PrimalSubNodeOrdered2{}),
-//             d(PrimalSubNodeOrdered1{}), d(PrimalSubNodeOrdered2{}));
+        using NodesValue = CalcTree::ValuesTupleInverse;
+        constexpr auto diff_ops = std::make_tuple(
+            d(PrimalSubNodeOrdered1{}) * d(PrimalSubNodeOrdered2{}),
+            d(PrimalSubNodeOrdered1{}), d(PrimalSubNodeOrdered2{}));
 
-//         constexpr auto next_derivatives = std::apply(
-//             [current_derivative_subnode_rest, diff_ops](const auto... seq) {
-//                 return std::make_tuple(multiply_ordered(
-//                     create_differential_operator(diff_ops, seq),
-//                     current_derivative_subnode_rest, NodesValue{})...);
-//             },
-//             multinomial_sequences);
+        constexpr auto next_derivatives = std::apply(
+            [current_derivative_subnode_rest, diff_ops](const auto... seq) {
+                return std::make_tuple(multiply_ordered(
+                    create_differential_operator(diff_ops, seq),
+                    current_derivative_subnode_rest, NodesValue{})...);
+            },
+            multinomial_sequences);
 
-//         constexpr auto flags_next_derivatives = std::apply(
-//             [dnin](auto... next_derivative) {
-//                 return std::tuple_cat(
-//                     std::conditional_t<monomial_included(next_derivative,
-//                     dnin),
-//                                        std::tuple<std::true_type>,
-//                                        std::tuple<std::false_type>>{}...);
-//             },
-//             next_derivatives);
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin](auto... next_derivative) {
+                return std::tuple_cat(
+                    std::conditional_t<monomial_included(next_derivative, dnin),
+                                       std::tuple<std::true_type>,
+                                       std::tuple<std::false_type>>{}...);
+            },
+            next_derivatives);
 
-//         constexpr auto next_derivatives_filtered =
-//             filter(next_derivatives, flags_next_derivatives);
+        constexpr auto next_derivatives_filtered =
+            filter(next_derivatives, flags_next_derivatives);
 
-//         if constexpr (LOG_LEVEL > 0) {
-//             std::cout << "next_derivatives_filtered" << std::endl;
-//             std::cout << type_name2<decltype(next_derivatives_filtered)>()
-//                       << std::endl;
-//         }
+        if constexpr (LOG) {
+            std::cout << "next_derivatives_filtered" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives_filtered)>()
+                      << std::endl;
+        }
 
-//         constexpr auto multinomial_sequences_filtered =
-//             filter(multinomial_sequences, flags_next_derivatives);
+        constexpr auto multinomial_sequences_filtered =
+            filter(multinomial_sequences, flags_next_derivatives);
 
-//         static_assert(size(next_derivatives_filtered));
+        static_assert(size(next_derivatives_filtered));
 
-//         double const this_val_derivative = get_differential_operator_value(
-//             current_node_der_loc, current_node_der, it, ia, bt, ba);
+        constexpr auto bt_free = free_on_buffer_size(
+            current_node_der_loc, current_node_der, BufferTypes{});
+        constexpr auto ResultFree = std::max(Result, size(bt_free));
 
-//         constexpr auto bt_free =
-//             free_on_buffer(current_node_der_loc, current_node_der, bt);
+        if constexpr (LOG) {
+            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+            std::cout << ResultFree << std::endl;
+            std::cout << "bt_free" << std::endl;
+            std::cout << type_name2<decltype(bt_free)>() << std::endl;
+        }
 
-//         constexpr auto next_derivatives_size =
-//             std::tuple_size_v<decltype(next_derivatives_filtered)>;
+        constexpr auto locations =
+            locate_new_vals(next_derivatives_filtered, it, bt_free);
 
-//         std::array<double, next_derivatives_size> next_derivatives_values;
-//         next_derivatives_values.fill(this_val_derivative);
+        if constexpr (LOG) {
+            std::cout << "locations" << std::endl;
+            std::cout << type_name2<decltype(locations)>() << std::endl;
+        }
 
-//         calc_mul(next_derivatives_values, powers1, powers2,
-//                  multinomial_sequences_filtered);
+        constexpr auto bt_new = update_buffer_types_size(
+            next_derivatives_filtered, locations, bt_free);
 
-//         constexpr auto locations =
-//             locate_new_vals(next_derivatives_filtered, it, bt_free);
+        if constexpr (LOG) {
+            std::cout << "bt_new" << std::endl;
+            std::cout << type_name2<decltype(bt_new)>() << std::endl;
+        }
 
-//         constexpr auto bt_new =
-//             update_buffer_types(next_derivatives_filtered, locations,
-//             bt_free);
+        constexpr auto ResultAdd = std::max(ResultFree, size(bt_new));
 
-//         write_results(next_derivatives_filtered, next_derivatives_values,
-//                       locations, bt_new, ba, it, ia);
+        if constexpr (LOG) {
+            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+            std::cout << ResultAdd << std::endl;
+        }
 
-//         if constexpr (LOG_VALS > 0) {
-//             std::cout.precision(std::numeric_limits<double>::max_digits10);
+        constexpr auto flags_only_new = std::apply(
+            [](auto... location) {
+                return std::tuple_cat(
+                    std::conditional_t<
+                        std::is_same_v<on_buffer_new_t, decltype(location)>,
+                        std::tuple<std::true_type>,
+                        std::tuple<std::false_type>>{}...);
+            },
+            locations);
 
-//             std::cout << "buffer" << std::endl;
-//             for (std::size_t i = 0; i < ba.size(); i++) {
-//                 std::cout << ba[i] << ", ";
-//             }
-//             std::cout << std::endl;
+        if constexpr (LOG) {
+            std::cout << "flags_only_new" << std::endl;
+            std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
+        }
 
-//             std::cout << "interface" << std::endl;
-//             for (std::size_t i = 0; i < ia.size(); i++) {
-//                 std::cout << ia[i] << ", ";
-//             }
-//             std::cout << std::endl;
-//         }
+        constexpr auto next_derivatives_new =
+            filter(next_derivatives_filtered, flags_only_new);
 
-//         constexpr auto flags_only_new = std::apply(
-//             [](auto... location) {
-//                 return std::tuple_cat(
-//                     std::conditional_t<
-//                         std::is_same_v<on_buffer_new_t, decltype(location)>,
-//                         std::tuple<std::true_type>,
-//                         std::tuple<std::false_type>>{}...);
-//             },
-//             locations);
+        if constexpr (LOG) {
+            std::cout << "next_derivatives_new" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives_new)>()
+                      << std::endl;
+        }
 
-//         constexpr auto next_derivatives_new =
-//             filter(next_derivatives_filtered, flags_only_new);
+        constexpr auto dnn_new =
+            merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
-//         constexpr auto dnn_new =
-//             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
+        if constexpr (LOG) {
+            std::cout << "dnn_new" << std::endl;
+            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+        }
 
-//         return treat_nodes_mul<N + 1>(pn, dnl, dn, ct, it, ia, bt_new, ba,
-//                                       powers1, powers2, dnn_new, dnin);
-//     }
-// }
-
-// template <class PrimalSubNode1, class PrimalSubNode2,
-//           class DerivativeNodeLocations, class DerivativeNodes, class
-//           CalcTree, class InterfaceTypes, class InterfaceArray, class
-//           BufferTypes, class BufferArray, class DerivativeNodeInputs>
-// auto treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
-//                              DerivativeNodeLocations dnl, DerivativeNodes dn,
-//                              CalcTree const &ct, InterfaceTypes it,
-//                              InterfaceArray &ia, BufferTypes bt,
-//                              BufferArray &ba, DerivativeNodeInputs dnin) {
-//     using NodesValue = CalcTree::ValuesTupleInverse;
-//     constexpr auto ordered_pair = detail::sort_pair(
-//         std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
-
-//     constexpr auto MaxOrder = detail::max_orders(dnin);
-
-//     double const val1 = ct.get(std::get<0>(ordered_pair));
-//     double const val2 = ct.get(std::get<1>(ordered_pair));
-//     auto const powers_val1 = detail::powers<MaxOrder>(val1);
-//     auto const powers_val2 = detail::powers<MaxOrder>(val2);
-
-//     return treat_nodes_mul(ordered_pair, dnl, dn, ct, it, ia, bt, ba,
-//                            powers_val1, powers_val2, std::tuple<>{}, dnin);
-// }
-
-// template <std::size_t N = 0, class PrimalSubNodeOrdered1,
-//           class PrimalSubNodeOrdered2, class DerivativeNodeLocations,
-//           class DerivativeNodes, class CalcTree, class InterfaceTypes,
-//           class InterfaceArray, class BufferTypes, class BufferArray,
-//           class DerivativeNodeNew, class DerivativeNodeInputs>
-// auto treat_nodes_add(
-//     std::tuple<PrimalSubNodeOrdered1, PrimalSubNodeOrdered2> pn,
-//     DerivativeNodeLocations dnl, DerivativeNodes dn, CalcTree const &ct,
-//     InterfaceTypes it, InterfaceArray &ia, BufferTypes bt, BufferArray &ba,
-//     DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
-
-//     if constexpr (N == std::tuple_size_v<DerivativeNodeLocations>) {
-//         return std::make_tuple(bt, dnn);
-//     } else {
-//         constexpr auto current_node_der = std::get<N>(dn);
-
-//         if constexpr (LOG_LEVEL > 0) {
-//             std::cout << "treating derivative tree node" << std::endl;
-//             std::cout << type_name2<decltype(current_node_der)>() <<
-//             std::endl;
-//         }
-
-//         constexpr auto current_node_der_loc = std::get<N>(dnl);
-//         constexpr auto current_derivative_subnode_rest =
-//         tail(current_node_der); constexpr auto pow =
-//         get_power(head(current_node_der));
-
-//         constexpr auto multinomial_sequences = MultinomialSequences<2,
-//         pow>(); constexpr auto diff_ops =
-//         std::make_tuple(d(PrimalSubNodeOrdered1{}),
-//                                                   d(PrimalSubNodeOrdered2{}));
-
-//         using NodesValue = CalcTree::ValuesTupleInverse;
-
-//         constexpr auto next_derivatives = std::apply(
-//             [current_derivative_subnode_rest, diff_ops](const auto... seq) {
-//                 return std::make_tuple(multiply_ordered(
-//                     create_differential_operator(diff_ops, seq),
-//                     current_derivative_subnode_rest, NodesValue{})...);
-//             },
-//             multinomial_sequences);
-
-//         constexpr auto flags_next_derivatives = std::apply(
-//             [dnin](auto... next_derivative) {
-//                 return std::tuple_cat(
-//                     std::conditional_t<monomial_included(next_derivative,
-//                     dnin),
-//                                        std::tuple<std::true_type>,
-//                                        std::tuple<std::false_type>>{}...);
-//             },
-//             next_derivatives);
-
-//         constexpr auto next_derivatives_filtered =
-//             filter(next_derivatives, flags_next_derivatives);
-
-//         if constexpr (LOG_LEVEL > 0) {
-//             std::cout << "next_derivatives_filtered" << std::endl;
-//             std::cout << type_name2<decltype(next_derivatives_filtered)>()
-//                       << std::endl;
-//         }
-
-//         constexpr auto multinomial_sequences_filtered =
-//             filter(multinomial_sequences, flags_next_derivatives);
-
-//         static_assert(size(next_derivatives_filtered));
-
-//         double const this_val_derivative = get_differential_operator_value(
-//             current_node_der_loc, current_node_der, it, ia, bt, ba);
-
-//         constexpr auto bt_free =
-//             free_on_buffer(current_node_der_loc, current_node_der, bt);
-
-//         constexpr auto next_derivatives_size =
-//             std::tuple_size_v<decltype(next_derivatives_filtered)>;
-
-//         std::array<double, next_derivatives_size> next_derivatives_values;
-//         next_derivatives_values.fill(this_val_derivative);
-
-//         calc_add(multinomial_sequences_filtered, next_derivatives_values);
-
-//         constexpr auto locations =
-//             locate_new_vals(next_derivatives_filtered, it, bt_free);
-
-//         constexpr auto bt_new =
-//             update_buffer_types(next_derivatives_filtered, locations,
-//             bt_free);
-
-//         write_results(next_derivatives_filtered, next_derivatives_values,
-//                       locations, bt_new, ba, it, ia);
-
-//         if constexpr (LOG_VALS > 0) {
-//             std::cout.precision(std::numeric_limits<double>::max_digits10);
-
-//             std::cout << "buffer" << std::endl;
-//             for (std::size_t i = 0; i < ba.size(); i++) {
-//                 std::cout << ba[i] << ", ";
-//             }
-//             std::cout << std::endl;
-
-//             std::cout << "interface" << std::endl;
-//             for (std::size_t i = 0; i < ia.size(); i++) {
-//                 std::cout << ia[i] << ", ";
-//             }
-//             std::cout << std::endl;
-//         }
-
-//         constexpr auto flags_only_new = std::apply(
-//             [](auto... location) {
-//                 return std::tuple_cat(
-//                     std::conditional_t<
-//                         std::is_same_v<on_buffer_new_t, decltype(location)>,
-//                         std::tuple<std::true_type>,
-//                         std::tuple<std::false_type>>{}...);
-//             },
-//             locations);
-
-//         constexpr auto next_derivatives_new =
-//             filter(next_derivatives_filtered, flags_only_new);
-
-//         constexpr auto dnn_new =
-//             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
-
-//         return treat_nodes_add<N + 1>(pn, dnl, dn, ct, it, ia, bt_new, ba,
-//                                       dnn_new, dnin);
-//     }
-// }
-
-// template <std::size_t N = 0, class PrimalSubNode1, class PrimalSubNode2,
-//           class DerivativeNodeLocations, class DerivativeNodes, class
-//           CalcTree, class InterfaceTypes, class InterfaceArray, class
-//           BufferTypes, class BufferArray, class DerivativeNodeInputs>
-// auto treat_nodes_specialized(add_t<PrimalSubNode1, PrimalSubNode2> pn,
-//                              DerivativeNodeLocations dnl, DerivativeNodes dn,
-//                              CalcTree const &ct, InterfaceTypes it,
-//                              InterfaceArray &ia, BufferTypes bt,
-//                              BufferArray &ba, DerivativeNodeInputs dnin) {
-//     using NodesValue = CalcTree::ValuesTupleInverse;
-//     constexpr auto ordered_pair = detail::sort_pair(
-//         std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
-
-//     return treat_nodes_add(ordered_pair, dnl, dn, ct, it, ia, bt, ba,
-//                            std::tuple<>{}, dnin);
-// }
+        return treat_nodes_mul_buffer_size<CalcTree, ResultAdd,
+                                           decltype(bt_new), MaxOrder, N + 1>(
+            pn, dnl, dn, it, dnn_new, dnin);
+    }
+}
 
 template <class CalcTree, std::size_t Result, class BufferTypes,
           class PrimalSubNode1, class PrimalSubNode2,
           class DerivativeNodeLocations, class DerivativeNodes,
           class InterfaceTypes, class DerivativeNodeInputs>
 constexpr auto treat_nodes_specialized_buffer_size(
-    add_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
-    DerivativeNodeLocations /* dnl */, DerivativeNodes /* dn */,
-    InterfaceTypes /* it */, DerivativeNodeInputs /* dnin */) {
+    mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodeLocations dnl,
+    DerivativeNodes dn, InterfaceTypes it, DerivativeNodeInputs dnin) {
 
     if constexpr (LOG) {
         std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
         std::cout << Result << std::endl;
     }
 
-    // using NodesValue = CalcTree::ValuesTupleInverse;
-    // constexpr auto ordered_pair = detail::sort_pair(
-    //     std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
+    using NodesValue = CalcTree::ValuesTupleInverse;
+    constexpr auto ordered_pair = detail::sort_pair(
+        std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
 
-    // return treat_nodes_add(ordered_pair, dnl, dn, ct, it, ia, bt, ba,
-    //                        std::tuple<>{}, dnin);
-    return std::tuple<std::tuple<>, std::tuple<>,
-                      std::integral_constant<std::size_t, 7>>{};
+    constexpr auto MaxOrder = detail::max_orders(dnin);
+
+    return treat_nodes_mul_buffer_size<CalcTree, Result, BufferTypes, MaxOrder>(
+        ordered_pair, dnl, dn, it, std::tuple<>{}, dnin);
+}
+
+template <class CalcTree, std::size_t Result, class BufferTypes,
+          std::size_t N = 0, class PrimalSubNodeOrdered1,
+          class PrimalSubNodeOrdered2, class DerivativeNodeLocations,
+          class DerivativeNodes, class InterfaceTypes, class DerivativeNodeNew,
+          class DerivativeNodeInputs>
+constexpr auto treat_nodes_add_buffer_size(
+    std::tuple<PrimalSubNodeOrdered1, PrimalSubNodeOrdered2> pn,
+    DerivativeNodeLocations dnl, DerivativeNodes dn, InterfaceTypes it,
+    DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
+
+    if constexpr (N == std::tuple_size_v<DerivativeNodeLocations>) {
+        return std::make_tuple(BufferTypes{}, dnn,
+                               std::integral_constant<std::size_t, Result>{});
+
+    } else {
+        constexpr auto current_node_der = std::get<N>(dn);
+
+        if constexpr (LOG) {
+            std::cout << "treating derivative tree node" << std::endl;
+            std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+        }
+
+        constexpr auto current_node_der_loc = std::get<N>(dnl);
+        constexpr auto current_derivative_subnode_rest = tail(current_node_der);
+        constexpr auto pow = get_power(head(current_node_der));
+
+        constexpr auto multinomial_sequences = MultinomialSequences<2, pow>();
+        constexpr auto diff_ops = std::make_tuple(d(PrimalSubNodeOrdered1{}),
+                                                  d(PrimalSubNodeOrdered2{}));
+
+        using NodesValue = CalcTree::ValuesTupleInverse;
+
+        constexpr auto next_derivatives = std::apply(
+            [current_derivative_subnode_rest, diff_ops](const auto... seq) {
+                return std::make_tuple(multiply_ordered(
+                    create_differential_operator(diff_ops, seq),
+                    current_derivative_subnode_rest, NodesValue{})...);
+            },
+            multinomial_sequences);
+
+        if constexpr (LOG) {
+            std::cout << "next_derivatives" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
+        }
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin](auto... next_derivative) {
+                return std::tuple_cat(
+                    std::conditional_t<monomial_included(next_derivative, dnin),
+                                       std::tuple<std::true_type>,
+                                       std::tuple<std::false_type>>{}...);
+            },
+            next_derivatives);
+
+        if constexpr (LOG) {
+            std::cout << "flags_next_derivatives" << std::endl;
+            std::cout << type_name2<decltype(flags_next_derivatives)>()
+                      << std::endl;
+        }
+
+        constexpr auto next_derivatives_filtered =
+            filter(next_derivatives, flags_next_derivatives);
+
+        if constexpr (LOG) {
+            std::cout << "next_derivatives_filtered" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives_filtered)>()
+                      << std::endl;
+        }
+
+        constexpr auto multinomial_sequences_filtered =
+            filter(multinomial_sequences, flags_next_derivatives);
+
+        static_assert(size(next_derivatives_filtered));
+
+        constexpr auto bt_free = free_on_buffer_size(
+            current_node_der_loc, current_node_der, BufferTypes{});
+        constexpr auto ResultFree = std::max(Result, size(bt_free));
+
+        if constexpr (LOG) {
+            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+            std::cout << ResultFree << std::endl;
+            std::cout << "bt_free" << std::endl;
+            std::cout << type_name2<decltype(bt_free)>() << std::endl;
+        }
+
+        constexpr auto locations =
+            locate_new_vals(next_derivatives_filtered, it, bt_free);
+
+        if constexpr (LOG) {
+            std::cout << "locations" << std::endl;
+            std::cout << type_name2<decltype(locations)>() << std::endl;
+        }
+
+        constexpr auto bt_new = update_buffer_types_size(
+            next_derivatives_filtered, locations, bt_free);
+
+        if constexpr (LOG) {
+            std::cout << "bt_new" << std::endl;
+            std::cout << type_name2<decltype(bt_new)>() << std::endl;
+        }
+
+        constexpr auto ResultAdd = std::max(ResultFree, size(bt_new));
+
+        if constexpr (LOG) {
+            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+            std::cout << ResultAdd << std::endl;
+        }
+
+        constexpr auto flags_only_new = std::apply(
+            [](auto... location) {
+                return std::tuple_cat(
+                    std::conditional_t<
+                        std::is_same_v<on_buffer_new_t, decltype(location)>,
+                        std::tuple<std::true_type>,
+                        std::tuple<std::false_type>>{}...);
+            },
+            locations);
+
+        constexpr auto next_derivatives_new =
+            filter(next_derivatives_filtered, flags_only_new);
+
+        constexpr auto dnn_new =
+            merge_sorted2(next_derivatives_new, dnn, NodesValue{});
+
+        return treat_nodes_add_buffer_size<CalcTree, ResultAdd,
+                                           decltype(bt_new), N + 1>(
+            pn, dnl, dn, it, dnn_new, dnin);
+    }
+}
+
+template <class CalcTree, std::size_t Result, class BufferTypes,
+          class PrimalSubNode1, class PrimalSubNode2,
+          class DerivativeNodeLocations, class DerivativeNodes,
+          class InterfaceTypes, class DerivativeNodeInputs>
+constexpr auto treat_nodes_specialized_buffer_size(
+    add_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodeLocations dnl,
+    DerivativeNodes dn, InterfaceTypes it, DerivativeNodeInputs dnin) {
+
+    if constexpr (LOG) {
+        std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
+        std::cout << Result << std::endl;
+    }
+
+    using NodesValue = CalcTree::ValuesTupleInverse;
+    constexpr auto ordered_pair = detail::sort_pair(
+        std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
+
+    return treat_nodes_add_buffer_size<CalcTree, Result, BufferTypes>(
+        ordered_pair, dnl, dn, it, std::tuple<>{}, dnin);
 }
 
 template <std::size_t N, class CalcTree, std::size_t Result, class BufferTypes,
@@ -447,21 +433,7 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
         }
 
         static_assert(size(next_derivatives_filtered));
-        // constexpr auto next_derivatives_size =
-        //     std::tuple_size_v<decltype(next_derivatives_filtered)>;
 
-        // std::array<double, next_derivatives_size> next_derivatives_values;
-
-        // if constexpr (pow > PrevOrder) {
-        //     elevate_univariate<PrevOrder, pow>(ua, ua_elevated);
-        // }
-
-        // copy_filtered_inverted(ua_elevated, next_derivatives_values,
-        //                        flags_next_derivatives);
-
-        // double const this_val_derivative = get_differential_operator_value(
-        //     current_node_der_loc, current_node_der, it, ia, bt, ba);
-        // constexpr auto NewResult = free_on_buffer_size(current_node_der_loc);
         constexpr auto bt_free = free_on_buffer_size(
             current_node_der_loc, current_node_der, BufferTypes{});
         constexpr auto ResultFree = std::max(Result, size(bt_free));
@@ -472,10 +444,6 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             std::cout << "bt_free" << std::endl;
             std::cout << type_name2<decltype(bt_free)>() << std::endl;
         }
-
-        // for (std::size_t i = 0; i < next_derivatives_size; i++) {
-        //     next_derivatives_values[i] *= this_val_derivative;
-        // }
 
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
@@ -510,15 +478,31 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             },
             locations);
 
+        if constexpr (LOG) {
+            std::cout << "flags_only_new" << std::endl;
+            std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
+        }
+
         constexpr auto next_derivatives_new =
             filter(next_derivatives_filtered, flags_only_new);
+
+        if constexpr (LOG) {
+            std::cout << "next_derivatives_new" << std::endl;
+            std::cout << type_name2<decltype(next_derivatives_new)>()
+                      << std::endl;
+        }
 
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
+        if constexpr (LOG) {
+            std::cout << "dnn_new" << std::endl;
+            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+        }
+
         return treat_nodes_univariate_buffer_size<currentN, CalcTree, ResultAdd,
-                                                  BufferTypes, MaxOrder>(
-            pn, dnl, dn, it, dnn, dnin);
+                                                  decltype(bt_new), MaxOrder>(
+            pn, dnl, dn, it, dnn_new, dnin);
     }
 }
 
@@ -561,6 +545,13 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
         std::cout << Result << std::endl;
     }
 
+    if constexpr (LOG) {
+        std::cout << "dnl" << std::endl;
+        std::cout << type_name2<decltype(dnl)>() << std::endl;
+        std::cout << "dn" << std::endl;
+        std::cout << type_name2<decltype(dn)>() << std::endl;
+    }
+
     constexpr auto flags_derivative_nodes = std::apply(
         [nd](auto... type) {
             return std::tuple_cat(
@@ -570,11 +561,29 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
         },
         dn);
 
+    if constexpr (LOG) {
+        std::cout << "flags_derivative_nodes" << std::endl;
+        std::cout << type_name2<decltype(flags_derivative_nodes)>()
+                  << std::endl;
+    }
+
     constexpr auto separated_derivative_nodes_loc =
         separate(dnl, flags_derivative_nodes);
 
+    if constexpr (LOG) {
+        std::cout << "separated_derivative_nodes_loc" << std::endl;
+        std::cout << type_name2<decltype(separated_derivative_nodes_loc)>()
+                  << std::endl;
+    }
+
     constexpr auto separated_derivative_nodes =
         separate(dn, flags_derivative_nodes);
+
+    if constexpr (LOG) {
+        std::cout << "separated_derivative_nodes" << std::endl;
+        std::cout << type_name2<decltype(separated_derivative_nodes)>()
+                  << std::endl;
+    }
 
     constexpr auto return_pair =
         treat_nodes_specialized_buffer_size<CalcTree, Result, BufferTypes>(
@@ -583,6 +592,11 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
 
     constexpr auto bt_new = std::get<0>(return_pair);
     constexpr auto dn_new = std::get<1>(return_pair);
+    if constexpr (LOG) {
+        std::cout << "dn_new" << std::endl;
+        std::cout << type_name2<decltype(dn_new)>() << std::endl;
+    }
+
     constexpr auto new_size = std::get<2>(return_pair);
 
     if constexpr (LOG) {
@@ -598,10 +612,20 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
 
     constexpr auto dn_remaining = std::get<1>(separated_derivative_nodes);
 
+    if constexpr (LOG) {
+        std::cout << "dn_remaining" << std::endl;
+        std::cout << type_name2<decltype(dn_remaining)>() << std::endl;
+    }
+
     using NodesValue = CalcTree::ValuesTupleInverse;
 
     constexpr auto dn_new_and_remaining =
         merge_sorted2(dn_new, dn_remaining, NodesValue{});
+
+    if constexpr (LOG) {
+        std::cout << "dn_new_and_remaining" << std::endl;
+        std::cout << type_name2<decltype(dn_new_and_remaining)>() << std::endl;
+    }
 
     // todo better for multiple output nodes
     constexpr auto dnl_new =
@@ -644,6 +668,12 @@ constexpr auto backpropagate_buffer_size(DerivativeNodeLocation const dnl,
         constexpr auto dn_new = std::get<2>(res);
         constexpr auto new_size = std::get<3>(res)();
         if constexpr (LOG) {
+            std::cout << "dnl_new" << std::endl;
+            std::cout << type_name2<decltype(dnl_new)>() << std::endl;
+
+            std::cout << "dn_new" << std::endl;
+            std::cout << type_name2<decltype(dn_new)>() << std::endl;
+
             std::cout << "backpropagate_buffer_size" << std::endl;
             std::cout << new_size << std::endl;
         }
@@ -656,7 +686,8 @@ constexpr auto backpropagate_buffer_size(DerivativeNodeLocation const dnl,
         }
 
         return backpropagate_buffer_size<CalcTree, ResultNew, N + 1,
-                                         BufferTypes>(dnl, dn, it, dnin);
+                                         decltype(bt_new)>(dnl_new, dn_new, it,
+                                                           dnin);
     } else {
         return Result;
     }
