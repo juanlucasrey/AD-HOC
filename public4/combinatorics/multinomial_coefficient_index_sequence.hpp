@@ -21,9 +21,9 @@
 #ifndef ADHOC4_PARTITION_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP
 #define ADHOC4_PARTITION_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP
 
+#include "../utils/index_sequence.hpp"
 #include "factorial.hpp"
 #include "multinomial_coefficient.hpp"
-#include "utils/index_sequence.hpp"
 
 #include <array>
 #include <cstddef>

@@ -21,10 +21,10 @@
 #ifndef ADHOC4_TAPE_BUFFER_SIZE_HPP
 #define ADHOC4_TAPE_BUFFER_SIZE_HPP
 
+#include "dependency.hpp"
 #include "utils/tuple.hpp"
 
 #include <cstddef>
-#include <dependency.hpp>
 
 namespace adhoc4 {
 
