@@ -33,15 +33,16 @@
 #include "utils/tuple.hpp"
 #include "utils/univariate.hpp"
 
-#include <array>
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
 
+#define LOG false
+
+#if LOG
 #include "../tests4/type_name.hpp"
 #include <iostream>
-
-#define LOG false
+#endif
 
 namespace adhoc4::detail {
 
@@ -61,10 +62,10 @@ constexpr auto treat_nodes_mul_buffer_size(
     } else {
         constexpr auto current_node_der = std::get<N>(dn);
 
-        if constexpr (LOG) {
-            std::cout << "treating derivative tree node" << std::endl;
-            std::cout << type_name2<decltype(current_node_der)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treating derivative tree node" << std::endl;
+        std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+#endif
 
         constexpr auto current_node_der_loc = std::get<N>(dnl);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
@@ -98,11 +99,11 @@ constexpr auto treat_nodes_mul_buffer_size(
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives, flags_next_derivatives);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives_filtered" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives_filtered)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives_filtered" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives_filtered)>()
+                  << std::endl;
+#endif
 
         constexpr auto multinomial_sequences_filtered =
             filter(multinomial_sequences, flags_next_derivatives);
@@ -113,35 +114,35 @@ constexpr auto treat_nodes_mul_buffer_size(
             current_node_der_loc, current_node_der, BufferTypes{});
         constexpr auto ResultFree = std::max(Result, size(bt_free));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultFree << std::endl;
-            std::cout << "bt_free" << std::endl;
-            std::cout << type_name2<decltype(bt_free)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultFree << std::endl;
+        std::cout << "bt_free" << std::endl;
+        std::cout << type_name2<decltype(bt_free)>() << std::endl;
+#endif
 
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "locations" << std::endl;
-            std::cout << type_name2<decltype(locations)>() << std::endl;
-        }
+#if LOG
+        std::cout << "locations" << std::endl;
+        std::cout << type_name2<decltype(locations)>() << std::endl;
+#endif
 
         constexpr auto bt_new = update_buffer_types_size(
             next_derivatives_filtered, locations, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "bt_new" << std::endl;
-            std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "bt_new" << std::endl;
+        std::cout << type_name2<decltype(bt_new)>() << std::endl;
+#endif
 
         constexpr auto ResultAdd = std::max(ResultFree, size(bt_new));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultAdd << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultAdd << std::endl;
+#endif
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -153,27 +154,26 @@ constexpr auto treat_nodes_mul_buffer_size(
             },
             locations);
 
-        if constexpr (LOG) {
-            std::cout << "flags_only_new" << std::endl;
-            std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "flags_only_new" << std::endl;
+        std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
+#endif
 
         constexpr auto next_derivatives_new =
             filter(next_derivatives_filtered, flags_only_new);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives_new" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives_new)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives_new" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives_new)>() << std::endl;
+#endif
 
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
-        if constexpr (LOG) {
-            std::cout << "dnn_new" << std::endl;
-            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "dnn_new" << std::endl;
+        std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+#endif
 
         return treat_nodes_mul_buffer_size<CalcTree, ResultAdd,
                                            decltype(bt_new), MaxOrder, N + 1>(
@@ -189,10 +189,10 @@ constexpr auto treat_nodes_specialized_buffer_size(
     mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodeLocations dnl,
     DerivativeNodes dn, InterfaceTypes it, DerivativeNodeInputs dnin) {
 
-    if constexpr (LOG) {
-        std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
+#if LOG
+    std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+#endif
 
     using NodesValue = CalcTree::ValuesTupleInverse;
     constexpr auto ordered_pair = detail::sort_pair(
@@ -221,10 +221,10 @@ constexpr auto treat_nodes_add_buffer_size(
     } else {
         constexpr auto current_node_der = std::get<N>(dn);
 
-        if constexpr (LOG) {
-            std::cout << "treating derivative tree node" << std::endl;
-            std::cout << type_name2<decltype(current_node_der)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treating derivative tree node" << std::endl;
+        std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+#endif
 
         constexpr auto current_node_der_loc = std::get<N>(dnl);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
@@ -244,10 +244,10 @@ constexpr auto treat_nodes_add_buffer_size(
             },
             multinomial_sequences);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
+#endif
 
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
@@ -258,20 +258,20 @@ constexpr auto treat_nodes_add_buffer_size(
             },
             next_derivatives);
 
-        if constexpr (LOG) {
-            std::cout << "flags_next_derivatives" << std::endl;
-            std::cout << type_name2<decltype(flags_next_derivatives)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "flags_next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(flags_next_derivatives)>()
+                  << std::endl;
+#endif
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives, flags_next_derivatives);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives_filtered" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives_filtered)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives_filtered" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives_filtered)>()
+                  << std::endl;
+#endif
 
         constexpr auto multinomial_sequences_filtered =
             filter(multinomial_sequences, flags_next_derivatives);
@@ -282,35 +282,35 @@ constexpr auto treat_nodes_add_buffer_size(
             current_node_der_loc, current_node_der, BufferTypes{});
         constexpr auto ResultFree = std::max(Result, size(bt_free));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultFree << std::endl;
-            std::cout << "bt_free" << std::endl;
-            std::cout << type_name2<decltype(bt_free)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultFree << std::endl;
+        std::cout << "bt_free" << std::endl;
+        std::cout << type_name2<decltype(bt_free)>() << std::endl;
+#endif
 
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "locations" << std::endl;
-            std::cout << type_name2<decltype(locations)>() << std::endl;
-        }
+#if LOG
+        std::cout << "locations" << std::endl;
+        std::cout << type_name2<decltype(locations)>() << std::endl;
+#endif
 
         constexpr auto bt_new = update_buffer_types_size(
             next_derivatives_filtered, locations, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "bt_new" << std::endl;
-            std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "bt_new" << std::endl;
+        std::cout << type_name2<decltype(bt_new)>() << std::endl;
+#endif
 
         constexpr auto ResultAdd = std::max(ResultFree, size(bt_new));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultAdd << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultAdd << std::endl;
+#endif
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -342,10 +342,10 @@ constexpr auto treat_nodes_specialized_buffer_size(
     add_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodeLocations dnl,
     DerivativeNodes dn, InterfaceTypes it, DerivativeNodeInputs dnin) {
 
-    if constexpr (LOG) {
-        std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
+#if LOG
+    std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+#endif
 
     using NodesValue = CalcTree::ValuesTupleInverse;
     constexpr auto ordered_pair = detail::sort_pair(
@@ -368,10 +368,10 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
                                                   DerivativeNodeNew dnn,
                                                   DerivativeNodeInputs dnin) {
 
-    if constexpr (LOG) {
-        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
+#if LOG
+    std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+#endif
 
     if constexpr (N == 0) {
         return std::make_tuple(BufferTypes{}, dnn,
@@ -380,10 +380,10 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
         constexpr std::size_t currentN = N - 1;
         constexpr auto current_node_der = std::get<currentN>(dn);
 
-        if constexpr (LOG) {
-            std::cout << "treating derivative tree node" << std::endl;
-            std::cout << type_name2<decltype(current_node_der)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treating derivative tree node" << std::endl;
+        std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+#endif
 
         constexpr auto current_node_der_loc = std::get<currentN>(dnl);
         constexpr auto current_derivative_subnode = head(current_node_der);
@@ -403,10 +403,10 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             },
             expansion_types);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
+#endif
 
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
@@ -417,20 +417,20 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             },
             next_derivatives);
 
-        if constexpr (LOG) {
-            std::cout << "flags_next_derivatives" << std::endl;
-            std::cout << type_name2<decltype(flags_next_derivatives)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "flags_next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(flags_next_derivatives)>()
+                  << std::endl;
+#endif
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives, flags_next_derivatives);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives_filtered" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives_filtered)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives_filtered" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives_filtered)>()
+                  << std::endl;
+#endif
 
         static_assert(size(next_derivatives_filtered));
 
@@ -438,35 +438,35 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             current_node_der_loc, current_node_der, BufferTypes{});
         constexpr auto ResultFree = std::max(Result, size(bt_free));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultFree << std::endl;
-            std::cout << "bt_free" << std::endl;
-            std::cout << type_name2<decltype(bt_free)>() << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultFree << std::endl;
+        std::cout << "bt_free" << std::endl;
+        std::cout << type_name2<decltype(bt_free)>() << std::endl;
+#endif
 
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "locations" << std::endl;
-            std::cout << type_name2<decltype(locations)>() << std::endl;
-        }
+#if LOG
+        std::cout << "locations" << std::endl;
+        std::cout << type_name2<decltype(locations)>() << std::endl;
+#endif
 
         constexpr auto bt_new = update_buffer_types_size(
             next_derivatives_filtered, locations, bt_free);
 
-        if constexpr (LOG) {
-            std::cout << "bt_new" << std::endl;
-            std::cout << type_name2<decltype(bt_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "bt_new" << std::endl;
+        std::cout << type_name2<decltype(bt_new)>() << std::endl;
+#endif
 
         constexpr auto ResultAdd = std::max(ResultFree, size(bt_new));
 
-        if constexpr (LOG) {
-            std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
-            std::cout << ResultAdd << std::endl;
-        }
+#if LOG
+        std::cout << "treat_nodes_univariate_buffer_size" << std::endl;
+        std::cout << ResultAdd << std::endl;
+#endif
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -478,27 +478,26 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
             },
             locations);
 
-        if constexpr (LOG) {
-            std::cout << "flags_only_new" << std::endl;
-            std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "flags_only_new" << std::endl;
+        std::cout << type_name2<decltype(flags_only_new)>() << std::endl;
+#endif
 
         constexpr auto next_derivatives_new =
             filter(next_derivatives_filtered, flags_only_new);
 
-        if constexpr (LOG) {
-            std::cout << "next_derivatives_new" << std::endl;
-            std::cout << type_name2<decltype(next_derivatives_new)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "next_derivatives_new" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives_new)>() << std::endl;
+#endif
 
         constexpr auto dnn_new =
             merge_sorted2(next_derivatives_new, dnn, NodesValue{});
 
-        if constexpr (LOG) {
-            std::cout << "dnn_new" << std::endl;
-            std::cout << type_name2<decltype(dnn_new)>() << std::endl;
-        }
+#if LOG
+        std::cout << "dnn_new" << std::endl;
+        std::cout << type_name2<decltype(dnn_new)>() << std::endl;
+#endif
 
         return treat_nodes_univariate_buffer_size<currentN, CalcTree, ResultAdd,
                                                   decltype(bt_new), MaxOrder>(
@@ -516,10 +515,10 @@ constexpr auto treat_nodes_specialized_buffer_size(Univariate<PrimalSubNode> pn,
                                                    InterfaceTypes it,
                                                    DerivativeNodeInputs dnin) {
 
-    if constexpr (LOG) {
-        std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
+#if LOG
+    std::cout << "treat_nodes_specialized_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+#endif
 
     using PrimalNode = Univariate<PrimalSubNode>;
     constexpr auto MaxOrder = detail::max_orders(dnin);
@@ -540,17 +539,14 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
                                       DerivativeNodes dn, InterfaceTypes it,
                                       DerivativeNodeInputs dnin) {
 
-    if constexpr (LOG) {
-        std::cout << "treat_node_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
-
-    if constexpr (LOG) {
-        std::cout << "dnl" << std::endl;
-        std::cout << type_name2<decltype(dnl)>() << std::endl;
-        std::cout << "dn" << std::endl;
-        std::cout << type_name2<decltype(dn)>() << std::endl;
-    }
+#if LOG
+    std::cout << "treat_node_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+    std::cout << "dnl" << std::endl;
+    std::cout << type_name2<decltype(dnl)>() << std::endl;
+    std::cout << "dn" << std::endl;
+    std::cout << type_name2<decltype(dn)>() << std::endl;
+#endif
 
     constexpr auto flags_derivative_nodes = std::apply(
         [nd](auto... type) {
@@ -561,29 +557,28 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
         },
         dn);
 
-    if constexpr (LOG) {
-        std::cout << "flags_derivative_nodes" << std::endl;
-        std::cout << type_name2<decltype(flags_derivative_nodes)>()
-                  << std::endl;
-    }
+#if LOG
+    std::cout << "flags_derivative_nodes" << std::endl;
+    std::cout << type_name2<decltype(flags_derivative_nodes)>() << std::endl;
+#endif
 
     constexpr auto separated_derivative_nodes_loc =
         separate(dnl, flags_derivative_nodes);
 
-    if constexpr (LOG) {
-        std::cout << "separated_derivative_nodes_loc" << std::endl;
-        std::cout << type_name2<decltype(separated_derivative_nodes_loc)>()
-                  << std::endl;
-    }
+#if LOG
+    std::cout << "separated_derivative_nodes_loc" << std::endl;
+    std::cout << type_name2<decltype(separated_derivative_nodes_loc)>()
+              << std::endl;
+#endif
 
     constexpr auto separated_derivative_nodes =
         separate(dn, flags_derivative_nodes);
 
-    if constexpr (LOG) {
-        std::cout << "separated_derivative_nodes" << std::endl;
-        std::cout << type_name2<decltype(separated_derivative_nodes)>()
-                  << std::endl;
-    }
+#if LOG
+    std::cout << "separated_derivative_nodes" << std::endl;
+    std::cout << type_name2<decltype(separated_derivative_nodes)>()
+              << std::endl;
+#endif
 
     constexpr auto return_pair =
         treat_nodes_specialized_buffer_size<CalcTree, Result, BufferTypes>(
@@ -592,40 +587,42 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
 
     constexpr auto bt_new = std::get<0>(return_pair);
     constexpr auto dn_new = std::get<1>(return_pair);
-    if constexpr (LOG) {
-        std::cout << "dn_new" << std::endl;
-        std::cout << type_name2<decltype(dn_new)>() << std::endl;
-    }
+
+#if LOG
+    std::cout << "dn_new" << std::endl;
+    std::cout << type_name2<decltype(dn_new)>() << std::endl;
+#endif
 
     constexpr auto new_size = std::get<2>(return_pair);
 
-    if constexpr (LOG) {
-        std::cout << "treat_node_buffer_size" << std::endl;
-        std::cout << new_size() << std::endl;
-    }
+#if LOG
+    std::cout << "treat_node_buffer_size" << std::endl;
+    std::cout << new_size() << std::endl;
+#endif
 
     constexpr auto ResultNew = std::max(Result, new_size());
-    if constexpr (LOG) {
-        std::cout << "treat_node_buffer_size" << std::endl;
-        std::cout << ResultNew << std::endl;
-    }
+
+#if LOG
+    std::cout << "treat_node_buffer_size" << std::endl;
+    std::cout << ResultNew << std::endl;
+#endif
 
     constexpr auto dn_remaining = std::get<1>(separated_derivative_nodes);
 
-    if constexpr (LOG) {
-        std::cout << "dn_remaining" << std::endl;
-        std::cout << type_name2<decltype(dn_remaining)>() << std::endl;
-    }
+#if LOG
+    std::cout << "dn_remaining" << std::endl;
+    std::cout << type_name2<decltype(dn_remaining)>() << std::endl;
+#endif
 
     using NodesValue = CalcTree::ValuesTupleInverse;
 
     constexpr auto dn_new_and_remaining =
         merge_sorted2(dn_new, dn_remaining, NodesValue{});
 
-    if constexpr (LOG) {
-        std::cout << "dn_new_and_remaining" << std::endl;
-        std::cout << type_name2<decltype(dn_new_and_remaining)>() << std::endl;
-    }
+#if LOG
+    std::cout << "dn_new_and_remaining" << std::endl;
+    std::cout << type_name2<decltype(dn_new_and_remaining)>() << std::endl;
+#endif
 
     // todo better for multiple output nodes
     constexpr auto dnl_new =
@@ -644,20 +641,19 @@ constexpr auto backpropagate_buffer_size(DerivativeNodeLocation const dnl,
                                          DerivativeNodeInputs dnin)
     -> std::size_t {
 
-    if constexpr (LOG) {
-        std::cout << "backpropagate_buffer_size" << std::endl;
-        std::cout << Result << std::endl;
-    }
+#if LOG
+    std::cout << "backpropagate_buffer_size" << std::endl;
+    std::cout << Result << std::endl;
+#endif
 
     using PrimalNodes = CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {
-        if constexpr (LOG) {
-            std::cout << "treating calc tree node" << std::endl;
-            std::cout << type_name2<decltype(current_primal_node)>()
-                      << std::endl;
-        }
+#if LOG
+        std::cout << "treating calc tree node" << std::endl;
+        std::cout << type_name2<decltype(current_primal_node)>() << std::endl;
+#endif
 
         constexpr auto res =
             treat_node_buffer_size<CalcTree, Result, BufferTypes>(
@@ -667,23 +663,23 @@ constexpr auto backpropagate_buffer_size(DerivativeNodeLocation const dnl,
         constexpr auto dnl_new = std::get<1>(res);
         constexpr auto dn_new = std::get<2>(res);
         constexpr auto new_size = std::get<3>(res)();
-        if constexpr (LOG) {
-            std::cout << "dnl_new" << std::endl;
-            std::cout << type_name2<decltype(dnl_new)>() << std::endl;
+#if LOG
+        std::cout << "dnl_new" << std::endl;
+        std::cout << type_name2<decltype(dnl_new)>() << std::endl;
 
-            std::cout << "dn_new" << std::endl;
-            std::cout << type_name2<decltype(dn_new)>() << std::endl;
+        std::cout << "dn_new" << std::endl;
+        std::cout << type_name2<decltype(dn_new)>() << std::endl;
 
-            std::cout << "backpropagate_buffer_size" << std::endl;
-            std::cout << new_size << std::endl;
-        }
+        std::cout << "backpropagate_buffer_size" << std::endl;
+        std::cout << new_size << std::endl;
+#endif
 
         constexpr auto ResultNew = std::max(Result, new_size);
 
-        if constexpr (LOG) {
-            std::cout << "backpropagate_buffer_size" << std::endl;
-            std::cout << ResultNew << std::endl;
-        }
+#if LOG
+        std::cout << "backpropagate_buffer_size" << std::endl;
+        std::cout << ResultNew << std::endl;
+#endif
 
         return backpropagate_buffer_size<CalcTree, ResultNew, N + 1,
                                          decltype(bt_new)>(dnl_new, dn_new, it,

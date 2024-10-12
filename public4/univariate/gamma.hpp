@@ -31,7 +31,10 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <limits>
 #include <numbers>
+#include <utility>
 
 namespace adhoc4 {
 
@@ -49,7 +52,7 @@ template <DoubleAsTemplateArg<double> F> struct Double {
 };
 
 template <class NProd, std::size_t N, std::size_t End, std::size_t Idx = 0>
-constexpr auto Poly_Zeta(double x_inv_2, double b, double result) {
+constexpr auto Poly_Zeta(double x_inv_2, double b, double result) -> double {
 
     constexpr double convergence = std::numeric_limits<double>::epsilon() * 0.5;
     // Expansion coefficients
@@ -91,7 +94,7 @@ constexpr auto Poly_Zeta(double x_inv_2, double b, double result) {
     }
 }
 
-template <std::size_t N> double inline zeta(double x) {
+template <std::size_t N> inline auto zeta(double x) -> double {
 
     constexpr double convergence = std::numeric_limits<double>::epsilon() * 0.5;
 
@@ -163,7 +166,7 @@ inline void cotd(double thisv, double /* in */,
 }
 
 template <std::size_t End, std::size_t Idx = 0>
-constexpr void Poly_Aux(double &result, double in) {
+inline void Poly_Aux(double &result, double in) {
     constexpr std::array<double, 7> coeffs = {
         8.33333333333333333333E-2, -2.10927960927960927961E-2,
         7.57575757575757575758E-3, -4.16666666666666666667E-3,
@@ -177,13 +180,13 @@ constexpr void Poly_Aux(double &result, double in) {
     }
 }
 
-template <std::size_t End> constexpr auto Poly(double in) {
+template <std::size_t End> constexpr auto Poly(double in) -> double {
     double result = 0.;
     Poly_Aux<End>(result, in);
     return result;
 }
 
-double inline digamma(double x) {
+inline auto digamma(double x) -> double {
     double w = 0.0;
     while (x < 10.0) {
         w += 1.0 / x;
@@ -239,9 +242,8 @@ namespace detail {
 
 template <std::size_t Current, std::size_t CoeffIdx = 0, std::size_t Order,
           std::size_t Output>
-constexpr auto tgamma_calc(double thisv,
-                           std::array<double, Order> const &lgamma,
-                           std::array<double, Output> &res) {
+inline void tgamma_calc(double thisv, std::array<double, Order> const &lgamma,
+                        std::array<double, Output> &res) {
 
     if constexpr (CoeffIdx == 0) {
         res[Current] = thisv * lgamma[Current];
@@ -263,8 +265,8 @@ constexpr auto tgamma_calc(double thisv,
 }
 
 template <std::size_t Idx = 0, std::size_t Order, std::size_t Output>
-constexpr auto tgamma_aux(double thisv, std::array<double, Order> const &lgamma,
-                          std::array<double, Output> &res) {
+inline void tgamma_aux(double thisv, std::array<double, Order> const &lgamma,
+                       std::array<double, Output> &res) {
 
     tgamma_calc<Idx>(thisv, lgamma, res);
 

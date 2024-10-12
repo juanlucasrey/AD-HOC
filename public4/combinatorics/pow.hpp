@@ -21,7 +21,7 @@
 #ifndef ADHOC4_COMBINATORICS_POW_HPP
 #define ADHOC4_COMBINATORICS_POW_HPP
 
-#include <cmath>
+#include <cstddef>
 
 namespace adhoc4::detail {
 

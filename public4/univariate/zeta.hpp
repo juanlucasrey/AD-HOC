@@ -26,19 +26,20 @@
 #include "../combinatorics/integer_partition_index_sequence.hpp"
 #include "../combinatorics/partition_function.hpp"
 #include "../utils/index_sequence.hpp"
+#include "gamma.hpp"
 #include "sincos.hpp"
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <numbers>
-
-#include <vector>
 
 namespace adhoc4 {
 
 namespace detail {
 
-template <std::size_t n> constexpr inline auto zeta_borwein_coeffs() -> auto {
+template <std::size_t n>
+constexpr auto zeta_borwein_coeffs() -> std::array<double, n> {
     std::array<double, n + 1> d;
     double prev = 0;
     for (std::size_t i = 0; i < (n + 1); i++) {
@@ -91,9 +92,9 @@ template <std::size_t n> inline auto zeta_borwein(double x) -> double {
 
 template <std::size_t End, std::size_t CoeffIdx = 0, std::size_t Order,
           std::size_t... I>
-void zeta4dd_aux3(std::index_sequence<I...> current, double &res,
-                  std::array<double, Order> const &buff1,
-                  std::array<double, Order> const &buff2) {
+inline void zeta4dd_aux3(std::index_sequence<I...> current, double &res,
+                         std::array<double, Order> const &buff1,
+                         std::array<double, Order> const &buff2) {
     constexpr auto sum_v = sum(current);
     constexpr auto coeff = BellCoeff(current);
     if constexpr (coeff == 1) {
@@ -111,17 +112,17 @@ void zeta4dd_aux3(std::index_sequence<I...> current, double &res,
 }
 
 template <std::size_t Idx = 0, std::size_t Size>
-void zeta4dd_aux2(double &res, std::array<double, Size> const &buff1,
-                  std::array<double, Size> const &buff2) {
+inline void zeta4dd_aux2(double &res, std::array<double, Size> const &buff1,
+                         std::array<double, Size> const &buff2) {
     res = 0;
     constexpr auto first = FirstPartitionIS<Idx + 1>();
     zeta4dd_aux3<partition_function(Idx + 1)>(first, res, buff1, buff2);
 }
 
 template <std::size_t Idx = 0, std::size_t Order, std::size_t Output>
-void zeta4dd_aux(std::array<double, Output> &res,
-                 std::array<double, Order> const &buff1,
-                 std::array<double, Order> const &buff2) {
+inline void zeta4dd_aux(std::array<double, Output> &res,
+                        std::array<double, Order> const &buff1,
+                        std::array<double, Order> const &buff2) {
     zeta4dd_aux2<Idx>(res[Idx], buff1, buff2);
     if constexpr ((Idx + 1) < Order) {
         zeta4dd_aux<Idx + 1>(res, buff1, buff2);
@@ -129,9 +130,9 @@ void zeta4dd_aux(std::array<double, Output> &res,
 }
 
 template <std::size_t End, std::size_t CoeffIdx = 0, std::size_t Order>
-void mult_aux(double &res, double rightval,
-              std::array<double, Order> const &right, double leftval,
-              std::array<double, Order> const &left) {
+inline void mult_aux(double &res, double rightval,
+                     std::array<double, Order> const &right, double leftval,
+                     std::array<double, Order> const &left) {
     if constexpr (CoeffIdx == 0) {
         res += rightval * left[End - 1];
     } else if constexpr (CoeffIdx == End) {
@@ -146,9 +147,9 @@ void mult_aux(double &res, double rightval,
 }
 
 template <std::size_t Idx = 0, std::size_t Order, std::size_t Output>
-void mult(std::array<double, Output> &res, double rightval,
-          std::array<double, Order> const &right, double leftval,
-          std::array<double, Order> const &left) {
+inline void mult(std::array<double, Output> &res, double rightval,
+                 std::array<double, Order> const &right, double leftval,
+                 std::array<double, Order> const &left) {
     static_assert(Order <= Output);
     res[Idx] = 0;
     mult_aux<Idx + 1>(res[Idx], rightval, right, leftval, left);

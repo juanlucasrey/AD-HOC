@@ -33,10 +33,8 @@
 #include "utils/tuple.hpp"
 
 #include <array>
+#include <cstddef>
 #include <tuple>
-
-#include "../tests4/type_name.hpp"
-#include <iostream>
 
 namespace adhoc4 {
 
@@ -204,26 +202,45 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
-        // constexpr auto nodes_derivative =
-        //     expand_tree(nodes_value, ordered_roots,
-        //     output_derivatives_ordered);
-
-        // constexpr auto buffer_size = 30;
 
         constexpr auto buffer_size =
             detail::backpropagate_buffer_size<CalcTree>(
                 node_derivative_location, outputs_sorted, ordered_derivatives,
                 inputs);
 
-        // constexpr auto buffer_size = 40;
-        // constexpr auto buffer_size = tape_buffer_size(
-        //     output_derivatives_ordered, ordered_inputs, primal_nodes);
-
-        // std::cout << buffer_size << std::endl;
-
         std::array<double, buffer_size> buffer{};
         constexpr auto buffer_types =
             std::tuple_cat(std::array<detail::available_t, buffer_size>{});
+
+        detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
+                                  ordered_derivatives, this->m_derivatives,
+                                  buffer_types, buffer, inputs);
+    }
+
+    template <std::size_t BufferSize, class CalcTree>
+    inline void backpropagate2(CalcTree const &ct) {
+
+        using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
+        constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
+
+        constexpr auto ordered_derivatives =
+            std::tuple_cat(std::make_tuple(detail::order_differential_operator(
+                InputsAndOutputsDers{}, primal_nodes_inverted))...);
+
+        constexpr auto inputs =
+            detail::select_root_derivatives(ordered_derivatives);
+        constexpr auto outputs =
+            detail::select_non_root_derivatives(ordered_derivatives);
+
+        constexpr auto outputs_sorted =
+            sort_differential_operators(outputs, primal_nodes_inverted);
+
+        constexpr auto node_derivative_location = std::tuple_cat(
+            std::array<detail::on_interface_t, size(outputs_sorted)>{});
+
+        std::array<double, BufferSize> buffer{};
+        constexpr auto buffer_types =
+            std::tuple_cat(std::array<detail::available_t, BufferSize>{});
 
         detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
                                   ordered_derivatives, this->m_derivatives,

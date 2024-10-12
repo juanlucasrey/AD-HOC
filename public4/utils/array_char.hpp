@@ -22,21 +22,23 @@
 #define ADHOC4_UTILS_ARRAY_CHAR_HPP
 
 #include <array>
-#include <cmath>
+#include <cstddef>
 
 namespace adhoc4 {
 
 namespace detail {
+
 template <class IT, class Intpu1, class... Input>
-inline constexpr void concatenate_aux(IT it, Intpu1 in, Input... ins) {
+constexpr void concatenate_aux(IT it, Intpu1 in, Input... ins) {
     it = std::copy_n(in.data(), in.size(), it);
     if constexpr (sizeof...(Input)) {
         concatenate_aux(it, ins...);
     }
 }
+
 } // namespace detail
 
-template <class... Input> inline constexpr auto concatenate(Input... ins) {
+template <class... Input> constexpr auto concatenate(Input... ins) {
     constexpr std::size_t N = (ins.size() + ...);
     std::array<char, N> result = {};
     detail::concatenate_aux(result.begin(), ins...);

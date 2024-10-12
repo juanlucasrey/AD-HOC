@@ -21,10 +21,10 @@
 #ifndef ADHOC4_UTILS_TUPLE_HPP
 #define ADHOC4_UTILS_TUPLE_HPP
 
-#include <array>
-#include <cmath>
 #include <concepts>
+#include <cstddef>
 #include <tuple>
+#include <type_traits>
 
 namespace adhoc4 {
 

@@ -22,7 +22,8 @@
 #define ADHOC4_COMBINATORICS_PASCAL_HPP
 
 #include <array>
-#include <cmath>
+#include <cstddef>
+#include <utility>
 
 namespace adhoc4 {
 

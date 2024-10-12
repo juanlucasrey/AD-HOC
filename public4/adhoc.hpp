@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <numbers>
 
 namespace adhoc4 {
@@ -626,7 +627,7 @@ template <size_t N> struct StringLiteral {
 template <detail::StringLiteral literal>
 struct double_t : public Base<double_t<literal>> {};
 
-#define ADHOC(x) constexpr double_t<#x> x
+#define ADHOC(x) constexpr adhoc4::double_t<#x> x
 
 } // namespace adhoc4
 

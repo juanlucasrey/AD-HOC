@@ -24,7 +24,8 @@
 #include "../combinatorics/pow.hpp"
 
 #include <array>
-#include <cmath>
+#include <cstddef>
+#include <utility>
 
 namespace adhoc4 {
 

@@ -27,13 +27,15 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <utility>
 
 namespace adhoc4 {
 
 namespace detail {
 
 template <std::size_t Idx, class IndexSequence>
-constexpr auto Multiply_aux(double &result, double tan2, IndexSequence i) {
+inline void Multiply_aux(double &result, double tan2, IndexSequence i) {
     result *= tan2;
     result += static_cast<double>(get<Idx - 1>(i));
 
@@ -44,7 +46,7 @@ constexpr auto Multiply_aux(double &result, double tan2, IndexSequence i) {
 
 template <int First, int... I>
 inline auto Multiply(double tan, double tan2,
-                     std::integer_sequence<int, First, I...> i) {
+                     std::integer_sequence<int, First, I...> i) -> double {
     auto result = static_cast<double>(get<i.size() - 1>(i));
     if constexpr (First != 0) {
         Multiply_aux<i.size() - 2>(result, tan2, i);

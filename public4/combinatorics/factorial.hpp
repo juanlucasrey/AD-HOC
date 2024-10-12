@@ -22,7 +22,6 @@
 #define ADHOC4_COMBINATORICS_FACTORIAL_HPP
 
 #include <array>
-#include <cmath>
 
 namespace adhoc4 {
 
