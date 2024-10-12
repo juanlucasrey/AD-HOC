@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(
   adhoc_test4
+  finite_differences.cpp
   utils/univariate.t.cpp
   utils/index_sequence.t.cpp
   combinatorics/multinomial_coefficient.t.cpp
@@ -18,7 +19,7 @@ add_executable(
   utils/tuple.t.cpp
   backpropagator.t.cpp
   black_scholes1.t.cpp
-  black_scholes2.t.cpp
+  # black_scholes2.t.cpp
   # black_scholes3.t.cpp
   backpropagator_tools.t.cpp
 )
@@ -35,6 +36,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unsafe-loop-optimizations -Wuseless-cast -Wlogical-op")
 endif()
 
+# if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+#   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fconstexpr-steps=1271242 -fconstexpr-depth=2300")
+# endif()
 
 target_include_directories(adhoc_test4 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public4)
 # target_include_directories(adhoc_test4 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public4 ../../boost_1_85_0)
