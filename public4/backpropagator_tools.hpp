@@ -407,14 +407,15 @@ constexpr auto multiply_differential_operator_aux(Single single, Many mult,
 
     if constexpr (id == id1) {
         return std::tuple_cat(
-            res, std::tuple<const der::d<order + order1, decltype(id1)>>{},
+            res,
+            std::tuple<der::d<order + order1, decltype(get_id(head(mult)))>>{},
             mult_tail);
     } else if constexpr (less_than_single(id, id1, nodes)) {
         return multiply_differential_operator_aux(
-            single, mult_tail, std::tuple_cat(res, std::make_tuple(mult_first)),
+            single, mult_tail, std::tuple_cat(res, std::make_tuple(head(mult))),
             nodes);
     } else {
-        return std::tuple_cat(res, std::tuple<const Single>{}, mult);
+        return std::tuple_cat(res, std::tuple<Single>{}, mult);
     }
 }
 

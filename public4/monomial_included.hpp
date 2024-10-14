@@ -447,7 +447,7 @@ constexpr auto compare_against_input(std::tuple<IndexSequences...> /* poly */,
 template <class... IndexSequences>
 constexpr auto any_sequence_is_zero(std::tuple<IndexSequences...> /* poly */)
     -> bool {
-    return (is_zero(IndexSequences{}) || ...);
+    return (all_equal_to<0U>(IndexSequences{}) || ...);
 }
 
 template <class TupleIndexSequence, class IndexSequence>

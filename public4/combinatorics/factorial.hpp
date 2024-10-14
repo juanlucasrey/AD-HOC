@@ -25,7 +25,7 @@
 
 namespace adhoc4 {
 
-inline constexpr double factorial(unsigned i) {
+constexpr double factorial(unsigned i) {
     constexpr std::array<double, 171> factorials = {
         1.0,
         1.0,

@@ -137,6 +137,11 @@ auto treat_nodes_mul(
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
 
+#if LOG_LEVEL
+        std::cout << "locations" << std::endl;
+        std::cout << type_name2<decltype(locations)>() << std::endl;
+#endif
+
         constexpr auto bt_new =
             update_buffer_types(next_derivatives_filtered, locations, bt_free);
 
@@ -376,6 +381,12 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto current_derivative_subnode = head(current_node_der);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
 
+#if LOG_LEVEL
+        std::cout << "current_derivative_subnode_rest" << std::endl;
+        std::cout << type_name2<decltype(current_derivative_subnode_rest)>()
+                  << std::endl;
+#endif
+
         constexpr auto pow = get_power(current_derivative_subnode);
         constexpr auto expansion_types =
             expand_univariate<PrimalSubNode, MaxOrder, pow>();
@@ -395,6 +406,11 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
             },
             expansion_types);
 
+#if LOG_LEVEL
+        std::cout << "next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(next_derivatives)>() << std::endl;
+#endif
+
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
                 return std::tuple_cat(
@@ -403,6 +419,12 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
                                        std::tuple<std::false_type>>{}...);
             },
             next_derivatives);
+
+#if LOG_LEVEL
+        std::cout << "flags_next_derivatives" << std::endl;
+        std::cout << type_name2<decltype(flags_next_derivatives)>()
+                  << std::endl;
+#endif
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives, flags_next_derivatives);
@@ -431,6 +453,11 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto bt_free =
             free_on_buffer(current_node_der_loc, current_node_der, bt);
 
+#if LOG_LEVEL
+        std::cout << "bt_free" << std::endl;
+        std::cout << type_name2<decltype(bt_free)>() << std::endl;
+#endif
+
         for (std::size_t i = 0; i < next_derivatives_size; i++) {
             next_derivatives_values[i] *= this_val_derivative;
         }
@@ -438,8 +465,18 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
         constexpr auto locations =
             locate_new_vals(next_derivatives_filtered, it, bt_free);
 
+#if LOG_LEVEL
+        std::cout << "locations" << std::endl;
+        std::cout << type_name2<decltype(locations)>() << std::endl;
+#endif
+
         constexpr auto bt_new =
             update_buffer_types(next_derivatives_filtered, locations, bt_free);
+
+#if LOG_LEVEL
+        std::cout << "bt_new" << std::endl;
+        std::cout << type_name2<decltype(bt_new)>() << std::endl;
+#endif
 
         write_results(next_derivatives_filtered, next_derivatives_values,
                       locations, bt_new, ba, it, ia);

@@ -41,7 +41,7 @@ TEST(BackPropagator, UnivariateLogExp) {
         EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
         EXPECT_NEAR(bp.get(d<3>(x)), 0., 1e-14);
         EXPECT_NEAR(bp.get(d<4>(x)), 0., 1e-14);
-        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-14);
+        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-13);
     }
 }
 
@@ -65,9 +65,9 @@ TEST(BackPropagator, UnivariateExpLog) {
 
         EXPECT_NEAR(bp.get(d(x)), 1., 1e-14);
         EXPECT_NEAR(bp.get(d<2>(x)), 0., 1e-14);
-        EXPECT_NEAR(bp.get(d<3>(x)), 0., 1e-14);
-        EXPECT_NEAR(bp.get(d<4>(x)), 0., 1e-13);
-        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-12);
+        EXPECT_NEAR(bp.get(d<3>(x)), 0., 1e-13);
+        EXPECT_NEAR(bp.get(d<4>(x)), 0., 1e-12);
+        EXPECT_NEAR(bp.get(d<5>(x)), 0., 1e-10);
     }
 }
 
@@ -80,6 +80,11 @@ TEST(BackPropagator2, UnivariateSingle) {
     ct.evaluate();
 
     BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x));
+
+    constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
+    static_assert(buffer_size == 0U);
+    // std::cout << buffer_size << std::endl;
+
     bp.set(d(res)) = 1.;
     bp.backpropagate(ct);
 
@@ -101,8 +106,8 @@ TEST(BackPropagator2, UnivariateSingle) {
     // print(taylor_coeff(f, x, 1.2, 3))
 
     EXPECT_NEAR(bp.get(d(x)), -0.267344347003539, 1e-14);
-    EXPECT_NEAR(bp.get(d<2>(x)), 0.320813216404247, 1e-14);
-    EXPECT_NEAR(bp.get(d<3>(x)), -0.167535790788885, 1e-14);
+    EXPECT_NEAR(bp.get(d<2>(x)), 0.64162643280849396, 1e-14);
+    EXPECT_NEAR(bp.get(d<3>(x)), -1.0052147447333071, 1e-14);
 }
 
 TEST(BackPropagator2, UnivariateDouble) {
@@ -114,6 +119,11 @@ TEST(BackPropagator2, UnivariateDouble) {
     ct.evaluate();
 
     BackPropagator bp(d(res), d(x), d<2>(x), d<3>(x));
+
+    constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
+    static_assert(buffer_size == 3U);
+    // std::cout << buffer_size << std::endl;
+
     bp.set(d(res)) = 1.;
     bp.backpropagate(ct);
 
@@ -135,8 +145,8 @@ TEST(BackPropagator2, UnivariateDouble) {
     // print(taylor_coeff(f, x, 1.2, 3))
 
     EXPECT_NEAR(bp.get(d(x)), -2.98089202449025, 1e-14);
-    EXPECT_NEAR(bp.get(d<2>(x)), -0.865788201446497, 1e-14);
-    EXPECT_NEAR(bp.get(d<3>(x)), -0.0342861937391300, 1e-14);
+    EXPECT_NEAR(bp.get(d<2>(x)), -1.731576402892995, 1e-14);
+    EXPECT_NEAR(bp.get(d<3>(x)), -0.20571716243479798, 1e-14);
 }
 
 TEST(BackPropagator2, SumSingle) {
@@ -151,6 +161,11 @@ TEST(BackPropagator2, SumSingle) {
     ct.evaluate();
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
+
+    constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
+    static_assert(buffer_size == 3U);
+    // std::cout << buffer_size << std::endl;
+
     bp.set(d(res)) = 1.;
     bp.backpropagate(ct);
 
@@ -176,7 +191,7 @@ TEST(BackPropagator2, MulSingle) {
     EXPECT_NEAR(bp.get(d(x)), 0.833333333333333, 1e-14);
     EXPECT_NEAR(bp.get(d(y)), 2.5, 1e-14);
     EXPECT_NEAR(bp.get(d(x) * d(y)), 0., 1e-14);
-    EXPECT_NEAR(bp.get(d<5>(x)), 0.0803755144032922, 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), 9.645061728395067, 1e-14);
 }
 
 TEST(BackPropagator2, MulSingle2) {
@@ -190,6 +205,11 @@ TEST(BackPropagator2, MulSingle2) {
     ct.evaluate();
 
     BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(x));
+
+    constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
+    static_assert(buffer_size == 3U);
+    // std::cout << buffer_size << std::endl;
+
     bp.set(d(res)) = 1.;
     bp.backpropagate(ct);
 
@@ -202,7 +222,7 @@ TEST(BackPropagator2, MulSingle2) {
     EXPECT_NEAR(bp.get(d(x)), -0.358470648907805, 1e-14);
     EXPECT_NEAR(bp.get(d(y)), -1.07541194672341, 1e-14);
     EXPECT_NEAR(bp.get(d(x) * d(y)), -0.483218434727721, 1e-14);
-    EXPECT_NEAR(bp.get(d<5>(x)), -0.000136899199787365, 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), -0.016427903974483831, 1e-14);
 }
 
 TEST(BackPropagator2, DivSingle) {
@@ -222,7 +242,7 @@ TEST(BackPropagator2, DivSingle) {
     EXPECT_NEAR(bp.get(d(x)), -0.000348132629866870, 1e-14);
     EXPECT_NEAR(bp.get(d(y)), 0.00104439788960061, 1e-14);
     EXPECT_NEAR(bp.get(d(x) * d(y)), -0.0147956367693420, 1e-14);
-    EXPECT_NEAR(bp.get(d<5>(x)), -0.0992721952354747, 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), -11.912663428256959, 1e-14);
 }
 
 TEST(BackPropagator2, MulConstant) {
@@ -241,7 +261,7 @@ TEST(BackPropagator2, MulConstant) {
     EXPECT_NEAR(bp.get(d(x)), 0.833333333333333, 1e-14);
     // EXPECT_NEAR(bp.get(d(y)), 2.5, 1e-14);
     // EXPECT_NEAR(bp.get(d(x) * d(y)), 0., 1e-14);
-    EXPECT_NEAR(bp.get(d<5>(x)), 0.0803755144032922, 1e-14);
+    EXPECT_NEAR(bp.get(d<5>(x)), 9.645061728395067, 1e-14);
 }
 
 namespace detail {
@@ -328,6 +348,36 @@ TEST(BackPropagator, IsInputDer) {
 
     constexpr auto resb2 = detail::is_derivative_input(res2);
     static_assert(!resb2);
+}
+
+TEST(BackPropagator, SecondDerCheck) {
+
+    double x0 = 1.02;
+    ADHOC(x);
+    auto res = exp(x) + x * exp(x);
+    CalcTree ct(res);
+    ct.set(x) = x0;
+    ct.evaluate();
+
+    auto dXX = d<2>(x);
+    auto dres = d(res);
+    BackPropagator t(dXX, dres);
+
+    t.set(dres) = 1.;
+    t.backpropagate(ct);
+
+    // from sympy import *
+    // x = Symbol('x')
+    // result = exp(x) + x * exp(x)
+    // def diff_function(f, diffs):
+    //     fdiff = f
+    //     for i in diffs:
+    //         fdiff = fdiff.diff(i)
+    //     return fdiff
+    // x0 = 1.02
+    // print(lambdify([x], diff_function(result, (x, x)))(x0))
+
+    EXPECT_NEAR(t.get(dXX), 11.148242951136478, 1e-14);
 }
 
 } // namespace adhoc4

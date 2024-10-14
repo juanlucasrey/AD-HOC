@@ -141,7 +141,12 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             get_first_type_idx(std::tuple<InputsAndOutputsDers...>{}, in);
         static_assert(idx < sizeof...(InputsAndOutputsDers),
                       "derivative not found");
-        return this->m_derivatives[idx];
+
+        if constexpr (is_one(in)) {
+            return this->m_derivatives[idx];
+        } else {
+            return this->m_derivatives[idx] * multiplicity(in);
+        }
     }
 
     template <class Input> auto inline set(Input in) -> double & {

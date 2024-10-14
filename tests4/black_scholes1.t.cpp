@@ -23,7 +23,7 @@ auto call_price2(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 
 } // namespace
 
-TEST(BlackScholes, BS_FD) {
+TEST(BlackScholes, BS1_FD) {
     double S = 1.01;
     auto res = call_price2(S, 1.02, 0.15, 0.5);
 
@@ -72,13 +72,6 @@ TEST(BlackScholes, BS1) {
     EXPECT_NEAR(t.get(dK), 3.3740304502248355, 1e-14);
     EXPECT_NEAR(t.get(dv), -1.9089022751421003, 1e-14);
     EXPECT_NEAR(t.get(dT), -0.28633534127131505, 1e-14);
-
-    // std::cout.precision(std::numeric_limits<double>::max_digits10);
-    // std::cout << ct.get(res) << std::endl;
-    // std::cout << t.get(dS) << std::endl;
-    // std::cout << t.get(dK) << std::endl;
-    // std::cout << t.get(dv) << std::endl;
-    // std::cout << t.get(dT) << std::endl;
 }
 
 } // namespace adhoc4

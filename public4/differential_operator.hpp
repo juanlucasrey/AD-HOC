@@ -24,6 +24,8 @@
 #include <cstddef>
 #include <tuple>
 
+#include "combinatorics/factorial.hpp"
+#include "utils/index_sequence.hpp"
 #include "utils/tuple.hpp"
 
 namespace adhoc4 {
@@ -122,6 +124,18 @@ constexpr auto
 create_differential_operator(std::tuple<DiffOps...> /* vars */,
                              std::index_sequence<I...> /* is */) {
     return (power<I>(DiffOps{}) * ...);
+}
+
+template <class... Ids1, std::size_t... Orders1>
+constexpr auto multiplicity(std::tuple<der::d<Orders1, Ids1>...> /* id1 */)
+    -> double {
+    return (factorial(Orders1) * ...);
+}
+
+template <class... Ids1, std::size_t... Orders1>
+constexpr auto is_one(std::tuple<der::d<Orders1, Ids1>...> /* id1 */)
+    -> double {
+    return all_equal_to<1>(std::index_sequence<Orders1...>{});
 }
 
 } // namespace adhoc4

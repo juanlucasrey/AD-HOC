@@ -39,9 +39,9 @@ constexpr auto sum(std::index_sequence<I...> /* idx_seq */) -> std::size_t {
     return (I + ...);
 }
 
-template <std::size_t... I>
-constexpr auto is_zero(std::index_sequence<I...> /* idx_seq */) -> bool {
-    return ((I == 0) && ...);
+template <std::size_t Val, std::size_t... I>
+constexpr auto all_equal_to(std::index_sequence<I...> /* idx_seq */) -> bool {
+    return ((I == Val) && ...);
 }
 
 namespace detail {
