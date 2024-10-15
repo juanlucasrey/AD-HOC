@@ -173,12 +173,31 @@ auto constexpr free_on_buffer(DerivativeNodeLoc current_node_der_loc,
     }
 }
 
+template <class Tuple, std::size_t... ISFirst, std::size_t... ISLast>
+auto constexpr remove_first_aux(std::index_sequence<ISFirst...> /* is_first */,
+                                std::index_sequence<ISLast...> /* is_last */) {
+    constexpr auto offset = sizeof...(ISFirst) + 1;
+    return std::tuple<std::tuple_element_t<ISFirst, Tuple>...,
+                      std::tuple_element_t<ISLast + offset, Tuple>...>{};
+}
+
+template <class Tuple, class Old>
+auto constexpr remove_first(Tuple /* tuple */, Old /* old_value */) {
+    constexpr auto loc = find4<Tuple, Old>();
+    constexpr auto tuple_size = std::tuple_size_v<Tuple>;
+    static_assert(loc < tuple_size);
+
+    return remove_first_aux<Tuple>(
+        std::make_index_sequence<loc>{},
+        std::make_index_sequence<tuple_size - loc - 1>());
+}
+
 template <class DerivativeNodeLoc, class DerivativeNode, class BufferTypes>
 auto constexpr free_on_buffer_size(DerivativeNodeLoc current_node_der_loc,
                                    DerivativeNode current_node_der,
                                    BufferTypes bt) {
     if constexpr (std::is_same_v<decltype(current_node_der_loc), on_buffer_t>) {
-        constexpr auto newtuple = remove(bt, current_node_der);
+        constexpr auto newtuple = remove_first(bt, current_node_der);
         return newtuple;
     } else {
         static_assert(
