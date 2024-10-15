@@ -291,31 +291,15 @@ constexpr auto update_buffer_types(TypesToPlace derivative_nodes,
     }
 }
 
-template <std::size_t N = 0, class TypesToPlace, class LocationIndicators,
-          class BufferTypes>
-constexpr auto update_buffer_types_size(TypesToPlace derivative_nodes,
-                                        LocationIndicators location_indicators,
-                                        BufferTypes bt) {
-    if constexpr (N < std::tuple_size_v<LocationIndicators>) {
-        constexpr auto current_indicator = std::get<N>(location_indicators);
-
-        if constexpr (std::is_same_v<const on_buffer_new_t,
-                                     decltype(current_indicator)>) {
-
-            constexpr auto current_derivative_node =
-                std::get<N>(derivative_nodes);
-            constexpr auto new_buffer_type =
-                std::tuple_cat(bt, std::make_tuple(current_derivative_node));
-
-            return update_buffer_types_size<N + 1>(
-                derivative_nodes, location_indicators, new_buffer_type);
-        } else {
-            return update_buffer_types_size<N + 1>(derivative_nodes,
-                                                   location_indicators, bt);
-        }
-    } else {
-        return bt;
-    }
+template <class... Types, class... Location, class BufferTypes>
+constexpr auto
+update_buffer_types_size(std::tuple<Types...> /* derivative_nodes */,
+                         std::tuple<Location...> /* location_indicators */,
+                         BufferTypes bt) {
+    return std::tuple_cat(
+        bt, std::conditional_t<
+                std::is_same_v<const Location, const on_buffer_new_t>,
+                std::tuple<Types>, std::tuple<>>{}...);
 }
 
 template <std::size_t N = 0, class ResultsTypes, class ResultsArray,
