@@ -210,28 +210,6 @@ class on_buffer_add_t {};
 class on_buffer_new_t {};
 class on_interface_add_t {};
 
-template <std::size_t N = 0, class TypesToPlace, class InterfaceTypes,
-          class BufferTypes, class Output>
-constexpr auto locate_new_vals_aux(TypesToPlace derivative_nodes,
-                                   InterfaceTypes it, BufferTypes bt,
-                                   Output out) {
-    if constexpr (N < std::tuple_size_v<TypesToPlace>) {
-        constexpr auto current_derivative_node = std::get<N>(derivative_nodes);
-        constexpr bool is_on_interface = contains(it, current_derivative_node);
-        constexpr bool is_on_buffer = contains(bt, current_derivative_node);
-
-        using this_result = std::conditional_t<
-            is_on_interface, on_interface_add_t,
-            std::conditional_t<is_on_buffer, on_buffer_add_t, on_buffer_new_t>>;
-
-        return locate_new_vals_aux<N + 1>(
-            derivative_nodes, it, bt,
-            std::tuple_cat(out, std::make_tuple(this_result{})));
-    } else {
-        return out;
-    }
-}
-
 template <class... Ts, class T>
 auto constexpr contains3(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
     return (std::is_same_v<const Ts, const T> || ...);
