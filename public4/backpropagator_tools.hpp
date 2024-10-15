@@ -38,7 +38,8 @@ template <class Tuple, class T, std::size_t N = 0>
 constexpr auto find4() -> std::size_t {
     if constexpr (N == std::tuple_size_v<Tuple>) {
         return N;
-    } else if constexpr (std::is_same_v<std::tuple_element_t<N, Tuple>, T>) {
+    } else if constexpr (std::is_same_v<const std::tuple_element_t<N, Tuple>,
+                                        const T>) {
         return N;
     } else {
         return find4<Tuple, T, N + 1>();
@@ -620,8 +621,8 @@ constexpr auto multiply_ordered_aux(DerOp1 const in1, DerOp2 const in2,
         constexpr auto in2_first = head(in2);
         constexpr auto id1 = get_id(in1_first);
         constexpr auto id2 = get_id(in2_first);
-        constexpr auto idx1 = get_first_type_idx(nodes, id1);
-        constexpr auto idx2 = get_first_type_idx(nodes, id2);
+        constexpr auto idx1 = find4<Nodes, decltype(id1)>();
+        constexpr auto idx2 = find4<Nodes, decltype(id2)>();
 
         if constexpr (idx1 < idx2) {
             constexpr std::size_t power = get_power(in1_first);
@@ -650,8 +651,8 @@ constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) {
         constexpr auto in_second = std::get<1>(in);
         constexpr auto id1 = get_id(in_first);
         constexpr auto id2 = get_id(in_second);
-        constexpr auto idx1 = get_first_type_idx(nodes, id1);
-        constexpr auto idx2 = get_first_type_idx(nodes, id2);
+        constexpr auto idx1 = find4<Nodes, decltype(id1)>();
+        constexpr auto idx2 = find4<Nodes, decltype(id2)>();
         if constexpr (idx1 < idx2) {
             return true;
         } else {
