@@ -127,12 +127,44 @@ auto get_differential_operator_value(DerivativeNodeLoc current_node_der_loc,
     }
 }
 
+template <class Tuple, class T, std::size_t N = 0>
+constexpr auto find4() -> std::size_t {
+    if constexpr (N == std::tuple_size_v<Tuple>) {
+        return N;
+    } else if constexpr (std::is_same_v<std::tuple_element_t<N, Tuple>, T>) {
+        return N;
+    } else {
+        return find4<Tuple, T, N + 1>();
+    }
+}
+
+template <class Tuple, class New, std::size_t... ISFirst, std::size_t... ISLast>
+auto constexpr replace_first3_aux(
+    std::index_sequence<ISFirst...> /* is_first */,
+    std::index_sequence<ISLast...> /* is_last */) {
+    constexpr auto offset = sizeof...(ISFirst) + 1;
+    return std::tuple<std::tuple_element_t<ISFirst, Tuple>..., New,
+                      std::tuple_element_t<ISLast + offset, Tuple>...>{};
+}
+
+template <class Tuple, class Old, class New>
+auto constexpr replace_first3(Tuple /* tuple */, Old /* old_value */,
+                              New /* new_value */) {
+    constexpr auto loc = find4<Tuple, Old>();
+    constexpr auto tuple_size = std::tuple_size_v<Tuple>;
+    static_assert(loc < tuple_size);
+
+    return replace_first3_aux<Tuple, New>(
+        std::make_index_sequence<loc>{},
+        std::make_index_sequence<tuple_size - loc - 1>());
+}
+
 template <class DerivativeNodeLoc, class DerivativeNode, class BufferTypes>
 auto constexpr free_on_buffer(DerivativeNodeLoc current_node_der_loc,
                               DerivativeNode current_node_der, BufferTypes bt) {
     if constexpr (std::is_same_v<decltype(current_node_der_loc), on_buffer_t>) {
         constexpr auto newtuple =
-            replace_first(bt, current_node_der, available_t{});
+            replace_first3(bt, current_node_der, available_t{});
         return newtuple;
     } else {
         static_assert(
@@ -181,32 +213,59 @@ constexpr auto locate_new_vals_aux(TypesToPlace derivative_nodes,
     }
 }
 
+template <class... Ts, class T>
+auto constexpr contains3(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
+    return (std::is_same_v<const Ts, const T> || ...);
+}
+
+template <class Type, class InterfaceTypes, class BufferTypes>
+constexpr auto locate_new_vals_aux3(Type derivative_nodes, InterfaceTypes it,
+                                    BufferTypes bt) {
+    if constexpr (contains3(it, derivative_nodes)) {
+        return on_interface_add_t{};
+    } else {
+        if constexpr (contains3(bt, derivative_nodes)) {
+            return on_buffer_add_t{};
+        } else {
+            return on_buffer_new_t{};
+        }
+    }
+}
+
 template <class TypesToPlace, class InterfaceTypes, class BufferTypes>
 constexpr auto locate_new_vals(TypesToPlace derivative_nodes, InterfaceTypes it,
                                BufferTypes bt) {
-    return locate_new_vals_aux(derivative_nodes, it, bt, std::tuple<>{});
+    return std::apply(
+        [it, bt](const auto... node) {
+            return std::make_tuple(locate_new_vals_aux3(node, it, bt)...);
+        },
+        derivative_nodes);
 }
 
-template <std::size_t N = 0, class TypesToPlace, class LocationIndicators,
-          class BufferTypes>
+template <std::size_t N = 0, std::size_t FindOffset = 0, class TypesToPlace,
+          class LocationIndicators, class BufferTypes>
 constexpr auto update_buffer_types(TypesToPlace derivative_nodes,
                                    LocationIndicators location_indicators,
                                    BufferTypes bt) {
     if constexpr (N < std::tuple_size_v<LocationIndicators>) {
-        constexpr auto current_indicator = std::get<N>(location_indicators);
+        if constexpr (std::is_same_v<
+                          const on_buffer_new_t,
+                          const std::tuple_element_t<N, LocationIndicators>>) {
+            constexpr auto loc = find4<BufferTypes, available_t, FindOffset>();
+            constexpr auto tuple_size = std::tuple_size_v<BufferTypes>;
+            static_assert(loc < tuple_size);
 
-        if constexpr (std::is_same_v<const on_buffer_new_t,
-                                     decltype(current_indicator)>) {
-
-            constexpr auto current_derivative_node =
-                std::get<N>(derivative_nodes);
             constexpr auto new_buffer_type =
-                replace_first(bt, available_t{}, current_derivative_node);
-            return update_buffer_types<N + 1>(
+                replace_first3_aux<BufferTypes,
+                                   std::tuple_element_t<N, TypesToPlace>>(
+                    std::make_index_sequence<loc>{},
+                    std::make_index_sequence<tuple_size - loc - 1>());
+
+            return update_buffer_types<N + 1, loc + 1>(
                 derivative_nodes, location_indicators, new_buffer_type);
         } else {
-            return update_buffer_types<N + 1>(derivative_nodes,
-                                              location_indicators, bt);
+            return update_buffer_types<N + 1, FindOffset>(
+                derivative_nodes, location_indicators, bt);
         }
     } else {
         return bt;
@@ -252,31 +311,33 @@ auto write_results(ResultsTypes derivatives_nodes,
                    InterfaceTypes interface_types,
                    std::array<double, InterfaceArraySize> &interface_array) {
     if constexpr (N < std::tuple_size_v<LocationIndicators>) {
+        if constexpr (std::is_same_v<
+                          const on_interface_add_t,
+                          const std::tuple_element_t<N, LocationIndicators>>) {
 
-        constexpr auto current_indicator = std::get<N>(location_indicators);
-        constexpr auto current_derivative_node = std::get<N>(derivatives_nodes);
-
-        if constexpr (std::is_same_v<const on_interface_add_t,
-                                     decltype(current_indicator)>) {
             constexpr auto idx =
-                get_first_type_idx(interface_types, current_derivative_node);
+                find4<InterfaceTypes, std::tuple_element_t<N, ResultsTypes>>();
 
             static_assert(idx < InterfaceArraySize);
 
             // we always add on the interface
             interface_array[idx] += results_array[N];
         } else {
-            constexpr auto idx = get_first_type_idx(buffer_types_updated,
-                                                    current_derivative_node);
+            constexpr auto idx =
+                find4<BufferTypes, std::tuple_element_t<N, ResultsTypes>>();
+
             static_assert(idx < BufferArraySize);
 
             if constexpr (std::is_same_v<const on_buffer_new_t,
-                                         decltype(current_indicator)>) {
+                                         const std::tuple_element_t<
+                                             N, LocationIndicators>>) {
                 // we place a new value so we override
                 buffer_array[idx] = results_array[N];
             } else {
-                static_assert(std::is_same_v<const on_buffer_add_t,
-                                             decltype(current_indicator)>);
+                static_assert(
+                    std::is_same_v<
+                        const on_buffer_add_t,
+                        const std::tuple_element_t<N, LocationIndicators>>);
                 // there is already a value so we add
                 buffer_array[idx] += results_array[N];
             }
