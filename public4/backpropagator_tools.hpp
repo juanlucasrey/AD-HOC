@@ -34,6 +34,17 @@
 
 namespace adhoc4::detail {
 
+template <class Tuple, class T, std::size_t N = 0>
+constexpr auto find4() -> std::size_t {
+    if constexpr (N == std::tuple_size_v<Tuple>) {
+        return N;
+    } else if constexpr (std::is_same_v<std::tuple_element_t<N, Tuple>, T>) {
+        return N;
+    } else {
+        return find4<Tuple, T, N + 1>();
+    }
+}
+
 template <std::size_t Order, class DiffOpNode, class Node>
 constexpr auto first_type_is_aux(der::d<Order, DiffOpNode> /* in */,
                                  Node /* node */) -> bool {
@@ -110,31 +121,18 @@ class on_interface_t {};
 
 template <class DerivativeNodeLoc, class DerivativeNode, class InterfaceTypes,
           class InterfaceArray, class BufferTypes, class BufferArray>
-auto get_differential_operator_value(DerivativeNodeLoc current_node_der_loc,
-                                     DerivativeNode current_node_der,
-                                     InterfaceTypes it,
-                                     InterfaceArray const &ia, BufferTypes bt,
-                                     BufferArray const &ba) -> double {
-    if constexpr (std::is_same_v<decltype(current_node_der_loc),
-                                 on_interface_t>) {
-        constexpr auto idx = get_first_type_idx(it, current_node_der);
+auto get_differential_operator_value(
+    DerivativeNodeLoc /* current_node_der_loc */,
+    DerivativeNode /* current_node_der */, InterfaceTypes /* it */,
+    InterfaceArray const &ia, BufferTypes /* bt */, BufferArray const &ba)
+    -> double {
+    if constexpr (std::is_same_v<DerivativeNodeLoc, on_interface_t>) {
+        constexpr auto idx = find4<InterfaceTypes, DerivativeNode>();
         return ia[idx];
     } else {
-        static_assert(
-            std::is_same_v<decltype(current_node_der_loc), on_buffer_t>);
-        constexpr auto idx = get_first_type_idx(bt, current_node_der);
+        static_assert(std::is_same_v<DerivativeNodeLoc, on_buffer_t>);
+        constexpr auto idx = find4<BufferTypes, DerivativeNode>();
         return ba[idx];
-    }
-}
-
-template <class Tuple, class T, std::size_t N = 0>
-constexpr auto find4() -> std::size_t {
-    if constexpr (N == std::tuple_size_v<Tuple>) {
-        return N;
-    } else if constexpr (std::is_same_v<std::tuple_element_t<N, Tuple>, T>) {
-        return N;
-    } else {
-        return find4<Tuple, T, N + 1>();
     }
 }
 
