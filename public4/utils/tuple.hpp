@@ -55,9 +55,8 @@ auto constexpr get_first_type_idx(std::tuple<Ts...> /* tuple */, T /* value */)
 }
 
 template <class... Ts, class T>
-auto constexpr contains(std::tuple<Ts...> tuple, T value) -> bool {
-    std::size_t constexpr pos = get_first_type_idx(tuple, value);
-    return pos < sizeof...(Ts);
+auto constexpr contains(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
+    return (std::is_same_v<const Ts, const T> || ...);
 }
 
 template <typename T, typename... Us>
