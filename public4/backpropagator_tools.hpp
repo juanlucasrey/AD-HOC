@@ -548,48 +548,32 @@ constexpr auto multiply_ordered_tuple(std::tuple<DerOps1...> const in1,
     }
 }
 
-template <class Op1, class Op2, class Nodes>
-constexpr auto less_than_check_empty2(Op1 /* in1 */, Op2 /* in2 */,
-                                      Nodes /* nodes */);
-
-template <class Id1, std::size_t Order1, class Id2, std::size_t Order2,
-          class Id1Remaining, class Id2Remaining, class Nodes>
-constexpr auto
-less_than_single2(der::d<Order1, Id1> /* in1 */, der::d<Order2, Id2> /* in2 */,
-                  Id1Remaining id1rem, Id2Remaining id2rem, Nodes nodes) {
-    constexpr auto idx1 = get_first_type_idx(nodes, Id1{});
-    constexpr auto idx2 = get_first_type_idx(nodes, Id2{});
-    if constexpr (idx1 < idx2) {
+template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Op1, class Op2,
+          class Nodes>
+constexpr auto less_than3_aux(Op1 in1, Op2 in2, Nodes nodes) {
+    if constexpr (Pos2 == std::tuple_size_v<Op2>) {
         return false;
-    } else if constexpr (idx1 > idx2) {
-        return true;
-    } else if constexpr (Order1 < Order2) {
-        return true;
-    } else if constexpr (Order1 > Order2) {
-        return false;
-    } else {
-        static_assert(std::is_same_v<der::d<Order1, const Id1>,
-                                     der::d<Order2, const Id2>>);
-        return less_than_check_empty2(id1rem, id2rem, nodes);
-    }
-}
-
-template <class In1, class In2, class Nodes>
-constexpr auto less_than_check_first2(In1 in1, In2 in2, Nodes nodes) {
-    return less_than_single2(head(in1), head(in2), tail(in1), tail(in2), nodes);
-}
-
-template <class Op1, class Op2, class Nodes>
-constexpr auto less_than_check_empty2(Op1 in1, Op2 in2, Nodes nodes) {
-    // if constexpr (size(in2) == 0) {
-    if constexpr (std::is_same_v<const Op2, const std::tuple<>>) {
-        return false;
-        // } else if constexpr (size(in1) == 0) {
-    } else if constexpr (std::is_same_v<const Op1, const std::tuple<>>) {
+    } else if constexpr (Pos1 == std::tuple_size_v<Op1>) {
         return true;
     } else {
-        // we can now assume that both ids are different and non empty
-        return less_than_check_first2(in1, in2, nodes);
+        constexpr std::tuple_element_t<Pos1, Op1> diffop1;
+        constexpr std::tuple_element_t<Pos2, Op2> diffop2;
+        constexpr auto idx1 = find4<Nodes, decltype(get_id(diffop1))>();
+        constexpr auto idx2 = find4<Nodes, decltype(get_id(diffop2))>();
+        constexpr std::size_t Order1 = get_power(diffop1);
+        constexpr std::size_t Order2 = get_power(diffop2);
+        if constexpr (idx1 < idx2) {
+            return false;
+        } else if constexpr (idx1 > idx2) {
+            return true;
+        } else if constexpr (Order1 < Order2) {
+            return true;
+        } else if constexpr (Order1 > Order2) {
+            return false;
+        } else {
+            static_assert(std::is_same_v<decltype(diffop1), decltype(diffop2)>);
+            return less_than3_aux<Pos1 + 1, Pos2 + 1>(in1, in2, nodes);
+        }
     }
 }
 
@@ -598,19 +582,20 @@ constexpr auto less_than2(Op1 in1, Op2 in2, Nodes nodes) {
     if constexpr (std::is_same_v<Op1, Op2>) {
         return false;
     } else {
-        return less_than_check_empty2(in1, in2, nodes);
+        return less_than3_aux(in1, in2, nodes);
     }
 }
 
-template <class Tuple, class Nodes>
-constexpr auto is_sorted2(Tuple in, Nodes nodes) {
-    if constexpr (size(in) <= 1) {
+template <std::size_t Pos = 0, class Tuple, class Nodes>
+constexpr auto is_sorted2(Tuple in, Nodes nodes) -> bool {
+    if constexpr (std::tuple_size_v<Tuple> <= (Pos + 1)) {
         return true;
     } else {
-        if constexpr (less_than2(std::get<0>(in), std::get<1>(in), nodes)) {
+        if constexpr (less_than2(std::get<Pos>(in), std::get<Pos + 1>(in),
+                                 nodes)) {
             return false;
         } else {
-            return is_sorted2(tail(in), nodes);
+            return is_sorted2<Pos + 1>(in, nodes);
         }
     }
 }
@@ -620,27 +605,32 @@ constexpr auto are_same(I1 /* lhs */, I2 /* rhs */) -> bool {
     return std::is_same_v<I1, I2>;
 }
 
-template <class Tuple1, class Tuple2, class Out, class Nodes>
+template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Tuple1,
+          class Tuple2, class Out, class Nodes>
 constexpr auto merge_sorted_aux2(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
-    if constexpr (size(in2) == 0) {
-        return std::tuple_cat(out, in1);
-    } else if constexpr (size(in1) == 0) {
-        return std::tuple_cat(out, in2);
+    if constexpr (std::tuple_size_v<Tuple1> == Pos1 &&
+                  std::tuple_size_v<Tuple2> == Pos2) {
+        return out;
+    } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
+        return merge_sorted_aux2<Pos1 + 1, Pos2>(
+            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos1>(in1))),
+            nodes);
+    } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
+        return merge_sorted_aux2<Pos1, Pos2 + 1>(
+            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos2>(in2))),
+            nodes);
     } else {
-        constexpr auto first1 = head(in1);
-        constexpr auto first2 = head(in2);
+        constexpr auto first1 = std::get<Pos1>(in1);
+        constexpr auto first2 = std::get<Pos2>(in2);
         if constexpr (are_same(first1, first2)) {
-            return merge_sorted_aux2(
-                tail(in1), tail(in2),
-                std::tuple_cat(out, std::make_tuple(first1)), nodes);
+            return merge_sorted_aux2<Pos1 + 1, Pos2 + 1>(
+                in1, in2, std::tuple_cat(out, std::make_tuple(first1)), nodes);
         } else if constexpr (less_than2(first1, first2, nodes)) {
-            return merge_sorted_aux2(
-                in1, tail(in2), std::tuple_cat(out, std::make_tuple(first2)),
-                nodes);
+            return merge_sorted_aux2<Pos1, Pos2 + 1>(
+                in1, in2, std::tuple_cat(out, std::make_tuple(first2)), nodes);
         } else {
-            return merge_sorted_aux2(
-                tail(in1), in2, std::tuple_cat(out, std::make_tuple(first1)),
-                nodes);
+            return merge_sorted_aux2<Pos1 + 1, Pos2>(
+                in1, in2, std::tuple_cat(out, std::make_tuple(first1)), nodes);
         }
     }
 }
