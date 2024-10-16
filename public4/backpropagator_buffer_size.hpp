@@ -66,9 +66,10 @@ constexpr auto treat_nodes_mul_buffer_size(
         constexpr auto current_node_der_loc = std::get<N>(dnl);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto pow = get_power(head(current_node_der));
+        constexpr auto rest_power = power(current_derivative_subnode_rest);
 
         constexpr auto multinomial_sequences =
-            TrinomialSequencesMult<pow, MaxOrder>();
+            TrinomialSequencesMult<pow, MaxOrder - rest_power>();
 
         using NodesValue = CalcTree::ValuesTupleInverse;
         constexpr auto diff_ops = std::make_tuple(
@@ -386,8 +387,9 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
 
         constexpr auto pow = get_power(current_derivative_subnode);
+        constexpr auto rest_power = power(current_derivative_subnode_rest);
         constexpr auto expansion_types =
-            expand_univariate<PrimalSubNode, MaxOrder, pow>();
+            expand_univariate<PrimalSubNode, MaxOrder - rest_power, pow>();
 
         using NodesValue = CalcTree::ValuesTupleInverse;
 
