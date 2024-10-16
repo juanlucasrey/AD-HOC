@@ -76,31 +76,11 @@ constexpr auto tail(std::tuple<First, Rest...> /* tuple */) {
     return std::tuple<Rest...>{};
 }
 
-namespace detail {
-
-template <std::size_t N, class UnfilteredTuple, class CalculateFlags,
-          class Output>
-constexpr auto filter_aux(UnfilteredTuple in, CalculateFlags calc_flags,
-                          Output out) {
-    if constexpr (N == std::tuple_size_v<UnfilteredTuple>) {
-        return out;
-    } else {
-        if constexpr (std::get<N>(calc_flags)) {
-            return filter_aux<N + 1>(
-                in, calc_flags,
-                std::tuple_cat(out, std::make_tuple(std::get<N>(in))));
-
-        } else {
-            return filter_aux<N + 1>(in, calc_flags, out);
-        }
-    }
-}
-
-} // namespace detail
-
-template <class UnfilteredTuple, class CalculateFlags>
-constexpr auto filter(UnfilteredTuple in, CalculateFlags calc_flags) {
-    return detail::filter_aux<0>(in, calc_flags, std::tuple<>{});
+template <class... Types, class... Flags>
+constexpr auto filter(std::tuple<Types...> /* in */,
+                      std::tuple<Flags...> /* calc_flags */) {
+    return std::tuple_cat(
+        std::conditional_t<Flags::value, std::tuple<Types>, std::tuple<>>{}...);
 }
 
 namespace detail {
