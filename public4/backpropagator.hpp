@@ -40,35 +40,6 @@ namespace adhoc4 {
 
 namespace detail {
 
-template <class I> constexpr auto is_derivative_input(I /* in */) -> bool {
-    return false;
-}
-
-template <StringLiteral... literals, std::size_t... Orders>
-constexpr auto
-is_derivative_input(std::tuple<der::d<Orders, double_t<literals>>...> /* in */)
-    -> bool {
-    return true;
-}
-
-template <StringLiteral... literals, std::size_t... Orders>
-constexpr auto is_derivative_input(
-    std::tuple<const der::d<Orders, double_t<literals>>...> /* in */) -> bool {
-    return true;
-}
-
-// template <class... Ids, std::size_t... Orders, std::size_t... Powers>
-// constexpr auto order(std::tuple<der::d<Orders, Ids>...> /* id1 */) {
-//     return (Orders + ...);
-// }
-
-// template <class... Ops>
-// constexpr auto max_orders(std::tuple<Ops...> /* id1 */) {
-//     constexpr std::array<std::size_t, sizeof...(Ops)> temp{order(Ops{})...};
-//     auto result = std::max_element(temp.begin(), temp.end());
-//     return *result;
-// }
-
 template <class... Ids, std::size_t... Orders, class Node>
 constexpr auto
 create_single_tuple(std::tuple<der::d<Orders, Ids>...> diff_operator, Node in) {
@@ -138,7 +109,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
               class Input>
     auto inline get(Input in) const -> double {
         constexpr auto idx =
-            get_first_type_idx(std::tuple<InputsAndOutputsDers...>{}, in);
+            detail::find4<std::tuple<InputsAndOutputsDers...>, Input>();
         static_assert(idx < sizeof...(InputsAndOutputsDers),
                       "derivative not found");
 
@@ -149,9 +120,9 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         }
     }
 
-    template <class Input> auto inline set(Input in) -> double & {
+    template <class Input> auto inline set(Input /* in */) -> double & {
         constexpr auto idx =
-            get_first_type_idx(std::tuple<InputsAndOutputsDers...>{}, in);
+            detail::find4<std::tuple<InputsAndOutputsDers...>, Input>();
         static_assert(idx < sizeof...(InputsAndOutputsDers),
                       "derivative not found");
         return this->m_derivatives[idx];

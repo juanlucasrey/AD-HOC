@@ -21,6 +21,7 @@
 #ifndef ADHOC4_BACKPROPAGATOR_TOOLS_HPP
 #define ADHOC4_BACKPROPAGATOR_TOOLS_HPP
 
+#include "adhoc.hpp"
 #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
 #include "differential_operator.hpp"
 #include "sort.hpp"
@@ -44,6 +45,23 @@ constexpr auto find4() -> std::size_t {
     } else {
         return find4<Tuple, T, N + 1>();
     }
+}
+
+template <class I> constexpr auto is_derivative_input(I /* in */) -> bool {
+    return false;
+}
+
+template <StringLiteral... literals, std::size_t... Orders>
+constexpr auto
+is_derivative_input(std::tuple<der::d<Orders, double_t<literals>>...> /* in */)
+    -> bool {
+    return true;
+}
+
+template <StringLiteral... literals, std::size_t... Orders>
+constexpr auto is_derivative_input(
+    std::tuple<const der::d<Orders, double_t<literals>>...> /* in */) -> bool {
+    return true;
 }
 
 template <std::size_t Order, class DiffOpNode, class Node>
@@ -205,32 +223,55 @@ auto constexpr free_on_buffer_size(DerivativeNodeLoc current_node_der_loc,
     }
 }
 
-class on_buffer_add_t {};
+template <std::size_t Loc> class on_buffer_add_t {};
 class on_buffer_new_t {};
-class on_interface_add_t {};
+template <std::size_t Loc> class on_interface_add_t {};
+
+template <class T, template <std::size_t> class U>
+inline constexpr bool is_instance_of_v = std::false_type{};
+
+template <template <std::size_t> class U, std::size_t V>
+inline constexpr bool is_instance_of_v<U<V>, U> = std::true_type{};
+
+template <std::size_t Loc> constexpr std::size_t get_loc(on_buffer_add_t<Loc>) {
+    return Loc;
+}
+
+template <std::size_t Loc>
+constexpr std::size_t get_loc(on_interface_add_t<Loc>) {
+    return Loc;
+}
 
 template <class Type, class InterfaceTypes, class BufferTypes>
-constexpr auto locate_new_vals_aux(Type derivative_nodes, InterfaceTypes it,
-                                   BufferTypes bt) {
-    if constexpr (contains(it, derivative_nodes)) {
-        return on_interface_add_t{};
+constexpr auto locate_new_vals_aux() {
+
+    if constexpr (is_derivative_input(Type{})) {
+        constexpr auto it_loc = find4<InterfaceTypes, Type>();
+        constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
+        static_assert(it_loc < it_size);
+        return on_interface_add_t<it_loc>{};
     } else {
-        if constexpr (contains(bt, derivative_nodes)) {
-            return on_buffer_add_t{};
+        constexpr auto bt_loc = find4<BufferTypes, Type>();
+        constexpr auto bt_size = std::tuple_size_v<BufferTypes>;
+        if constexpr (bt_loc < bt_size) {
+            return on_buffer_add_t<bt_loc>{};
         } else {
-            return on_buffer_new_t{};
+            constexpr auto it_loc = find4<InterfaceTypes, Type>();
+            constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
+            if constexpr (it_loc < it_size) {
+                return on_interface_add_t<it_loc>{};
+            } else {
+                return on_buffer_new_t{};
+            }
         }
     }
 }
 
-template <class TypesToPlace, class InterfaceTypes, class BufferTypes>
-constexpr auto locate_new_vals(TypesToPlace derivative_nodes, InterfaceTypes it,
-                               BufferTypes bt) {
-    return std::apply(
-        [it, bt](const auto... node) {
-            return std::make_tuple(locate_new_vals_aux(node, it, bt)...);
-        },
-        derivative_nodes);
+template <class... Types, class InterfaceTypes, class BufferTypes>
+constexpr auto locate_new_vals(std::tuple<Types...> /* derivative_nodes */,
+                               InterfaceTypes /* it */, BufferTypes /* bt */) {
+    return std::make_tuple(
+        locate_new_vals_aux<Types, InterfaceTypes, BufferTypes>()...);
 }
 
 template <std::size_t N = 0, std::size_t FindOffset = 0, class TypesToPlace,
@@ -286,34 +327,32 @@ auto write_results(ResultsTypes derivatives_nodes,
                    InterfaceTypes interface_types,
                    std::array<double, InterfaceArraySize> &interface_array) {
     if constexpr (N < std::tuple_size_v<LocationIndicators>) {
-        if constexpr (std::is_same_v<
-                          const on_interface_add_t,
-                          const std::tuple_element_t<N, LocationIndicators>>) {
-
+        if constexpr (is_instance_of_v<std::decay_t<std::tuple_element_t<
+                                           N, LocationIndicators>>,
+                                       on_interface_add_t>) {
             constexpr auto idx =
-                find4<InterfaceTypes, std::tuple_element_t<N, ResultsTypes>>();
+                get_loc(std::tuple_element_t<N, LocationIndicators>{});
 
             static_assert(idx < InterfaceArraySize);
 
             // we always add on the interface
             interface_array[idx] += results_array[N];
         } else {
-            constexpr auto idx =
-                find4<BufferTypes, std::tuple_element_t<N, ResultsTypes>>();
-
-            static_assert(idx < BufferArraySize);
-
             if constexpr (std::is_same_v<const on_buffer_new_t,
                                          const std::tuple_element_t<
                                              N, LocationIndicators>>) {
-                // we place a new value so we override
+                constexpr auto idx =
+                    find4<BufferTypes, std::tuple_element_t<N, ResultsTypes>>();
+                static_assert(idx < BufferArraySize);
                 buffer_array[idx] = results_array[N];
             } else {
                 static_assert(
-                    std::is_same_v<
-                        const on_buffer_add_t,
-                        const std::tuple_element_t<N, LocationIndicators>>);
-                // there is already a value so we add
+                    is_instance_of_v<std::decay_t<std::tuple_element_t<
+                                         N, LocationIndicators>>,
+                                     on_buffer_add_t>);
+                constexpr auto idx =
+                    get_loc(std::tuple_element_t<N, LocationIndicators>{});
+                static_assert(idx < BufferArraySize);
                 buffer_array[idx] += results_array[N];
             }
         }
