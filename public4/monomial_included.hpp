@@ -482,47 +482,22 @@ constexpr auto check_included_final(TupleIndexSequence poly,
 }
 
 template <class TupleIndexSequence, class... IndexSequences>
-constexpr auto check_included_single_output(TupleIndexSequence /* poly */,
-                                            std::tuple<> /* diff_op_input */)
+constexpr auto
+check_included_single_output(TupleIndexSequence poly,
+                             std::tuple<IndexSequences...> /* diff_op_input */)
     -> bool {
-    return false;
+
+    return (check_included_final(poly, IndexSequences{}) || ...);
 }
 
-template <class TupleIndexSequence, class IndexSequence,
-          class... IndexSequences>
-constexpr auto check_included_single_output(
-    TupleIndexSequence poly,
-    std::tuple<IndexSequence, IndexSequences...> /* diff_op_input */) -> bool {
-    constexpr bool thisres =
-        check_included_final(TupleIndexSequence{}, IndexSequence{});
-    if constexpr (thisres) {
-        return true;
-    } else {
-        return check_included_single_output(poly,
-                                            std::tuple<IndexSequences...>{});
-    }
-}
-
-template <class... IndexSequences>
-constexpr auto check_included(std::tuple<> /* poly */,
-                              std::tuple<IndexSequences...> /* diff_op_input */)
+template <class... TupleIndexSequences, class... IndexSequences>
+constexpr auto check_included(std::tuple<TupleIndexSequences...> /* poly */,
+                              std::tuple<IndexSequences...> diff_op_input)
     -> bool {
-    return false;
-}
 
-template <class TupleIndexSequence, class... TupleIndexSequences,
-          class... IndexSequences>
-constexpr auto check_included(
-    std::tuple<TupleIndexSequence, TupleIndexSequences...> /* poly */,
-    std::tuple<IndexSequences...> diff_op_input) -> bool {
-    constexpr bool thisres =
-        check_included_single_output(TupleIndexSequence{}, diff_op_input);
-    if constexpr (thisres) {
-        return true;
-    } else {
-        return check_included(std::tuple<TupleIndexSequences...>{},
-                              diff_op_input);
-    }
+    return (
+        check_included_single_output(TupleIndexSequences{}, diff_op_input) ||
+        ...);
 }
 
 template <class Single, class Many>
