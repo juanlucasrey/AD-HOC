@@ -110,26 +110,39 @@ constexpr auto get_id(const der::d<Order, Id> /* in */) {
     return Id{};
 }
 
+namespace detail {
 template <std::size_t P, class... Ids1, std::size_t... Orders1>
-constexpr auto power(std::tuple<der::d<Orders1, Ids1>...> /* id1 */) {
+constexpr auto
+elevate_by_power(std::tuple<der::d<Orders1, Ids1>...> /* id1 */) {
     if constexpr (P == 0) {
         return std::tuple<>{};
     } else {
         return std::tuple<der::d<Orders1 * P, Ids1>...>{};
     }
 }
+} // namespace detail
 
 template <class... DiffOps, std::size_t... I>
 constexpr auto
 create_differential_operator(std::tuple<DiffOps...> /* vars */,
                              std::index_sequence<I...> /* is */) {
-    return (power<I>(DiffOps{}) * ...);
+    return (detail::elevate_by_power<I>(DiffOps{}) * ...);
 }
 
-template <class... Ids1, std::size_t... Orders1>
-constexpr auto multiplicity(std::tuple<der::d<Orders1, Ids1>...> /* id1 */)
+template <class... Ids, std::size_t... Orders>
+constexpr auto multiplicity(std::tuple<der::d<Orders, Ids>...> /* id1 */)
     -> double {
-    return (factorial(Orders1) * ...);
+    return (factorial(Orders) * ...);
+}
+
+template <class... Ids, std::size_t... Orders>
+constexpr auto power(std::tuple<der::d<Orders, Ids>...> /* id1 */)
+    -> std::size_t {
+    if constexpr (sizeof...(Orders)) {
+        return (Orders + ...);
+    } else {
+        return 0;
+    }
 }
 
 template <class... Ids1, std::size_t... Orders1>
