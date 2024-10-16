@@ -134,6 +134,36 @@ void inline copy_filtered_inverted(std::array<FromD, FromS> const &from_array,
     copy_filtered_inverted_aux<offset>(from_array, to_array, filt);
 }
 
+template <std::size_t From, std::size_t To, std::size_t PosOut = 0,
+          std::size_t PosFilter = 0, class In, class Out, class FilteredIS>
+void inline copy_filtered_inverted_aux2(In const &from_array, Out &to_array,
+                                        FilteredIS fis) {
+    constexpr std::size_t ToNext = To - 1;
+    if constexpr (std::tuple_element_t<PosFilter, FilteredIS>::value) {
+        to_array[PosOut] = from_array[ToNext];
+        if constexpr (ToNext != From) {
+            copy_filtered_inverted_aux2<From, ToNext, PosOut + 1,
+                                        PosFilter + 1>(from_array, to_array,
+                                                       fis);
+        }
+    } else {
+        if constexpr (ToNext != From) {
+            copy_filtered_inverted_aux2<From, ToNext, PosOut, PosFilter + 1>(
+                from_array, to_array, fis);
+        }
+    }
+}
+
+template <std::size_t From, std::size_t To, class D, std::size_t InSize,
+          std::size_t OutSize, class Filter>
+void inline copy_filtered_inverted2(std::array<D, InSize> const &from_array,
+                                    std::array<D, OutSize> &to_array,
+                                    Filter filt) {
+    static_assert(From <= To);
+    static_assert((To - From) == size(filt));
+    copy_filtered_inverted_aux2<From, To>(from_array, to_array, filt);
+}
+
 class available_t {};
 class on_buffer_t {};
 class on_interface_t {};

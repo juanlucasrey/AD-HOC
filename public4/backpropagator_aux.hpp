@@ -21,10 +21,6 @@
 #ifndef ADHOC4_BACKPROPAGATOR_AUX_HPP
 #define ADHOC4_BACKPROPAGATOR_AUX_HPP
 
-// #include "combinatorics/combinations.hpp"
-// #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
-// #include "utils/bivariate.hpp"
-// #include "utils/index_sequence.hpp"
 #include "backpropagator_tools.hpp"
 #include "combinatorics/trinomial.hpp"
 #include "dependency.hpp"
@@ -79,9 +75,10 @@ auto treat_nodes_mul(
         constexpr auto current_node_der_loc = std::get<N>(dnl);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto pow = get_power(head(current_node_der));
+        constexpr auto rest_power = power(current_derivative_subnode_rest);
 
         constexpr auto multinomial_sequences =
-            TrinomialSequencesMult<pow, MaxOrder>();
+            TrinomialSequencesMult<pow, MaxOrder - rest_power>();
 
         using NodesValue = CalcTree::ValuesTupleInverse;
         constexpr auto diff_ops = std::make_tuple(
@@ -388,8 +385,9 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
 #endif
 
         constexpr auto pow = get_power(current_derivative_subnode);
+        constexpr auto rest_power = power(current_derivative_subnode_rest);
         constexpr auto expansion_types =
-            expand_univariate<PrimalSubNode, MaxOrder, pow>();
+            expand_univariate<PrimalSubNode, MaxOrder - rest_power, pow>();
 
 #if LOG_LEVEL
         std::cout << "expansion_types" << std::endl;
@@ -445,8 +443,8 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn,
             elevate_univariate<PrevOrder, pow>(ua, ua_elevated);
         }
 
-        copy_filtered_inverted(ua_elevated, next_derivatives_values,
-                               flags_next_derivatives);
+        copy_filtered_inverted2<pow - 1, MaxOrder - rest_power>(
+            ua_elevated, next_derivatives_values, flags_next_derivatives);
 
         double const this_val_derivative = get_differential_operator_value(
             current_node_der_loc, current_node_der, it, ia, bt, ba);
