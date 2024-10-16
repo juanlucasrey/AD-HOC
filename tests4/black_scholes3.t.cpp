@@ -88,11 +88,45 @@ TEST(BlackScholes, BS3) {
                      dSvT, dKvT, dres);
 
     t.set(dres) = 1.;
-    t.backpropagate(ct);
+    t.backpropagate2<71>(ct);
+
+    EXPECT_NEAR(ct.get(res), 1.8890465506626162, 1e-14);
+    EXPECT_NEAR(t.get(dS), 6.0454412443913581, 1e-14);
+    EXPECT_NEAR(t.get(dK), 3.3740304502248355, 1e-14);
+    EXPECT_NEAR(t.get(dv), -1.9089022751421003, 1e-14);
+    EXPECT_NEAR(t.get(dT), -0.28633534127131505, 1e-14);
+    EXPECT_NEAR(t.get(dSS), 0.69395318306607745, 1e-14);
+    EXPECT_NEAR(t.get(dKK), -1.0577074070536294, 1e-14);
+    EXPECT_NEAR(t.get(dvv), 1.1669805086658553, 1e-14);
+    EXPECT_NEAR(t.get(dTT), 0.16942473208063927, 1e-14);
+    EXPECT_NEAR(t.get(dSK), 4.3981330899714148, 1e-14);
+    EXPECT_NEAR(t.get(dSv), -16.278830190533597, 1e-14);
+    EXPECT_NEAR(t.get(dST), -2.4418245285800397, 1e-14);
+    EXPECT_NEAR(t.get(dKv), -9.1167961040278751, 1e-14);
+    EXPECT_NEAR(t.get(dKT), -1.3675194156041814, 1e-14);
+    EXPECT_NEAR(t.get(dvT), -1.5588081225423438, 1e-14);
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
-    std::cout << ct.get(res) << std::endl;
-    std::cout << t.get(dS) << std::endl;
+    std::cout << t.get(dSSS) << std::endl;
+    std::cout << t.get(dKKK) << std::endl;
+    std::cout << t.get(dvvv) << std::endl;
+    std::cout << t.get(dTTT) << std::endl;
+    std::cout << t.get(dSSK) << std::endl;
+    std::cout << t.get(dSSv) << std::endl;
+    std::cout << t.get(dSST) << std::endl;
+    std::cout << t.get(dSKK) << std::endl;
+    std::cout << t.get(dSvv) << std::endl;
+    std::cout << t.get(dSTT) << std::endl;
+    std::cout << t.get(dKKv) << std::endl;
+    std::cout << t.get(dKKT) << std::endl;
+    std::cout << t.get(dKvv) << std::endl;
+    std::cout << t.get(dKTT) << std::endl;
+    std::cout << t.get(dvvT) << std::endl;
+    std::cout << t.get(dvTT) << std::endl;
+    std::cout << t.get(dSKv) << std::endl;
+    std::cout << t.get(dSKT) << std::endl;
+    std::cout << t.get(dSvT) << std::endl;
+    std::cout << t.get(dKvT) << std::endl;
 }
 
 } // namespace adhoc4

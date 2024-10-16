@@ -1,6 +1,5 @@
 #include <calc_tree.hpp>
 #include <sort.hpp>
-#include <utils/bivariate.hpp>
 
 #include "type_name.hpp"
 #include <gtest/gtest.h>
@@ -19,9 +18,6 @@ TEST(BackPropagator, Sort) {
     CalcTree ct(res);
     using PrimalNodes = decltype(ct)::ValuesTupleInverse;
     constexpr auto primal_nodes_inverted = PrimalNodes{};
-
-    constexpr auto new_bi = detail::sort_bivariate(temp, primal_nodes_inverted);
-    std::cout << type_name2<decltype(new_bi)>() << std::endl;
 
     auto d1 = d(res);
     auto d2 = d(res) * d(x);

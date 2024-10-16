@@ -2,7 +2,6 @@
 #include <backpropagator.hpp>
 #include <calc_tree.hpp>
 #include <differential_operator.hpp>
-#include <utils/bivariate.hpp>
 
 #include <utils/tuple.hpp>
 

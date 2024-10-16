@@ -21,10 +21,6 @@
 #ifndef ADHOC4_BACKPROPAGATOR_BUFFER_SIZE_HPP
 #define ADHOC4_BACKPROPAGATOR_BUFFER_SIZE_HPP
 
-// #include "combinatorics/combinations.hpp"
-// #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
-// #include "utils/bivariate.hpp"
-// #include "utils/index_sequence.hpp"
 #include "backpropagator_tools.hpp"
 #include "combinatorics/trinomial.hpp"
 #include "dependency.hpp"
