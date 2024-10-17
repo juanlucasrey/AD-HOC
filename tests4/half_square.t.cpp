@@ -46,7 +46,7 @@ constexpr auto switch_flag_aux(TupleBool tb,
     return std::tuple_cat(
         std::make_tuple(std::get<First>(tb))...,
         std::make_tuple(
-            std::conditional_t<std::tuple_element<Loc, TupleBool>::type::value,
+            std::conditional_t<std::tuple_element_t<Loc, TupleBool>::value,
                                std::false_type, std::true_type>{}),
         std::make_tuple(std::get<Last + Loc + 1>(tb))...);
 }
@@ -63,8 +63,8 @@ constexpr auto switch_flag(TupleBool tb) {
 template <std::size_t Row, std::size_t Col, std::size_t Side, std::size_t Size,
           class TupleBool>
 auto set(std::array<double, Size> & /* vals */, TupleBool tb) {
-    if constexpr (std::tuple_element<half_square_index(Row, Col, Side),
-                                     TupleBool>::type::value) {
+    if constexpr (std::tuple_element_t<half_square_index(Row, Col, Side),
+                                       TupleBool>::value) {
         return tb;
     } else {
         return tb;
