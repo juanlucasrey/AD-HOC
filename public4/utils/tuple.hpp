@@ -128,6 +128,21 @@ auto constexpr replace_first(Tuple tuple, Old old_value, New new_value) {
                                      std::tuple<>{});
 }
 
+namespace detail {
+
+template <class Tuple, std::size_t... I>
+constexpr auto sub_tuple_aux(std::index_sequence<I...> /* i */) {
+    return std::tuple<std::tuple_element_t<I, Tuple>...>{};
+}
+
+} // namespace detail
+
+template <std::size_t From, std::size_t To, class Tuple>
+constexpr auto sub_tuple(Tuple /* tuple */) {
+    static_assert(std::tuple_size_v<Tuple> > From);
+    return detail::sub_tuple_aux<Tuple>(make_index_sequence<From, To>());
+}
+
 } // namespace adhoc4
 
 #endif // ADHOC4_UTILS_TUPLE_HPP

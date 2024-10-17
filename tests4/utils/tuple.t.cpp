@@ -1,4 +1,4 @@
-
+#include <utils/index_sequence.hpp>
 #include <utils/tuple.hpp>
 
 #include "../type_name.hpp"
@@ -33,6 +33,24 @@ TEST(UtilsTuple, Invert) {
 
     constexpr auto inverted_temp = invert(temp);
     std::cout << type_name2<decltype(inverted_temp)>() << std::endl;
+}
+
+TEST(UtilsTuple, Find) {
+
+    constexpr std::tuple<double, int, char> temp;
+    constexpr float v1 = 0;
+
+    constexpr auto loc2 = find<std::tuple<double, int, char>, int, 1>();
+    static_assert(loc2 == 1);
+}
+
+TEST(UtilsTuple, SubTuple) {
+
+    constexpr std::tuple<double, int, char> temp;
+    constexpr auto sub = sub_tuple<1, 2>(temp);
+
+    constexpr std::tuple<int, char> result;
+    static_assert(std::is_same_v<decltype(result), decltype(sub)>);
 }
 
 } // namespace adhoc4
