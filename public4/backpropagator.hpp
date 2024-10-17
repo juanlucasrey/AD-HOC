@@ -44,7 +44,7 @@ template <class... Ids, std::size_t... Orders, class Node>
 constexpr auto
 create_single_tuple(std::tuple<der::d<Orders, Ids>...> diff_operator,
                     Node /* in */) {
-    std::size_t constexpr pos = find4<std::tuple<Ids...>, Node>();
+    std::size_t constexpr pos = find<std::tuple<Ids...>, Node>();
     if constexpr (pos < sizeof...(Ids)) {
         return std::make_tuple(std::get<pos>(diff_operator));
     } else {
@@ -108,8 +108,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
     template <DerivativeType DT = DerivativeType::TaylorCoefficient,
               class Input>
     auto inline get(Input in) const -> double {
-        constexpr auto idx =
-            find4<std::tuple<InputsAndOutputsDers...>, Input>();
+        constexpr auto idx = find<std::tuple<InputsAndOutputsDers...>, Input>();
         static_assert(idx < sizeof...(InputsAndOutputsDers),
                       "derivative not found");
 
@@ -121,8 +120,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
     }
 
     template <class Input> auto inline set(Input /* in */) -> double & {
-        constexpr auto idx =
-            find4<std::tuple<InputsAndOutputsDers...>, Input>();
+        constexpr auto idx = find<std::tuple<InputsAndOutputsDers...>, Input>();
         static_assert(idx < sizeof...(InputsAndOutputsDers),
                       "derivative not found");
         return this->m_derivatives[idx];

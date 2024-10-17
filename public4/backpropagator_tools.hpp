@@ -164,11 +164,11 @@ auto get_differential_operator_value(
     InterfaceArray const &ia, BufferTypes /* bt */, BufferArray const &ba)
     -> double {
     if constexpr (std::is_same_v<DerivativeNodeLoc, on_interface_t>) {
-        constexpr auto idx = find4<InterfaceTypes, DerivativeNode>();
+        constexpr auto idx = find<InterfaceTypes, DerivativeNode>();
         return ia[idx];
     } else {
         static_assert(std::is_same_v<DerivativeNodeLoc, on_buffer_t>);
-        constexpr auto idx = find4<BufferTypes, DerivativeNode>();
+        constexpr auto idx = find<BufferTypes, DerivativeNode>();
         return ba[idx];
     }
 }
@@ -185,7 +185,7 @@ auto constexpr replace_first3_aux(
 template <class Tuple, class Old, class New>
 auto constexpr replace_first3(Tuple /* tuple */, Old /* old_value */,
                               New /* new_value */) {
-    constexpr auto loc = find4<Tuple, Old>();
+    constexpr auto loc = find<Tuple, Old>();
     constexpr auto tuple_size = std::tuple_size_v<Tuple>;
     static_assert(loc < tuple_size);
 
@@ -218,7 +218,7 @@ auto constexpr remove_first_aux(std::index_sequence<ISFirst...> /* is_first */,
 
 template <class Tuple, class Old>
 auto constexpr remove_first(Tuple /* tuple */, Old /* old_value */) {
-    constexpr auto loc = find4<Tuple, Old>();
+    constexpr auto loc = find<Tuple, Old>();
     constexpr auto tuple_size = std::tuple_size_v<Tuple>;
     static_assert(loc < tuple_size);
 
@@ -264,17 +264,17 @@ template <class Type, class InterfaceTypes, class BufferTypes>
 constexpr auto locate_new_vals_aux() {
 
     if constexpr (is_derivative_input(Type{})) {
-        constexpr auto it_loc = find4<InterfaceTypes, Type>();
+        constexpr auto it_loc = find<InterfaceTypes, Type>();
         constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
         static_assert(it_loc < it_size);
         return on_interface_add_t<it_loc>{};
     } else {
-        constexpr auto bt_loc = find4<BufferTypes, Type>();
+        constexpr auto bt_loc = find<BufferTypes, Type>();
         constexpr auto bt_size = std::tuple_size_v<BufferTypes>;
         if constexpr (bt_loc < bt_size) {
             return on_buffer_add_t<bt_loc>{};
         } else {
-            constexpr auto it_loc = find4<InterfaceTypes, Type>();
+            constexpr auto it_loc = find<InterfaceTypes, Type>();
             constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
             if constexpr (it_loc < it_size) {
                 return on_interface_add_t<it_loc>{};
@@ -301,7 +301,7 @@ constexpr auto update_buffer_types(TypesToPlace derivative_nodes,
         if constexpr (std::is_same_v<
                           const on_buffer_new_t,
                           const std::tuple_element_t<N, LocationIndicators>>) {
-            constexpr auto loc = find4<BufferTypes, available_t, FindOffset>();
+            constexpr auto loc = find<BufferTypes, available_t, FindOffset>();
             constexpr auto tuple_size = std::tuple_size_v<BufferTypes>;
             static_assert(loc < tuple_size);
 
@@ -360,7 +360,7 @@ auto write_results(ResultsTypes derivatives_nodes,
                                          const std::tuple_element_t<
                                              N, LocationIndicators>>) {
                 constexpr auto idx =
-                    find4<BufferTypes, std::tuple_element_t<N, ResultsTypes>>();
+                    find<BufferTypes, std::tuple_element_t<N, ResultsTypes>>();
                 static_assert(idx < BufferArraySize);
                 buffer_array[idx] = results_array[N];
             } else {
@@ -394,8 +394,8 @@ template <std::size_t N, class T> constexpr auto make_tuple_same(T /* t */) {
 
 template <class Id1, class Id2, class Nodes>
 constexpr auto sort_pair(std::tuple<Id1, Id2> id, Nodes /* nodes */) {
-    constexpr auto idx1 = find4<Nodes, Id1>();
-    constexpr auto idx2 = find4<Nodes, Id2>();
+    constexpr auto idx1 = find<Nodes, Id1>();
+    constexpr auto idx2 = find<Nodes, Id2>();
     constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
     if constexpr (id1_less_than_id2) {
         return std::tuple<Id2, Id1>{};
@@ -442,8 +442,8 @@ multiply_differential_operator_aux(DiffOp single, std::tuple<> /* mult */,
 template <class Id1, class Id2, class Nodes>
 constexpr auto less_than_single(Id1 /* in1 */, Id2 /* in2 */,
                                 Nodes /* nodes */) {
-    constexpr auto idx1 = find4<Nodes, Id1>();
-    constexpr auto idx2 = find4<Nodes, Id2>();
+    constexpr auto idx1 = find<Nodes, Id1>();
+    constexpr auto idx2 = find<Nodes, Id2>();
     return (idx1 > idx2);
 }
 
@@ -506,8 +506,8 @@ constexpr auto less_than3_aux(Op1 in1, Op2 in2, Nodes nodes) {
     } else {
         constexpr std::tuple_element_t<Pos1, Op1> diffop1;
         constexpr std::tuple_element_t<Pos2, Op2> diffop2;
-        constexpr auto idx1 = find4<Nodes, decltype(get_id(diffop1))>();
-        constexpr auto idx2 = find4<Nodes, decltype(get_id(diffop2))>();
+        constexpr auto idx1 = find<Nodes, decltype(get_id(diffop1))>();
+        constexpr auto idx2 = find<Nodes, decltype(get_id(diffop2))>();
         constexpr std::size_t Order1 = get_power(diffop1);
         constexpr std::size_t Order2 = get_power(diffop2);
         if constexpr (idx1 < idx2) {
@@ -636,8 +636,8 @@ constexpr auto multiply_ordered_aux(Tuple1 in1, Tuple2 in2, Out out,
         constexpr auto element2 = std::get<Pos2>(in2);
         constexpr auto id1 = get_id(element1);
         constexpr auto id2 = get_id(element2);
-        constexpr auto idx1 = find4<Nodes, decltype(id1)>();
-        constexpr auto idx2 = find4<Nodes, decltype(id2)>();
+        constexpr auto idx1 = find<Nodes, decltype(id1)>();
+        constexpr auto idx2 = find<Nodes, decltype(id2)>();
 
         if constexpr (idx1 < idx2) {
             constexpr std::size_t power = get_power(element1);
@@ -665,8 +665,8 @@ constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) -> bool {
         constexpr auto in_second = std::get<Pos + 1>(in);
         constexpr auto id1 = get_id(in_first);
         constexpr auto id2 = get_id(in_second);
-        constexpr auto idx1 = find4<Nodes, decltype(id1)>();
-        constexpr auto idx2 = find4<Nodes, decltype(id2)>();
+        constexpr auto idx1 = find<Nodes, decltype(id1)>();
+        constexpr auto idx2 = find<Nodes, decltype(id2)>();
         if constexpr (idx1 < idx2) {
             return true;
         } else {

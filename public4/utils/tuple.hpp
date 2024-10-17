@@ -29,14 +29,14 @@
 namespace adhoc4 {
 
 template <class Tuple, class T, std::size_t N = 0>
-constexpr auto find4() -> std::size_t {
+constexpr auto find() -> std::size_t {
     if constexpr (N == std::tuple_size_v<Tuple>) {
         return N;
     } else if constexpr (std::is_same_v<const std::tuple_element_t<N, Tuple>,
                                         const T>) {
         return N;
     } else {
-        return find4<Tuple, T, N + 1>();
+        return find<Tuple, T, N + 1>();
     }
 }
 

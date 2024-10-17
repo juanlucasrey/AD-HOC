@@ -43,7 +43,7 @@ template <class... ActiveLeafsAndRootsDerivatives> class Tape {
         detail::calc_order_aux_t<
             true, ActiveLeafsAndRootsDerivatives...>::template call()));
 
-    std::array<double, std::tuple_size<ValuesTuple>{}> m_values{};
+    std::array<double, std::tuple_size_v<ValuesTuple>> m_values{};
     std::array<double, sizeof...(ActiveLeafsAndRootsDerivatives)>
         m_derivatives{};
 
@@ -316,7 +316,7 @@ template <class... ActiveLeafsAndRootsDerivatives>
 template <class Derived>
 auto Tape<ActiveLeafsAndRootsDerivatives...>::set(Base<Derived> /* in */)
     -> double & {
-    static_assert(get_idx_first2<Derived>(leafs{}) != std::tuple_size<leafs>{},
+    static_assert(get_idx_first2<Derived>(leafs{}) != std::tuple_size_v<leafs>,
                   "only leafs are allowed to be set");
     constexpr auto idx = get_idx_first2<Derived>(ValuesTuple{});
     return this->m_values[idx];
