@@ -543,13 +543,11 @@ constexpr auto merge_sorted_aux2(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
                   std::tuple_size_v<Tuple2> == Pos2) {
         return out;
     } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
-        return merge_sorted_aux2<Pos1 + 1, Pos2>(
-            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos1>(in1))),
-            nodes);
+        return std::tuple_cat(
+            out, sub_tuple<Pos1, std::tuple_size_v<Tuple1> - 1>(in1));
     } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
-        return merge_sorted_aux2<Pos1, Pos2 + 1>(
-            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos2>(in2))),
-            nodes);
+        return std::tuple_cat(
+            out, sub_tuple<Pos2, std::tuple_size_v<Tuple2> - 1>(in2));
     } else {
         constexpr auto first1 = std::get<Pos1>(in1);
         constexpr auto first2 = std::get<Pos2>(in2);
