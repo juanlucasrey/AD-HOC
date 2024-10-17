@@ -35,18 +35,6 @@
 
 namespace adhoc4::detail {
 
-template <class Tuple, class T, std::size_t N = 0>
-constexpr auto find4() -> std::size_t {
-    if constexpr (N == std::tuple_size_v<Tuple>) {
-        return N;
-    } else if constexpr (std::is_same_v<const std::tuple_element_t<N, Tuple>,
-                                        const T>) {
-        return N;
-    } else {
-        return find4<Tuple, T, N + 1>();
-    }
-}
-
 template <class I> constexpr auto is_derivative_input(I /* in */) -> bool {
     return false;
 }
@@ -393,48 +381,6 @@ auto write_results(ResultsTypes derivatives_nodes,
     }
 }
 
-template <class Tuple, class Nodes>
-constexpr auto is_sorted(Tuple in, Nodes nodes) {
-    if constexpr (size(in) <= 1) {
-        return true;
-    } else {
-        if constexpr (less_than(std::get<1>(in), std::get<0>(in), nodes)) {
-            return is_sorted(tail(in), nodes);
-        } else {
-            return false;
-        }
-    }
-}
-
-template <class Tuple1, class Tuple2, class Out, class Nodes>
-constexpr auto merge_sorted_aux(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
-    if constexpr (size(in2) == 0) {
-        return std::tuple_cat(out, in1);
-    } else if constexpr (size(in1) == 0) {
-        return std::tuple_cat(out, in2);
-    } else {
-        constexpr auto first1 = head(in1);
-        constexpr auto first2 = head(in2);
-        if constexpr (first1 == first2) {
-            return merge_sorted_aux(tail(in1), tail(in2),
-                                    std::tuple_cat(out, first1), nodes);
-        } else if constexpr (less_than(first1, first2, nodes)) {
-            return merge_sorted_aux(in1, tail(in2), std::tuple_cat(out, first2),
-                                    nodes);
-        } else {
-            return merge_sorted_aux(tail(in1), in2, std::tuple_cat(out, first1),
-                                    nodes);
-        }
-    }
-}
-
-template <class Tuple1, class Tuple2, class Nodes>
-constexpr auto merge_sorted(Tuple1 in1, Tuple2 in2, Nodes nodes) {
-    static_assert(is_sorted(in1, nodes));
-    static_assert(is_sorted(in2, nodes));
-    return merge_sorted_aux(in1, in2, std::tuple<>{}, nodes);
-}
-
 template <std::size_t I, class T> using Type = T;
 
 template <class T, std::size_t... Is>
@@ -447,9 +393,10 @@ template <std::size_t N, class T> constexpr auto make_tuple_same(T /* t */) {
 }
 
 template <class Id1, class Id2, class Nodes>
-constexpr auto sort_pair(std::tuple<Id1, Id2> id, Nodes nodes) {
-    constexpr auto id1_less_than_id2 = static_cast<bool>(
-        get_first_type_idx(nodes, Id1{}) >= get_first_type_idx(nodes, Id2{}));
+constexpr auto sort_pair(std::tuple<Id1, Id2> id, Nodes /* nodes */) {
+    constexpr auto idx1 = find4<Nodes, Id1>();
+    constexpr auto idx2 = find4<Nodes, Id2>();
+    constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
     if constexpr (id1_less_than_id2) {
         return std::tuple<Id2, Id1>{};
     } else {
@@ -493,9 +440,10 @@ multiply_differential_operator_aux(DiffOp single, std::tuple<> /* mult */,
 }
 
 template <class Id1, class Id2, class Nodes>
-constexpr auto less_than_single(Id1 /* in1 */, Id2 /* in2 */, Nodes nodes) {
-    constexpr auto idx1 = get_first_type_idx(nodes, Id1{});
-    constexpr auto idx2 = get_first_type_idx(nodes, Id2{});
+constexpr auto less_than_single(Id1 /* in1 */, Id2 /* in2 */,
+                                Nodes /* nodes */) {
+    constexpr auto idx1 = find4<Nodes, Id1>();
+    constexpr auto idx2 = find4<Nodes, Id2>();
     return (idx1 > idx2);
 }
 
@@ -668,46 +616,53 @@ auto calc_mul(std::array<double, OutSize> &arrayout,
     }
 }
 
-template <class DerOp1, class DerOp2, class Result, class Nodes>
-constexpr auto multiply_ordered_aux(DerOp1 const in1, DerOp2 const in2,
-                                    Result res, Nodes nodes) {
-    if constexpr (size(in2) == 0) {
-        return std::tuple_cat(res, in1);
-    } else if constexpr (size(in1) == 0) {
-        return std::tuple_cat(res, in2);
+template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Tuple1,
+          class Tuple2, class Out, class Nodes>
+constexpr auto multiply_ordered_aux(Tuple1 in1, Tuple2 in2, Out out,
+                                    Nodes nodes) {
+    if constexpr (std::tuple_size_v<Tuple1> == Pos1 &&
+                  std::tuple_size_v<Tuple2> == Pos2) {
+        return out;
+    } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
+        return multiply_ordered_aux<Pos1 + 1, Pos2>(
+            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos1>(in1))),
+            nodes);
+    } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
+        return multiply_ordered_aux<Pos1, Pos2 + 1>(
+            in1, in2, std::tuple_cat(out, std::make_tuple(std::get<Pos2>(in2))),
+            nodes);
     } else {
-        constexpr auto in1_first = head(in1);
-        constexpr auto in2_first = head(in2);
-        constexpr auto id1 = get_id(in1_first);
-        constexpr auto id2 = get_id(in2_first);
+        constexpr auto element1 = std::get<Pos1>(in1);
+        constexpr auto element2 = std::get<Pos2>(in2);
+        constexpr auto id1 = get_id(element1);
+        constexpr auto id2 = get_id(element2);
         constexpr auto idx1 = find4<Nodes, decltype(id1)>();
         constexpr auto idx2 = find4<Nodes, decltype(id2)>();
 
         if constexpr (idx1 < idx2) {
-            constexpr std::size_t power = get_power(in1_first);
-            return multiply_ordered_aux(
-                tail(in1), in2, std::tuple_cat(res, d<power>(id1)), nodes);
+            constexpr std::size_t power = get_power(element1);
+            return multiply_ordered_aux<Pos1 + 1, Pos2>(
+                in1, in2, std::tuple_cat(out, d<power>(id1)), nodes);
         } else if constexpr (idx1 > idx2) {
-            constexpr std::size_t power = get_power(in2_first);
-            return multiply_ordered_aux(
-                in1, tail(in2), std::tuple_cat(res, d<power>(id2)), nodes);
+            constexpr std::size_t power = get_power(element2);
+            return multiply_ordered_aux<Pos1, Pos2 + 1>(
+                in1, in2, std::tuple_cat(out, d<power>(id2)), nodes);
         } else {
             constexpr std::size_t power =
-                get_power(in1_first) + get_power(in2_first);
-            return multiply_ordered_aux(tail(in1), tail(in2),
-                                        std::tuple_cat(res, d<power>(id1)),
-                                        nodes);
+                get_power(element1) + get_power(element2);
+            return multiply_ordered_aux<Pos1 + 1, Pos2 + 1>(
+                in1, in2, std::tuple_cat(out, d<power>(id1)), nodes);
         }
     }
 }
 
-template <class Tuple, class Nodes>
-constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) {
-    if constexpr (size(in) <= 1) {
+template <std::size_t Pos = 0, class Tuple, class Nodes>
+constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) -> bool {
+    if constexpr (std::tuple_size_v<Tuple> <= (Pos + 1)) {
         return true;
     } else {
-        constexpr auto in_first = std::get<0>(in);
-        constexpr auto in_second = std::get<1>(in);
+        constexpr auto in_first = std::get<Pos>(in);
+        constexpr auto in_second = std::get<Pos + 1>(in);
         constexpr auto id1 = get_id(in_first);
         constexpr auto id2 = get_id(in_second);
         constexpr auto idx1 = find4<Nodes, decltype(id1)>();
@@ -715,7 +670,7 @@ constexpr auto is_sorted_diff_op(Tuple in, Nodes nodes) {
         if constexpr (idx1 < idx2) {
             return true;
         } else {
-            return is_sorted_diff_op(tail(in), nodes);
+            return is_sorted_diff_op<Pos + 1>(in, nodes);
         }
     }
 }

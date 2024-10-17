@@ -55,7 +55,7 @@ constexpr auto add_duplicate(der::d<Order1, Id> /* in1 */,
 template <class Id1, std::size_t Order1, class... Ids2, std::size_t... Orders2>
 constexpr auto add_duplicates(der::d<Order1, Id1> in,
                               std::tuple<der::d<Orders2, Ids2>...> id2) {
-    constexpr auto idx = get_first_type_idx(std::tuple<Ids2...>{}, Id1{});
+    constexpr auto idx = find4<std::tuple<Ids2...>, Id1>();
 
     if constexpr (idx < sizeof...(Orders2)) {
         constexpr auto v = std::get<idx>(id2);
@@ -70,7 +70,7 @@ template <class Id1, std::size_t Order1, class... Ids2, std::size_t... Orders2>
 constexpr auto
 remove_duplicates(der::d<Order1, Id1> in,
                   std::tuple<der::d<Orders2, Ids2>...> /* id2 */) {
-    constexpr auto idx = get_first_type_idx(std::tuple<Ids2...>{}, Id1{});
+    constexpr auto idx = find4<std::tuple<Ids2...>, Id1>();
 
     if constexpr (idx < sizeof...(Orders2)) {
         return std::tuple{};

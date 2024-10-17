@@ -114,7 +114,7 @@ template <class... Outputs> class CalcTree {
     inline void
     evaluate_aux(std::tuple<Xvariate<Inputs...>, NodesToCalc...> /* nodes */) {
         using CurrentNode = Xvariate<Inputs...>;
-        constexpr auto idx = get_first_type_idx(ValuesTuple{}, CurrentNode{});
+        constexpr auto idx = find4<ValuesTuple, CurrentNode>();
         this->m_values[idx] = CurrentNode::v(this->get(Inputs{})...);
         this->evaluate_aux(std::tuple<NodesToCalc...>{});
     }
@@ -124,7 +124,7 @@ template <class... Outputs> class CalcTree {
     inline void evaluate_aux(
         std::tuple<mul_t<Node1, inv_t<Node2>>, NodesToCalc...> /* nodes */) {
         using CurrentNode = mul_t<Node1, inv_t<Node2>>;
-        constexpr auto idx = get_first_type_idx(ValuesTuple{}, CurrentNode{});
+        constexpr auto idx = find4<ValuesTuple, CurrentNode>();
         this->m_values[idx] = this->get(Node1{}) / this->get(Node2{});
         this->evaluate_aux(std::tuple<NodesToCalc...>{});
     }
@@ -138,14 +138,14 @@ template <class... Outputs> class CalcTree {
         return constants::CD<D>::v();
     }
 
-    template <class Input> auto inline get(Input in) const -> double {
-        constexpr auto idx = get_first_type_idx(ValuesTuple{}, in);
+    template <class Input> auto inline get(Input /* in */) const -> double {
+        constexpr auto idx = find4<ValuesTuple, Input>();
         return this->m_values[idx];
     }
 
     template <class Input> auto inline set(Input in) -> double & {
         static_assert(is_input(in), "only inputs are allowed to be set");
-        constexpr auto idx = get_first_type_idx(ValuesTuple{}, in);
+        constexpr auto idx = find4<ValuesTuple, Input>();
         static_assert(idx < std::tuple_size<ValuesTuple>{}, "input not found");
         return this->m_values[idx];
     }

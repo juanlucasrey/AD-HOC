@@ -28,30 +28,16 @@
 
 namespace adhoc4 {
 
-namespace detail {
-
-template <std::size_t Idx = 0, class T>
-auto constexpr get_first_type_idx_aux(std::tuple<> /* tuple */, T /* value */)
-    -> std::size_t {
-    return Idx;
-}
-
-template <std::size_t Idx = 0, class FirstT, class... Ts, class T>
-auto constexpr get_first_type_idx_aux(std::tuple<FirstT, Ts...> /* tuple */,
-                                      T /* value */) -> std::size_t {
-    if constexpr (std::same_as<const FirstT, const T>) {
-        return Idx;
+template <class Tuple, class T, std::size_t N = 0>
+constexpr auto find4() -> std::size_t {
+    if constexpr (N == std::tuple_size_v<Tuple>) {
+        return N;
+    } else if constexpr (std::is_same_v<const std::tuple_element_t<N, Tuple>,
+                                        const T>) {
+        return N;
     } else {
-        return get_first_type_idx_aux<Idx + 1>(std::tuple<Ts...>{}, T{});
+        return find4<Tuple, T, N + 1>();
     }
-}
-
-} // namespace detail
-
-template <class... Ts, class T>
-auto constexpr get_first_type_idx(std::tuple<Ts...> /* tuple */, T /* value */)
-    -> std::size_t {
-    return detail::get_first_type_idx_aux(std::tuple<Ts...>{}, T{});
 }
 
 template <class... Ts, class T>

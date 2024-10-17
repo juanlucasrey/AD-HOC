@@ -40,8 +40,8 @@ template <class Id1, std::size_t Order1, class Id2, std::size_t Order2,
 constexpr auto
 less_than_single(der::d<Order1, Id1> /* in1 */, der::d<Order2, Id2> /* in2 */,
                  Id1Remaining id1rem, Id2Remaining id2rem, Nodes nodes) {
-    constexpr auto idx1 = get_first_type_idx(nodes, Id1{});
-    constexpr auto idx2 = get_first_type_idx(nodes, Id2{});
+    constexpr auto idx1 = find4<Nodes, Id1>();
+    constexpr auto idx2 = find4<Nodes, Id2>();
     if constexpr (idx1 < idx2) {
         return false;
     } else if constexpr (idx1 > idx2) {
