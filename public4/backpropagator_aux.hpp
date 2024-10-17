@@ -585,11 +585,8 @@ auto treat_node(PrimalNode nd, DerivativeNodeLocation dnl, DerivativeNodes dn,
         nd, std::get<0>(separated_derivative_nodes_loc),
         std::get<0>(separated_derivative_nodes), ct, it, ia, bt, ba, dnin);
 
-    constexpr
-        typename std::tuple_element<0, decltype(return_pair)>::type bt_new;
-    constexpr
-        typename std::tuple_element<1, decltype(return_pair)>::type dn_new;
-
+    constexpr std::tuple_element_t<0, decltype(return_pair)> bt_new;
+    constexpr std::tuple_element_t<1, decltype(return_pair)> dn_new;
     constexpr auto dn_remaining = std::get<1>(separated_derivative_nodes);
 
     using NodesValue = CalcTree::ValuesTupleInverse;
@@ -626,9 +623,9 @@ void backpropagate_aux(DerivativeNodeLocation dnl, DerivativeNodes dn,
         auto res =
             treat_node(current_primal_node, dnl, dn, ct, it, ia, bt, ba, dnin);
 
-        constexpr typename std::tuple_element<0, decltype(res)>::type bt_new;
-        constexpr typename std::tuple_element<1, decltype(res)>::type dnl_new;
-        constexpr typename std::tuple_element<2, decltype(res)>::type dn_new;
+        constexpr std::tuple_element_t<0, decltype(res)> bt_new;
+        constexpr std::tuple_element_t<1, decltype(res)> dnl_new;
+        constexpr std::tuple_element_t<2, decltype(res)> dn_new;
 
 #if LOG_LEVEL
         std::cout << "dnl_new" << std::endl;
