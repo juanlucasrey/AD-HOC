@@ -83,34 +83,14 @@ constexpr auto filter(std::tuple<Types...> /* in */,
         std::conditional_t<Flags::value, std::tuple<Types>, std::tuple<>>{}...);
 }
 
-namespace detail {
-
-template <std::size_t N, class UnfilteredTuple, class CalculateFlags,
-          class Output1, class Output2>
-constexpr auto separate_aux(UnfilteredTuple in, CalculateFlags calc_flags,
-                            Output1 out1, Output2 out2) {
-    if constexpr (N == std::tuple_size_v<UnfilteredTuple>) {
-        return std::make_pair(out1, out2);
-    } else {
-        if constexpr (std::get<N>(calc_flags)) {
-            return separate_aux<N + 1>(
-                in, calc_flags,
-                std::tuple_cat(out1, std::make_tuple(std::get<N>(in))), out2);
-
-        } else {
-            return separate_aux<N + 1>(
-                in, calc_flags, out1,
-                std::tuple_cat(out2, std::make_tuple(std::get<N>(in))));
-        }
-    }
-}
-
-} // namespace detail
-
-template <class UnfilteredTuple, class CalculateFlags>
-constexpr auto separate(UnfilteredTuple in, CalculateFlags calc_flags) {
-    return detail::separate_aux<0>(in, calc_flags, std::tuple<>{},
-                                   std::tuple<>{});
+template <class... Types, class... Flags>
+constexpr auto separate(std::tuple<Types...> /* in */,
+                        std::tuple<Flags...> /* calc_flags */) {
+    return std::make_pair(
+        std::tuple_cat(std::conditional_t<Flags::value, std::tuple<Types>,
+                                          std::tuple<>>{}...),
+        std::tuple_cat(std::conditional_t<!Flags::value, std::tuple<Types>,
+                                          std::tuple<>>{}...));
 }
 
 namespace detail {
