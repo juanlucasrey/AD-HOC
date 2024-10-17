@@ -106,7 +106,7 @@ inline void zeta4dd_aux3(std::index_sequence<I...> current, double &res,
     }
 
     if constexpr ((CoeffIdx + 1) < End) {
-        auto constexpr next = NextPartitionIS(current);
+        constexpr auto next = NextPartitionIS(current);
         zeta4dd_aux3<End, CoeffIdx + 1>(next, res, buff1, buff2);
     }
 }

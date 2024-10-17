@@ -80,7 +80,7 @@ namespace detail {
 
 template <class CurrentIS, class Output>
 constexpr auto PartitionSequences_aux(CurrentIS const current, Output out) {
-    auto constexpr next = NextPartitionIS(current);
+    constexpr auto next = NextPartitionIS(current);
     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
         return PartitionSequences_aux(
             next, std::tuple_cat(out, std::make_tuple(current)));

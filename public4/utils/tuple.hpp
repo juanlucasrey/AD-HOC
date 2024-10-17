@@ -41,7 +41,7 @@ constexpr auto find() -> std::size_t {
 }
 
 template <class... Ts, class T>
-auto constexpr contains(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
+constexpr auto contains(std::tuple<Ts...> /* tuple */, T /* value */) -> bool {
     return (std::is_same_v<const Ts, const T> || ...);
 }
 
@@ -103,13 +103,13 @@ constexpr auto size(Tuple /* tuple */) -> std::size_t {
 namespace detail {
 
 template <class Old, class New, class Res>
-auto constexpr replace_first_aux(std::tuple<> /* tuple */, Old /* old_value */,
+constexpr auto replace_first_aux(std::tuple<> /* tuple */, Old /* old_value */,
                                  New /* new_value */, Res res) {
     return res;
 }
 
 template <class Input, class Old, class New, class Res>
-auto constexpr replace_first_aux(Input tuple, Old old_value, New new_value,
+constexpr auto replace_first_aux(Input tuple, Old old_value, New new_value,
                                  Res res) {
     if constexpr (std::is_same_v<decltype(head(tuple)), Old>) {
         return std::tuple_cat(res, std::make_tuple(new_value), tail(tuple));
@@ -123,7 +123,7 @@ auto constexpr replace_first_aux(Input tuple, Old old_value, New new_value,
 } // namespace detail
 
 template <class Tuple, class Old, class New>
-auto constexpr replace_first(Tuple tuple, Old old_value, New new_value) {
+constexpr auto replace_first(Tuple tuple, Old old_value, New new_value) {
     return detail::replace_first_aux(tuple, old_value, new_value,
                                      std::tuple<>{});
 }

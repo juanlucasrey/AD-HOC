@@ -460,8 +460,8 @@ constexpr auto check_included_final(TupleIndexSequence poly,
     if constexpr (order_monomial < size_poly) {
         return false;
     } else {
-        auto constexpr element_sum = element_wise_sum(poly);
-        bool constexpr smallerthan = diff_op_input <= element_sum;
+        constexpr auto element_sum = element_wise_sum(poly);
+        constexpr bool smallerthan = diff_op_input <= element_sum;
         // if any of the monomial order is larger than all polynomials, it can't
         // be included
         if constexpr (!smallerthan) {

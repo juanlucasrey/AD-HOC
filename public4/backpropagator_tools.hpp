@@ -77,7 +77,7 @@ constexpr auto max_orders(std::tuple<Ops...> /* id1 */) {
 
 template <std::size_t Offset, std::size_t PosFrom = 0, std::size_t PosTo = 0,
           class From, class To, class FilteredIS>
-auto constexpr copy_filtered_aux(From const &from_array, To &to_array,
+constexpr auto copy_filtered_aux(From const &from_array, To &to_array,
                                  FilteredIS fis) {
     if constexpr (PosFrom < size(fis)) {
         if constexpr (std::get<PosFrom>(fis)) {
@@ -92,7 +92,7 @@ auto constexpr copy_filtered_aux(From const &from_array, To &to_array,
 }
 
 template <class FromD, std::size_t FromS, class To, class Filter>
-auto constexpr copy_filtered(std::array<FromD, FromS> const &from_array,
+constexpr auto copy_filtered(std::array<FromD, FromS> const &from_array,
                              To &to_array, Filter filt) {
     constexpr std::size_t offset = FromS - size(filt);
     copy_filtered_aux<offset>(from_array, to_array, filt);
@@ -174,16 +174,16 @@ auto get_differential_operator_value(
 }
 
 template <class Tuple, class New, std::size_t... ISFirst, std::size_t... ISLast>
-auto constexpr replace_first3_aux(
-    std::index_sequence<ISFirst...> /* is_first */,
-    std::index_sequence<ISLast...> /* is_last */) {
+constexpr auto
+replace_first3_aux(std::index_sequence<ISFirst...> /* is_first */,
+                   std::index_sequence<ISLast...> /* is_last */) {
     constexpr auto offset = sizeof...(ISFirst) + 1;
     return std::tuple<std::tuple_element_t<ISFirst, Tuple>..., New,
                       std::tuple_element_t<ISLast + offset, Tuple>...>{};
 }
 
 template <class Tuple, class Old, class New>
-auto constexpr replace_first3(Tuple /* tuple */, Old /* old_value */,
+constexpr auto replace_first3(Tuple /* tuple */, Old /* old_value */,
                               New /* new_value */) {
     constexpr auto loc = find<Tuple, Old>();
     constexpr auto tuple_size = std::tuple_size_v<Tuple>;
@@ -195,7 +195,7 @@ auto constexpr replace_first3(Tuple /* tuple */, Old /* old_value */,
 }
 
 template <class DerivativeNodeLoc, class DerivativeNode, class BufferTypes>
-auto constexpr free_on_buffer(DerivativeNodeLoc current_node_der_loc,
+constexpr auto free_on_buffer(DerivativeNodeLoc current_node_der_loc,
                               DerivativeNode current_node_der, BufferTypes bt) {
     if constexpr (std::is_same_v<decltype(current_node_der_loc), on_buffer_t>) {
         constexpr auto newtuple =
@@ -209,7 +209,7 @@ auto constexpr free_on_buffer(DerivativeNodeLoc current_node_der_loc,
 }
 
 template <class Tuple, std::size_t... ISFirst, std::size_t... ISLast>
-auto constexpr remove_first_aux(std::index_sequence<ISFirst...> /* is_first */,
+constexpr auto remove_first_aux(std::index_sequence<ISFirst...> /* is_first */,
                                 std::index_sequence<ISLast...> /* is_last */) {
     constexpr auto offset = sizeof...(ISFirst) + 1;
     return std::tuple<std::tuple_element_t<ISFirst, Tuple>...,
@@ -217,7 +217,7 @@ auto constexpr remove_first_aux(std::index_sequence<ISFirst...> /* is_first */,
 }
 
 template <class Tuple, class Old>
-auto constexpr remove_first(Tuple /* tuple */, Old /* old_value */) {
+constexpr auto remove_first(Tuple /* tuple */, Old /* old_value */) {
     constexpr auto loc = find<Tuple, Old>();
     constexpr auto tuple_size = std::tuple_size_v<Tuple>;
     static_assert(loc < tuple_size);
@@ -228,7 +228,7 @@ auto constexpr remove_first(Tuple /* tuple */, Old /* old_value */) {
 }
 
 template <class DerivativeNodeLoc, class DerivativeNode, class BufferTypes>
-auto constexpr free_on_buffer_size(DerivativeNodeLoc current_node_der_loc,
+constexpr auto free_on_buffer_size(DerivativeNodeLoc current_node_der_loc,
                                    DerivativeNode current_node_der,
                                    BufferTypes bt) {
     if constexpr (std::is_same_v<decltype(current_node_der_loc), on_buffer_t>) {
@@ -246,10 +246,10 @@ class on_buffer_new_t {};
 template <std::size_t Loc> class on_interface_add_t {};
 
 template <class T, template <std::size_t> class U>
-inline constexpr bool is_instance_of_v = std::false_type{};
+constexpr bool is_instance_of_v = std::false_type{};
 
 template <template <std::size_t> class U, std::size_t V>
-inline constexpr bool is_instance_of_v<U<V>, U> = std::true_type{};
+constexpr bool is_instance_of_v<U<V>, U> = std::true_type{};
 
 template <std::size_t Loc> constexpr std::size_t get_loc(on_buffer_add_t<Loc>) {
     return Loc;

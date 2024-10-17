@@ -72,7 +72,7 @@ constexpr auto NextTrinomialIS(std::index_sequence<I...> i) {
 
 template <class CurrentIS, class Output>
 constexpr auto TrinomialSequences_aux(CurrentIS const current, Output out) {
-    auto constexpr next = NextTrinomialIS(current);
+    constexpr auto next = NextTrinomialIS(current);
     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
         return TrinomialSequences_aux(
             next, std::tuple_cat(out, std::make_tuple(current)));
@@ -135,7 +135,7 @@ constexpr auto NextTrinomialIS2(std::index_sequence<I...> i) {
 
 template <std::size_t DoublePower, class CurrentIS, class Output>
 constexpr auto TrinomialSequences_aux2(CurrentIS const current, Output out) {
-    auto constexpr next = NextTrinomialIS2<DoublePower>(current);
+    constexpr auto next = NextTrinomialIS2<DoublePower>(current);
     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
         return TrinomialSequences_aux2<DoublePower>(
             next, std::tuple_cat(out, std::make_tuple(current)));

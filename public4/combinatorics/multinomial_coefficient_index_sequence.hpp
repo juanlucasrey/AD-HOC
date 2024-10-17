@@ -86,7 +86,7 @@ namespace detail {
 
 template <class CurrentIS, class Output>
 constexpr auto MultinomialSequences_aux(CurrentIS const current, Output out) {
-    auto constexpr next = NextMultinomialIS(current);
+    constexpr auto next = NextMultinomialIS(current);
     if constexpr (!std::is_same_v<decltype(current), decltype(next)>) {
         return MultinomialSequences_aux(
             next, std::tuple_cat(out, std::make_tuple(current)));

@@ -58,8 +58,8 @@ namespace detail {
 template <std::size_t N, std::size_t Order, std::size_t Output>
 inline void asin_aux(std::array<double, Output> &res, double in,
                      double denominator) {
-    auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
-    auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
+    constexpr auto coeff1 = static_cast<double>(2 * (N - 1) + 1);
+    constexpr auto coeff2 = static_cast<double>((N - 1) * (N - 1));
     res[N] = (coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
         asin_aux<N + 1, Order>(res, in, denominator);
@@ -135,8 +135,8 @@ namespace detail {
 template <std::size_t N, std::size_t Order, std::size_t Output>
 inline void atan_aux(std::array<double, Output> &res, double in,
                      double denominator) {
-    auto constexpr coeff1 = static_cast<double>(2 * N);
-    auto constexpr coeff2 = static_cast<double>(N * (N - 1));
+    constexpr auto coeff1 = static_cast<double>(2 * N);
+    constexpr auto coeff2 = static_cast<double>(N * (N - 1));
     res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
         atan_aux<N + 1, Order>(res, in, denominator);
@@ -241,8 +241,8 @@ namespace detail {
 template <std::size_t N, std::size_t Order, std::size_t Output>
 inline void asinh_aux(std::array<double, Output> &res, double in,
                       double denominator) {
-    auto constexpr coeff1 = static_cast<double>(2 * (N - 1) + 1);
-    auto constexpr coeff2 = static_cast<double>((N - 1) * (N - 1));
+    constexpr auto coeff1 = static_cast<double>(2 * (N - 1) + 1);
+    constexpr auto coeff2 = static_cast<double>((N - 1) * (N - 1));
     res[N] = -(coeff1 * in * res[N - 1] + coeff2 * res[N - 2]) * denominator;
     if constexpr ((N + 1) < Order) {
         asinh_aux<N + 1, Order>(res, in, denominator);
@@ -474,10 +474,10 @@ template <std::size_t N, std::size_t Order, std::size_t Output>
 inline void comp_ellint_1_ders(std::array<double, Output> &res, double in,
                                double coeff, double denominator) {
     static_assert(N > 0);
-    auto constexpr coeff1 = static_cast<double>(N);
-    auto constexpr coeff2 =
+    constexpr auto coeff1 = static_cast<double>(N);
+    constexpr auto coeff2 =
         static_cast<double>(3 * (N - 1) * (N - 1) + 3 * (N - 1) + 1);
-    auto constexpr coeff3 = static_cast<double>((N - 1) * (N - 1) * (N - 1));
+    constexpr auto coeff3 = static_cast<double>((N - 1) * (N - 1) * (N - 1));
     res[N] = (coeff3 * res[N - 3] + coeff2 * in * res[N - 2] -
               coeff1 * coeff * res[N - 1]) *
              denominator;
@@ -533,10 +533,10 @@ template <std::size_t N, std::size_t Order, std::size_t Output>
 inline void comp_ellint_2_ders(std::array<double, Output> &res, double in,
                                double in_sq, double denominator) {
     static_assert(N > 0);
-    auto constexpr coeff1 = static_cast<double>((N - 1) * (N - 1) * (N - 1) -
+    constexpr auto coeff1 = static_cast<double>((N - 1) * (N - 1) * (N - 1) -
                                                 2 * (N - 1) * (N - 1));
-    auto constexpr coeff2 = static_cast<double>(3 * (N - 1) * (N - 1) - N);
-    auto constexpr coeff3 = static_cast<double>(3 * N - 2);
+    constexpr auto coeff2 = static_cast<double>(3 * (N - 1) * (N - 1) - N);
+    constexpr auto coeff3 = static_cast<double>(3 * N - 2);
     res[N] = (coeff1 * res[N - 3] + coeff2 * in * res[N - 2] -
               (static_cast<double>(N) - coeff3 * in_sq) * res[N - 1]) *
              denominator;
