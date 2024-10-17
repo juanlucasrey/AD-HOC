@@ -536,39 +536,85 @@ constexpr auto are_same(I1 /* lhs */, I2 /* rhs */) -> bool {
     return std::is_same_v<I1, I2>;
 }
 
-template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Tuple1,
-          class Tuple2, class Out, class Nodes>
-constexpr auto merge_sorted_aux2(Tuple1 in1, Tuple2 in2, Out out, Nodes nodes) {
+template <class Tuple1, class Tuple2, std::size_t Pos1 = 0,
+          std::size_t Pos2 = 0, class... Out, class Nodes>
+constexpr auto merge_sorted_aux2(std::tuple<Out...> out, Nodes nodes) {
     if constexpr (std::tuple_size_v<Tuple1> == Pos1 &&
                   std::tuple_size_v<Tuple2> == Pos2) {
         return out;
     } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
-        return std::tuple_cat(
-            out, sub_tuple<Pos1, std::tuple_size_v<Tuple1> - 1>(in1));
+        return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2>(
+            std::tuple<Out...,
+                       std::pair<std::true_type,
+                                 std::integral_constant<std::size_t, Pos1>>>{},
+            nodes);
     } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
-        return std::tuple_cat(
-            out, sub_tuple<Pos2, std::tuple_size_v<Tuple2> - 1>(in2));
+        return merge_sorted_aux2<Tuple1, Tuple2, Pos1, Pos2 + 1>(
+            std::tuple<Out...,
+                       std::pair<std::false_type,
+                                 std::integral_constant<std::size_t, Pos2>>>{},
+            nodes);
     } else {
-        constexpr auto first1 = std::get<Pos1>(in1);
-        constexpr auto first2 = std::get<Pos2>(in2);
+        constexpr std::tuple_element_t<Pos1, Tuple1> first1;
+        constexpr std::tuple_element_t<Pos2, Tuple2> first2;
+
         if constexpr (are_same(first1, first2)) {
-            return merge_sorted_aux2<Pos1 + 1, Pos2 + 1>(
-                in1, in2, std::tuple_cat(out, std::make_tuple(first1)), nodes);
+            return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2 + 1>(
+                std::tuple<Out...,
+                           std::pair<std::true_type, std::integral_constant<
+                                                         std::size_t, Pos1>>>{},
+                nodes);
+
         } else if constexpr (less_than2(first1, first2, nodes)) {
-            return merge_sorted_aux2<Pos1, Pos2 + 1>(
-                in1, in2, std::tuple_cat(out, std::make_tuple(first2)), nodes);
+            return merge_sorted_aux2<Tuple1, Tuple2, Pos1, Pos2 + 1>(
+                std::tuple<
+                    Out...,
+                    std::pair<std::false_type,
+                              std::integral_constant<std::size_t, Pos2>>>{},
+                nodes);
         } else {
-            return merge_sorted_aux2<Pos1 + 1, Pos2>(
-                in1, in2, std::tuple_cat(out, std::make_tuple(first1)), nodes);
+            return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2>(
+                std::tuple<Out...,
+                           std::pair<std::true_type, std::integral_constant<
+                                                         std::size_t, Pos1>>>{},
+                nodes);
         }
     }
+}
+
+template <class Tuple1, class Tuple2, class... Flag, class... Position>
+constexpr auto
+merge_sorted_aux4(std::tuple<std::pair<Flag, Position>...> /* positions */) {
+    // why do we do a conditional on the tuple element index?
+    // because conditional_t is eager on evaluation and we therefore have to
+    // refer to a type that always exists..
+    return std::tuple<std::conditional_t<
+        Flag::value,
+        std::tuple_element_t<
+            std::conditional_t<Flag::value, Position,
+                               std::integral_constant<std::size_t, 0>>::value,
+            Tuple1>,
+        std::tuple_element_t<
+            std::conditional_t<Flag::value,
+                               std::integral_constant<std::size_t, 0>,
+                               Position>::value,
+            Tuple2>>...>{};
 }
 
 template <class Tuple1, class Tuple2, class Nodes>
 constexpr auto merge_sorted2(Tuple1 in1, Tuple2 in2, Nodes nodes) {
     static_assert(is_sorted2(in1, nodes));
     static_assert(is_sorted2(in2, nodes));
-    return merge_sorted_aux2(in1, in2, std::tuple<>{}, nodes);
+
+    if constexpr (std::tuple_size_v<Tuple1> == 0) {
+        return in2;
+    } else if constexpr (std::tuple_size_v<Tuple2> == 0) {
+        return in1;
+    } else {
+        constexpr auto position =
+            merge_sorted_aux2<Tuple1, Tuple2>(std::tuple<>{}, nodes);
+        return merge_sorted_aux4<Tuple1, Tuple2>(position);
+    }
 }
 
 template <std::size_t N = 0, std::size_t OutSize, std::size_t MaxOrder,
