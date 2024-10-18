@@ -127,7 +127,7 @@ template <std::size_t From, std::size_t To, std::size_t PosOut = 0,
 void inline copy_filtered_inverted_aux2(In const &from_array, Out &to_array,
                                         FilteredIS fis) {
     constexpr std::size_t ToNext = To - 1;
-    if constexpr (std::tuple_element_t<PosFilter, FilteredIS>::value) {
+    if constexpr (get<PosFilter>(fis)) {
         to_array[PosOut] = from_array[ToNext];
         if constexpr (ToNext != From) {
             copy_filtered_inverted_aux2<From, ToNext, PosOut + 1,
@@ -148,7 +148,7 @@ void inline copy_filtered_inverted2(std::array<D, InSize> const &from_array,
                                     std::array<D, OutSize> &to_array,
                                     Filter filt) {
     static_assert(From <= To);
-    static_assert((To - From) == size(filt));
+    static_assert((To - From) == filt.size());
     copy_filtered_inverted_aux2<From, To>(from_array, to_array, filt);
 }
 

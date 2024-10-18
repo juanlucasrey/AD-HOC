@@ -63,20 +63,6 @@ order_differential_operator(std::tuple<der::d<Orders, Ids>...> diff_operator,
         nodes);
 }
 
-template <class... Ders>
-constexpr auto select_root_derivatives(std::tuple<Ders...> /* ids */) {
-    return std::tuple_cat(
-        std::conditional_t<is_derivative_input(Ders{}), std::tuple<Ders>,
-                           std::tuple<>>{}...);
-}
-
-template <class... Ders>
-constexpr auto select_non_root_derivatives(std::tuple<Ders...> /* ids */) {
-    return std::tuple_cat(
-        std::conditional_t<!is_derivative_input(Ders{}), std::tuple<Ders>,
-                           std::tuple<>>{}...);
-}
-
 } // namespace detail
 
 enum class DerivativeType { TaylorCoefficient, Derivative };
@@ -140,20 +126,25 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             std::tuple_cat(std::make_tuple(detail::order_differential_operator(
                 InputsAndOutputsDers{}, primal_nodes_inverted))...);
 
-        constexpr auto inputs =
-            detail::select_root_derivatives(ordered_derivatives);
-        constexpr auto outputs =
-            detail::select_non_root_derivatives(ordered_derivatives);
+        constexpr auto flags_inputs = std::apply(
+            [](auto... der) {
+                return std::integer_sequence<bool, detail::is_derivative_input(
+                                                       der)...>{};
+            },
+            ordered_derivatives);
 
-        constexpr auto outputs_sorted =
-            sort_differential_operators(outputs, primal_nodes_inverted);
+        constexpr auto inputs_and_outputs =
+            separate(ordered_derivatives, flags_inputs);
+
+        constexpr auto outputs_sorted = sort_differential_operators(
+            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
 
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
 
         return detail::backpropagate_buffer_size<CalcTree>(
             node_derivative_location, outputs_sorted, ordered_derivatives,
-            inputs);
+            std::get<0>(inputs_and_outputs));
     }
 
   public:
@@ -166,13 +157,18 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             std::tuple_cat(std::make_tuple(detail::order_differential_operator(
                 InputsAndOutputsDers{}, primal_nodes_inverted))...);
 
-        constexpr auto inputs =
-            detail::select_root_derivatives(ordered_derivatives);
-        constexpr auto outputs =
-            detail::select_non_root_derivatives(ordered_derivatives);
+        constexpr auto flags_inputs = std::apply(
+            [](auto... der) {
+                return std::integer_sequence<bool, detail::is_derivative_input(
+                                                       der)...>{};
+            },
+            ordered_derivatives);
 
-        constexpr auto outputs_sorted =
-            sort_differential_operators(outputs, primal_nodes_inverted);
+        constexpr auto inputs_and_outputs =
+            separate(ordered_derivatives, flags_inputs);
+
+        constexpr auto outputs_sorted = sort_differential_operators(
+            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
 
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
@@ -180,7 +176,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto buffer_size =
             detail::backpropagate_buffer_size<CalcTree>(
                 node_derivative_location, outputs_sorted, ordered_derivatives,
-                inputs);
+                std::get<0>(inputs_and_outputs));
 
         std::array<double, buffer_size> buffer{};
         constexpr auto buffer_types =
@@ -188,7 +184,8 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
         detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
                                   ordered_derivatives, this->m_derivatives,
-                                  buffer_types, buffer, inputs);
+                                  buffer_types, buffer,
+                                  std::get<0>(inputs_and_outputs));
     }
 
     template <std::size_t BufferSize, class CalcTree>
@@ -201,13 +198,18 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             std::tuple_cat(std::make_tuple(detail::order_differential_operator(
                 InputsAndOutputsDers{}, primal_nodes_inverted))...);
 
-        constexpr auto inputs =
-            detail::select_root_derivatives(ordered_derivatives);
-        constexpr auto outputs =
-            detail::select_non_root_derivatives(ordered_derivatives);
+        constexpr auto flags_inputs = std::apply(
+            [](auto... der) {
+                return std::integer_sequence<bool, detail::is_derivative_input(
+                                                       der)...>{};
+            },
+            ordered_derivatives);
 
-        constexpr auto outputs_sorted =
-            sort_differential_operators(outputs, primal_nodes_inverted);
+        constexpr auto inputs_and_outputs =
+            separate(ordered_derivatives, flags_inputs);
+
+        constexpr auto outputs_sorted = sort_differential_operators(
+            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
 
         constexpr auto node_derivative_location = std::tuple_cat(
             std::array<detail::on_interface_t, size(outputs_sorted)>{});
@@ -218,7 +220,8 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
         detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
                                   ordered_derivatives, this->m_derivatives,
-                                  buffer_types, buffer, inputs);
+                                  buffer_types, buffer,
+                                  std::get<0>(inputs_and_outputs));
     }
 };
 

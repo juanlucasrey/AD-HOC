@@ -62,21 +62,22 @@ constexpr auto tail(std::tuple<First, Rest...> /* tuple */) {
     return std::tuple<Rest...>{};
 }
 
-template <class... Types, class... Flags>
+template <class... Types, bool... Flags>
 constexpr auto filter(std::tuple<Types...> /* in */,
-                      std::tuple<Flags...> /* calc_flags */) {
+                      std::integer_sequence<bool, Flags...> /* calc_flags */) {
     return std::tuple_cat(
-        std::conditional_t<Flags::value, std::tuple<Types>, std::tuple<>>{}...);
+        std::conditional_t<Flags, std::tuple<Types>, std::tuple<>>{}...);
 }
 
-template <class... Types, class... Flags>
-constexpr auto separate(std::tuple<Types...> /* in */,
-                        std::tuple<Flags...> /* calc_flags */) {
+template <class... Types, bool... Flags>
+constexpr auto
+separate(std::tuple<Types...> /* in */,
+         std::integer_sequence<bool, Flags...> /* calc_flags */) {
     return std::make_pair(
-        std::tuple_cat(std::conditional_t<Flags::value, std::tuple<Types>,
-                                          std::tuple<>>{}...),
-        std::tuple_cat(std::conditional_t<!Flags::value, std::tuple<Types>,
-                                          std::tuple<>>{}...));
+        std::tuple_cat(
+            std::conditional_t<Flags, std::tuple<Types>, std::tuple<>>{}...),
+        std::tuple_cat(
+            std::conditional_t<!Flags, std::tuple<Types>, std::tuple<>>{}...));
 }
 
 namespace detail {

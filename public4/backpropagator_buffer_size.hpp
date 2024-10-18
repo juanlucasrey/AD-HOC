@@ -86,10 +86,8 @@ constexpr auto treat_nodes_mul_buffer_size(
 
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
-                return std::tuple_cat(
-                    std::conditional_t<monomial_included(next_derivative, dnin),
-                                       std::tuple<std::true_type>,
-                                       std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool, monomial_included(next_derivative, dnin)...>{};
             },
             next_derivatives);
 
@@ -143,11 +141,9 @@ constexpr auto treat_nodes_mul_buffer_size(
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
-                return std::tuple_cat(
-                    std::conditional_t<
-                        std::is_same_v<on_buffer_new_t, decltype(location)>,
-                        std::tuple<std::true_type>,
-                        std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool,
+                    std::is_same_v<on_buffer_new_t, decltype(location)>...>{};
             },
             locations);
 
@@ -248,10 +244,8 @@ constexpr auto treat_nodes_add_buffer_size(
 
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
-                return std::tuple_cat(
-                    std::conditional_t<monomial_included(next_derivative, dnin),
-                                       std::tuple<std::true_type>,
-                                       std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool, monomial_included(next_derivative, dnin)...>{};
             },
             next_derivatives);
 
@@ -311,11 +305,9 @@ constexpr auto treat_nodes_add_buffer_size(
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
-                return std::tuple_cat(
-                    std::conditional_t<
-                        std::is_same_v<on_buffer_new_t, decltype(location)>,
-                        std::tuple<std::true_type>,
-                        std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool,
+                    std::is_same_v<on_buffer_new_t, decltype(location)>...>{};
             },
             locations);
 
@@ -408,10 +400,8 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
 
         constexpr auto flags_next_derivatives = std::apply(
             [dnin](auto... next_derivative) {
-                return std::tuple_cat(
-                    std::conditional_t<monomial_included(next_derivative, dnin),
-                                       std::tuple<std::true_type>,
-                                       std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool, monomial_included(next_derivative, dnin)...>{};
             },
             next_derivatives);
 
@@ -468,11 +458,9 @@ constexpr auto treat_nodes_univariate_buffer_size(Univariate<PrimalSubNode> pn,
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
-                return std::tuple_cat(
-                    std::conditional_t<
-                        std::is_same_v<on_buffer_new_t, decltype(location)>,
-                        std::tuple<std::true_type>,
-                        std::tuple<std::false_type>>{}...);
+                return std::integer_sequence<
+                    bool,
+                    std::is_same_v<on_buffer_new_t, decltype(location)>...>{};
             },
             locations);
 
@@ -548,10 +536,8 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodeLocation dnl,
 
     constexpr auto flags_derivative_nodes = std::apply(
         [nd](auto... type) {
-            return std::tuple_cat(
-                std::conditional_t<detail::first_type_is(type, nd),
-                                   std::tuple<std::true_type>,
-                                   std::tuple<std::false_type>>{}...);
+            return std::integer_sequence<bool,
+                                         detail::first_type_is(type, nd)...>{};
         },
         dn);
 
