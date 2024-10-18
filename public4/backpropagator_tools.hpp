@@ -557,15 +557,9 @@ constexpr auto merge_sorted_aux2(std::tuple<Out...> out, Nodes nodes) {
     } else {
         constexpr std::tuple_element_t<Pos1, Tuple1> first1;
         constexpr std::tuple_element_t<Pos2, Tuple2> first2;
+        static_assert(!are_same(first1, first2));
 
-        if constexpr (are_same(first1, first2)) {
-            return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2 + 1>(
-                std::tuple<Out...,
-                           std::pair<std::true_type, std::integral_constant<
-                                                         std::size_t, Pos1>>>{},
-                nodes);
-
-        } else if constexpr (less_than2(first1, first2, nodes)) {
+        if constexpr (less_than2(first1, first2, nodes)) {
             return merge_sorted_aux2<Tuple1, Tuple2, Pos1, Pos2 + 1>(
                 std::tuple<
                     Out...,
