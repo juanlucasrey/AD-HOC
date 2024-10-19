@@ -35,6 +35,7 @@
 #include <array>
 #include <cstddef>
 #include <tuple>
+#include <utility>
 
 namespace adhoc4 {
 
@@ -133,17 +134,20 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             },
             ordered_derivatives);
 
+        constexpr auto ordered_derivatives_with_pos =
+            detail::add_position(ordered_derivatives);
+
+        constexpr auto inputs_and_outputs_with_pos =
+            separate(ordered_derivatives_with_pos, flags_inputs);
+
+        constexpr auto outputs_sorted_with_pos = sort_differential_operators(
+            std::get<1>(inputs_and_outputs_with_pos), primal_nodes_inverted);
+
         constexpr auto inputs_and_outputs =
             separate(ordered_derivatives, flags_inputs);
 
-        constexpr auto outputs_sorted = sort_differential_operators(
-            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
-
-        constexpr auto node_derivative_location = std::tuple_cat(
-            std::array<detail::on_interface_t, size(outputs_sorted)>{});
-
         return detail::backpropagate_buffer_size<CalcTree>(
-            node_derivative_location, outputs_sorted, ordered_derivatives,
+            outputs_sorted_with_pos, ordered_derivatives,
             std::get<0>(inputs_and_outputs));
     }
 
@@ -164,25 +168,28 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             },
             ordered_derivatives);
 
+        constexpr auto ordered_derivatives_with_pos =
+            detail::add_position(ordered_derivatives);
+
+        constexpr auto inputs_and_outputs_with_pos =
+            separate(ordered_derivatives_with_pos, flags_inputs);
+
+        constexpr auto outputs_sorted_with_pos = sort_differential_operators(
+            std::get<1>(inputs_and_outputs_with_pos), primal_nodes_inverted);
+
         constexpr auto inputs_and_outputs =
             separate(ordered_derivatives, flags_inputs);
 
-        constexpr auto outputs_sorted = sort_differential_operators(
-            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
-
-        constexpr auto node_derivative_location = std::tuple_cat(
-            std::array<detail::on_interface_t, size(outputs_sorted)>{});
-
         constexpr auto buffer_size =
             detail::backpropagate_buffer_size<CalcTree>(
-                node_derivative_location, outputs_sorted, ordered_derivatives,
+                outputs_sorted_with_pos, ordered_derivatives,
                 std::get<0>(inputs_and_outputs));
 
         std::array<double, buffer_size> buffer{};
         constexpr auto buffer_types =
             std::tuple_cat(std::array<detail::available_t, buffer_size>{});
 
-        detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
+        detail::backpropagate_aux(outputs_sorted_with_pos, ct,
                                   ordered_derivatives, this->m_derivatives,
                                   buffer_types, buffer,
                                   std::get<0>(inputs_and_outputs));
@@ -205,23 +212,31 @@ template <class... InputsAndOutputsDers> class BackPropagator {
             },
             ordered_derivatives);
 
-        constexpr auto inputs_and_outputs =
-            separate(ordered_derivatives, flags_inputs);
+        constexpr auto ordered_derivatives_with_pos =
+            detail::add_position(ordered_derivatives);
 
-        constexpr auto outputs_sorted = sort_differential_operators(
-            std::get<1>(inputs_and_outputs), primal_nodes_inverted);
+        constexpr auto flags_outputs = std::apply(
+            [](auto... der) {
+                return std::integer_sequence<bool, !detail::is_derivative_input(
+                                                       der)...>{};
+            },
+            ordered_derivatives);
 
-        constexpr auto node_derivative_location = std::tuple_cat(
-            std::array<detail::on_interface_t, size(outputs_sorted)>{});
+        constexpr auto outputs_with_pos =
+            filter(ordered_derivatives_with_pos, flags_outputs);
+
+        constexpr auto outputs_sorted_with_pos = sort_differential_operators(
+            outputs_with_pos, primal_nodes_inverted);
+
+        constexpr auto inputs = filter(ordered_derivatives, flags_inputs);
 
         std::array<double, BufferSize> buffer{};
         constexpr auto buffer_types =
             std::tuple_cat(std::array<detail::available_t, BufferSize>{});
 
-        detail::backpropagate_aux(node_derivative_location, outputs_sorted, ct,
+        detail::backpropagate_aux(outputs_sorted_with_pos, ct,
                                   ordered_derivatives, this->m_derivatives,
-                                  buffer_types, buffer,
-                                  std::get<0>(inputs_and_outputs));
+                                  buffer_types, buffer, inputs);
     }
 };
 
