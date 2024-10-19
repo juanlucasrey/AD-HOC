@@ -95,6 +95,60 @@ constexpr auto make_index_sequence() {
     }
 }
 
+namespace detail {
+
+template <bool Value, std::size_t... I>
+constexpr auto make_bool_sequence_aux(std::index_sequence<I...>) {
+    return std::integer_sequence<bool, (I, Value)...>{};
+}
+
+} // namespace detail
+
+template <bool Value, std::size_t Size> constexpr auto make_bool_sequence() {
+    return detail::make_bool_sequence_aux<Value>(
+        std::make_index_sequence<Size>());
+}
+
+namespace detail {
+
+template <std::size_t Idx, bool New, bool... I, std::size_t... II>
+constexpr auto replace_aux2(std::integer_sequence<bool, I...> /* i */,
+                            std::index_sequence<II...> /* is_last */) {
+    std::array<bool, sizeof...(I)> temp{I...};
+    temp[Idx] = New;
+    return temp;
+}
+
+template <std::size_t Idx, bool New, bool... I, std::size_t... II>
+constexpr auto replace_aux(std::integer_sequence<bool, I...> i,
+                           std::index_sequence<II...> idx) {
+    constexpr auto result_array = replace_aux2<Idx, New>(i, idx);
+    return std::integer_sequence<bool, result_array[II]...>{};
+}
+
+} // namespace detail
+
+template <std::size_t Idx, bool New, bool... I>
+constexpr auto replace(std::integer_sequence<bool, I...> i) {
+    constexpr auto is_size = sizeof...(I);
+    static_assert(Idx < is_size);
+
+    return detail::replace_aux<Idx, New>(i,
+                                         std::make_index_sequence<is_size>());
+}
+
+template <bool T, std::size_t Offset = 0, bool... I>
+constexpr auto find(std::integer_sequence<bool, I...> /* i */) -> std::size_t {
+    constexpr auto size_is = sizeof...(I);
+    std::array<bool, size_is> temp{I...};
+
+    std::size_t loc = Offset;
+    while (loc < size_is && temp[loc] != T) {
+        loc++;
+    }
+    return loc;
+}
+
 } // namespace adhoc4
 
 #endif // ADHOC4_UTILS_INDEX_SEQUENCE_HPP
