@@ -245,6 +245,20 @@ constexpr auto find_first() -> std::size_t {
     }
 }
 
+template <class Tuple, class T, std::size_t N = 0>
+constexpr auto find_first_type_not() -> std::size_t {
+    if constexpr (N == std::tuple_size_v<Tuple>) {
+        return N;
+    } else if constexpr (!detail::first_type_is(
+                             std::tuple_element_t<
+                                 0, std::tuple_element_t<N, Tuple>>{},
+                             T{})) {
+        return N;
+    } else {
+        return find_first_type_not<Tuple, T, N + 1>();
+    }
+}
+
 template <std::size_t Last, std::size_t N = 0, std::size_t FindOffset = 0,
           class... Types, class InterfaceTypes, class BufferTypes,
           class DerivNodeLoc, class DerivativeNodes, class DerivativeNodeNew>

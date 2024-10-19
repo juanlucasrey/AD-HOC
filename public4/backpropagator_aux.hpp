@@ -546,14 +546,7 @@ auto treat_node(PrimalNode nd, DerivativeNodes dn, CalcTree const &ct,
                 InterfaceTypes it, InterfaceArray &ia, BufferFlags bf,
                 BufferArray &ba, DerivativeNodeInputs dnin) {
 
-    constexpr auto flags_derivative_nodes = std::apply(
-        [nd](auto... type) {
-            return std::integer_sequence<bool, !detail::first_type_is(
-                                                   type.first, nd)...>{};
-        },
-        dn);
-
-    constexpr auto Last = find<true>(flags_derivative_nodes);
+    constexpr auto Last = find_first_type_not<DerivativeNodes, PrimalNode>();
 
     auto return_pair =
         treat_nodes_specialized<Last>(nd, dn, ct, it, ia, bf, ba, dnin);
@@ -561,10 +554,9 @@ auto treat_node(PrimalNode nd, DerivativeNodes dn, CalcTree const &ct,
     constexpr std::tuple_element_t<0, decltype(return_pair)> bf_new;
     constexpr std::tuple_element_t<1, decltype(return_pair)> dn_new;
 
-    constexpr auto dn_remaining = filter(dn, flags_derivative_nodes);
-
     using NodesValue = CalcTree::ValuesTupleInverse;
 
+    constexpr auto dn_remaining = sub_tuple<Last, size(dn) - 1>(dn);
     constexpr auto dn_new_and_remaining =
         merge_sorted(dn_new, dn_remaining, NodesValue{});
 
