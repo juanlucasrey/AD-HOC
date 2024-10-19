@@ -186,12 +186,11 @@ template <class... InputsAndOutputsDers> class BackPropagator {
                 std::get<0>(inputs_and_outputs));
 
         std::array<double, buffer_size> buffer{};
-        constexpr auto buffer_types =
-            std::tuple_cat(std::array<detail::available_t, buffer_size>{});
+        constexpr auto buffer_flags = make_bool_sequence<false, buffer_size>();
 
         detail::backpropagate_aux(outputs_sorted_with_pos, ct,
                                   ordered_derivatives, this->m_derivatives,
-                                  buffer_types, buffer,
+                                  buffer_flags, buffer,
                                   std::get<0>(inputs_and_outputs));
     }
 
@@ -231,12 +230,11 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto inputs = filter(ordered_derivatives, flags_inputs);
 
         std::array<double, BufferSize> buffer{};
-        constexpr auto buffer_types =
-            std::tuple_cat(std::array<detail::available_t, BufferSize>{});
+        constexpr auto buffer_flags = make_bool_sequence<false, buffer_size>();
 
         detail::backpropagate_aux(outputs_sorted_with_pos, ct,
                                   ordered_derivatives, this->m_derivatives,
-                                  buffer_types, buffer, inputs);
+                                  buffer_flags, buffer, inputs);
     }
 };
 
