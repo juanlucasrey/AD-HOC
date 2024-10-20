@@ -218,17 +218,15 @@ constexpr auto remove_first(Tuple /* tuple */, Old /* old_value */) {
         std::make_index_sequence<tuple_size - loc - 1>());
 }
 
-template <class DiffOps, class Where, std::size_t I, class BufferTypes>
+template <class Where, std::size_t I>
 constexpr auto free_on_buffer_size(
-    std::pair<DiffOps, std::pair<Where, std::integral_constant<std::size_t, I>>>
-    /* current_node_der */,
-    BufferTypes bt) {
+    const std::pair<Where, std::integral_constant<std::size_t, I>> /* loc */)
+    -> bool {
     if constexpr (std::is_same_v<Where, on_buffer_t>) {
-        constexpr auto newtuple = remove_first(bt, DiffOps{});
-        return newtuple;
+        return true;
     } else {
         static_assert(std::is_same_v<Where, on_interface_t>);
-        return bt;
+        return false;
     }
 }
 
@@ -260,14 +258,14 @@ constexpr auto find_first_type_not() -> std::size_t {
 }
 
 template <std::size_t Last, std::size_t N = 0, std::size_t FindOffset = 0,
-          class... Types, class InterfaceTypes, class BufferTypes,
+          class DerivativeNodesToPlace, class InterfaceTypes, class BufferTypes,
           class DerivNodeLoc, class DerivativeNodes, class DerivativeNodeNew>
 constexpr auto locate_new_vals_update_buffer_types_aux(
-    std::tuple<Types...> derivative_nodes, InterfaceTypes it, BufferTypes bt,
+    DerivativeNodesToPlace derivative_nodes, InterfaceTypes it, BufferTypes bt,
     DerivNodeLoc dnl, DerivativeNodes dn, DerivativeNodeNew dnn) {
 
-    if constexpr (N < std::tuple_size_v<std::tuple<Types...>>) {
-        using Type = std::tuple_element_t<N, std::tuple<Types...>>;
+    if constexpr (N < std::tuple_size_v<DerivativeNodesToPlace>) {
+        using Type = std::tuple_element_t<N, DerivativeNodesToPlace>;
         if constexpr (is_derivative_input(Type{})) {
             constexpr auto it_loc = find<InterfaceTypes, Type>();
             constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
@@ -350,89 +348,107 @@ constexpr auto locate_new_vals_update_buffer_types_aux(
     }
 }
 
-template <std::size_t Last, class... Types, class InterfaceTypes,
+template <std::size_t Last, class DerivativeNodesToPlace, class InterfaceTypes,
           class BufferTypes, class DerivativeNodes, class DerivativeNodeNew>
 constexpr auto
-locate_new_vals_update_buffer_types(std::tuple<Types...> derivative_nodes,
+locate_new_vals_update_buffer_types(DerivativeNodesToPlace derivative_nodes,
                                     InterfaceTypes it, BufferTypes bt,
                                     DerivativeNodes dn, DerivativeNodeNew dnn) {
     return locate_new_vals_update_buffer_types_aux<Last>(
         derivative_nodes, it, bt, std::tuple<>{}, dn, dnn);
 }
 
-template <std::size_t N = 0, std::size_t FindOffset = 0, class... Types,
-          class InterfaceTypes, class BufferTypes, class DerivNodeLoc>
+template <std::size_t Last, std::size_t N = 0, class DerivativeNodesToPlace,
+          class InterfaceTypes, class DerivNodeLoc, class DerivativeNodes,
+          class DerivativeNodeNew>
 constexpr auto locate_new_vals_update_buffer_types_aux_size(
-    std::tuple<Types...> derivative_nodes, InterfaceTypes it, BufferTypes bt,
-    DerivNodeLoc dnl) {
+    DerivativeNodesToPlace derivative_nodes, InterfaceTypes it,
+    DerivNodeLoc dnl, DerivativeNodes dn, DerivativeNodeNew dnn) {
 
-    if constexpr (N < std::tuple_size_v<std::tuple<Types...>>) {
-        using Type = std::tuple_element_t<N, std::tuple<Types...>>;
+    if constexpr (N < std::tuple_size_v<DerivativeNodesToPlace>) {
+        using Type = std::tuple_element_t<N, DerivativeNodesToPlace>;
         if constexpr (is_derivative_input(Type{})) {
             constexpr auto it_loc = find<InterfaceTypes, Type>();
             constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
             static_assert(it_loc < it_size);
-            return locate_new_vals_update_buffer_types_aux_size<N + 1,
-                                                                FindOffset>(
-                derivative_nodes, it, bt,
+            return locate_new_vals_update_buffer_types_aux_size<Last, N + 1>(
+                derivative_nodes, it,
                 std::tuple_cat(
                     dnl, std::tuple<std::pair<
                              on_interface_t,
-                             std::integral_constant<std::size_t, it_loc>>>{}));
+                             std::integral_constant<std::size_t, it_loc>>>{}),
+                dn, dnn);
         } else {
-            constexpr auto bt_loc = find<BufferTypes, Type>();
-            constexpr auto bt_size = std::tuple_size_v<BufferTypes>;
-            if constexpr (bt_loc < bt_size) {
-                return locate_new_vals_update_buffer_types_aux_size<N + 1,
-                                                                    FindOffset>(
-                    derivative_nodes, it, bt,
+            constexpr auto dn_loc = find_first<DerivativeNodes, Type, Last>();
+            constexpr auto dn_size = std::tuple_size_v<DerivativeNodes>;
+            if constexpr (dn_loc < dn_size) {
+                return locate_new_vals_update_buffer_types_aux_size<Last,
+                                                                    N + 1>(
+                    derivative_nodes, it,
                     std::tuple_cat(
                         dnl,
-                        std::tuple<std::pair<
-                            on_buffer_not_new_t,
-                            std::integral_constant<std::size_t, bt_loc>>>{}));
-            } else {
-                constexpr auto it_loc = find<InterfaceTypes, Type>();
-                constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
-                if constexpr (it_loc < it_size) {
-                    return locate_new_vals_update_buffer_types_aux_size<
-                        N + 1, FindOffset>(
-                        derivative_nodes, it, bt,
-                        std::tuple_cat(
-                            dnl,
-                            std::tuple<std::pair<on_interface_t,
-                                                 std::integral_constant<
-                                                     std::size_t, it_loc>>>{}));
-                } else {
-                    constexpr auto bt_new = std::tuple_cat(
-                        bt,
                         std::tuple<
-                            std::tuple_element_t<N, std::tuple<Types...>>>{});
+                            std::pair<on_buffer_not_new_t,
+                                      std::integral_constant<
+                                          std::size_t, std::get<dn_loc>(dn)
+                                                           .second.second>>>{}),
+                    dn, dnn);
+            } else {
+                constexpr auto dnn_loc = find_first<DerivativeNodeNew, Type>();
+                constexpr auto dnn_size = std::tuple_size_v<DerivativeNodeNew>;
 
-                    return locate_new_vals_update_buffer_types_aux_size<
-                        N + 1, bt_loc + 1>(
-                        derivative_nodes, it, bt_new,
+                if constexpr (dnn_loc < dnn_size) {
+                    return locate_new_vals_update_buffer_types_aux_size<Last,
+                                                                        N + 1>(
+                        derivative_nodes, it,
                         std::tuple_cat(
                             dnl,
-                            std::tuple<std::pair<on_buffer_t,
-                                                 std::integral_constant<
-                                                     std::size_t, bt_loc>>>{}));
+                            std::tuple<std::pair<
+                                on_buffer_not_new_t,
+                                std::integral_constant<
+                                    std::size_t,
+                                    std::get<dnn_loc>(dnn).second.second>>>{}),
+                        dn, dnn);
+                } else {
+                    constexpr auto it_loc = find<InterfaceTypes, Type>();
+                    constexpr auto it_size = std::tuple_size_v<InterfaceTypes>;
+                    if constexpr (it_loc < it_size) {
+                        return locate_new_vals_update_buffer_types_aux_size<
+                            Last, N + 1>(
+                            derivative_nodes, it,
+                            std::tuple_cat(
+                                dnl,
+                                std::tuple<
+                                    std::pair<on_interface_t,
+                                              std::integral_constant<
+                                                  std::size_t, it_loc>>>{}),
+                            dn, dnn);
+                    } else {
+                        return locate_new_vals_update_buffer_types_aux_size<
+                            Last, N + 1>(
+                            derivative_nodes, it,
+                            std::tuple_cat(
+                                dnl,
+                                std::tuple<std::pair<
+                                    on_buffer_t,
+                                    std::integral_constant<std::size_t, 0>>>{}),
+                            dn, dnn);
+                    }
                 }
             }
         }
-
     } else {
-        return std::make_pair(bt, dnl);
+        return dnl;
     }
 }
 
-template <class... Types, class InterfaceTypes, class BufferTypes>
-constexpr auto
-locate_new_vals_update_buffer_types_size(std::tuple<Types...> derivative_nodes,
-                                         InterfaceTypes it, BufferTypes bt) {
-    constexpr auto result = locate_new_vals_update_buffer_types_aux_size(
-        derivative_nodes, it, bt, std::tuple<>{});
-    return result;
+template <std::size_t Last, class DerivativeNodesToPlace, class InterfaceTypes,
+          class DerivativeNodes, class DerivativeNodeNew>
+constexpr auto locate_new_vals_update_buffer_types_size(
+    DerivativeNodesToPlace derivative_nodes, InterfaceTypes it,
+    DerivativeNodes dn, DerivativeNodeNew dnn) {
+    return locate_new_vals_update_buffer_types_aux_size<Last>(
+        derivative_nodes, it, std::tuple<>{}, dn, dnn);
 }
 
 template <std::size_t N = 0, class ResultsArray, class LocationIndicators,

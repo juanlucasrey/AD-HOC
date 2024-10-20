@@ -65,13 +65,13 @@ auto treat_nodes_mul(
         return std::make_tuple(bf, dnn);
     } else {
         constexpr auto current_node_der = std::get<0>(std::get<N>(dn));
+        constexpr auto current_node_loc = std::get<1>(std::get<N>(dn));
 
 #if LOG_LEVEL
         std::cout << "treating derivative tree node" << std::endl;
         std::cout << type_name2<decltype(current_node_der)>() << std::endl;
 #endif
 
-        constexpr auto current_node_der_loc = std::get<1>(std::get<N>(dn));
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto pow = get_power(head(current_node_der));
         constexpr auto rest_power = power(current_derivative_subnode_rest);
@@ -114,9 +114,9 @@ auto treat_nodes_mul(
         static_assert(size(next_derivatives_filtered));
 
         double const this_val_derivative =
-            get_differential_operator_value(current_node_der_loc, ia, ba);
+            get_differential_operator_value(current_node_loc, ia, ba);
 
-        constexpr auto bf_free = free_on_buffer(current_node_der_loc, bf);
+        constexpr auto bf_free = free_on_buffer(current_node_loc, bf);
 
         constexpr auto next_derivatives_size =
             std::tuple_size_v<decltype(next_derivatives_filtered)>;
@@ -223,13 +223,13 @@ auto treat_nodes_add(
         return std::make_tuple(bf, dnn);
     } else {
         constexpr auto current_node_der = std::get<0>(std::get<N>(dn));
+        constexpr auto current_node_loc = std::get<1>(std::get<N>(dn));
 
 #if LOG_LEVEL
         std::cout << "treating derivative tree node" << std::endl;
         std::cout << type_name2<decltype(current_node_der)>() << std::endl;
 #endif
 
-        constexpr auto current_node_der_loc = std::get<1>(std::get<N>(dn));
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto pow = get_power(head(current_node_der));
 
@@ -269,9 +269,9 @@ auto treat_nodes_add(
         static_assert(size(next_derivatives_filtered));
 
         double const this_val_derivative =
-            get_differential_operator_value(current_node_der_loc, ia, ba);
+            get_differential_operator_value(current_node_loc, ia, ba);
 
-        constexpr auto bf_free = free_on_buffer(current_node_der_loc, bf);
+        constexpr auto bf_free = free_on_buffer(current_node_loc, bf);
 
         constexpr auto next_derivatives_size =
             std::tuple_size_v<decltype(next_derivatives_filtered)>;
@@ -361,14 +361,13 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn, DerivativeNodes dn,
     } else {
         constexpr std::size_t currentN = N - 1;
         constexpr auto current_node_der = std::get<0>(std::get<currentN>(dn));
+        constexpr auto current_node_loc = std::get<1>(std::get<currentN>(dn));
 
 #if LOG_LEVEL
         std::cout << "treating derivative tree node" << std::endl;
         std::cout << type_name2<decltype(current_node_der)>() << std::endl;
 #endif
 
-        constexpr auto current_node_der_loc =
-            std::get<1>(std::get<currentN>(dn));
         constexpr auto current_derivative_subnode = head(current_node_der);
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
 
@@ -439,9 +438,9 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn, DerivativeNodes dn,
             ua_elevated, next_derivatives_values, flags_next_derivatives);
 
         double const this_val_derivative =
-            get_differential_operator_value(current_node_der_loc, ia, ba);
+            get_differential_operator_value(current_node_loc, ia, ba);
 
-        constexpr auto bf_free = free_on_buffer(current_node_der_loc, bf);
+        constexpr auto bf_free = free_on_buffer(current_node_loc, bf);
 
 #if LOG_LEVEL
         std::cout << "bt_free" << std::endl;
@@ -548,11 +547,10 @@ auto treat_node(PrimalNode nd, DerivativeNodes dn, CalcTree const &ct,
 
     constexpr auto Last = find_first_type_not<DerivativeNodes, PrimalNode>();
 
-    auto return_pair =
-        treat_nodes_specialized<Last>(nd, dn, ct, it, ia, bf, ba, dnin);
+    auto res = treat_nodes_specialized<Last>(nd, dn, ct, it, ia, bf, ba, dnin);
 
-    constexpr std::tuple_element_t<0, decltype(return_pair)> bf_new;
-    constexpr std::tuple_element_t<1, decltype(return_pair)> dn_new;
+    constexpr std::tuple_element_t<0, decltype(res)> bf_new;
+    constexpr std::tuple_element_t<1, decltype(res)> dn_new;
 
     using NodesValue = CalcTree::ValuesTupleInverse;
 
