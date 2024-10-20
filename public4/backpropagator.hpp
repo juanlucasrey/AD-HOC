@@ -230,7 +230,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto inputs = filter(ordered_derivatives, flags_inputs);
 
         std::array<double, BufferSize> buffer{};
-        constexpr auto buffer_flags = make_bool_sequence<false, buffer_size>();
+        constexpr auto buffer_flags = make_bool_sequence<false, BufferSize>();
 
         detail::backpropagate_aux(outputs_sorted_with_pos, ct,
                                   ordered_derivatives, this->m_derivatives,
