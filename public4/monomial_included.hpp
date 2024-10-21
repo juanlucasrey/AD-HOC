@@ -235,10 +235,11 @@ template <class In> constexpr auto filter_equal(In seqs) {
     return filter_equal_aux(std::tuple<>{}, seqs);
 }
 
-template <class... DifferentialOperators>
-constexpr auto get_vars(std::tuple<DifferentialOperators...> /* diff_ops */) {
+template <class... DiffOpInputs, class... Positions>
+constexpr auto
+get_vars(std::tuple<std::pair<DiffOpInputs, Positions>...> /* diff_ops */) {
     constexpr auto all_vars =
-        std::tuple_cat(get_vars_single(DifferentialOperators{})...);
+        std::tuple_cat(get_vars_single(DiffOpInputs{})...);
     return filter_equal(all_vars);
 }
 
@@ -333,9 +334,10 @@ constexpr auto order_input(DiffOp diff_op, std::tuple<Inputs...> /* input */)
     return std::index_sequence<order_input_aux2(diff_op, Inputs{})...>{};
 }
 
-template <class... DiffOpInputs, class... Inputs>
-constexpr auto order_inputs(std::tuple<DiffOpInputs...> /* diff_op_inputs */,
-                            std::tuple<Inputs...> input) -> auto {
+template <class... DiffOpInputs, class... Positions, class... Inputs>
+constexpr auto order_inputs(
+    std::tuple<std::pair<DiffOpInputs, Positions>...> /* diff_op_inputs */,
+    std::tuple<Inputs...> input) -> auto {
     return std::make_tuple(order_input(DiffOpInputs{}, input)...);
 }
 
