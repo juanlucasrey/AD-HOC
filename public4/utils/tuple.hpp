@@ -140,8 +140,11 @@ constexpr auto sub_tuple_aux(std::index_sequence<I...> /* i */) {
 
 template <std::size_t From, std::size_t To, class Tuple>
 constexpr auto sub_tuple(Tuple /* tuple */) {
-    static_assert(std::tuple_size_v<Tuple> > From);
-    return detail::sub_tuple_aux<Tuple>(make_index_sequence<From, To>());
+    if constexpr (std::tuple_size_v<Tuple> <= From) {
+        return std::tuple<>{};
+    } else {
+        return detail::sub_tuple_aux<Tuple>(make_index_sequence<From, To>());
+    }
 }
 
 } // namespace adhoc4
