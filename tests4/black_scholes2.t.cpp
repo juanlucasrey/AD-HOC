@@ -3,27 +3,12 @@
 #include <calc_tree.hpp>
 #include <differential_operator.hpp>
 
+#include "call_price.hpp"
 #include <gtest/gtest.h>
 
 namespace adhoc4 {
 
-namespace {
-
-template <class I1, class I2, class I3, class I4>
-auto call_price2(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using constants::CD;
-    using std::erfc;
-    using std::log;
-    using std::sqrt;
-    auto totalvol = v * sqrt(T);
-    auto d1 = log(S * sqrt(K)) * log(totalvol) + totalvol * CD<0.5>();
-    auto d2 = d1 + totalvol;
-    return S * erfc(d1) + K * erfc(d2);
-}
-
-} // namespace
-
-TEST(BlackScholes, BS2) {
+TEST(BlackScholes, Order2) {
     ADHOC(S);
     ADHOC(K);
     ADHOC(v);
@@ -64,16 +49,35 @@ TEST(BlackScholes, BS2) {
     t.set(dres) = 1.;
     t.backpropagate(ct);
 
+    EXPECT_NEAR(ct.get(res), 1.02586812693369, 1e-14);
+    EXPECT_NEAR(t.get(dS), 8.03256922212305, 1e-14);
+    EXPECT_NEAR(t.get(dK), -6.94806547785353, 1e-14);
+    EXPECT_NEAR(t.get(dv), 1.07376087149468, 1e-14);
+    EXPECT_NEAR(t.get(dT), 0.161064130724201, 1e-14);
+    EXPECT_NEAR(t.get(dSS), -0.975928505799621, 1e-14);
+    EXPECT_NEAR(t.get(dKK), -0.956886455945976, 1e-14);
+    EXPECT_NEAR(t.get(dvv), -6.73743074286942, 1e-14);
+    EXPECT_NEAR(t.get(dTT), -0.312656322438763, 1e-14);
+    EXPECT_NEAR(t.get(dSK), 0.966360579272174, 1e-14);
+    EXPECT_NEAR(t.get(dSv), -50.2111752240705, 2e-14);
+    EXPECT_NEAR(t.get(dST), -7.53167628361058, 1e-14);
+    EXPECT_NEAR(t.get(dKv), 50.7716155370646, 1e-14);
+    EXPECT_NEAR(t.get(dKT), 7.61574233055969, 1e-14);
+    EXPECT_NEAR(t.get(dvT), 0.0631462600642643, 1e-14);
+
     // from sympy import *
     // S = Symbol('S')
     // K = Symbol('K')
     // v = Symbol('v')
     // T = Symbol('T')
 
+    // def cdf(x):
+    //     return 0.5 * erfc(x * -0.70710678118654746)
+
     // totalvol = v * sqrt(T)
-    // d1 = log(S * sqrt(K)) * log(totalvol) + totalvol * 0.5
+    // d1 = log(S / K) / totalvol + totalvol * 0.5
     // d2 = d1 + totalvol
-    // result = S * erfc(d1) + K * erfc(d2)
+    // result = S * cdf(d1) + K * cdf(d2)
 
     // def diff(f, diffs):
     //     fdiff = f
@@ -102,22 +106,6 @@ TEST(BlackScholes, BS2) {
     // print(lambdify([S, K, v, T], diff(result, (K, v)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (K, T)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (v, T)))(S0, K0, v0, T0))
-
-    EXPECT_NEAR(ct.get(res), 1.8890465506626162, 1e-14);
-    EXPECT_NEAR(t.get(dS), 6.0454412443913581, 1e-14);
-    EXPECT_NEAR(t.get(dK), 3.3740304502248355, 1e-14);
-    EXPECT_NEAR(t.get(dv), -1.9089022751421003, 1e-14);
-    EXPECT_NEAR(t.get(dT), -0.28633534127131505, 1e-14);
-    EXPECT_NEAR(t.get(dSS), 1.38790636613215, 1e-14);
-    EXPECT_NEAR(t.get(dKK), 0.334319305617748, 1e-14);
-    EXPECT_NEAR(t.get(dvv), 2.38267251329635, 1e-14);
-    EXPECT_NEAR(t.get(dTT), 0.339945472820483, 1e-14);
-    EXPECT_NEAR(t.get(dSK), 4.3981330899714148, 1e-14);
-    EXPECT_NEAR(t.get(dSv), -16.278830190533597, 1e-14);
-    EXPECT_NEAR(t.get(dST), -2.4418245285800397, 1e-14);
-    EXPECT_NEAR(t.get(dKv), -9.1167961040278751, 1e-14);
-    EXPECT_NEAR(t.get(dKT), -1.3675194156041814, 1e-14);
-    EXPECT_NEAR(t.get(dvT), -1.55150139814765, 1e-14);
 }
 
 } // namespace adhoc4
