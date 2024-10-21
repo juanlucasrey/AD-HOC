@@ -22,6 +22,7 @@
 #define ADHOC4_BACKPROPAGATOR_AUX_HPP
 
 #include "backpropagator_tools.hpp"
+#include "combinatorics/pow.hpp"
 #include "combinatorics/trinomial.hpp"
 #include "dependency.hpp"
 #include "differential_operator.hpp"
@@ -72,11 +73,11 @@ auto treat_nodes_mul(
 #endif
 
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
-        constexpr auto pow = get_power(head(current_node_der));
+        constexpr auto this_power = get_power(head(current_node_der));
         constexpr auto rest_power = power(current_derivative_subnode_rest);
 
         constexpr auto multinomial_sequences =
-            TrinomialSequencesMult<pow, MaxOrder - rest_power>();
+            TrinomialSequencesMult<this_power, MaxOrder - rest_power>();
 
         using NodesValue = CalcTree::ValuesTupleInverse;
         constexpr auto diff_ops = std::make_tuple(
@@ -182,6 +183,74 @@ auto treat_nodes_mul(
     }
 }
 
+template <std::size_t Last, std::size_t N = 0, class PrimalSubNode,
+          class PrimalSubNodeConst, class DerivativeNodes, class CalcTree,
+          class InterfaceArray, class BufferFlags, class BufferArray,
+          class DerivativeNodeNew, class DerivativeNodeInputs>
+auto treat_nodes_mul_const(std::tuple<PrimalSubNode, PrimalSubNodeConst> pn,
+                           DerivativeNodes dn, CalcTree const &ct,
+                           InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
+                           DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
+
+    if constexpr (N == Last) {
+        return std::make_tuple(bf, dnn);
+    } else {
+        constexpr auto current_node_der = std::get<0>(std::get<N>(dn));
+        constexpr auto current_node_loc = std::get<1>(std::get<N>(dn));
+
+#if LOG_LEVEL
+        std::cout << "treating derivative tree node" << std::endl;
+        std::cout << type_name2<decltype(current_node_der)>() << std::endl;
+#endif
+
+        constexpr auto current_derivative_subnode_rest = tail(current_node_der);
+        constexpr auto this_power = get_power(head(current_node_der));
+
+        using NodesValue = CalcTree::ValuesTupleInverse;
+
+        constexpr auto next_derivatives_filtered = std::make_tuple(
+            multiply_ordered(d<this_power>(PrimalSubNode{}),
+                             current_derivative_subnode_rest, NodesValue{}));
+
+        double const this_val_derivative =
+            get_differential_operator_value(current_node_loc, ia, ba);
+
+        constexpr auto bf_free = free_on_buffer(current_node_loc, bf);
+
+        constexpr double mult = pow<this_power>(PrimalSubNodeConst::v());
+        std::array<double, 1> next_derivatives_values{this_val_derivative *
+                                                      mult};
+
+        constexpr auto bf_new_pair = locate_new_vals_update_buffer_types<Last>(
+            next_derivatives_filtered, bf_free, dn, dnn, dnin);
+        constexpr auto bf_new = std::get<0>(bf_new_pair);
+        constexpr auto locations = std::get<1>(bf_new_pair);
+
+        write_results(next_derivatives_values, locations, ba, ia);
+
+        constexpr auto flags_only_new = std::apply(
+            [](auto... location) {
+                return std::integer_sequence<
+                    bool,
+                    std::is_same_v<on_buffer_t, decltype(location.first)>...>{};
+            },
+            locations);
+
+        constexpr auto next_derivatives_new =
+            filter(next_derivatives_filtered, flags_only_new);
+
+        constexpr auto locations_new = filter(locations, flags_only_new);
+        constexpr auto next_derivatives_new_with_pos =
+            add_position(next_derivatives_new, locations_new);
+
+        constexpr auto dnn_new =
+            merge_sorted(next_derivatives_new_with_pos, dnn, NodesValue{});
+
+        return treat_nodes_mul_const<Last, N + 1>(pn, dn, ct, ia, bf_new, ba,
+                                                  dnn_new, dnin);
+    }
+}
+
 template <std::size_t Last, class PrimalSubNode1, class PrimalSubNode2,
           class DerivativeNodes, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, class DerivativeNodeInputs>
@@ -193,15 +262,24 @@ auto treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
     constexpr auto ordered_pair = detail::sort_pair(
         std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
 
-    constexpr auto MaxOrder = detail::max_orders(dnin);
+    static_assert(!is_constant(std::get<0>(ordered_pair)));
+    constexpr bool is_const = is_constant(std::get<1>(ordered_pair));
 
-    double const val1 = ct.get(std::get<0>(ordered_pair));
-    double const val2 = ct.get(std::get<1>(ordered_pair));
-    auto const powers_val1 = detail::powers<MaxOrder>(val1);
-    auto const powers_val2 = detail::powers<MaxOrder>(val2);
+    if constexpr (is_const) {
+        return treat_nodes_mul_const<Last>(ordered_pair, dn, ct, ia, bf, ba,
+                                           std::tuple<>{}, dnin);
 
-    return treat_nodes_mul<Last>(ordered_pair, dn, ct, ia, bf, ba, powers_val1,
-                                 powers_val2, std::tuple<>{}, dnin);
+    } else {
+        constexpr auto MaxOrder = detail::max_orders(dnin);
+        double const val1 = ct.get(std::get<0>(ordered_pair));
+        double const val2 = ct.get(std::get<1>(ordered_pair));
+        auto const powers_val1 = detail::powers<MaxOrder>(val1);
+        auto const powers_val2 = detail::powers<MaxOrder>(val2);
+
+        return treat_nodes_mul<Last>(ordered_pair, dn, ct, ia, bf, ba,
+                                     powers_val1, powers_val2, std::tuple<>{},
+                                     dnin);
+    }
 }
 
 template <std::size_t Last, std::size_t N = 0, class PrimalSubNodeOrdered1,
@@ -225,9 +303,10 @@ auto treat_nodes_add(
 #endif
 
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
-        constexpr auto pow = get_power(head(current_node_der));
+        constexpr auto this_power = get_power(head(current_node_der));
 
-        constexpr auto multinomial_sequences = MultinomialSequences<2, pow>();
+        constexpr auto multinomial_sequences =
+            MultinomialSequences<2, this_power>();
         constexpr auto diff_ops = std::make_tuple(d(PrimalSubNodeOrdered1{}),
                                                   d(PrimalSubNodeOrdered2{}));
 
@@ -368,10 +447,11 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn, DerivativeNodes dn,
                   << std::endl;
 #endif
 
-        constexpr auto pow = get_power(current_derivative_subnode);
+        constexpr auto this_power = get_power(current_derivative_subnode);
         constexpr auto rest_power = power(current_derivative_subnode_rest);
         constexpr auto expansion_types =
-            expand_univariate<PrimalSubNode, MaxOrder - rest_power, pow>();
+            expand_univariate<PrimalSubNode, MaxOrder - rest_power,
+                              this_power>();
 
 #if LOG_LEVEL
         std::cout << "expansion_types" << std::endl;
@@ -421,11 +501,11 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn, DerivativeNodes dn,
 
         std::array<double, next_derivatives_size> next_derivatives_values;
 
-        if constexpr (pow > PrevOrder) {
-            elevate_univariate<PrevOrder, pow>(ua, ua_elevated);
+        if constexpr (this_power > PrevOrder) {
+            elevate_univariate<PrevOrder, this_power>(ua, ua_elevated);
         }
 
-        copy_filtered_inverted2<pow - 1, MaxOrder - rest_power>(
+        copy_filtered_inverted2<this_power - 1, MaxOrder - rest_power>(
             ua_elevated, next_derivatives_values, flags_next_derivatives);
 
         double const this_val_derivative =
@@ -499,7 +579,7 @@ auto treat_nodes_univariate(Univariate<PrimalSubNode> pn, DerivativeNodes dn,
         constexpr auto dnn_new =
             merge_sorted(next_derivatives_new_with_pos, dnn, NodesValue{});
 
-        return treat_nodes_univariate<Last, currentN, pow>(
+        return treat_nodes_univariate<Last, currentN, this_power>(
             pn, dn, ct, ia, bf_new, ba, ua, ua_elevated, dnn_new, dnin);
     }
 }
