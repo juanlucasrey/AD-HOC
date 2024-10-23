@@ -64,7 +64,7 @@ constexpr auto first_type_is(DiffOp diffop, Node node) -> bool {
     return first_type_is_aux(head(diffop), node);
 }
 
-template <class... Ids, std::size_t... Orders, std::size_t... Powers>
+template <class... Ids, std::size_t... Orders>
 constexpr auto order(std::tuple<der::d<Orders, Ids>...> /* id1 */) {
     return (Orders + ...);
 }
@@ -234,8 +234,8 @@ constexpr auto free_on_buffer_size(
 
 template <class Tuple, class T, std::size_t N = 0>
 constexpr auto find_first() -> std::size_t {
-    if constexpr (N == std::tuple_size_v<Tuple>) {
-        return N;
+    if constexpr (N >= std::tuple_size_v<Tuple>) {
+        return std::tuple_size_v<Tuple>;
     } else if constexpr (std::is_same_v<const std::tuple_element_t<
                                             0, std::tuple_element_t<N, Tuple>>,
                                         const T>) {
@@ -259,24 +259,119 @@ constexpr auto find_first_type_not() -> std::size_t {
     }
 }
 
-template <std::size_t Last, std::size_t N = 0, std::size_t FindOffset = 0,
-          class DerivativeNodesToPlace, class BufferTypes, class DerivNodeLoc,
-          class DerivativeNodes, class DerivativeNodeNew,
-          class DerivativeNodeInputs>
+template <std::size_t Order, class DiffOpNode, class Node>
+constexpr auto first_type_is_aux2(der::d<Order, DiffOpNode> /* in */,
+                                  Node /* node */) -> bool {
+    return std::is_same_v<Node, DiffOpNode>;
+}
+
+template <class DiffOp, class Node>
+constexpr auto first_type_is2(DiffOp diffop, Node node) -> bool {
+    return first_type_is_aux2(head(diffop), node);
+}
+
+template <std::size_t Order, std::size_t Id>
+constexpr auto
+get_id2(const der::d<Order, std::integral_constant<std::size_t, Id>> /* in
+*/)
+    -> std::size_t {
+    return Id;
+}
+
+template <class Tuple, std::size_t T, std::size_t N = 0>
+constexpr auto find_first_type_not2() -> std::size_t {
+    if constexpr (N >= std::tuple_size_v<Tuple>) {
+        return std::tuple_size_v<Tuple>;
+    } else if constexpr (get_id2(std::tuple_element_t<
+                                 0,
+                                 std::tuple_element_t<
+                                     0, std::tuple_element_t<N, Tuple>>>{}) !=
+                         T) {
+        return N;
+    } else {
+        return find_first_type_not2<Tuple, T, N + 1>();
+    }
+}
+
+template <class CalcTreeValuesTupleInverse, class... Ids, std::size_t...
+Orders, class Position> constexpr auto convert_to_index(std::pair<std::tuple<der::d<Orders, Ids>...>, Position> /*
+id1 */) {
+    return std::pair<
+        std::tuple<
+            der::d<Orders, std::integral_constant<
+                               std::size_t,
+                               find<CalcTreeValuesTupleInverse, Ids>()>>...>,
+        Position>{};
+}
+
+template <class CalcTreeValuesTupleInverse, class... DiffOps,
+          class... Positions>
+constexpr auto
+convert_to_index_many(std::tuple<std::pair<DiffOps, Positions>...> /* id1 */) {
+    return std::make_tuple(convert_to_index<CalcTreeValuesTupleInverse>(
+        std::pair<DiffOps, Positions>{})...);
+}
+
+template <class CalcTreeValuesTupleInverse, class... Ids, std::size_t...
+Orders> constexpr auto convert_to_index2(std::tuple<der::d<Orders, Ids>...> /*
+id1 */) {
+    return std::tuple<
+        der::d<Orders,
+               std::integral_constant<
+                   std::size_t, find<CalcTreeValuesTupleInverse, Ids>()>>...>{};
+}
+
+template <class CalcTreeValuesTupleInverse, class... DiffOps>
+constexpr auto convert_to_index_many2(std::tuple<DiffOps...> /* id1 */) {
+    return std::make_tuple(
+        convert_to_index2<CalcTreeValuesTupleInverse>(DiffOps{})...);
+}
+
+template <class CalcTreeValuesTupleInverse, std::size_t... Ids, std::size_t...
+Orders, class Position> constexpr auto convert_to_diffop(std::pair<std::tuple<der::d<Orders, std::integral_constant<
+                               std::size_t,Ids>>  ...>, Position> /*
+id1 */) {
+    return std::pair<
+        std::tuple<der::d<
+            Orders, std::tuple_element_t<Ids, CalcTreeValuesTupleInverse>>...>,
+        Position>{};
+}
+
+template <class CalcTreeValuesTupleInverse, std::size_t... Ids, std::size_t...
+Orders> constexpr auto convert_to_diffop2(std::tuple<der::d<Orders, std::integral_constant<
+                               std::size_t,Ids>>  ...> /*
+id1 */) {
+    return std::tuple<der::d<
+        Orders, std::tuple_element_t<Ids, CalcTreeValuesTupleInverse>>...>{};
+}
+
+template <class CalcTreeValuesTupleInverse, class... DiffOps,
+          class... Positions>
+constexpr auto
+convert_to_diffop_many(std::tuple<std::pair<DiffOps, Positions>...> /* id1 */) {
+    return std::make_tuple(convert_to_diffop<CalcTreeValuesTupleInverse>(
+        std::pair<DiffOps, Positions>{})...);
+}
+
+template <class NodesValue, std::size_t Last, std::size_t N = 0,
+          std::size_t FindOffset = 0, class DerivativeNodesToPlace,
+          class BufferTypes, class DerivNodeLoc, class DerivativeNodes,
+          class DerivativeNodeNew, class DerivativeNodeInputs>
 constexpr auto locate_new_vals_update_buffer_types_aux(
-    DerivativeNodesToPlace derivative_nodes, BufferTypes bt, DerivNodeLoc dnl,
+    DerivativeNodesToPlace derivative_nodes2, BufferTypes bt, DerivNodeLoc dnl,
     DerivativeNodes dn, DerivativeNodeNew dnn, DerivativeNodeInputs dni) {
 
     if constexpr (N < std::tuple_size_v<DerivativeNodesToPlace>) {
         using Type = std::tuple_element_t<N, DerivativeNodesToPlace>;
-        if constexpr (is_derivative_input(Type{})) {
+        constexpr auto type = convert_to_diffop2<NodesValue>(Type{});
+        if constexpr (is_derivative_input(type)) {
             constexpr auto it_loc = find_first<DerivativeNodeInputs, Type>();
             constexpr auto it_size = std::tuple_size_v<DerivativeNodeInputs>;
 
             static_assert(it_loc < it_size);
-            return locate_new_vals_update_buffer_types_aux<Last, N + 1,
-                                                           FindOffset>(
-                derivative_nodes, bt,
+            return locate_new_vals_update_buffer_types_aux<NodesValue, Last,
+                                                           N + 1, FindOffset>(
+                derivative_nodes2, bt,
                 std::tuple_cat(dnl,
                                std::make_tuple(std::get<it_loc>(dni).second)),
                 dn, dnn, dni);
@@ -284,9 +379,9 @@ constexpr auto locate_new_vals_update_buffer_types_aux(
             constexpr auto dn_loc = find_first<DerivativeNodes, Type, Last>();
             constexpr auto dn_size = std::tuple_size_v<DerivativeNodes>;
             if constexpr (dn_loc < dn_size) {
-                return locate_new_vals_update_buffer_types_aux<Last, N + 1,
-                                                               FindOffset>(
-                    derivative_nodes, bt,
+                return locate_new_vals_update_buffer_types_aux<
+                    NodesValue, Last, N + 1, FindOffset>(
+                    derivative_nodes2, bt,
                     std::tuple_cat(
                         dnl,
                         std::tuple<
@@ -300,9 +395,9 @@ constexpr auto locate_new_vals_update_buffer_types_aux(
                 constexpr auto dnn_size = std::tuple_size_v<DerivativeNodeNew>;
 
                 if constexpr (dnn_loc < dnn_size) {
-                    return locate_new_vals_update_buffer_types_aux<Last, N + 1,
-                                                                   FindOffset>(
-                        derivative_nodes, bt,
+                    return locate_new_vals_update_buffer_types_aux<
+                        NodesValue, Last, N + 1, FindOffset>(
+                        derivative_nodes2, bt,
                         std::tuple_cat(
                             dnl,
                             std::tuple<std::pair<
@@ -317,9 +412,9 @@ constexpr auto locate_new_vals_update_buffer_types_aux(
                     static_assert(bt_loc < tuple_size);
                     constexpr auto bt_new = replace<bt_loc, true>(bt);
 
-                    return locate_new_vals_update_buffer_types_aux<Last, N + 1,
-                                                                   bt_loc + 1>(
-                        derivative_nodes, bt_new,
+                    return locate_new_vals_update_buffer_types_aux<
+                        NodesValue, Last, N + 1, bt_loc + 1>(
+                        derivative_nodes2, bt_new,
                         std::tuple_cat(
                             dnl,
                             std::tuple<std::pair<on_buffer_t,
@@ -334,18 +429,19 @@ constexpr auto locate_new_vals_update_buffer_types_aux(
     }
 }
 
-template <std::size_t Last, class DerivativeNodesToPlace, class BufferTypes,
-          class DerivativeNodes, class DerivativeNodeNew,
+template <class NodesValue, std::size_t Last, class DerivativeNodesToPlace,
+          class BufferTypes, class DerivativeNodes, class DerivativeNodeNew,
           class DerivativeNodeInputs>
 constexpr auto locate_new_vals_update_buffer_types(
-    DerivativeNodesToPlace derivative_nodes, BufferTypes bt, DerivativeNodes dn,
-    DerivativeNodeNew dnn, DerivativeNodeInputs dni) {
-    return locate_new_vals_update_buffer_types_aux<Last>(
-        derivative_nodes, bt, std::tuple<>{}, dn, dnn, dni);
+    DerivativeNodesToPlace derivative_nodes2, BufferTypes bt,
+    DerivativeNodes dn, DerivativeNodeNew dnn, DerivativeNodeInputs dni) {
+    return locate_new_vals_update_buffer_types_aux<NodesValue, Last>(
+        derivative_nodes2, bt, std::tuple<>{}, dn, dnn, dni);
 }
 
-template <std::size_t Last, std::size_t N = 0, class DerivativeNodesToPlace,
-          class DerivNodeLoc, class DerivativeNodes, class DerivativeNodeNew,
+template <class NodesValue, std::size_t Last, std::size_t N = 0,
+          class DerivativeNodesToPlace, class DerivNodeLoc,
+          class DerivativeNodes, class DerivativeNodeNew,
           class DerivativeNodeInputs>
 constexpr auto locate_new_vals_update_buffer_types_aux_size(
     DerivativeNodesToPlace derivative_nodes, DerivNodeLoc dnl,
@@ -353,12 +449,14 @@ constexpr auto locate_new_vals_update_buffer_types_aux_size(
 
     if constexpr (N < std::tuple_size_v<DerivativeNodesToPlace>) {
         using Type = std::tuple_element_t<N, DerivativeNodesToPlace>;
-        if constexpr (is_derivative_input(Type{})) {
+        constexpr auto type = convert_to_diffop2<NodesValue>(Type{});
+        if constexpr (is_derivative_input(type)) {
             constexpr auto it_loc = find_first<DerivativeNodeInputs, Type>();
             constexpr auto it_size = std::tuple_size_v<DerivativeNodeInputs>;
 
             static_assert(it_loc < it_size);
-            return locate_new_vals_update_buffer_types_aux_size<Last, N + 1>(
+            return locate_new_vals_update_buffer_types_aux_size<NodesValue,
+                                                                Last, N + 1>(
                 derivative_nodes,
                 std::tuple_cat(dnl,
                                std::make_tuple(std::get<it_loc>(dni).second)),
@@ -367,8 +465,8 @@ constexpr auto locate_new_vals_update_buffer_types_aux_size(
             constexpr auto dn_loc = find_first<DerivativeNodes, Type, Last>();
             constexpr auto dn_size = std::tuple_size_v<DerivativeNodes>;
             if constexpr (dn_loc < dn_size) {
-                return locate_new_vals_update_buffer_types_aux_size<Last,
-                                                                    N + 1>(
+                return locate_new_vals_update_buffer_types_aux_size<
+                    NodesValue, Last, N + 1>(
                     derivative_nodes,
                     std::tuple_cat(
                         dnl,
@@ -383,8 +481,8 @@ constexpr auto locate_new_vals_update_buffer_types_aux_size(
                 constexpr auto dnn_size = std::tuple_size_v<DerivativeNodeNew>;
 
                 if constexpr (dnn_loc < dnn_size) {
-                    return locate_new_vals_update_buffer_types_aux_size<Last,
-                                                                        N + 1>(
+                    return locate_new_vals_update_buffer_types_aux_size<
+                        NodesValue, Last, N + 1>(
                         derivative_nodes,
                         std::tuple_cat(
                             dnl,
@@ -395,8 +493,8 @@ constexpr auto locate_new_vals_update_buffer_types_aux_size(
                                     std::get<dnn_loc>(dnn).second.second>>>{}),
                         dn, dnn, dni);
                 } else {
-                    return locate_new_vals_update_buffer_types_aux_size<Last,
-                                                                        N + 1>(
+                    return locate_new_vals_update_buffer_types_aux_size<
+                        NodesValue, Last, N + 1>(
                         derivative_nodes,
                         std::tuple_cat(
                             dnl,
@@ -412,12 +510,13 @@ constexpr auto locate_new_vals_update_buffer_types_aux_size(
     }
 }
 
-template <std::size_t Last, class DerivativeNodesToPlace, class DerivativeNodes,
-          class DerivativeNodeNew, class DerivativeNodeInputs>
+template <class NodesValue, std::size_t Last, class DerivativeNodesToPlace,
+          class DerivativeNodes, class DerivativeNodeNew,
+          class DerivativeNodeInputs>
 constexpr auto locate_new_vals_update_buffer_types_size(
     DerivativeNodesToPlace derivative_nodes, DerivativeNodes dn,
     DerivativeNodeNew dnn, DerivativeNodeInputs dni) {
-    return locate_new_vals_update_buffer_types_aux_size<Last>(
+    return locate_new_vals_update_buffer_types_aux_size<NodesValue, Last>(
         derivative_nodes, std::tuple<>{}, dn, dnn, dni);
 }
 
@@ -547,7 +646,7 @@ constexpr auto multiply_differential_operator(Single const single,
 
 template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Op1, class Op2,
           class Nodes>
-constexpr auto less_than3_aux(Op1 in1, Op2 in2, Nodes nodes) {
+constexpr auto less_than_aux(Op1 in1, Op2 in2, Nodes nodes) {
     if constexpr (Pos2 == std::tuple_size_v<Op2>) {
         return false;
     } else if constexpr (Pos1 == std::tuple_size_v<Op1>) {
@@ -555,8 +654,8 @@ constexpr auto less_than3_aux(Op1 in1, Op2 in2, Nodes nodes) {
     } else {
         constexpr std::tuple_element_t<Pos1, Op1> diffop1;
         constexpr std::tuple_element_t<Pos2, Op2> diffop2;
-        constexpr auto idx1 = find<Nodes, decltype(get_id(diffop1))>();
-        constexpr auto idx2 = find<Nodes, decltype(get_id(diffop2))>();
+        constexpr auto idx1 = get_id2(diffop1);
+        constexpr auto idx2 = get_id2(diffop2);
         constexpr std::size_t Order1 = get_power(diffop1);
         constexpr std::size_t Order2 = get_power(diffop2);
         if constexpr (idx1 < idx2) {
@@ -569,7 +668,7 @@ constexpr auto less_than3_aux(Op1 in1, Op2 in2, Nodes nodes) {
             return false;
         } else {
             static_assert(std::is_same_v<decltype(diffop1), decltype(diffop2)>);
-            return less_than3_aux<Pos1 + 1, Pos2 + 1>(in1, in2, nodes);
+            return less_than_aux<Pos1 + 1, Pos2 + 1>(in1, in2, nodes);
         }
     }
 }
@@ -579,7 +678,7 @@ constexpr auto less_than2(Op1 in1, Op2 in2, Nodes nodes) {
     if constexpr (std::is_same_v<Op1, Op2>) {
         return false;
     } else {
-        return less_than3_aux(in1, in2, nodes);
+        return less_than_aux(in1, in2, nodes);
     }
 }
 
@@ -607,18 +706,18 @@ constexpr auto are_same(I1 /* lhs */, I2 /* rhs */) -> bool {
 
 template <class Tuple1, class Tuple2, std::size_t Pos1 = 0,
           std::size_t Pos2 = 0, class... Out, class Nodes>
-constexpr auto merge_sorted_aux2(std::tuple<Out...> out, Nodes nodes) {
+constexpr auto merge_sorted_aux1(std::tuple<Out...> out, Nodes nodes) {
     if constexpr (std::tuple_size_v<Tuple1> == Pos1 &&
                   std::tuple_size_v<Tuple2> == Pos2) {
         return out;
     } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
-        return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2>(
+        return merge_sorted_aux1<Tuple1, Tuple2, Pos1 + 1, Pos2>(
             std::tuple<Out...,
                        std::pair<std::true_type,
                                  std::integral_constant<std::size_t, Pos1>>>{},
             nodes);
     } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
-        return merge_sorted_aux2<Tuple1, Tuple2, Pos1, Pos2 + 1>(
+        return merge_sorted_aux1<Tuple1, Tuple2, Pos1, Pos2 + 1>(
             std::tuple<Out...,
                        std::pair<std::false_type,
                                  std::integral_constant<std::size_t, Pos2>>>{},
@@ -630,14 +729,14 @@ constexpr auto merge_sorted_aux2(std::tuple<Out...> out, Nodes nodes) {
         static_assert(!are_same(Id1{}, Id2{}));
 
         if constexpr (less_than2(Id1{}, Id2{}, nodes)) {
-            return merge_sorted_aux2<Tuple1, Tuple2, Pos1, Pos2 + 1>(
+            return merge_sorted_aux1<Tuple1, Tuple2, Pos1, Pos2 + 1>(
                 std::tuple<
                     Out...,
                     std::pair<std::false_type,
                               std::integral_constant<std::size_t, Pos2>>>{},
                 nodes);
         } else {
-            return merge_sorted_aux2<Tuple1, Tuple2, Pos1 + 1, Pos2>(
+            return merge_sorted_aux1<Tuple1, Tuple2, Pos1 + 1, Pos2>(
                 std::tuple<Out...,
                            std::pair<std::true_type, std::integral_constant<
                                                          std::size_t, Pos1>>>{},
@@ -648,7 +747,7 @@ constexpr auto merge_sorted_aux2(std::tuple<Out...> out, Nodes nodes) {
 
 template <class Tuple1, class Tuple2, class... Flag, class... Position>
 constexpr auto
-merge_sorted_aux4(std::tuple<std::pair<Flag, Position>...> /* positions */) {
+merge_sorted_aux2(std::tuple<std::pair<Flag, Position>...> /* positions */) {
     // why do we do a conditional on the tuple element index?
     // because conditional_t is eager on evaluation and we therefore have to
     // refer to a type that always exists..
@@ -676,8 +775,8 @@ constexpr auto merge_sorted(Tuple1 in1, Tuple2 in2, Nodes nodes) {
         return in1;
     } else {
         constexpr auto position =
-            merge_sorted_aux2<Tuple1, Tuple2>(std::tuple<>{}, nodes);
-        return merge_sorted_aux4<Tuple1, Tuple2>(position);
+            merge_sorted_aux1<Tuple1, Tuple2>(std::tuple<>{}, nodes);
+        return merge_sorted_aux2<Tuple1, Tuple2>(position);
     }
 }
 

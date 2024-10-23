@@ -35,6 +35,7 @@
 #include <array>
 #include <cstddef>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace adhoc4 {
@@ -143,8 +144,16 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto outputs_sorted_with_pos = sort_differential_operators(
             std::get<1>(inputs_and_outputs_with_pos), primal_nodes_inverted);
 
+        constexpr auto outputs_sorted_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(outputs_sorted_with_pos);
+
+        constexpr auto inputs_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(
+                std::get<0>(inputs_and_outputs_with_pos));
+
         return detail::backpropagate_buffer_size<CalcTree>(
-            outputs_sorted_with_pos, std::get<0>(inputs_and_outputs_with_pos));
+            outputs_sorted_with_pos_idx, inputs_with_pos_idx,
+            std::get<0>(inputs_and_outputs_with_pos));
     }
 
   public:
@@ -173,16 +182,24 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto outputs_sorted_with_pos = sort_differential_operators(
             std::get<1>(inputs_and_outputs_with_pos), primal_nodes_inverted);
 
+        constexpr auto outputs_sorted_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(outputs_sorted_with_pos);
+
+        constexpr auto inputs_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(
+                std::get<0>(inputs_and_outputs_with_pos));
+
         constexpr auto buffer_size =
             detail::backpropagate_buffer_size<CalcTree>(
-                outputs_sorted_with_pos,
+                outputs_sorted_with_pos_idx, inputs_with_pos_idx,
                 std::get<0>(inputs_and_outputs_with_pos));
 
         std::array<double, buffer_size> buffer{};
         constexpr auto buffer_flags = make_bool_sequence<false, buffer_size>();
 
-        detail::backpropagate_aux(outputs_sorted_with_pos, ct,
-                                  this->m_derivatives, buffer_flags, buffer,
+        detail::backpropagate_aux(outputs_sorted_with_pos_idx,
+                                  inputs_with_pos_idx, ct, this->m_derivatives,
+                                  buffer_flags, buffer,
                                   std::get<0>(inputs_and_outputs_with_pos));
     }
 
@@ -209,25 +226,28 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         constexpr auto inputs_and_outputs_with_pos =
             separate(ordered_derivatives_with_pos, flags_inputs);
 
-        constexpr auto flags_outputs = std::apply(
-            [](auto... der) {
-                return std::integer_sequence<bool, !detail::is_derivative_input(
-                                                       der)...>{};
-            },
-            ordered_derivatives);
-
-        constexpr auto outputs_with_pos =
-            filter(ordered_derivatives_with_pos, flags_outputs);
-
         constexpr auto outputs_sorted_with_pos = sort_differential_operators(
-            outputs_with_pos, primal_nodes_inverted);
+            std::get<1>(inputs_and_outputs_with_pos), primal_nodes_inverted);
 
         std::array<double, BufferSize> buffer{};
         constexpr auto buffer_flags = make_bool_sequence<false, BufferSize>();
 
-        detail::backpropagate_aux(outputs_sorted_with_pos, ct,
-                                  this->m_derivatives, buffer_flags, buffer,
+        constexpr auto outputs_sorted_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(outputs_sorted_with_pos);
+
+        constexpr auto inputs_with_pos_idx =
+            convert_to_index_many<PrimalNodesInverse>(
+                std::get<0>(inputs_and_outputs_with_pos));
+
+        detail::backpropagate_aux(outputs_sorted_with_pos_idx,
+                                  inputs_with_pos_idx, ct, this->m_derivatives,
+                                  buffer_flags, buffer,
                                   std::get<0>(inputs_and_outputs_with_pos));
+
+        // detail::backpropagate_aux(outputs_sorted_with_pos_idx,
+        //                           inputs_with_pos_idx, ct,
+        //                           this->m_derivatives, buffer_flags, buffer,
+        //                           std::tuple<>{});
     }
 };
 
