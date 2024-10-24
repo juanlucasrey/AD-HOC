@@ -705,23 +705,18 @@ constexpr auto are_same(I1 /* lhs */, I2 /* rhs */) -> bool {
 }
 
 template <class Tuple1, class Tuple2, std::size_t Pos1 = 0,
-          std::size_t Pos2 = 0, class... Out, class Nodes>
-constexpr auto merge_sorted_aux1(std::tuple<Out...> out, Nodes nodes) {
+          std::size_t Pos2 = 0, bool... Flags, class Nodes>
+constexpr auto merge_sorted_aux1(std::integer_sequence<bool, Flags...> out,
+                                 Nodes nodes) {
     if constexpr (std::tuple_size_v<Tuple1> == Pos1 &&
                   std::tuple_size_v<Tuple2> == Pos2) {
         return out;
     } else if constexpr (std::tuple_size_v<Tuple2> == Pos2) {
         return merge_sorted_aux1<Tuple1, Tuple2, Pos1 + 1, Pos2>(
-            std::tuple<Out...,
-                       std::pair<std::true_type,
-                                 std::integral_constant<std::size_t, Pos1>>>{},
-            nodes);
+            std::integer_sequence<bool, Flags..., true>{}, nodes);
     } else if constexpr (std::tuple_size_v<Tuple1> == Pos1) {
         return merge_sorted_aux1<Tuple1, Tuple2, Pos1, Pos2 + 1>(
-            std::tuple<Out...,
-                       std::pair<std::false_type,
-                                 std::integral_constant<std::size_t, Pos2>>>{},
-            nodes);
+            std::integer_sequence<bool, Flags..., false>{}, nodes);
     } else {
         using Id1 = std::tuple_element_t<0, std::tuple_element_t<Pos1, Tuple1>>;
         using Id2 = std::tuple_element_t<0, std::tuple_element_t<Pos2, Tuple2>>;
@@ -730,38 +725,53 @@ constexpr auto merge_sorted_aux1(std::tuple<Out...> out, Nodes nodes) {
 
         if constexpr (less_than2(Id1{}, Id2{}, nodes)) {
             return merge_sorted_aux1<Tuple1, Tuple2, Pos1, Pos2 + 1>(
-                std::tuple<
-                    Out...,
-                    std::pair<std::false_type,
-                              std::integral_constant<std::size_t, Pos2>>>{},
-                nodes);
+                std::integer_sequence<bool, Flags..., false>{}, nodes);
         } else {
             return merge_sorted_aux1<Tuple1, Tuple2, Pos1 + 1, Pos2>(
-                std::tuple<Out...,
-                           std::pair<std::true_type, std::integral_constant<
-                                                         std::size_t, Pos1>>>{},
-                nodes);
+                std::integer_sequence<bool, Flags..., true>{}, nodes);
         }
     }
 }
 
-template <class Tuple1, class Tuple2, class... Flag, class... Position>
+template <std::size_t Size>
+constexpr auto merge_sorted_aux4(std::array<bool, Size> const &flags)
+    -> std::array<int, Size> {
+    std::array<int, Size> out;
+
+    int count1 = 0;
+    int count2 = -1;
+
+    for (std::size_t i = 0; i < Size; i++) {
+        if (flags[i]) {
+            out[i] = count1;
+            count1++;
+        } else {
+            out[i] = count2;
+            count2--;
+        }
+    }
+
+    return out;
+}
+
+template <class Tuple1, class Tuple2, bool... Flags, std::size_t... I>
 constexpr auto
-merge_sorted_aux2(std::tuple<std::pair<Flag, Position>...> /* positions */) {
-    // why do we do a conditional on the tuple element index?
-    // because conditional_t is eager on evaluation and we therefore have to
-    // refer to a type that always exists..
+merge_sorted_aux2(std::integer_sequence<bool, Flags...> /* positions */,
+                  std::index_sequence<I...> /* idx */) {
+
+    constexpr std::array<bool, sizeof...(Flags)> temp{Flags...};
+    constexpr auto out = merge_sorted_aux4(temp);
+
+    // why do we do a min on the index? because conditional_t is eager
+    // and we cannot go beyond the last element of the tuple.
     return std::tuple<std::conditional_t<
-        Flag::value,
-        std::tuple_element_t<
-            std::conditional_t<Flag::value, Position,
-                               std::integral_constant<std::size_t, 0>>::value,
-            Tuple1>,
-        std::tuple_element_t<
-            std::conditional_t<Flag::value,
-                               std::integral_constant<std::size_t, 0>,
-                               Position>::value,
-            Tuple2>>...>{};
+        (out[I] >= 0),
+        std::tuple_element_t<std::min(static_cast<std::size_t>(out[I]),
+                                      std::tuple_size_v<Tuple1> - 1),
+                             Tuple1>,
+        std::tuple_element_t<std::min(static_cast<std::size_t>(-out[I] - 1),
+                                      std::tuple_size_v<Tuple2> - 1),
+                             Tuple2>>...>{};
 }
 
 template <class Tuple1, class Tuple2, class Nodes>
@@ -774,9 +784,10 @@ constexpr auto merge_sorted(Tuple1 in1, Tuple2 in2, Nodes nodes) {
     } else if constexpr (std::tuple_size_v<Tuple2> == 0) {
         return in1;
     } else {
-        constexpr auto position =
-            merge_sorted_aux1<Tuple1, Tuple2>(std::tuple<>{}, nodes);
-        return merge_sorted_aux2<Tuple1, Tuple2>(position);
+        constexpr auto position = merge_sorted_aux1<Tuple1, Tuple2>(
+            std::integer_sequence<bool>{}, nodes);
+        return merge_sorted_aux2<Tuple1, Tuple2>(
+            position, std::make_index_sequence<position.size()>{});
     }
 }
 
