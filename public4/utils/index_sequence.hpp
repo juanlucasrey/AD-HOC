@@ -99,7 +99,8 @@ namespace detail {
 
 template <bool Value, std::size_t... I>
 constexpr auto make_bool_sequence_aux(std::index_sequence<I...>) {
-    return std::integer_sequence<bool, (I, Value)...>{};
+    constexpr auto return_bool = [](std::size_t /* I */, bool b) { return b; };
+    return std::integer_sequence<bool, return_bool(I, Value)...>{};
 }
 
 } // namespace detail
