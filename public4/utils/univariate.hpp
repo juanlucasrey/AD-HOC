@@ -33,8 +33,8 @@ namespace adhoc4 {
 namespace detail {
 template <std::size_t ToPow, std::size_t N, std::size_t N2 = N,
           std::size_t MaxOrder>
-auto elevate_univariate_pow_2_aux(std::array<double, MaxOrder> const &ua,
-                                  std::array<double, MaxOrder> &ua_res) {
+inline auto elevate_univariate_pow_2_aux(std::array<double, MaxOrder> const &ua,
+                                         std::array<double, MaxOrder> &ua_res) {
     constexpr auto Pos = N2 + N + 1;
     constexpr auto EarlyStop = ToPow - 2;
     if constexpr (Pos < (MaxOrder - EarlyStop)) {
@@ -48,8 +48,8 @@ auto elevate_univariate_pow_2_aux(std::array<double, MaxOrder> const &ua,
 }
 
 template <std::size_t ToPow, std::size_t N = 0, std::size_t MaxOrder>
-auto elevate_univariate_pow_2(std::array<double, MaxOrder> const &ua,
-                              std::array<double, MaxOrder> &ua_res) {
+inline auto elevate_univariate_pow_2(std::array<double, MaxOrder> const &ua,
+                                     std::array<double, MaxOrder> &ua_res) {
     if constexpr (N < (MaxOrder / 2)) {
         elevate_univariate_pow_2_aux<ToPow, N>(ua, ua_res);
         elevate_univariate_pow_2<ToPow, N + 1>(ua, ua_res);
@@ -58,10 +58,10 @@ auto elevate_univariate_pow_2(std::array<double, MaxOrder> const &ua,
 
 template <std::size_t PrevPow, std::size_t ToPow, std::size_t N,
           std::size_t Loc = PrevPow, std::size_t MaxOrder>
-auto elevate_univariate_pow_3_up_aux(
-    std::array<double, MaxOrder> const &ua,
-    std::array<double, MaxOrder> const &ua_prev,
-    std::array<double, MaxOrder> &ua_res) {
+inline auto
+elevate_univariate_pow_3_up_aux(std::array<double, MaxOrder> const &ua,
+                                std::array<double, MaxOrder> const &ua_prev,
+                                std::array<double, MaxOrder> &ua_res) {
     constexpr auto EarlyStop = ToPow - PrevPow - 1;
     constexpr auto Pos = Loc + N;
     if constexpr (Pos < (MaxOrder - EarlyStop)) {
@@ -73,9 +73,10 @@ auto elevate_univariate_pow_3_up_aux(
 
 template <std::size_t PrevPow, std::size_t ToPow, std::size_t N = 0,
           std::size_t MaxOrder>
-auto elevate_univariate_pow_3_up(std::array<double, MaxOrder> const &ua,
-                                 std::array<double, MaxOrder> const &ua_prev,
-                                 std::array<double, MaxOrder> &ua_res) {
+inline auto
+elevate_univariate_pow_3_up(std::array<double, MaxOrder> const &ua,
+                            std::array<double, MaxOrder> const &ua_prev,
+                            std::array<double, MaxOrder> &ua_res) {
     if constexpr (N + PrevPow - 1 < MaxOrder) {
         elevate_univariate_pow_3_up_aux<PrevPow, ToPow, N>(ua, ua_prev, ua_res);
         elevate_univariate_pow_3_up<PrevPow, ToPow, N + 1>(ua, ua_prev, ua_res);
@@ -84,8 +85,8 @@ auto elevate_univariate_pow_3_up(std::array<double, MaxOrder> const &ua,
 } // namespace detail
 
 template <std::size_t FromPow, std::size_t ToPow, std::size_t MaxOrder>
-void elevate_univariate(std::array<double, MaxOrder> const &ua,
-                        std::array<double, MaxOrder> &ua_res) {
+inline void elevate_univariate(std::array<double, MaxOrder> const &ua,
+                               std::array<double, MaxOrder> &ua_res) {
     if constexpr (FromPow < ToPow) {
         if constexpr (FromPow == 0) {
             ua_res = ua;
@@ -105,7 +106,7 @@ void elevate_univariate(std::array<double, MaxOrder> const &ua,
 
 namespace detail {
 template <std::size_t Idx = 1, std::size_t MaxOrder>
-void derivative_to_taylor_aux(std::array<double, MaxOrder> &ua) {
+inline void derivative_to_taylor_aux(std::array<double, MaxOrder> &ua) {
     if constexpr (Idx < MaxOrder) {
         constexpr double inverse_factorial = 1. / factorial(Idx + 1);
         ua[Idx] *= inverse_factorial;
@@ -115,7 +116,7 @@ void derivative_to_taylor_aux(std::array<double, MaxOrder> &ua) {
 } // namespace detail
 
 template <std::size_t MaxOrder>
-void derivative_to_taylor(std::array<double, MaxOrder> &ua) {
+inline void derivative_to_taylor(std::array<double, MaxOrder> &ua) {
     if constexpr (1 < MaxOrder) {
         detail::derivative_to_taylor_aux(ua);
     }

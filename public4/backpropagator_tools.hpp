@@ -103,7 +103,7 @@ constexpr auto copy_filtered(std::array<FromD, FromS> const &from_array,
 
 template <std::size_t Offset, std::size_t PosFrom = 0, std::size_t PosTo = 0,
           class From, class To, class FilteredIS>
-void inline copy_filtered_inverted_aux(From const &from_array, To &to_array,
+inline void copy_filtered_inverted_aux(From const &from_array, To &to_array,
                                        FilteredIS fis) {
     if constexpr (PosFrom < size(fis)) {
         if constexpr (std::get<PosFrom>(fis)) {
@@ -118,7 +118,7 @@ void inline copy_filtered_inverted_aux(From const &from_array, To &to_array,
 }
 
 template <class FromD, std::size_t FromS, class To, class Filter>
-void inline copy_filtered_inverted(std::array<FromD, FromS> const &from_array,
+inline void copy_filtered_inverted(std::array<FromD, FromS> const &from_array,
                                    To &to_array, Filter filt) {
     static_assert(FromS >= size(filt));
     constexpr std::size_t offset = FromS - size(filt);
@@ -127,7 +127,7 @@ void inline copy_filtered_inverted(std::array<FromD, FromS> const &from_array,
 
 template <std::size_t From, std::size_t To, std::size_t PosOut = 0,
           std::size_t PosFilter = 0, class In, class Out, class FilteredIS>
-void inline copy_filtered_inverted_aux2(In const &from_array, Out &to_array,
+inline void copy_filtered_inverted_aux2(In const &from_array, Out &to_array,
                                         FilteredIS fis) {
     constexpr std::size_t ToNext = To - 1;
     if constexpr (get<PosFilter>(fis)) {
@@ -147,7 +147,7 @@ void inline copy_filtered_inverted_aux2(In const &from_array, Out &to_array,
 
 template <std::size_t From, std::size_t To, class D, std::size_t InSize,
           std::size_t OutSize, class Filter>
-void inline copy_filtered_inverted2(std::array<D, InSize> const &from_array,
+inline void copy_filtered_inverted2(std::array<D, InSize> const &from_array,
                                     std::array<D, OutSize> &to_array,
                                     Filter filt) {
     static_assert(From <= To);
@@ -160,7 +160,7 @@ class on_interface_t {};
 class on_buffer_not_new_t {};
 
 template <class Where, std::size_t I, class InterfaceArray, class BufferArray>
-auto get_differential_operator_value(
+inline auto get_differential_operator_value(
     std::pair<Where, std::integral_constant<std::size_t,
                                             I>> /* current_node_der_loc */,
     InterfaceArray const &ia, BufferArray const &ba) -> double {
@@ -522,10 +522,11 @@ constexpr auto locate_new_vals_update_buffer_types_size(
 
 template <std::size_t N = 0, class ResultsArray, class LocationIndicators,
           std::size_t BufferArraySize, std::size_t InterfaceArraySize>
-auto write_results(ResultsArray const &results_array,
-                   LocationIndicators location_indicators,
-                   std::array<double, BufferArraySize> &buffer_array,
-                   std::array<double, InterfaceArraySize> &interface_array) {
+inline auto
+write_results(ResultsArray const &results_array,
+              LocationIndicators location_indicators,
+              std::array<double, BufferArraySize> &buffer_array,
+              std::array<double, InterfaceArraySize> &interface_array) {
     if constexpr (N < std::tuple_size_v<LocationIndicators>) {
 
         using Indicator = std::tuple_element_t<N, LocationIndicators>;
@@ -594,7 +595,8 @@ constexpr auto IsPlus(std::index_sequence<I1, I2> /* idx_seq */) -> bool {
 
 template <bool positiveIdx1, bool positiveIdx2, std::size_t N = 0,
           class PartitionIntegerSequences, class ArrayOut>
-auto calc_add(PartitionIntegerSequences const sequences, ArrayOut &arrayout) {
+inline auto calc_add(PartitionIntegerSequences const sequences,
+                     ArrayOut &arrayout) {
     if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
         constexpr auto current_sequence = std::get<N>(sequences);
         constexpr auto mult_coeff = MultinomialCoeff2(current_sequence);
@@ -810,9 +812,9 @@ constexpr auto merge_sorted(Tuple1 in1, Tuple2 in2, Nodes nodes) {
 
 template <std::size_t N = 0, std::size_t OutSize, std::size_t MaxOrder,
           class IS>
-auto calc_mul(std::array<double, OutSize> &arrayout,
-              std::array<double, MaxOrder> const &powers_val1,
-              std::array<double, MaxOrder> const &powers_val2, IS et) {
+inline auto calc_mul(std::array<double, OutSize> &arrayout,
+                     std::array<double, MaxOrder> const &powers_val1,
+                     std::array<double, MaxOrder> const &powers_val2, IS et) {
     static_assert(OutSize == std::tuple_size_v<IS>);
     if constexpr (N < OutSize) {
         constexpr auto current_sequence = std::get<N>(et);

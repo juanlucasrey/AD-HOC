@@ -54,12 +54,12 @@ template <std::size_t Last, std::size_t Idx1, std::size_t Idx2,
           class DerivativeNodeNew, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, std::size_t MaxOrder,
           class DerivativeNodeInputs>
-auto treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                     DerivativeNodeNew dnn_i, CalcTree const &ct,
-                     InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
-                     std::array<double, MaxOrder> const &powers1,
-                     std::array<double, MaxOrder> const &powers2,
-                     DerivativeNodeInputs dnin) {
+inline auto treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                            DerivativeNodeNew dnn_i, CalcTree const &ct,
+                            InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
+                            std::array<double, MaxOrder> const &powers1,
+                            std::array<double, MaxOrder> const &powers2,
+                            DerivativeNodeInputs dnin) {
 
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
@@ -181,10 +181,11 @@ template <std::size_t Idx, class PrimalSubNodeConst, std::size_t Last,
           std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
           class DerivativeNodeNew, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, class DerivativeNodeInputs>
-auto treat_nodes_mul_const(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                           DerivativeNodeNew dnn_i, CalcTree const &ct,
-                           InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
-                           DerivativeNodeInputs dnin) {
+inline auto treat_nodes_mul_const(DerivativeNodes dn,
+                                  DerivativeNodeInputsI dnin_i,
+                                  DerivativeNodeNew dnn_i, CalcTree const &ct,
+                                  InterfaceArray &ia, BufferFlags bf,
+                                  BufferArray &ba, DerivativeNodeInputs dnin) {
 
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
@@ -257,11 +258,11 @@ template <std::size_t Last, class PrimalSubNode1, class PrimalSubNode2,
           class DerivativeNodes, class DerivativeNodeInputsI, class CalcTree,
           class InterfaceArray, class BufferFlags, class BufferArray,
           class DerivativeNodeInputs>
-auto treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
-                             DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                             CalcTree const &ct, InterfaceArray &ia,
-                             BufferFlags bf, BufferArray &ba,
-                             DerivativeNodeInputs dnin) {
+inline auto
+treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
+                        DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                        CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
+                        BufferArray &ba, DerivativeNodeInputs dnin) {
     using NodesValue = CalcTree::ValuesTupleInverse;
 
     constexpr auto is_const1 = is_constant(PrimalSubNode1{});
@@ -304,10 +305,10 @@ template <std::size_t Last, std::size_t Idx1, std::size_t Idx2,
           class DerivativeNodes, class DerivativeNodeInputsI,
           class DerivativeNodeNew, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, class DerivativeNodeInputs>
-auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                     DerivativeNodeNew dnn_i, CalcTree const &ct,
-                     InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
-                     DerivativeNodeInputs dnin) {
+inline auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                            DerivativeNodeNew dnn_i, CalcTree const &ct,
+                            InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
+                            DerivativeNodeInputs dnin) {
 
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
@@ -428,11 +429,11 @@ template <std::size_t Last, class PrimalSubNode1, class PrimalSubNode2,
           class DerivativeNodesI, class DerivativeNodeInputsI, class CalcTree,
           class InterfaceArray, class BufferFlags, class BufferArray,
           class DerivativeNodeInputs>
-auto treat_nodes_specialized(sub_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
-                             DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
-                             CalcTree const &ct, InterfaceArray &ia,
-                             BufferFlags bf, BufferArray &ba,
-                             DerivativeNodeInputs dnin) {
+inline auto
+treat_nodes_specialized(sub_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
+                        DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
+                        CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
+                        BufferArray &ba, DerivativeNodeInputs dnin) {
     using NodesValue = CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
@@ -450,11 +451,11 @@ template <std::size_t Last, class PrimalSubNode1, class PrimalSubNode2,
           class DerivativeNodesI, class DerivativeNodeInputsI, class CalcTree,
           class InterfaceArray, class BufferFlags, class BufferArray,
           class DerivativeNodeInputs>
-auto treat_nodes_specialized(add_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
-                             DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
-                             CalcTree const &ct, InterfaceArray &ia,
-                             BufferFlags bf, BufferArray &ba,
-                             DerivativeNodeInputs dnin) {
+inline auto
+treat_nodes_specialized(add_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
+                        DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
+                        CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
+                        BufferArray &ba, DerivativeNodeInputs dnin) {
     using NodesValue = CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
@@ -473,12 +474,11 @@ template <std::size_t Last, std::size_t N, std::size_t Idx,
           class DerivativeNodeInputsI, class DerivativeNodeNew, class CalcTree,
           class InterfaceArray, class BufferFlags, class BufferArray,
           std::size_t MaxOrder, class DerivativeNodeInputs>
-auto treat_nodes_univariate(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                            DerivativeNodeNew dnn, CalcTree const &ct,
-                            InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
-                            std::array<double, MaxOrder> const &ua,
-                            std::array<double, MaxOrder> &ua_elevated,
-                            DerivativeNodeInputs dnin) {
+inline auto treat_nodes_univariate(
+    DerivativeNodes dn, DerivativeNodeInputsI dnin_i, DerivativeNodeNew dnn,
+    CalcTree const &ct, InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
+    std::array<double, MaxOrder> const &ua,
+    std::array<double, MaxOrder> &ua_elevated, DerivativeNodeInputs dnin) {
     if constexpr (N == 0) {
         return std::make_tuple(bf, dnn);
     } else {
@@ -600,11 +600,11 @@ template <std::size_t Last, template <class> class Univariate,
           class PrimalSubNode, class DerivativeNodes,
           class DerivativeNodeInputsI, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, class DerivativeNodeInputs>
-auto treat_nodes_specialized(Univariate<PrimalSubNode> /* pn */,
-                             DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                             CalcTree const &ct, InterfaceArray &ia,
-                             BufferFlags bf, BufferArray &ba,
-                             DerivativeNodeInputs dnin) {
+inline auto
+treat_nodes_specialized(Univariate<PrimalSubNode> /* pn */, DerivativeNodes dn,
+                        DerivativeNodeInputsI dnin_i, CalcTree const &ct,
+                        InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
+                        DerivativeNodeInputs dnin) {
 
     using PrimalNode = Univariate<PrimalSubNode>;
     constexpr auto MaxOrder = detail::max_orders(dnin_i);
@@ -627,9 +627,10 @@ auto treat_nodes_specialized(Univariate<PrimalSubNode> /* pn */,
 template <std::size_t CN, class PrimalNode, class DerivativeNodes,
           class DerivativeNodeInputsI, class CalcTree, class InterfaceArray,
           class BufferFlags, class BufferArray, class DerivativeNodeInputs>
-auto treat_node(DerivativeNodes dn, DerivativeNodeInputsI dnin_i, PrimalNode nd,
-                CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
-                BufferArray &ba, DerivativeNodeInputs dnin) {
+inline auto treat_node(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                       PrimalNode nd, CalcTree const &ct, InterfaceArray &ia,
+                       BufferFlags bf, BufferArray &ba,
+                       DerivativeNodeInputs dnin) {
 
     constexpr auto Last = find_first_type_not2<DerivativeNodes, CN>();
 
@@ -651,9 +652,10 @@ auto treat_node(DerivativeNodes dn, DerivativeNodeInputsI dnin_i, PrimalNode nd,
 template <std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
           class CalcTree, class InterfaceArray, class BufferFlags,
           class BufferArray, class DerivativeNodeInputs>
-void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                       CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
-                       BufferArray &ba, DerivativeNodeInputs dnin) {
+inline void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                              CalcTree const &ct, InterfaceArray &ia,
+                              BufferFlags bf, BufferArray &ba,
+                              DerivativeNodeInputs dnin) {
 
     using PrimalNodes = CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
