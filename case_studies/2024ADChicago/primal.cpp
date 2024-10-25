@@ -1,4 +1,4 @@
-#include "call_price.hpp"
+#include "black_scholes.hpp"
 
 #include <chrono>
 #include <iostream>

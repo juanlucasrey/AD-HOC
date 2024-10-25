@@ -1,5 +1,5 @@
-#ifndef TESTS4_CALL_PRICE4_HPP
-#define TESTS4_CALL_PRICE4_HPP
+#ifndef CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
+#define CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
 
 #include "../../public4/constants_type.hpp"
 
@@ -15,7 +15,7 @@ template <class D> inline auto cdf_n(D const &x) {
 }
 
 template <class I1, class I2, class I3, class I4>
-auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
+inline auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using adhoc4::constants::CD;
     using std::log;
     using std::sqrt;
@@ -26,7 +26,7 @@ auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 }
 
 template <class I1, class I2, class I3, class I4>
-auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
+inline auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using adhoc4::constants::CD;
     using std::log;
     using std::sqrt;
@@ -36,4 +36,4 @@ auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     return K * cdf_n(-d2) - S * cdf_n(-d1);
 }
 
-#endif // TESTS4_CALL_PRICE4_HPP
+#endif // CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP

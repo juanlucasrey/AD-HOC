@@ -4,7 +4,7 @@
 #include "../../public4/constants_type.hpp"
 #include "../../public4/differential_operator.hpp"
 
-#include "call_price.hpp"
+#include "black_scholes.hpp"
 
 #include <chrono>
 #include <iostream>
