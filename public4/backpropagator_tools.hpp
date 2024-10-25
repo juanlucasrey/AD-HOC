@@ -585,15 +585,32 @@ template <std::size_t Order> auto powers(double a) {
     return vals;
 }
 
-template <std::size_t N = 0, class PartitionIntegerSequences, class ArrayOut>
+template <bool positiveIdx1, bool positiveIdx2, std::size_t I1, std::size_t I2>
+constexpr auto IsPlus(std::index_sequence<I1, I2> /* idx_seq */) -> bool {
+    bool is_plus_1 = positiveIdx1 || !(I1 & 0x1);
+    bool is_plus_2 = positiveIdx2 || !(I2 & 0x1);
+    return is_plus_1 == is_plus_2;
+}
+
+template <bool positiveIdx1, bool positiveIdx2, std::size_t N = 0,
+          class PartitionIntegerSequences, class ArrayOut>
 auto calc_add(PartitionIntegerSequences const sequences, ArrayOut &arrayout) {
     if constexpr (N < std::tuple_size_v<PartitionIntegerSequences>) {
         constexpr auto current_sequence = std::get<N>(sequences);
-        if constexpr (MultinomialCoeff2(current_sequence) != 1) {
-            arrayout[N] *=
-                static_cast<double>(MultinomialCoeff2(current_sequence));
+        constexpr auto mult_coeff = MultinomialCoeff2(current_sequence);
+        constexpr bool is_plus =
+            IsPlus<positiveIdx1, positiveIdx2>(current_sequence);
+
+        if constexpr (mult_coeff != 1) {
+            if constexpr (is_plus) {
+                arrayout[N] *= static_cast<double>(mult_coeff);
+            } else {
+                arrayout[N] *= -static_cast<double>(mult_coeff);
+            }
+        } else if constexpr (!is_plus) {
+            arrayout[N] = -arrayout[N];
         }
-        calc_add<N + 1>(sequences, arrayout);
+        calc_add<positiveIdx1, positiveIdx2, N + 1>(sequences, arrayout);
     }
 }
 

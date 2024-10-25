@@ -340,12 +340,13 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
     }
 }
 
+// default for add_t and sub_t
 template <std::size_t Last, class CalcTree, std::size_t SizeMax,
-          std::size_t SizeCur, class PrimalSubNode1, class PrimalSubNode2,
-          class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeInputs>
+          std::size_t SizeCur, template <class, class> class Bivariate,
+          class PrimalSubNode1, class PrimalSubNode2, class DerivativeNodes,
+          class DerivativeNodeInputsI, class DerivativeNodeInputs>
 constexpr auto treat_nodes_specialized_buffer_size(
-    add_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
+    Bivariate<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
     DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
     using NodesValue = CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();

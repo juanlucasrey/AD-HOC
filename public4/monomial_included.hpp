@@ -80,8 +80,9 @@ constexpr auto expand(Univariate<Input> num) {
     return num;
 }
 
-template <class Input1, class Input2>
-constexpr auto expand(add_t<Input1, Input2> /* num */) {
+// default for add_t and sub_t
+template <template <class, class> class Bivariate, class Input1, class Input2>
+constexpr auto expand(Bivariate<Input1, Input2> /* num */) {
 
     constexpr auto expanded1 = expand(Input1{});
     constexpr auto expanded2 = expand(Input2{});
