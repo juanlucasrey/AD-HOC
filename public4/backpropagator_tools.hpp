@@ -23,6 +23,7 @@
 
 #include "adhoc.hpp"
 #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
+#include "combinatorics/trinomial.hpp"
 #include "differential_operator.hpp"
 #include "sort.hpp"
 #include "utils/index_sequence.hpp"
@@ -33,6 +34,7 @@
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace adhoc4::detail {
 
@@ -811,29 +813,74 @@ constexpr auto merge_sorted(Tuple1 in1, Tuple2 in2, Nodes nodes) {
 }
 
 template <std::size_t N = 0, std::size_t OutSize, std::size_t MaxOrder,
-          class IS>
+          std::size_t CrossedSize, class CrossedTypes, class IS>
 inline auto calc_mul(std::array<double, OutSize> &arrayout,
                      std::array<double, MaxOrder> const &powers_val1,
-                     std::array<double, MaxOrder> const &powers_val2, IS et) {
+                     std::array<double, MaxOrder> const &powers_val2,
+                     std::array<double, CrossedSize> const &powers_crossed,
+                     CrossedTypes xt, IS et) {
     static_assert(OutSize == std::tuple_size_v<IS>);
     if constexpr (N < OutSize) {
         constexpr auto current_sequence = std::get<N>(et);
         static_assert(current_sequence.size() == 3);
-        if constexpr (get<1>(current_sequence)) {
-            arrayout[N] *= powers_val2[get<1>(current_sequence) - 1];
+
+        if constexpr (sequence_is_on_one_value(current_sequence)) {
+            if constexpr (get<1>(current_sequence)) {
+                arrayout[N] *= powers_val2[get<1>(current_sequence) - 1];
+            }
+
+            if constexpr (get<2>(current_sequence)) {
+                arrayout[N] *= powers_val1[get<2>(current_sequence) - 1];
+            }
+        } else {
+            constexpr std::size_t idx =
+                find<CrossedTypes, std::tuple_element_t<N, IS>>();
+            static_assert(idx < std::tuple_size_v<CrossedTypes>);
+            arrayout[N] *= powers_crossed[idx];
         }
 
-        if constexpr (get<2>(current_sequence)) {
-            arrayout[N] *= powers_val1[get<2>(current_sequence) - 1];
-        }
-
-        if constexpr (MultinomialCoeff2(current_sequence) != 1) {
-            arrayout[N] *=
-                static_cast<double>(MultinomialCoeff2(current_sequence));
-        }
-
-        calc_mul<N + 1>(arrayout, powers_val1, powers_val2, et);
+        calc_mul<N + 1>(arrayout, powers_val1, powers_val2, powers_crossed, xt,
+                        et);
     }
+}
+
+template <std::size_t I, std::size_t I1, std::size_t I2, std::size_t I3,
+          std::size_t ThisMaxOrder, std::size_t ResultSize>
+inline auto
+crossed_powers_single(std::index_sequence<I1, I2, I3> seq,
+                      std::array<double, ThisMaxOrder> const &powers1,
+                      std::array<double, ThisMaxOrder> const &powers2,
+                      std::array<double, ResultSize> &vals) {
+    vals[I] = static_cast<double>(MultinomialCoeff2(seq));
+
+    if constexpr (I2) {
+        vals[I] *= powers2[I2 - 1];
+    }
+
+    if constexpr (I3) {
+        vals[I] *= powers1[I3 - 1];
+    }
+}
+
+template <class TupleIS, std::size_t ThisMaxOrder, std::size_t ResultSize,
+          std::size_t... I>
+inline auto crossed_powers_aux(TupleIS seqs,
+                               std::array<double, ThisMaxOrder> const &powers1,
+                               std::array<double, ThisMaxOrder> const &powers2,
+                               std::array<double, ResultSize> &vals,
+                               std::index_sequence<I...> /* idx_seq */) {
+    (crossed_powers_single<I>(std::get<I>(seqs), powers1, powers2, vals), ...);
+}
+
+template <class TupleIS, std::size_t ThisMaxOrder>
+inline auto crossed_powers(TupleIS seqs,
+                           std::array<double, ThisMaxOrder> const &powers1,
+                           std::array<double, ThisMaxOrder> const &powers2) {
+    constexpr std::size_t array_size = std::tuple_size_v<TupleIS>;
+    std::array<double, array_size> vals;
+    crossed_powers_aux(seqs, powers1, powers2, vals,
+                       std::make_index_sequence<array_size>{});
+    return vals;
 }
 
 template <std::size_t Pos1 = 0, std::size_t Pos2 = 0, class Tuple1,

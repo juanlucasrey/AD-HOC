@@ -21,6 +21,8 @@
 #ifndef ADHOC4_PARTITION_TRINOMIAL_HPP
 #define ADHOC4_PARTITION_TRINOMIAL_HPP
 
+#include "../utils/tuple.hpp"
+
 #include <array>
 #include <cstddef>
 #include <tuple>
@@ -33,7 +35,7 @@ namespace detail {
 
 constexpr auto NextTrinomial(std::array<std::size_t, 3> const &prev) {
     // check the previous trinomial coefficient is not the last
-    std::array<std::size_t, 3> arrlast{0};
+    std::array<std::size_t, 3> arrlast{0, 0, 0};
     arrlast.back() = prev.back();
     if (arrlast == prev) {
         return prev;
@@ -93,7 +95,7 @@ namespace detail {
 template <std::size_t DoublePower>
 constexpr auto NextTrinomial2(std::array<std::size_t, 3> const &prev) {
     // check the previous trinomial coefficient is not the last
-    std::array<std::size_t, 3> arrlast{0};
+    std::array<std::size_t, 3> arrlast{0, 0, 0};
     arrlast.back() = prev.back();
     if (arrlast == prev) {
         return prev;
@@ -159,6 +161,44 @@ constexpr auto TrinomialSequencesMult() {
     constexpr auto first =
         std::index_sequence<DoublePower, Order - DoublePower, 0>{};
     return detail::TrinomialSequences_aux2<DoublePower>(first, std::tuple<>{});
+}
+
+template <std::size_t MaxOrder, std::size_t... I>
+constexpr auto
+AllTrinomialSequencesStored_aux(std::index_sequence<I...> /* in */) {
+    return std::tuple_cat(TrinomialSequencesMult<I, MaxOrder>()...);
+}
+
+template <std::size_t I1, std::size_t I2, std::size_t I3>
+constexpr auto
+sequence_is_on_one_value(std::index_sequence<I1, I2, I3> /* seq */) -> bool {
+    if constexpr (I1 == 0 && I2 == 0) {
+        return true;
+    } else if constexpr (I1 == 0 && I3 == 0) {
+        return true;
+    } else if constexpr (I2 == 0 && I3 == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// this is a highly tailored method that gives the valid monomial expansions
+// of (e(x)*e(y) + e(x) + e(y))^Order for Order included in [1, MaxOrder]
+// that require storage of a value
+template <std::size_t ThisMaxOrder, std::size_t MaxOrder>
+constexpr auto AllTrinomialSequencesStored() {
+    constexpr auto unfiltered = AllTrinomialSequencesStored_aux<MaxOrder>(
+        make_index_sequence<1, ThisMaxOrder>());
+
+    constexpr auto flags = std::apply(
+        [](auto... seq) {
+            return std::integer_sequence<bool,
+                                         !sequence_is_on_one_value(seq)...>{};
+        },
+        unfiltered);
+
+    return filter(unfiltered, flags);
 }
 
 } // namespace adhoc4

@@ -34,6 +34,7 @@
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 #define LOG_LEVEL 0
 #define LOG_VALS false
@@ -50,16 +51,19 @@
 namespace adhoc4::detail {
 
 template <std::size_t Last, std::size_t Idx1, std::size_t Idx2,
-          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeNew, class CalcTree, class InterfaceArray,
-          class BufferFlags, class BufferArray, std::size_t MaxOrder,
+          std::size_t MaxOrder, std::size_t N = 0, class DerivativeNodes,
+          class DerivativeNodeInputsI, class DerivativeNodeNew, class CalcTree,
+          class InterfaceArray, class BufferFlags, class BufferArray,
+          std::size_t ThisMaxOrder, std::size_t CrossedSize, class CrossedTypes,
           class DerivativeNodeInputs>
-inline auto treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                            DerivativeNodeNew dnn_i, CalcTree const &ct,
-                            InterfaceArray &ia, BufferFlags bf, BufferArray &ba,
-                            std::array<double, MaxOrder> const &powers1,
-                            std::array<double, MaxOrder> const &powers2,
-                            DerivativeNodeInputs dnin) {
+inline auto
+treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
+                DerivativeNodeNew dnn_i, CalcTree const &ct, InterfaceArray &ia,
+                BufferFlags bf, BufferArray &ba,
+                std::array<double, ThisMaxOrder> const &powers1,
+                std::array<double, ThisMaxOrder> const &powers2,
+                std::array<double, CrossedSize> const &powers_crossed,
+                CrossedTypes xt, DerivativeNodeInputs dnin) {
 
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
@@ -127,7 +131,7 @@ inline auto treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         std::array<double, next_derivatives_size> next_derivatives_values;
         next_derivatives_values.fill(this_val_derivative);
 
-        calc_mul(next_derivatives_values, powers1, powers2,
+        calc_mul(next_derivatives_values, powers1, powers2, powers_crossed, xt,
                  multinomial_sequences_filtered);
 
         constexpr auto bf_new_pair =
@@ -172,8 +176,9 @@ inline auto treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         constexpr auto dnn_new =
             merge_sorted(next_derivatives_new_with_pos, dnn_i, NodesValue{});
 
-        return treat_nodes_mul<Last, Idx1, Idx2, N + 1>(
-            dn, dnin_i, dnn_new, ct, ia, bf_new, ba, powers1, powers2, dnin);
+        return treat_nodes_mul<Last, Idx1, Idx2, MaxOrder, N + 1>(
+            dn, dnin_i, dnn_new, ct, ia, bf_new, ba, powers1, powers2,
+            powers_crossed, xt, dnin);
     }
 }
 
@@ -279,23 +284,40 @@ treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
             dn, dnin_i, std::tuple<>{}, ct, ia, bf, ba, dnin);
     } else {
 
+        // this assumes the derivatives nodes are ordered. the first one should
+        // have the highest power
+        using FirstDerivativeNode = std::tuple_element_t<
+            0,
+            std::tuple_element_t<0, std::tuple_element_t<0, DerivativeNodes>>>;
+        constexpr auto ThisMaxOrder = get_power(FirstDerivativeNode{});
         constexpr auto MaxOrder = detail::max_orders(dnin_i);
+
+        constexpr auto valstypes =
+            AllTrinomialSequencesStored<ThisMaxOrder, MaxOrder>();
+
         double const val1 = ct.get(PrimalSubNode1{});
         double const val2 = ct.get(PrimalSubNode2{});
-        auto const powers_val1 = detail::powers<MaxOrder>(val1);
-        auto const powers_val2 = detail::powers<MaxOrder>(val2);
+        auto const powers_val1 = detail::powers<ThisMaxOrder>(val1);
+        auto const powers_val2 = detail::powers<ThisMaxOrder>(val2);
 
         constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
         constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
         constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
         if constexpr (id1_less_than_id2) {
-            return treat_nodes_mul<Last, idx2, idx1>(
+
+            auto const powers_crossed =
+                crossed_powers(valstypes, powers_val2, powers_val1);
+
+            return treat_nodes_mul<Last, idx2, idx1, MaxOrder>(
                 dn, dnin_i, std::tuple<>{}, ct, ia, bf, ba, powers_val2,
-                powers_val1, dnin);
+                powers_val1, powers_crossed, valstypes, dnin);
         } else {
-            return treat_nodes_mul<Last, idx1, idx2>(
+            auto const powers_crossed =
+                crossed_powers(valstypes, powers_val1, powers_val2);
+
+            return treat_nodes_mul<Last, idx1, idx2, MaxOrder>(
                 dn, dnin_i, std::tuple<>{}, ct, ia, bf, ba, powers_val1,
-                powers_val2, dnin);
+                powers_val2, powers_crossed, valstypes, dnin);
         }
     }
 }
