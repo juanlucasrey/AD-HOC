@@ -1,7 +1,6 @@
-#include "../../public4/adhoc.hpp"
-#include "../../public4/backpropagator.hpp"
-#include "../../public4/calc_tree.hpp"
-#include "../../public4/differential_operator.hpp"
+#define DCO_AUTO_SUPPORT
+#define DCO_DISABLE_AVX2_WARNING
+#include "packages/dco/include/dco.hpp"
 
 #include "black_scholes.hpp"
 
@@ -26,44 +25,33 @@ int main() {
     std::array<double, 5> results_average;
     results_average.fill(0);
 
-    using namespace adhoc4;
-    ADHOC(S);
-    ADHOC(K);
-    ADHOC(v);
-    ADHOC(T);
-
-    auto res = call_price(S, K, v, T);
-
-    CalcTree ct(res);
-
-    // order 1
-    auto dS = d(S);
-    auto dK = d(K);
-    auto dv = d(v);
-    auto dT = d(T);
-
-    auto dres = d(res);
-
-    BackPropagator t(dS, dK, dv, dT, dres);
+    using mode_t = dco::ga1s<double>;
+    using type = mode_t::type;
+    mode_t::global_tape = mode_t::tape_t::create();
 
     time1 = std::chrono::high_resolution_clock::now();
 
     for (std::size_t j = 0; j < iters; ++j) {
-        ct.set(S) = stock_distr(generator);
-        ct.set(K) = stock_distr(generator);
-        ct.set(v) = vol_distr(generator);
-        ct.set(T) = time_distr(generator);
-        ct.evaluate();
-        t.reset();
-        t.set(dres) = 1.;
-        t.backpropagate(ct);
+        type S = stock_distr(generator);
+        type K = stock_distr(generator);
+        type v = vol_distr(generator);
+        type T = time_distr(generator);
+        mode_t::global_tape->register_variable(S);
+        mode_t::global_tape->register_variable(K);
+        mode_t::global_tape->register_variable(v);
+        mode_t::global_tape->register_variable(T);
+        auto pos = mode_t::global_tape->get_position();
+        type y = call_price(S, K, v, T);
+        mode_t::global_tape->register_output_variable(y);
+        dco::derivative(y) = 1.0;
+        mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
 
         // average to make sure compiler doesn't optimise calculations away
-        results_average[0] += ct.get(res);
-        results_average[1] += t.get(dS);
-        results_average[2] += t.get(dK);
-        results_average[3] += t.get(dv);
-        results_average[4] += t.get(dT);
+        results_average[0] += dco::value(y);
+        results_average[1] += dco::derivative(S);
+        results_average[2] += dco::derivative(K);
+        results_average[3] += dco::derivative(v);
+        results_average[4] += dco::derivative(T);
     }
 
     time2 = std::chrono::high_resolution_clock::now();
@@ -72,7 +60,7 @@ int main() {
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "adhoc order 1 time: " << time << std::endl;
+    std::cout << "nag/dco order 1 time: " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {
@@ -80,5 +68,6 @@ int main() {
         std::cout << results_average[i] << std::endl;
     }
 
+    mode_t::tape_t::remove(mode_t::global_tape);
     return 0;
 }

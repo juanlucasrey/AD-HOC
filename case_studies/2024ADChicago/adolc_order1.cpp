@@ -61,6 +61,7 @@ int main() {
         zos_forward(tag, m, n, 1, xp, yp);
         fos_reverse(tag, m, n, u, z);
 
+        // average to make sure compiler doesn't optimise calculations away
         results_average[0] += yp[0];
         results_average[1] += z[0];
         results_average[2] += z[1];

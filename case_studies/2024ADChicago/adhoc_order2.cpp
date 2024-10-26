@@ -71,8 +71,7 @@ int main() {
         t.set(dres) = 1.;
         t.backpropagate(ct);
 
-        // why do we do this? to make sure that compiler does not remove the
-        // calculations (it might happen if they are not used)
+        // average to make sure compiler doesn't optimise calculations away
         results_average[0] += ct.get(res);
         results_average[1] += t.get(dS);
         results_average[2] += t.get(dK);
