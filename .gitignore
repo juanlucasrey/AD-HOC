@@ -5,5 +5,6 @@ build
 .DS_Store
 benchmark
 tests3/packages
+case_studies/2024ADChicago/packages
 gtest-1.6.0
 TODO
