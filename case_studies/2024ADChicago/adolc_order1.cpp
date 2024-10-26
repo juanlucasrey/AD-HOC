@@ -75,7 +75,7 @@ int main() {
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "adhoc order 1 time: " << time << std::endl;
+    std::cout << "adol-c order 1 time (ms): " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {

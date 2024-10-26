@@ -54,13 +54,14 @@ int main() {
         results_average[4] += dco::derivative(T);
     }
 
+    mode_t::tape_t::remove(mode_t::global_tape);
     time2 = std::chrono::high_resolution_clock::now();
     auto time =
         std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1)
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "nag/dco order 1 time: " << time << std::endl;
+    std::cout << "nag/dco order 1 time (ms): " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {
@@ -68,6 +69,5 @@ int main() {
         std::cout << results_average[i] << std::endl;
     }
 
-    mode_t::tape_t::remove(mode_t::global_tape);
     return 0;
 }
