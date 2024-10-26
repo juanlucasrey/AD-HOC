@@ -1,7 +1,6 @@
 #include "../../public4/adhoc.hpp"
 #include "../../public4/backpropagator.hpp"
 #include "../../public4/calc_tree.hpp"
-#include "../../public4/constants_type.hpp"
 #include "../../public4/differential_operator.hpp"
 
 #include "black_scholes.hpp"
@@ -19,7 +18,7 @@ int main() {
     using namespace std::chrono;
     std::chrono::time_point<std::chrono::high_resolution_clock> time1, time2;
 
-    std::size_t iters = 1000;
+    std::size_t iters = 1;
     if (auto env_p = std::getenv("ITERATIONS")) {
         iters = std::stoul(env_p);
     }
