@@ -15,41 +15,47 @@ adhoc order 2 time (ms): 75\
 assuming /path/g++ is your path to GCC, build the timing executables with the following commands:
 
 ## Primal calculation (no derivatives)
-compile with:\
+compile with:
+
 /path/g++ -o primal primal.cpp -std=c++20 -O3
 
 ## AD-HOC
-compile with:\
+compile with:
+
 /path/g++ -o adhoc_order1 adhoc_order1.cpp -std=c++20 -O3 -I../../include\
 /path/g++ -o adhoc_order2 adhoc_order2.cpp -std=c++20 -O3 -I../../include\
 /path/g++ -o adhoc_order3 adhoc_order3.cpp -std=c++20 -O3 -I../../include\
 /path/g++ -o adhoc_order4 adhoc_order4.cpp -std=c++20 -O3 -I../../include\
 /path/g++ -o adhoc_order5 adhoc_order5.cpp -std=c++20 -O3 -I../../include
 
-make sure you use GCC as clang will break for order 3 onwards. Also for order 5, at the time of writing, compilation will take a while. Current work is being done to reduce compilations times and make sure clang works for higher orders.
+note: make sure you use GCC as clang will break for order 3 onwards. Also for order 5, at the time of writing, compilation will take a while. Current work is being done to reduce compilations times and make sure clang works for higher orders.
 
-## ADOL-C
-note: ADOL-C does not support erfc at the time of writing so a different header is used for Black-Scholes, without erfc, in the file "black_scholes_no_erfc.hpp"
-Assuming ADOL-C is installed in the folder /install/adolc, compile with:
+## [ADOL-C](https://github.com/coin-or/ADOL-C)
+Assuming [ADOL-C](https://github.com/coin-or/ADOL-C) is installed in the folder /install/adolc, compile with:
 
-compile with:\
 /path/g++ -o adolc_order1 adolc_order1.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
 /path/g++ -o adolc_order2 adolc_order2.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
 /path/g++ -o adolc_order3 adolc_order3.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
 /path/g++ -o adolc_order4 adolc_order4.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
 /path/g++ -o adolc_order5 adolc_order5.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc
 
-## dco/c++
-Assuming dco/c++ is installed in the folder /install/dco, compile with:\
+note: ADOL-C does not support erfc at the time of writing so a different header is used for Black-Scholes, without erfc, in the file "black_scholes_no_erfc.hpp".
+
+## [dco/c++](https://nag.com/automatic-differentiation)
+Assuming [dco/c++](https://nag.com/automatic-differentiation/) is installed in the folder /install/dco, compile with:
+
 /path/g++ -o dco_order1 dco_order1.cpp -std=c++20 -O3 -I/install/dco/include\
 /path/g++ -o dco_order2 dco_order2.cpp -std=c++20 -O3 -I/install/dco/include
 
-## CoDiPack
-Assuming CoDiPack is installed in the folder /install/codi, compile with:\
+note: dco/c++ is a commercial package so you will need to purchase a licence.
+
+## [CoDiPack](https://github.com/SciCompKL/CoDiPack)
+Assuming [CoDiPack](https://github.com/SciCompKL/CoDiPack) is installed in the folder /install/codi, compile with:
+
 /path/g++ -o codi_order1 codi_order1.cpp -std=c++20 -O3 -I/install/codi\
 /path/g++ -o codi_order2 codi_order2.cpp -std=c++20 -O3 -I/install/codi
 
-## Tapenade
+## [Tapenade](https://gitlab.inria.fr/tapenade/tapenade)
 
 ## Python correctness verification
 The correctness of the derivative calculations for the first iteration can be verified using a python script "sympy_value_check.py". Make sure you have python3 with sympy installed and run:\
