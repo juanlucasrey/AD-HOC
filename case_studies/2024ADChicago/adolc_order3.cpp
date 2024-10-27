@@ -72,6 +72,7 @@ int main() {
 
         tensor_eval(tag, m, n, degree, n, xp, tensor, S);
 
+        // average values in a single Taylor expansion
         std::size_t counter = 0;
         for (std::size_t dim2 = 0; dim2 < (n + 1); ++dim2) {
             multi[2] = dim2;

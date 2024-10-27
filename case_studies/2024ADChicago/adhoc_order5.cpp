@@ -1,7 +1,7 @@
-#include "../../public4/adhoc.hpp"
-#include "../../public4/backpropagator.hpp"
-#include "../../public4/calc_tree.hpp"
-#include "../../public4/differential_operator.hpp"
+#include <adhoc.hpp>
+#include <backpropagator.hpp>
+#include <calc_tree.hpp>
+#include <differential_operator.hpp>
 
 #include "black_scholes.hpp"
 
@@ -203,7 +203,7 @@ int main() {
         t.backpropagate2<368>(ct);
         // t.backpropagate(ct);
 
-        // average to make sure compiler doesn't optimise calculations away
+        // average values in a single Taylor expansion
         results_average[0] += ct.get(res);
         results_average[1] += t.get(dS);
         results_average[2] += t.get(dK);

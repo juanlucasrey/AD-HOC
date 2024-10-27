@@ -1,7 +1,7 @@
 #ifndef CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
 #define CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
 
-#include "../../public4/constants_type.hpp"
+#include "../../include/constants_type.hpp"
 
 #include <cmath>
 #include <numbers>

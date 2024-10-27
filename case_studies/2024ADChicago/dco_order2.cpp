@@ -1,6 +1,6 @@
 #define DCO_AUTO_SUPPORT
 #define DCO_DISABLE_AVX2_WARNING
-#include "packages/dco/include/dco.hpp"
+#include <dco.hpp>
 
 #include "black_scholes.hpp"
 

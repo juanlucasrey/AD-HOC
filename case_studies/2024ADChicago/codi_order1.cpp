@@ -1,4 +1,4 @@
-#include "packages/codi/codi.hpp"
+#include <codi.hpp>
 
 #include "black_scholes.hpp"
 
@@ -47,7 +47,7 @@ int main() {
         y.setGradient(1.0);
         tape.evaluate();
 
-        // average to make sure compiler doesn't optimise calculations away
+        // average values in a single Taylor expansion
         results_average[0] += y.value();
         results_average[1] += S.getGradient();
         results_average[2] += K.getGradient();

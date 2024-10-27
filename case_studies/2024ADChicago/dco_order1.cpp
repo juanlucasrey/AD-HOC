@@ -1,6 +1,6 @@
 #define DCO_AUTO_SUPPORT
 #define DCO_DISABLE_AVX2_WARNING
-#include "packages/dco/include/dco.hpp"
+#include <dco.hpp>
 
 #include "black_scholes.hpp"
 
@@ -46,7 +46,7 @@ int main() {
         dco::derivative(y) = 1.0;
         mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
 
-        // average to make sure compiler doesn't optimise calculations away
+        // average values in a single Taylor expansion
         results_average[0] += dco::value(y);
         results_average[1] += dco::derivative(S);
         results_average[2] += dco::derivative(K);

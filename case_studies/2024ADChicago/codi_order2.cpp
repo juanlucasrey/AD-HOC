@@ -1,4 +1,4 @@
-#include "packages/codi/codi.hpp"
+#include <codi.hpp>
 
 #include "black_scholes.hpp"
 
