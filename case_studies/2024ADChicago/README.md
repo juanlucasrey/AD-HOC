@@ -52,3 +52,9 @@ path/g++ -o codi_order1 codi_order1.cpp -std=c++20 -O3\
 path/g++ -o codi_order2 codi_order2.cpp -std=c++20 -O3
 
 ## Tapenade
+
+## Python correctness verification
+The correctness of the derivative calculations for the first iteration can be verified using a python script "sympy_value_check.py". Make sure you have python3 with sympy installed and run:\
+python3 sympy_value_check.py
+
+The values being printed should correspond to the values of any program being run, with ITERATIONS=1 (or the ITERATIONS argument being absent since 1 is the default value)

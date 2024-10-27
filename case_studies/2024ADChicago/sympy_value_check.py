@@ -26,6 +26,7 @@ v0 = 0.22272121285943147
 T0 = 1.2191503088807956
 
 
+print("sympy verification values for first iteration of Black-Scholes:")
 # value
 print(lambdify([S, K, v, T], result)(S0, K0, v0, T0))
 
