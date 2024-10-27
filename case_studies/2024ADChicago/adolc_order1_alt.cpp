@@ -1,13 +1,12 @@
-#include "../../public4/adhoc.hpp"
-#include "../../public4/backpropagator.hpp"
-#include "../../public4/calc_tree.hpp"
-#include "../../public4/differential_operator.hpp"
+#include <adolc/adolc.h>
 
-#include "black_scholes.hpp"
+#include "black_scholes_no_erfc.hpp"
 
 #include <chrono>
 #include <iostream>
 #include <random>
+
+int factorial(int n) { return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n; }
 
 int main() {
     std::mt19937 generator(123);
@@ -26,44 +25,46 @@ int main() {
     std::array<double, 5> results_average;
     results_average.fill(0);
 
-    using namespace adhoc4;
-    ADHOC(S);
-    ADHOC(K);
-    ADHOC(v);
-    ADHOC(T);
-
-    auto res = call_price(S, K, v, T);
-
-    CalcTree ct(res);
-
-    // order 1
-    auto dS = d(S);
-    auto dK = d(K);
-    auto dv = d(v);
-    auto dT = d(T);
-
-    auto dres = d(res);
-
-    BackPropagator t(dS, dK, dv, dT, dres);
-
     time1 = std::chrono::high_resolution_clock::now();
 
+    int n = 4;
+    int m = 1;
+    auto x = new adouble[n];
+    auto y = new adouble[m];
+
+    double *xp = new double[n];
+    double *yp = new double[m];
+
+    double *u = new double[m];
+    double *z = new double[n];
+    u[0] = 1.;
+
+    int tag = 0;
+    trace_on(tag);
+
+    for (std::size_t i = 0; i < n; ++i) {
+        x[i] <<= xp[i];
+    }
+    y[0] = call_price(x[0], x[1], x[2], x[3]);
+    y[0] >>= yp[0];
+
+    trace_off();
+
     for (std::size_t j = 0; j < iters; ++j) {
-        ct.set(S) = stock_distr(generator);
-        ct.set(K) = stock_distr(generator);
-        ct.set(v) = vol_distr(generator);
-        ct.set(T) = time_distr(generator);
-        ct.evaluate();
-        t.reset();
-        t.set(dres) = 1.;
-        t.backpropagate(ct);
+        xp[0] = stock_distr(generator);
+        xp[1] = stock_distr(generator);
+        xp[2] = vol_distr(generator);
+        xp[3] = time_distr(generator);
+
+        zos_forward(tag, m, n, 1, xp, yp);
+        fos_reverse(tag, m, n, u, z);
 
         // average to make sure compiler doesn't optimise calculations away
-        results_average[0] += ct.get(res);
-        results_average[1] += t.get(dS);
-        results_average[2] += t.get(dK);
-        results_average[3] += t.get(dv);
-        results_average[4] += t.get(dT);
+        results_average[0] += yp[0];
+        results_average[1] += z[0];
+        results_average[2] += z[1];
+        results_average[3] += z[2];
+        results_average[4] += z[3];
     }
 
     time2 = std::chrono::high_resolution_clock::now();
@@ -72,7 +73,7 @@ int main() {
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "AD-HOC order 1 time (ms): " << time << std::endl;
+    std::cout << "ADOL-C order 1 time (ms): " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {

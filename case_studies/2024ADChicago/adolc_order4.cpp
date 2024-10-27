@@ -22,14 +22,14 @@ int main() {
         iters = std::stoul(env_p);
     }
 
-    std::array<double, 5> results_average;
+    std::array<double, 70> results_average;
     results_average.fill(0);
 
     time1 = std::chrono::high_resolution_clock::now();
 
     int n = 4;
     int m = 1;
-    int degree = 1;
+    int degree = 4;
     int *multi = new int[degree];
     for (std::size_t i = 0; i < degree; ++i) {
         multi[i] = 0;
@@ -73,10 +73,19 @@ int main() {
         tensor_eval(tag, m, n, degree, n, xp, tensor, S);
 
         std::size_t counter = 0;
-        for (std::size_t dim0 = 0; dim0 < (n + 1); ++dim0) {
-            multi[0] = dim0;
-            results_average[counter++] +=
-                tensor[0][tensor_address(degree, multi)];
+        for (std::size_t dim3 = 0; dim3 < (n + 1); ++dim3) {
+            multi[3] = dim3;
+            for (std::size_t dim2 = dim3; dim2 < (n + 1); ++dim2) {
+                multi[2] = dim2;
+                for (std::size_t dim1 = dim2; dim1 < (n + 1); ++dim1) {
+                    multi[1] = dim1;
+                    for (std::size_t dim0 = dim1; dim0 < (n + 1); ++dim0) {
+                        multi[0] = dim0;
+                        results_average[counter++] +=
+                            tensor[0][tensor_address(degree, multi)];
+                    }
+                }
+            }
         }
     }
 
@@ -86,7 +95,7 @@ int main() {
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "ADOL-C order 1 time (ms): " << time << std::endl;
+    std::cout << "ADOL-C order 4 time (ms): " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {
