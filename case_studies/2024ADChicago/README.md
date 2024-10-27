@@ -29,9 +29,8 @@ compile with:\
 make sure you use GCC as clang will break for order 3 onwards. Also for order 5, at the time of writing, compilation will take a while. Current work is being done to reduce compilations times and make sure clang works for higher orders.
 
 ## ADOL-C
-Assuming dco/c++ is installed in the folder /install/adolc, compile with:
-for ADOL-C timing, make sure ADOL-C is installed in the folder "./packages/adolc":\
 note: ADOL-C does not support erfc at the time of writing so a different header is used for Black-Scholes, without erfc, in the file "black_scholes_no_erfc.hpp"
+Assuming ADOL-C is installed in the folder /install/adolc, compile with:
 
 compile with:\
 /path/g++ -o adolc_order1 adolc_order1.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
