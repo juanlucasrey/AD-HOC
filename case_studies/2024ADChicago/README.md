@@ -39,11 +39,11 @@ path/g++ -o adolc_order3 adolc_order3.cpp -std=c++20 -O3 -I./packages/adolc/incl
 path/g++ -o adolc_order4 adolc_order4.cpp -std=c++20 -O3 -I./packages/adolc/include -L./packages/adolc/lib  -rpath ./packages/adolc/lib -ladolc\
 path/g++ -o adolc_order5 adolc_order5.cpp -std=c++20 -O3 -I./packages/adolc/include -L./packages/adolc/lib  -rpath ./packages/adolc/lib -ladolc
 
-## NAG-DCO
+## dco/c++
 for NAG-DCO timing, make sure NAG-DCO is installed in the folder "./packages/dco".\
 compile with:\
-path/g++ -o nag_order1 nag_order1.cpp -std=c++20 -O3\
-path/g++ -o nag_order2 nag_order2.cpp -std=c++20 -O3
+path/g++ -o dco_order1 dco_order1.cpp -std=c++20 -O3\
+path/g++ -o dco_order2 dco_order2.cpp -std=c++20 -O3
 
 ## CoDiPack
 for CoDiPack timing, make sure CoDiPack is installed in the folder "./packages/codi".\
