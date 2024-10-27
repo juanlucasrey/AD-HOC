@@ -1,7 +1,5 @@
-#define CODI_ChunkSize 64 // this speeds things up on runtime
-#include <codi.hpp>
-
-#include "black_scholes.hpp"
+#include "black_scholes_c.h"
+#include "tapenade/c_version_bs_b.h"
 
 #include <array>
 #include <chrono>
@@ -25,48 +23,37 @@ int main() {
     std::array<double, 5> results_average;
     results_average.fill(0);
 
-    using type = codi::RealReverse;
-    using Tape = typename type::Tape;
-    Tape &tape = type::getTape();
+    double S0, K0, v0, T0, Sb, Kb, vb, Tb, res;
+    double seed = 1.0;
 
     time1 = std::chrono::high_resolution_clock::now();
 
     for (std::size_t j = 0; j < iters; ++j) {
-        type S = stock_distr(generator);
-        type K = stock_distr(generator);
-        type v = vol_distr(generator);
-        type T = time_distr(generator);
+        S0 = stock_distr(generator);
+        K0 = stock_distr(generator);
+        v0 = vol_distr(generator);
+        T0 = time_distr(generator);
+        results_average[0] += call_price(S0, K0, v0, T0);
+        call_price_b(S0, &Sb, K0, &Kb, v0, &vb, T0, &Tb, seed);
 
-        tape.setActive();
-        tape.registerInput(S);
-        tape.registerInput(K);
-        tape.registerInput(v);
-        tape.registerInput(T);
-        type y = call_price(S, K, v, T);
+        results_average[1] += Sb;
+        results_average[2] += Kb;
+        results_average[3] += vb;
+        results_average[4] += Tb;
 
-        tape.registerOutput(y);
-        tape.setPassive();
-        y.setGradient(1.0);
-        tape.evaluate();
-
-        // average values in a single Taylor expansion
-        results_average[0] += y.value();
-        results_average[1] += S.getGradient();
-        results_average[2] += K.getGradient();
-        results_average[3] += v.getGradient();
-        results_average[4] += T.getGradient();
-
-        tape.reset();
+        Sb = 0;
+        Kb = 0;
+        vb = 0;
+        Tb = 0;
     }
 
-    tape.reset();
     time2 = std::chrono::high_resolution_clock::now();
     auto time =
         std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1)
             .count();
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "CoDiPack order 1 time (ms): " << time << std::endl;
+    std::cout << "Tapenade order 1 time (ms): " << time << std::endl;
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {

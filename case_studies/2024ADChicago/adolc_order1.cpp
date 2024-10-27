@@ -2,6 +2,7 @@
 
 #include "black_scholes_no_erfc.hpp"
 
+#include <array>
 #include <chrono>
 #include <iostream>
 #include <random>

@@ -5,6 +5,7 @@
 
 #include "black_scholes.hpp"
 
+#include <array>
 #include <chrono>
 #include <iostream>
 #include <random>
