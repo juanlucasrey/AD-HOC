@@ -1,3 +1,4 @@
+#define CODI_ChunkSize 64 // this speeds things up on runtime
 #include <codi.hpp>
 
 #include "black_scholes.hpp"
@@ -56,9 +57,9 @@ int main() {
             results_average[3] += v.gradient().value();
             results_average[4] += T.gradient().value();
             results_average[5] += S.gradient().gradient();
-            results_average[9] += K.gradient().gradient();
-            results_average[10] += v.gradient().gradient();
-            results_average[11] += T.gradient().gradient();
+            results_average[6] += K.gradient().gradient();
+            results_average[7] += v.gradient().gradient();
+            results_average[8] += T.gradient().gradient();
 
             tape.reset();
             // S.gradient() = 0.0;
@@ -83,9 +84,9 @@ int main() {
             y.setGradient(1.0);
             tape.evaluate();
 
-            results_average[6] += K.gradient().gradient();
-            results_average[12] += v.gradient().gradient();
-            results_average[13] += T.gradient().gradient();
+            results_average[9] += K.gradient().gradient();
+            results_average[10] += v.gradient().gradient();
+            results_average[11] += T.gradient().gradient();
 
             tape.reset();
             // S.gradient() = 0.0;
@@ -110,8 +111,8 @@ int main() {
             y.setGradient(1.0);
             tape.evaluate();
 
-            results_average[7] += v.gradient().gradient();
-            results_average[14] += T.gradient().gradient();
+            results_average[12] += v.gradient().gradient();
+            results_average[13] += T.gradient().gradient();
 
             tape.reset();
             // S.gradient() = 0.0;
@@ -136,7 +137,7 @@ int main() {
             y.setGradient(1.0);
             tape.evaluate();
 
-            results_average[8] += T.gradient().gradient();
+            results_average[14] += T.gradient().gradient();
 
             tape.reset();
             // S.gradient() = 0.0;

@@ -44,20 +44,20 @@ int main() {
 
     // order 2
     auto dSS = d<2>(S);
-    auto dKK = d<2>(K);
-    auto dvv = d<2>(v);
-    auto dTT = d<2>(T);
     auto dSK = d(S) * d(K);
     auto dSv = d(S) * d(v);
     auto dST = d(S) * d(T);
+    auto dKK = d<2>(K);
     auto dKv = d(K) * d(v);
     auto dKT = d(K) * d(T);
+    auto dvv = d<2>(v);
     auto dvT = d(v) * d(T);
+    auto dTT = d<2>(T);
 
     auto dres = d(res);
 
-    BackPropagator t(dS, dK, dv, dT, dSS, dKK, dvv, dTT, dSK, dSv, dST, dKv,
-                     dKT, dvT, dres);
+    BackPropagator t(dS, dK, dv, dT, dSS, dSK, dSv, dST, dKK, dKv, dKT, dvv,
+                     dvT, dTT, dres);
 
     time1 = std::chrono::high_resolution_clock::now();
 
@@ -78,15 +78,15 @@ int main() {
         results_average[3] += t.get(dv);
         results_average[4] += t.get(dT);
         results_average[5] += t.get(dSS);
-        results_average[6] += t.get(dKK);
-        results_average[7] += t.get(dvv);
-        results_average[8] += t.get(dTT);
-        results_average[9] += t.get(dSK);
-        results_average[10] += t.get(dSv);
-        results_average[11] += t.get(dST);
-        results_average[12] += t.get(dKv);
-        results_average[13] += t.get(dKT);
-        results_average[14] += t.get(dvT);
+        results_average[6] += t.get(dSK);
+        results_average[7] += t.get(dSv);
+        results_average[8] += t.get(dST);
+        results_average[9] += t.get(dKK);
+        results_average[10] += t.get(dKv);
+        results_average[11] += t.get(dKT);
+        results_average[12] += t.get(dvv);
+        results_average[13] += t.get(dvT);
+        results_average[14] += t.get(dTT);
     }
 
     time2 = std::chrono::high_resolution_clock::now();

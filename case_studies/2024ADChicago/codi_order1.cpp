@@ -1,3 +1,4 @@
+#define CODI_ChunkSize 64 // this speeds things up on runtime
 #include <codi.hpp>
 
 #include "black_scholes.hpp"

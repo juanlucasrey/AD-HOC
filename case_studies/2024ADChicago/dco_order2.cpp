@@ -57,9 +57,9 @@ int main() {
             results_average[3] += dco::value(dco::derivative(v));
             results_average[4] += dco::value(dco::derivative(T));
             results_average[5] += dco::derivative(dco::derivative(S));
-            results_average[9] += dco::derivative(dco::derivative(K));
-            results_average[10] += dco::derivative(dco::derivative(v));
-            results_average[11] += dco::derivative(dco::derivative(T));
+            results_average[6] += dco::derivative(dco::derivative(K));
+            results_average[7] += dco::derivative(dco::derivative(v));
+            results_average[8] += dco::derivative(dco::derivative(T));
 
             mode_t::global_tape->reset();
             dco::derivative(dco::value(S)) = 0.0;
@@ -79,9 +79,9 @@ int main() {
             dco::derivative(y) = 1.0;
             mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
 
-            results_average[6] += dco::derivative(dco::derivative(K));
-            results_average[12] += dco::derivative(dco::derivative(v));
-            results_average[13] += dco::derivative(dco::derivative(T));
+            results_average[9] += dco::derivative(dco::derivative(K));
+            results_average[10] += dco::derivative(dco::derivative(v));
+            results_average[11] += dco::derivative(dco::derivative(T));
 
             mode_t::global_tape->reset();
             dco::derivative(dco::value(K)) = 0.0;
@@ -101,8 +101,8 @@ int main() {
             dco::derivative(y) = 1.0;
             mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
 
-            results_average[7] += dco::derivative(dco::derivative(v));
-            results_average[14] += dco::derivative(dco::derivative(T));
+            results_average[12] += dco::derivative(dco::derivative(v));
+            results_average[13] += dco::derivative(dco::derivative(T));
 
             mode_t::global_tape->reset();
             dco::derivative(dco::value(v)) = 0.0;
@@ -122,7 +122,7 @@ int main() {
             dco::derivative(y) = 1.0;
             mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
 
-            results_average[8] += dco::derivative(dco::derivative(T));
+            results_average[14] += dco::derivative(dco::derivative(T));
 
             mode_t::global_tape->reset();
             dco::derivative(dco::value(T)) = 0.0;
