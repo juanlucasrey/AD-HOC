@@ -23,7 +23,7 @@ int main() {
     std::array<double, 5> results_average;
     results_average.fill(0);
 
-    double S0, K0, v0, T0, Sb, Kb, vb, Tb, res;
+    double S0, K0, v0, T0, Sb = 0, Kb = 0, vb = 0, Tb = 0;
     double seed = 1.0;
 
     time1 = std::chrono::high_resolution_clock::now();

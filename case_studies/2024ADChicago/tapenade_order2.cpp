@@ -23,18 +23,13 @@ int main() {
     std::array<double, 15> results_average;
     results_average.fill(0);
 
-    double S0, K0, v0, T0, Sb, Kb, vb, Tb, res;
-    double seed = 1.0;
+    double S0, K0, v0, T0, Sb = 0, Kb = 0, vb = 0, Tb = 0;
 
-    double Sdb, Kdb, vdb, Tdb;
-    double Sd, Kd, vd, Td;
+    double Sdb = 0, Kdb = 0, vdb = 0, Tdb = 0;
+    double Sd = 0, Kd = 0, vd = 0, Td = 0;
     double call_price_val = 0.;
     double call_priceb = 0.0;
     double call_price_db = 1.;
-    Sd = 0.;
-    Kd = 0.;
-    vd = 0.;
-    Td = 0.;
     time1 = std::chrono::high_resolution_clock::now();
 
     for (std::size_t j = 0; j < iters; ++j) {
@@ -67,6 +62,10 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
+            Sdb = 0;
+            Kdb = 0;
+            vdb = 0;
+            Tdb = 0;
         }
 
         // 2
@@ -86,6 +85,10 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
+            Sdb = 0;
+            Kdb = 0;
+            vdb = 0;
+            Tdb = 0;
         }
 
         // 3
@@ -104,6 +107,10 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
+            Sdb = 0;
+            Kdb = 0;
+            vdb = 0;
+            Tdb = 0;
         }
 
         // 4
@@ -121,6 +128,10 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
+            Sdb = 0;
+            Kdb = 0;
+            vdb = 0;
+            Tdb = 0;
         }
     }
 
