@@ -143,7 +143,7 @@ void call_price_d_b(double S, double *Sb, double Sd, double *Sdb, double K,
     *vdb = *vdb + result1*totalvoldb;
     result1db = v*totalvoldb;
     tempb0 = (T == 0.0 ? 0.0 : result1db/(2.0*temp_pre));
-    tempb = result1b - Td*tempb0/temp;
+    tempb = result1b - Td*tempb0/temp_pre;
     *Tdb = *Tdb + tempb0;
     if (!(T==0.0))
         *Tb = *Tb + tempb/(2.0*sqrt(T));
