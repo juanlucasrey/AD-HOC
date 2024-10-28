@@ -75,6 +75,9 @@ void call_price_d_b(double S, double *Sb, double Sd, double *Sdb, double K,
     double result2b;
     double result2d;
     double result2db;
+
+    double temp_pre;
+
     double temp;
     double tempb;
     double temp0;
@@ -83,9 +86,9 @@ void call_price_d_b(double S, double *Sb, double Sd, double *Sdb, double K,
     double temp1;
     double tempb1;
     double tempb2;
-    temp = sqrt(T);
-    result1d = (T == 0.0 ? 0.0 : Td/(2.0*temp));
-    result1 = temp;
+    temp_pre = sqrt(T);
+    result1d = (T == 0.0 ? 0.0 : Td/(2.0*temp_pre));
+    result1 = temp_pre;
     totalvold = result1*vd + v*result1d;
     totalvol = v*result1;
     temp = S/K;
@@ -139,7 +142,7 @@ void call_price_d_b(double S, double *Sb, double Sd, double *Sdb, double K,
     result1b = result1b + v*totalvolb + vd*totalvoldb;
     *vdb = *vdb + result1*totalvoldb;
     result1db = v*totalvoldb;
-    tempb0 = (T == 0.0 ? 0.0 : result1db/(2.0*temp));
+    tempb0 = (T == 0.0 ? 0.0 : result1db/(2.0*temp_pre));
     tempb = result1b - Td*tempb0/temp;
     *Tdb = *Tdb + tempb0;
     if (!(T==0.0))
