@@ -59,7 +59,7 @@ Assuming [CoDiPack](https://github.com/SciCompKL/CoDiPack) is installed in the f
 [Tapenade](https://gitlab.inria.fr/tapenade/tapenade) does not support c++ at the time of writing, so a different header, written in C ("black_scholes_c.h") has been used to generate the Tapenade code. These generated files are stored in the folder Tapenade. Compile with:
 
 /path/g++ -o tapenade_order1 tapenade_order1.c tapenade/c_version_bs_b.c tapenade/adStack.c -O3\
-/path/g++ -o tapenade_order2 tapenade_order2.cpp tapenade/c_version_bs_d_b.c tapenade/adStack.c -O3
+/path/g++ -o tapenade_order2 tapenade_order2.cpp tapenade/c_version_bs_d_b_corrected.c tapenade/adStack.c -O3
 
 ## Python correctness verification
 The correctness of the derivative calculations for the first iteration can be verified using a python script "sympy_value_check.py". Make sure you have python3 with sympy installed and run:\
