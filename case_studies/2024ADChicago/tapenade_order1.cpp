@@ -30,17 +30,12 @@ int main() {
         T0 = time_distr(generator);
         results_average[0] += call_price(S0, K0, v0, T0);
         call_price_b(S0, &Sb, K0, &Kb, v0, &vb, T0, &Tb, seed);
-
-        results_average[1] += Sb;
-        results_average[2] += Kb;
-        results_average[3] += vb;
-        results_average[4] += Tb;
-
-        Sb = 0;
-        Kb = 0;
-        vb = 0;
-        Tb = 0;
     }
+
+    results_average[1] = Sb;
+    results_average[2] = Kb;
+    results_average[3] = vb;
+    results_average[4] = Tb;
 
     auto time2 = std::chrono::high_resolution_clock::now();
     auto time =
