@@ -31,20 +31,22 @@ int main() {
     Tape &tape = type::getTape();
 
     time1 = std::chrono::high_resolution_clock::now();
+    type S, K, v, T;
+    tape.setActive();
+    tape.registerInput(S);
+    tape.registerInput(K);
+    tape.registerInput(v);
+    tape.registerInput(T);
+    auto pos = tape.getPosition();
 
     for (std::size_t j = 0; j < iters; ++j) {
-        type S = stock_distr(generator);
-        type K = stock_distr(generator);
-        type v = vol_distr(generator);
-        type T = time_distr(generator);
+        S.value().value() = stock_distr(generator);
+        K.value().value() = stock_distr(generator);
+        v.value().value() = vol_distr(generator);
+        T.value().value() = time_distr(generator);
 
         // 1
         {
-            tape.setActive();
-            tape.registerInput(S);
-            tape.registerInput(K);
-            tape.registerInput(v);
-            tape.registerInput(T);
             S.value().gradient() = 1.0;
 
             type y = call_price(S, K, v, T);
@@ -62,22 +64,16 @@ int main() {
             results_average[7] += v.gradient().gradient();
             results_average[8] += T.gradient().gradient();
 
-            tape.reset();
-            // S.gradient() = 0.0;
-            // K.gradient() = 0.0;
-            // v.gradient() = 0.0;
-            // T.gradient() = 0.0;
+            tape.resetTo(pos);
+            S.gradient() = 0.0;
+            K.gradient() = 0.0;
+            v.gradient() = 0.0;
+            T.gradient() = 0.0;
             S.value().gradient() = 0.0;
-            // tape.reset(false);
         }
 
         // 2
         {
-            tape.setActive();
-            tape.registerInput(S);
-            tape.registerInput(K);
-            tape.registerInput(v);
-            tape.registerInput(T);
             K.value().gradient() = 1.0;
 
             type y = call_price(S, K, v, T);
@@ -89,22 +85,16 @@ int main() {
             results_average[10] += v.gradient().gradient();
             results_average[11] += T.gradient().gradient();
 
-            tape.reset();
-            // S.gradient() = 0.0;
-            // K.gradient() = 0.0;
-            // v.gradient() = 0.0;
-            // T.gradient() = 0.0;
+            tape.resetTo(pos);
+            S.gradient() = 0.0;
+            K.gradient() = 0.0;
+            v.gradient() = 0.0;
+            T.gradient() = 0.0;
             K.value().gradient() = 0.0;
-            // tape.reset(false);
         }
 
         // 3
         {
-            tape.setActive();
-            tape.registerInput(S);
-            tape.registerInput(K);
-            tape.registerInput(v);
-            tape.registerInput(T);
             v.value().gradient() = 1.0;
 
             type y = call_price(S, K, v, T);
@@ -115,22 +105,16 @@ int main() {
             results_average[12] += v.gradient().gradient();
             results_average[13] += T.gradient().gradient();
 
-            tape.reset();
-            // S.gradient() = 0.0;
-            // K.gradient() = 0.0;
-            // v.gradient() = 0.0;
-            // T.gradient() = 0.0;
+            tape.resetTo(pos);
+            S.gradient() = 0.0;
+            K.gradient() = 0.0;
+            v.gradient() = 0.0;
+            T.gradient() = 0.0;
             v.value().gradient() = 0.0;
-            // tape.reset(false);
         }
 
         // 4
         {
-            tape.setActive();
-            tape.registerInput(S);
-            tape.registerInput(K);
-            tape.registerInput(v);
-            tape.registerInput(T);
             T.value().gradient() = 1.0;
 
             type y = call_price(S, K, v, T);
@@ -140,13 +124,12 @@ int main() {
 
             results_average[14] += T.gradient().gradient();
 
-            tape.reset();
-            // S.gradient() = 0.0;
-            // K.gradient() = 0.0;
-            // v.gradient() = 0.0;
-            // T.gradient() = 0.0;
+            tape.resetTo(pos);
+            S.gradient() = 0.0;
+            K.gradient() = 0.0;
+            v.gradient() = 0.0;
+            T.gradient() = 0.0;
             T.value().gradient() = 0.0;
-            // tape.reset(false);
         }
     }
 
