@@ -31,33 +31,33 @@ int main() {
 
     time1 = std::chrono::high_resolution_clock::now();
 
+    type S, K, v, T;
+    tape.setActive();
+    tape.registerInput(S);
+    tape.registerInput(K);
+    tape.registerInput(v);
+    tape.registerInput(T);
+    auto pos = tape.getPosition();
+
     for (std::size_t j = 0; j < iters; ++j) {
-        type S = stock_distr(generator);
-        type K = stock_distr(generator);
-        type v = vol_distr(generator);
-        type T = time_distr(generator);
-
-        tape.setActive();
-        tape.registerInput(S);
-        tape.registerInput(K);
-        tape.registerInput(v);
-        tape.registerInput(T);
+        S.value() = stock_distr(generator);
+        K.value() = stock_distr(generator);
+        v.value() = vol_distr(generator);
+        T.value() = time_distr(generator);
         type y = call_price(S, K, v, T);
-
         tape.registerOutput(y);
-        tape.setPassive();
         y.setGradient(1.0);
         tape.evaluate();
+        tape.resetTo(pos);
 
         // average values in a single Taylor expansion
         results_average[0] += y.value();
-        results_average[1] += S.getGradient();
-        results_average[2] += K.getGradient();
-        results_average[3] += v.getGradient();
-        results_average[4] += T.getGradient();
-
-        tape.reset();
     }
+
+    results_average[1] = S.getGradient();
+    results_average[2] = K.getGradient();
+    results_average[3] = v.getGradient();
+    results_average[4] = T.getGradient();
 
     tape.reset();
     time2 = std::chrono::high_resolution_clock::now();
