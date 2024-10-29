@@ -32,16 +32,18 @@ int main() {
 
     time1 = std::chrono::high_resolution_clock::now();
 
+    type S, K, v, T;
+    mode_t::global_tape->register_variable(S);
+    mode_t::global_tape->register_variable(K);
+    mode_t::global_tape->register_variable(v);
+    mode_t::global_tape->register_variable(T);
+    auto pos = mode_t::global_tape->get_position();
+
     for (std::size_t j = 0; j < iters; ++j) {
-        type S = stock_distr(generator);
-        type K = stock_distr(generator);
-        type v = vol_distr(generator);
-        type T = time_distr(generator);
-        mode_t::global_tape->register_variable(S);
-        mode_t::global_tape->register_variable(K);
-        mode_t::global_tape->register_variable(v);
-        mode_t::global_tape->register_variable(T);
-        auto pos = mode_t::global_tape->get_position();
+        dco::value(S) = stock_distr(generator);
+        dco::value(K) = stock_distr(generator);
+        dco::value(v) = vol_distr(generator);
+        dco::value(T) = time_distr(generator);
         type y = call_price(S, K, v, T);
         mode_t::global_tape->register_output_variable(y);
         dco::derivative(y) = 1.0;
@@ -49,12 +51,12 @@ int main() {
 
         // average values in a single Taylor expansion
         results_average[0] += dco::value(y);
-        results_average[1] += dco::derivative(S);
-        results_average[2] += dco::derivative(K);
-        results_average[3] += dco::derivative(v);
-        results_average[4] += dco::derivative(T);
     }
 
+    results_average[1] = dco::derivative(S);
+    results_average[2] = dco::derivative(K);
+    results_average[3] = dco::derivative(v);
+    results_average[4] = dco::derivative(T);
     mode_t::tape_t::remove(mode_t::global_tape);
     time2 = std::chrono::high_resolution_clock::now();
     auto time =
