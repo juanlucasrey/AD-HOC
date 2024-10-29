@@ -11,22 +11,17 @@ int factorial(int n) { return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n; }
 
 int main() {
     std::mt19937 generator(123);
-    std::uniform_real_distribution<double> stock_distr(90, 110.0);
-    std::uniform_real_distribution<double> vol_distr(0.05, 0.3);
-    std::uniform_real_distribution<double> time_distr(0.5, 1.5);
-
-    using namespace std::chrono;
-    std::chrono::time_point<std::chrono::high_resolution_clock> time1, time2;
+    std::uniform_real_distribution<double> stock_distr(90, 110.0),
+        vol_distr(0.05, 0.3), time_distr(0.5, 1.5);
 
     std::size_t iters = 1;
     if (auto env_p = std::getenv("ITERATIONS")) {
         iters = std::stoul(env_p);
     }
 
-    std::array<double, 5> results_average;
-    results_average.fill(0);
+    std::array<double, 5> results_average{};
 
-    time1 = std::chrono::high_resolution_clock::now();
+    auto time1 = std::chrono::high_resolution_clock::now();
 
     int n = 4;
     int m = 1;
@@ -82,7 +77,7 @@ int main() {
         }
     }
 
-    time2 = std::chrono::high_resolution_clock::now();
+    auto time2 = std::chrono::high_resolution_clock::now();
     auto time =
         std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1)
             .count();
