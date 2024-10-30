@@ -1,5 +1,5 @@
 #include "black_scholes_c.h"
-#include "tapenade/c_version_bs_d_b.h"
+#include "tapenade/c_version_bs_b_d.h"
 
 #include <array>
 #include <chrono>
@@ -25,6 +25,9 @@ int main() {
     double call_price_val = 0.;
     double call_priceb = 0.0;
     double call_price_db = 1.;
+
+    double Sbd = 0, Kbd = 0, vbd = 0, Tbd = 0;
+    double call_pricebd = 0;
     auto time1 = std::chrono::high_resolution_clock::now();
 
     for (std::size_t j = 0; j < iters; ++j) {
@@ -37,19 +40,19 @@ int main() {
         // 1
         {
             Sd = 1.;
-            call_price_d_b(S0, &Sb, Sd, &Sdb, K0, &Kb, Kd, &Kdb, v0, &vb, vd,
-                           &vdb, T0, &Tb, Td, &Tdb, &call_price_val,
-                           &call_priceb, call_price_db);
+            call_priceb = 1.0;
+            call_price_b_d(S0, Sd, &Sb, &Sbd, K0, Kd, &Kb, &Kbd, v0, vd, &vb,
+                           &vbd, T0, Td, &Tb, &Tbd, call_priceb, call_pricebd);
 
-            results_average[1] += Sdb;
-            results_average[2] += Kdb;
-            results_average[3] += vdb;
-            results_average[4] += Tdb;
+            results_average[1] += Sb;
+            results_average[2] += Kb;
+            results_average[3] += vb;
+            results_average[4] += Tb;
 
-            results_average[5] += Sb;
-            results_average[6] += Kb;
-            results_average[7] += vb;
-            results_average[8] += Tb;
+            results_average[5] += Sbd;
+            results_average[6] += Kbd;
+            results_average[7] += vbd;
+            results_average[8] += Tbd;
 
             Sd = 0.;
 
@@ -57,22 +60,22 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
-            Sdb = 0;
-            Kdb = 0;
-            vdb = 0;
-            Tdb = 0;
+            Sbd = 0;
+            Kbd = 0;
+            vbd = 0;
+            Tbd = 0;
         }
 
         // 2
         {
             Kd = 1.;
-            call_price_d_b(S0, &Sb, Sd, &Sdb, K0, &Kb, Kd, &Kdb, v0, &vb, vd,
-                           &vdb, T0, &Tb, Td, &Tdb, &call_price_val,
-                           &call_priceb, call_price_db);
+            call_priceb = 1.0;
+            call_price_b_d(S0, Sd, &Sb, &Sbd, K0, Kd, &Kb, &Kbd, v0, vd, &vb,
+                           &vbd, T0, Td, &Tb, &Tbd, call_priceb, call_pricebd);
 
-            results_average[9] += Kb;
-            results_average[10] += vb;
-            results_average[11] += Tb;
+            results_average[9] += Kbd;
+            results_average[10] += vbd;
+            results_average[11] += Tbd;
 
             Kd = 0.;
 
@@ -80,21 +83,21 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
-            Sdb = 0;
-            Kdb = 0;
-            vdb = 0;
-            Tdb = 0;
+            Sbd = 0;
+            Kbd = 0;
+            vbd = 0;
+            Tbd = 0;
         }
 
         // 3
         {
             vd = 1.;
-            call_price_d_b(S0, &Sb, Sd, &Sdb, K0, &Kb, Kd, &Kdb, v0, &vb, vd,
-                           &vdb, T0, &Tb, Td, &Tdb, &call_price_val,
-                           &call_priceb, call_price_db);
+            call_priceb = 1.0;
+            call_price_b_d(S0, Sd, &Sb, &Sbd, K0, Kd, &Kb, &Kbd, v0, vd, &vb,
+                           &vbd, T0, Td, &Tb, &Tbd, call_priceb, call_pricebd);
 
-            results_average[12] += vb;
-            results_average[13] += Tb;
+            results_average[12] += vbd;
+            results_average[13] += Tbd;
 
             vd = 0.;
 
@@ -102,20 +105,20 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
-            Sdb = 0;
-            Kdb = 0;
-            vdb = 0;
-            Tdb = 0;
+            Sbd = 0;
+            Kbd = 0;
+            vbd = 0;
+            Tbd = 0;
         }
 
         // 4
         {
             Td = 1.;
-            call_price_d_b(S0, &Sb, Sd, &Sdb, K0, &Kb, Kd, &Kdb, v0, &vb, vd,
-                           &vdb, T0, &Tb, Td, &Tdb, &call_price_val,
-                           &call_priceb, call_price_db);
+            call_priceb = 1.0;
+            call_price_b_d(S0, Sd, &Sb, &Sbd, K0, Kd, &Kb, &Kbd, v0, vd, &vb,
+                           &vbd, T0, Td, &Tb, &Tbd, call_priceb, call_pricebd);
 
-            results_average[14] += Tb;
+            results_average[14] += Tbd;
 
             Td = 0.;
 
@@ -123,10 +126,10 @@ int main() {
             Kb = 0;
             vb = 0;
             Tb = 0;
-            Sdb = 0;
-            Kdb = 0;
-            vdb = 0;
-            Tdb = 0;
+            Sbd = 0;
+            Kbd = 0;
+            vbd = 0;
+            Tbd = 0;
         }
     }
 
