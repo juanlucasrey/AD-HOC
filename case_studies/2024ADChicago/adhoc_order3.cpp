@@ -134,14 +134,14 @@ int main() {
         std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1)
             .count();
 
-    std::cout << "iterations: " << iters << std::endl;
-    std::cout << "AD-HOC order 3 time (ms): " << time << std::endl;
-
     std::cout.precision(std::numeric_limits<double>::max_digits10);
     for (std::size_t i = 0; i < results_average.size(); ++i) {
         results_average[i] /= static_cast<double>(iters);
         std::cout << results_average[i] << std::endl;
     }
+
+    std::cout << "iterations: " << iters << std::endl;
+    std::cout << "AD-HOC order 3 time (ms): " << time << std::endl;
 
     return 0;
 }
