@@ -2,6 +2,7 @@
 #define DCO_DISABLE_AVX2_WARNING
 #include <dco.hpp>
 
+#define WITHOUT_AUTO
 #include "black_scholes.hpp"
 
 #include <array>
