@@ -65,15 +65,14 @@ int main() {
         xp[3] = time_distr(generator);
 
         std::size_t counter = 0;
-
-        for (int i = 0; i < n; i++) {
+        for (std::size_t i = 0; i < n; ++i) {
             x_tangent[i] = 1.0;
             fos_forward(tag, m, n, 2, xp, x_tangent, yp, y_tangent);
             hos_reverse(tag, m, n, 1, weights, res);
             results_average[i + 1] += y_tangent[0];
 
             // access the entries of the hessian (w/o dublication)
-            for (int k = i; k < n; k++)
+            for (std::size_t k = i; k < n; ++k)
                 results_average[5 + counter++] += res[k][1];
 
             x_tangent[i] = 0.0;
@@ -93,7 +92,7 @@ int main() {
     }
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "ADOL-C order 2 time (ms): " << time << std::endl;
+    std::cout << "ADOL-C fov-rev order 2 time (ms): " << time << std::endl;
 
     return 0;
 }
