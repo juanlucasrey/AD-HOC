@@ -14,7 +14,7 @@ int main() {
     std::uniform_real_distribution<double> stock_distr(90, 110.0),
         vol_distr(0.05, 0.3), time_distr(0.5, 1.5);
 
-    std::size_t iters = 1000;
+    std::size_t iters = 1;
     if (auto env_p = std::getenv("ITERATIONS")) {
         iters = std::stoul(env_p);
     }
@@ -43,12 +43,13 @@ int main() {
 
     trace_off();
     double *x_tangent = myalloc1(n);
-    double *y_tangent = myalloc1(n);
-    double *weights = myalloc1(m);
-    weights[0] = 1.0;
-    double **res = myalloc2(n, 2);
     for (int i = 0; i < n; i++)
         x_tangent[i] = 0;
+    double *y_tangent = myalloc1(m);
+    double *weights = myalloc1(m);
+    weights[0] = 1.0;
+
+    double **res = myalloc2(n, 2);
 
     for (std::size_t j = 0; j < iters; ++j) {
         xp[0] = stock_distr(generator);
@@ -56,15 +57,17 @@ int main() {
         xp[2] = vol_distr(generator);
         xp[3] = time_distr(generator);
 
+        std::size_t counter = 0;
         for (int i = 0; i < n; i++) {
             x_tangent[i] = 1.0;
             fos_forward(tag, m, n, 2, xp, x_tangent, yp, y_tangent);
-            results_average[i + 1] += y_tangent[i];
             hos_reverse(tag, m, n, 1, weights, res);
-            results_average[i + 4] += res[i][i];
+            results_average[i + 1] += y_tangent[0];
+            for (int k = i; k < n; k++)
+                results_average[5 + counter++] += res[k][1];
             x_tangent[i] = 0.0;
         }
-        results_average[0] = yp[0];
+        results_average[0] += yp[0];
     }
 
     auto time2 = std::chrono::high_resolution_clock::now();
