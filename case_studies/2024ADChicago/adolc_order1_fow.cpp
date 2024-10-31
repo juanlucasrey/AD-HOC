@@ -45,8 +45,8 @@ int main() {
     // right multiplier of the jacobian
     double **x_tangent = myalloc2(n, n);
     double **y_tangent = myalloc2(m, n);
-    for (std::size_t i = 0; i < n; i++) {
-        for (std::size_t j = 0; j < n; j++) {
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t j = 0; j < n; ++j) {
             x_tangent[i][j] = 0.0;
             if (i == j)
                 x_tangent[i][j] = 1.0;
@@ -80,7 +80,8 @@ int main() {
     }
 
     std::cout << "iterations: " << iters << std::endl;
-    std::cout << "ADOL-C alt. order 1 time (ms): " << time << std::endl;
+    std::cout << "ADOL-C tape-based forward order 1 time (ms): " << time
+              << std::endl;
 
     return 0;
 }
