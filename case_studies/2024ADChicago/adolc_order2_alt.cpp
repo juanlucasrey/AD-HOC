@@ -42,13 +42,20 @@ int main() {
     y[0] >>= yp[0];
 
     trace_off();
+
+    // right multiplier of the hessian
     double *x_tangent = myalloc1(n);
     for (int i = 0; i < n; i++)
         x_tangent[i] = 0;
+
+    // result of the forward mode pass (stores jac)
     double *y_tangent = myalloc1(m);
+
+    // left multiplier of the hessian
     double *weights = myalloc1(m);
     weights[0] = 1.0;
 
+    // storage for the result of hov_reverse
     double **res = myalloc2(n, 2);
 
     for (std::size_t j = 0; j < iters; ++j) {
@@ -58,13 +65,17 @@ int main() {
         xp[3] = time_distr(generator);
 
         std::size_t counter = 0;
+
         for (int i = 0; i < n; i++) {
             x_tangent[i] = 1.0;
             fos_forward(tag, m, n, 2, xp, x_tangent, yp, y_tangent);
             hos_reverse(tag, m, n, 1, weights, res);
             results_average[i + 1] += y_tangent[0];
+
+            // access the entries of the hessian (w/o dublication)
             for (int k = i; k < n; k++)
                 results_average[5 + counter++] += res[k][1];
+
             x_tangent[i] = 0.0;
         }
         results_average[0] += yp[0];
