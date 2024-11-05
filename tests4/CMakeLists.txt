@@ -7,7 +7,6 @@ add_executable(
   finite_differences.cpp
   utils/univariate.t.cpp
   utils/index_sequence.t.cpp
-  combinatorics/multinomial_coefficient.t.cpp
   monomial_included.t.cpp
   adhoc.t.cpp
   differential_operator.t.cpp
@@ -40,7 +39,7 @@ endif()
 #   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fconstexpr-steps=1271242 -fconstexpr-depth=2300")
 # endif()
 
-target_include_directories(adhoc_test4 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public4)
+target_include_directories(adhoc_test4 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../include)
 # target_include_directories(adhoc_test4 SYSTEM PUBLIC /usr/local/include /usr/local/include/eigen3 ../public4 ../../boost_1_85_0)
 target_link_directories(adhoc_test4 PUBLIC /usr/local/lib)
 

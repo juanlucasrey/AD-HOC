@@ -20,6 +20,7 @@ set(Working
     differential_operator.t.cpp
     differential_operator2.t.cpp
     combinatorics/multinomial_coefficient_index_sequence.cpp
+    combinatorics/multinomial_coefficient.cpp
 )
 
 # list of static checks that do not compile (and shouldn't)

@@ -3,19 +3,14 @@
 #include <combinatorics/multinomial_coefficient_index_sequence.hpp>
 #include <combinatorics/trinomial.hpp>
 #include <dependency.hpp>
-
-#include <tuple>
-#include <utility>
 #include <utils/tuple.hpp>
 
-#include "../type_name.hpp"
-
-#include <gtest/gtest.h>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 
-namespace adhoc4 {
-
-TEST(MultinomialCoefficient, Multinomial) {
+int main() {
+    using namespace adhoc4;
 
     {
         constexpr std::array<std::array<std::size_t, 1>, combinations(1, 1)>
@@ -188,24 +183,6 @@ TEST(MultinomialCoefficient, Multinomial) {
         constexpr auto last2 = NextMultinomial(last);
         static_assert(last == last2);
     }
-}
-
-// TEST(Partition, MultinomialSequences) {
-//     constexpr auto sequences = MultinomialSequences<4, 2>();
-//     constexpr auto flags =
-//         std::tuple<std::true_type, std::false_type, std::true_type,
-//                    std::true_type, std::false_type, std::false_type,
-//                    std::false_type, std::false_type, std::false_type,
-//                    std::false_type>{};
-//     constexpr auto filtered_sequences = filter(sequences, flags);
-//     constexpr auto flags_in = precedent_required(filtered_sequences);
-//     constexpr auto result = std::tuple<std::true_type, std::false_type,
-//                                        std::true_type, std::true_type>{};
-
-//     static_assert(std::is_same_v<decltype(flags_in), decltype(result)>);
-// }
-
-TEST(MultinomialCoefficient, MultinomialCoeffs) {
 
     {
         constexpr std::array<std::array<std::size_t, 1>, combinations(1, 1)>
@@ -291,9 +268,6 @@ TEST(MultinomialCoefficient, MultinomialCoeffs) {
         static_assert(MultinomialCoeff<3, 4>(factorials, parts[18]) == 3);
         static_assert(MultinomialCoeff<3, 4>(factorials, parts[19]) == 1);
     }
-}
-
-TEST(MultinomialCoefficient, MultinomialCoeffsIS) {
 
     {
         constexpr auto parts = std::tuple<std::index_sequence<1>>{};
@@ -369,29 +343,20 @@ TEST(MultinomialCoefficient, MultinomialCoeffsIS) {
         static_assert(MultinomialCoeff2(std::get<18>(parts)) == 3);
         static_assert(MultinomialCoeff2(std::get<19>(parts)) == 1);
     }
+
+    {
+        constexpr auto multinomial_sequences = TrinomialSequencesMult<4, 6>();
+
+        constexpr auto result = std::make_tuple(
+            std::index_sequence<2, 2, 0>{}, std::index_sequence<1, 3, 0>{},
+            std::index_sequence<0, 4, 0>{}, std::index_sequence<2, 1, 1>{},
+            std::index_sequence<1, 2, 1>{}, std::index_sequence<0, 3, 1>{},
+            std::index_sequence<2, 0, 2>{}, std::index_sequence<1, 1, 2>{},
+            std::index_sequence<0, 2, 2>{}, std::index_sequence<1, 0, 3>{},
+            std::index_sequence<0, 1, 3>{}, std::index_sequence<0, 0, 4>{});
+        static_assert(
+            std::is_same_v<decltype(multinomial_sequences), decltype(result)>);
+    }
+
+    return 0;
 }
-
-TEST(MultinomialCoefficient, TrinomialSequences) {
-    constexpr auto multinomial_sequences = TrinomialSequences<4>();
-    std::cout << type_name2<decltype(multinomial_sequences)>() << std::endl;
-}
-
-template <class I1, class I2>
-constexpr auto equal_types(I1 /* lhs */, I2 /* rhs */) -> bool {
-    return std::is_same_v<I1, I2>;
-}
-
-TEST(MultinomialCoefficient, TrinomialSequencesLimit) {
-    constexpr auto multinomial_sequences = TrinomialSequencesMult<4, 6>();
-
-    constexpr auto result = std::make_tuple(
-        std::index_sequence<2, 2, 0>{}, std::index_sequence<1, 3, 0>{},
-        std::index_sequence<0, 4, 0>{}, std::index_sequence<2, 1, 1>{},
-        std::index_sequence<1, 2, 1>{}, std::index_sequence<0, 3, 1>{},
-        std::index_sequence<2, 0, 2>{}, std::index_sequence<1, 1, 2>{},
-        std::index_sequence<0, 2, 2>{}, std::index_sequence<1, 0, 3>{},
-        std::index_sequence<0, 1, 3>{}, std::index_sequence<0, 0, 4>{});
-    static_assert(equal_types(multinomial_sequences, result));
-}
-
-} // namespace adhoc4
