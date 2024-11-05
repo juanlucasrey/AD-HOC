@@ -1,7 +1,9 @@
 function(compile_check filelist fail)
     foreach(testfile IN LISTS filelist)
         file(RELATIVE_PATH target "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${testfile}")
-        set(test_name "static3.${target}")
+        string(REPLACE .cpp "" target ${target})
+        string(REPLACE / "." target ${target})
+        set(test_name "static.${target}")
         # message(STATUS "testfile=${testfile}")
         add_executable(${test_name} "${testfile}")
         set_target_properties(${test_name} PROPERTIES EXCLUDE_FROM_ALL true EXCLUDE_FROM_DEFAULT_BUILD true)
@@ -14,7 +16,11 @@ function(compile_check filelist fail)
 endfunction()
 
 # list of static checks that compile
-set(Working differential_operator.t.cpp differential_operator2.t.cpp)
+set(Working
+    differential_operator.t.cpp
+    differential_operator2.t.cpp
+    combinatorics/multinomial_coefficient_index_sequence.cpp
+)
 
 # list of static checks that do not compile (and shouldn't)
 set(Failing differential_operator.t.fail.cpp)
