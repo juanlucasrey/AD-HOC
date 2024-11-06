@@ -35,25 +35,11 @@ int main() {
     bp.set(dres) = 1.;
     bp.backpropagate(ct);
 
-    if (!expect_near(ct.get(res), 13.171437637423516, 1e-14)) {
-        return 1;
-    }
-
-    if (!expect_near(bp.get(dS), 0.6422853983194291, 1e-14)) {
-        return 1;
-    }
-
-    if (!expect_near(bp.get(dK), -0.54720656926323585, 1e-14)) {
-        return 1;
-    }
-
-    if (!expect_near(bp.get(dv), 43.404665363383245, 1e-14)) {
-        return 1;
-    }
-
-    if (!expect_near(bp.get(dT), 3.8196105519777257, 1e-14)) {
-        return 1;
-    }
+    EXPECT_NEAR(ct.get(res), 13.171437637423516, 1e-14);
+    EXPECT_NEAR(bp.get(dS), 0.6422853983194291, 1e-14);
+    EXPECT_NEAR(bp.get(dK), -0.54720656926323585, 1e-14);
+    EXPECT_NEAR(bp.get(dv), 43.404665363383245, 1e-14);
+    EXPECT_NEAR(bp.get(dT), 3.8196105519777257, 1e-14);
 
     // from sympy import *
     // S = Symbol('S')
