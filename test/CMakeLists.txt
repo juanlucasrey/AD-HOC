@@ -4,7 +4,6 @@ function(compile_check filelist fail)
         string(REPLACE .cpp "" target ${target})
         string(REPLACE / "." target ${target})
         set(test_name "static.${target}")
-        # message(STATUS "testfile=${testfile}")
         add_executable(${test_name} "${testfile}")
         set_target_properties(${test_name} PROPERTIES EXCLUDE_FROM_ALL true EXCLUDE_FROM_DEFAULT_BUILD true)
         add_test(NAME ${test_name} COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target ${test_name})
@@ -42,7 +41,8 @@ set(StaticFailing
 
 # list of normal, dynamic tests
 set(Dynamic
-    black_scholes1.cpp)
+    black_scholes1.cpp
+    black_scholes2.cpp)
 
 compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
