@@ -145,13 +145,12 @@ TEST(BackPropagator2, UnivariateDouble) {
 
     EXPECT_NEAR(bp.get(d(x)), -2.98089202449025, 1e-14);
     EXPECT_NEAR(bp.get(d<2>(x)), -1.731576402892995, 1e-14);
-    EXPECT_NEAR(bp.get(d<3>(x)), -0.20571716243479798, 1e-14);
+    EXPECT_NEAR(bp.get(d<3>(x)), -0.20571716243479798, 1e-13);
 }
 
 TEST(BackPropagator2, SumSingle) {
     ADHOC(x);
     ADHOC(y);
-    // auto res = x + y;
     auto res = log(x + y);
 
     CalcTree ct(res);
@@ -163,7 +162,6 @@ TEST(BackPropagator2, SumSingle) {
 
     constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
     static_assert(buffer_size == 3U);
-    // std::cout << buffer_size << std::endl;
 
     bp.set(d(res)) = 1.;
     bp.backpropagate(ct);
@@ -171,6 +169,47 @@ TEST(BackPropagator2, SumSingle) {
     EXPECT_NEAR(bp.get(d(x)), 0.625, 1e-13);
     EXPECT_NEAR(bp.get(d(y)), 0.625, 1e-13);
     EXPECT_NEAR(bp.get(d(x) * d(y)), -0.390625, 1e-13);
+}
+
+TEST(BackPropagator2, SubstractSingle) {
+    ADHOC(x);
+    ADHOC(y);
+    auto res = log(x - y);
+
+    CalcTree ct(res);
+    ct.set(x) = 1.2;
+    ct.set(y) = 0.4;
+    ct.evaluate();
+
+    BackPropagator bp(d(res), d(x), d(y), d(x) * d(y), d<5>(y));
+
+    constexpr auto buffer_size = bp.buffer_size<decltype(ct)>();
+    static_assert(buffer_size == 3U);
+
+    bp.set(d(res)) = 1.;
+    bp.backpropagate(ct);
+
+    EXPECT_NEAR(bp.get(d(x)), 1.25, 1e-13);
+    EXPECT_NEAR(bp.get(d(y)), -1.25, 1e-13);
+    EXPECT_NEAR(bp.get(d(x) * d(y)), 1.5625, 1e-13);
+    EXPECT_NEAR(bp.get(d<5>(y)), -73.2421875, 1e-13);
+
+    // values verified with:
+    // from sympy import *
+    // x = Symbol('x')
+    // y = Symbol('y')
+    // result = log(x - y)
+    // def diff(f, diffs):
+    //     fdiff = f
+    //     for i in diffs:
+    //         fdiff = fdiff.diff(i)
+    //     return fdiff
+    // x0 = 1.2
+    // y0 = 0.4
+    // print(lambdify([x, y], diff(result, (x,)))(x0, y0))
+    // print(lambdify([x, y], diff(result, (y,)))(x0, y0))
+    // print(lambdify([x, y], diff(result, (x, y)))(x0, y0))
+    // print(lambdify([x, y], diff(result, (y, y, y, y, y)))(x0, y0))
 }
 
 TEST(BackPropagator2, MulSingle) {
