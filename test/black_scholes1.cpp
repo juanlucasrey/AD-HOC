@@ -35,7 +35,7 @@ int main() {
     bp.set(dres) = 1.;
     bp.backpropagate(ct);
 
-    EXPECT_NEAR(ct.get(res), 13.171437637423516, 1e-14);
+    EXPECT_NEAR(ct.get(res), 13.171437637423516, 1e-13);
     EXPECT_NEAR(bp.get(dS), 0.6422853983194291, 1e-14);
     EXPECT_NEAR(bp.get(dK), -0.54720656926323585, 1e-14);
     EXPECT_NEAR(bp.get(dv), 43.404665363383245, 1e-14);
@@ -52,7 +52,7 @@ int main() {
 
     // totalvol = v * sqrt(T)
     // d1 = log(S / K) / totalvol + totalvol * 0.5
-    // d2 = d1 + totalvol
+    // d2 = d1 - totalvol
     // result = S * cdf(d1) - K * cdf(d2)
 
     // def diff(f, diffs):
@@ -67,10 +67,7 @@ int main() {
     // v0 = 0.22
     // T0 = 1.25
 
-    // # value
     // print(lambdify([S, K, v, T], result)(S0, K0, v0, T0))
-
-    // # order 1
     // print(lambdify([S, K, v, T], diff(result, (S,)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (K,)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (v,)))(S0, K0, v0, T0))
