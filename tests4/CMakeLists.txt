@@ -8,7 +8,6 @@ add_executable(
   utils/univariate.t.cpp
   utils/index_sequence.t.cpp
   monomial_included.t.cpp
-  adhoc.t.cpp
   differential_operator.t.cpp
   univariate_vs_fd.t.cpp
   univariate_vs_python.t.cpp
