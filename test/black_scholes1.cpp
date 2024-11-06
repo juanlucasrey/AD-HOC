@@ -4,23 +4,22 @@
 #include <differential_operator.hpp>
 
 #include "call_price.hpp"
-#include <gtest/gtest.h>
+#include "test_tools.hpp"
 
-namespace adhoc4 {
-
-TEST(BlackScholes, Order1) {
+int main() {
+    using namespace adhoc4;
     ADHOC(S);
     ADHOC(K);
     ADHOC(v);
     ADHOC(T);
 
-    auto res = call_price2(S, K, v, T);
+    auto res = call_price(S, K, v, T);
 
     CalcTree ct(res);
-    ct.set(S) = 1.01;
-    ct.set(K) = 1.02;
-    ct.set(v) = 0.15;
-    ct.set(T) = 0.5;
+    ct.set(S) = 104.;
+    ct.set(K) = 98.;
+    ct.set(v) = 0.22;
+    ct.set(T) = 1.25;
     ct.evaluate();
 
     // order 1
@@ -31,16 +30,30 @@ TEST(BlackScholes, Order1) {
 
     auto dres = d(res);
 
-    BackPropagator t(dS, dK, dv, dT, dres);
+    BackPropagator bp(dS, dK, dv, dT, dres);
 
-    t.set(dres) = 1.;
-    t.backpropagate(ct);
+    bp.set(dres) = 1.;
+    bp.backpropagate(ct);
 
-    EXPECT_NEAR(ct.get(res), 1.02586812693369, 1e-14);
-    EXPECT_NEAR(t.get(dS), 8.03256922212305, 1e-14);
-    EXPECT_NEAR(t.get(dK), -6.94806547785353, 1e-14);
-    EXPECT_NEAR(t.get(dv), 1.07376087149468, 1e-14);
-    EXPECT_NEAR(t.get(dT), 0.161064130724201, 1e-14);
+    if (!expect_near(ct.get(res), 13.171437637423516, 1e-14)) {
+        return 1;
+    }
+
+    if (!expect_near(bp.get(dS), 0.6422853983194291, 1e-14)) {
+        return 1;
+    }
+
+    if (!expect_near(bp.get(dK), -0.54720656926323585, 1e-14)) {
+        return 1;
+    }
+
+    if (!expect_near(bp.get(dv), 43.404665363383245, 1e-14)) {
+        return 1;
+    }
+
+    if (!expect_near(bp.get(dT), 3.8196105519777257, 1e-14)) {
+        return 1;
+    }
 
     // from sympy import *
     // S = Symbol('S')
@@ -54,7 +67,7 @@ TEST(BlackScholes, Order1) {
     // totalvol = v * sqrt(T)
     // d1 = log(S / K) / totalvol + totalvol * 0.5
     // d2 = d1 + totalvol
-    // result = S * cdf(d1) + K * cdf(d2)
+    // result = S * cdf(d1) - K * cdf(d2)
 
     // def diff(f, diffs):
     //     fdiff = f
@@ -63,10 +76,10 @@ TEST(BlackScholes, Order1) {
 
     //     return fdiff
 
-    // S0 = 1.01
-    // K0 = 1.02
-    // v0 = 0.15
-    // T0 = 0.5
+    // S0 = 104.
+    // K0 = 98.
+    // v0 = 0.22
+    // T0 = 1.25
 
     // # value
     // print(lambdify([S, K, v, T], result)(S0, K0, v0, T0))
@@ -76,6 +89,6 @@ TEST(BlackScholes, Order1) {
     // print(lambdify([S, K, v, T], diff(result, (K,)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (v,)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (T,)))(S0, K0, v0, T0))
-}
 
-} // namespace adhoc4
+    return 0;
+}

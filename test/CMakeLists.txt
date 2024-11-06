@@ -15,8 +15,20 @@ function(compile_check filelist fail)
     endforeach()
 endfunction()
 
+function(run_check filelist)
+    foreach(testfile IN LISTS filelist)
+        file(RELATIVE_PATH target "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${testfile}")
+        string(REPLACE .cpp "" target ${target})
+        string(REPLACE / "." target ${target})
+        set(test_name "dynamic.${target}")
+        add_executable(${test_name} "${testfile}")
+        add_test(NAME ${test_name} COMMAND ${test_name})
+        target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+    endforeach()
+endfunction()
+
 # list of static checks that compile
-set(Working
+set(StaticWorking
     differential_operator.t.cpp
     differential_operator2.t.cpp
     name.cpp
@@ -25,7 +37,13 @@ set(Working
 )
 
 # list of static checks that do not compile (and shouldn't)
-set(Failing differential_operator.t.fail.cpp)
+set(StaticFailing
+    differential_operator.t.fail.cpp)
 
-compile_check("${Working}" false)
-compile_check("${Failing}" true)
+# list of normal, dynamic tests
+set(Dynamic
+    black_scholes1.cpp)
+
+compile_check("${StaticWorking}" false)
+compile_check("${StaticFailing}" true)
+run_check("${Dynamic}")
