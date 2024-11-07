@@ -44,16 +44,18 @@ set(StaticWorkingGCC
 set(StaticFailing
     calc_tree_fail_not_on_tree.cpp
     calc_tree_fail_not_input.cpp
-    differential_operator.t.fail.cpp)
+)
 
 # list of normal, dynamic tests
 set(Dynamic
     black_scholes1.cpp
-    black_scholes2.cpp)
+    black_scholes2.cpp
+)
 
 # list of normal, dynamic tests (only working with GCC at the moment)
 set(DynamicGCC
-    black_scholes3.cpp)
+    black_scholes3.cpp
+)
 
 compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
