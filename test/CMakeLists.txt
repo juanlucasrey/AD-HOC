@@ -44,6 +44,13 @@ set(Dynamic
     black_scholes1.cpp
     black_scholes2.cpp)
 
+# list of normal, dynamic tests (only working with GCC at the moment)
+set(DynamicGCC
+    black_scholes3.cpp)
+
 compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
 run_check("${Dynamic}")
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    run_check("${DynamicGCC}")
+endif()
