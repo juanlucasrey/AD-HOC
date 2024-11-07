@@ -63,4 +63,15 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
         }                                                                      \
     }
 
+#define EXPECT_LESS_THAN(VAL1, VAL2)                                           \
+    {                                                                          \
+        if (!(VAL1 < VAL2)) {                                                  \
+            std::cout.precision(std::numeric_limits<double>::max_digits10);    \
+            std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
+                      << std::endl;                                            \
+            std::cout << "Expected " << VAL1 << " < " << VAL2 << std::endl;    \
+            _result = 1;                                                       \
+        }                                                                      \
+    }
+
 #endif // TEST_TOOLS_HPP

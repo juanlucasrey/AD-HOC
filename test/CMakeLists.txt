@@ -52,6 +52,7 @@ set(StaticFailing
 set(Dynamic
     black_scholes1.cpp
     black_scholes2.cpp
+    univariate_vs_python.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)
@@ -69,3 +70,5 @@ run_check("${Dynamic}")
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     run_check("${DynamicGCC}")
 endif()
+
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
