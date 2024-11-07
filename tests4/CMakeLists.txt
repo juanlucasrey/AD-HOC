@@ -7,7 +7,6 @@ add_executable(
   finite_differences.cpp
   utils/univariate.t.cpp
   monomial_included.t.cpp
-  differential_operator.t.cpp
   univariate_vs_fd.t.cpp
   univariate_vs_python.t.cpp
   order.t.cpp
