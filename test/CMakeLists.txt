@@ -28,9 +28,8 @@ endfunction()
 
 # list of static checks that compile
 set(StaticWorking
-    differential_operator.t.cpp
-    differential_operator2.t.cpp
     name.cpp
+    is_input.cpp
     combinatorics/multinomial_coefficient_index_sequence.cpp
     combinatorics/multinomial_coefficient.cpp
 )

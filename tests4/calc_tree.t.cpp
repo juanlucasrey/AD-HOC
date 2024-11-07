@@ -10,30 +10,6 @@
 
 namespace adhoc4 {
 
-TEST(CalcTree, IsInput) {
-    ADHOC(vol);
-    ADHOC(strike);
-    ADHOC(spot);
-
-    auto res = vol * strike + exp(spot);
-    static_assert(is_input(vol));
-    static_assert(is_input(strike));
-    static_assert(is_input(spot));
-    static_assert(!is_input(res));
-
-    constexpr auto tree = detail::calc_tree_t(res);
-    std::cout << type_name2<decltype(tree)>() << std::endl;
-
-    constexpr auto resb1 = (vol == strike);
-    static_assert(!resb1);
-
-    constexpr auto resb2 = (vol == vol);
-    static_assert(resb2);
-
-    constexpr auto resb3 = (res == res);
-    static_assert(resb3);
-}
-
 TEST(CalcTree, ConstType) {
     ADHOC(val0);
 
@@ -73,7 +49,7 @@ TEST(CalcTree, Repeat) {
 
 TEST(CalcTree, EvaluateFwdUni2) {
     ADHOC(val0);
-    ADHOC(val1);
+    // ADHOC(val1);
     auto temp = exp(val0);
     CalcTree t(temp);
 
