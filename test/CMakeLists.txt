@@ -57,8 +57,11 @@ set(DynamicGCC
 
 compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
-run_check("${Dynamic}")
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     compile_check("${StaticWorkingGCC}" false)
+endif()
+
+run_check("${Dynamic}")
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     run_check("${DynamicGCC}")
 endif()
