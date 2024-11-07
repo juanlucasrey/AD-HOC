@@ -34,10 +34,10 @@ namespace adhoc4::detail {
 template <typename T, typename... Types>
 concept is_all_same = (... && std::is_same<T, Types>::value);
 
-constexpr auto add_sat(std::size_t lhs) { return lhs; }
+constexpr auto add_sat(std::size_t lhs) -> std::size_t { return lhs; }
 
 template <is_all_same<std::size_t>... Types>
-constexpr auto add_sat(std::size_t lhs, Types... args) {
+constexpr auto add_sat(std::size_t lhs, Types... args) -> std::size_t {
     auto const rhs = add_sat(args...);
 
     if (std::numeric_limits<std::size_t>::max() - lhs < rhs) {

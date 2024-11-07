@@ -33,13 +33,14 @@ namespace detail {
 
 template <class Op1, class Op2, class Nodes>
 constexpr auto less_than_check_empty(Op1 /* in1 */, Op2 /* in2 */,
-                                     Nodes /* nodes */);
+                                     Nodes /* nodes */) -> bool;
 
 template <class Id1, std::size_t Order1, class Id2, std::size_t Order2,
           class Id1Remaining, class Id2Remaining, class Nodes>
-constexpr auto
-less_than_single(der::d<Order1, Id1> /* in1 */, der::d<Order2, Id2> /* in2 */,
-                 Id1Remaining id1rem, Id2Remaining id2rem, Nodes nodes) {
+constexpr auto less_than_single(der::d<Order1, Id1> /* in1 */,
+                                der::d<Order2, Id2> /* in2 */,
+                                Id1Remaining id1rem, Id2Remaining id2rem,
+                                Nodes nodes) -> bool {
     constexpr auto idx1 = find<Nodes, Id1>();
     constexpr auto idx2 = find<Nodes, Id2>();
     if constexpr (idx1 < idx2) {
@@ -65,12 +66,12 @@ less_than_single(der::d<Order1, Id1> /* in1 */, der::d<Order2, Id2> /* in2 */,
 // }
 
 template <class In1, class In2, class Nodes>
-constexpr auto less_than_check_first(In1 in1, In2 in2, Nodes nodes) {
+constexpr auto less_than_check_first(In1 in1, In2 in2, Nodes nodes) -> bool {
     return less_than_single(head(in1), head(in2), tail(in1), tail(in2), nodes);
 }
 
 template <class Op1, class Op2, class Nodes>
-constexpr auto less_than_check_empty(Op1 in1, Op2 in2, Nodes nodes) {
+constexpr auto less_than_check_empty(Op1 in1, Op2 in2, Nodes nodes) -> bool {
     if constexpr (std::is_same_v<const Op2, const std::tuple<>>) {
         return false;
     } else if constexpr (std::is_same_v<const Op1, const std::tuple<>>) {
@@ -82,7 +83,7 @@ constexpr auto less_than_check_empty(Op1 in1, Op2 in2, Nodes nodes) {
 }
 
 template <class Op1, class Op2, class Nodes>
-constexpr auto less_than(Op1 in1, Op2 in2, Nodes nodes) {
+constexpr auto less_than(Op1 in1, Op2 in2, Nodes nodes) -> bool {
     if constexpr (std::is_same_v<Op1, Op2>) {
         return false;
     } else {

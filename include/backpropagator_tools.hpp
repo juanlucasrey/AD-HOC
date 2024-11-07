@@ -67,13 +67,15 @@ constexpr auto first_type_is(DiffOp diffop, Node node) -> bool {
 }
 
 template <class... Ids, std::size_t... Orders>
-constexpr auto order(std::tuple<der::d<Orders, Ids>...> /* id1 */) {
+constexpr auto order(std::tuple<der::d<Orders, Ids>...> /* id1 */)
+    -> std::size_t {
     return (Orders + ...);
 }
 
 template <class... DiffOps, class... Positions>
 constexpr auto
-max_orders(std::tuple<std::pair<DiffOps, Positions>...> /* id1 */) {
+max_orders(std::tuple<std::pair<DiffOps, Positions>...> /* id1 */)
+    -> std::size_t {
     constexpr std::array<std::size_t, sizeof...(DiffOps)> temp{
         order(DiffOps{})...};
     auto result = std::max_element(temp.begin(), temp.end());
