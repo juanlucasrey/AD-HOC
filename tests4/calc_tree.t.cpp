@@ -12,13 +12,10 @@ namespace adhoc4 {
 
 TEST(CalcTree, EvaluateFwdUni2) {
     ADHOC(val0);
-    // ADHOC(val1);
     auto temp = exp(val0);
     CalcTree t(temp);
 
     t.set(val0) = 1.0;
-    // t.set(val1) = 1.0; // fails because it's not on the calculation tree
-    // t.set(temp) = 1.0; // fails because it's not an input
     t.evaluate();
 
     double const result = t.get(temp);
@@ -34,7 +31,6 @@ TEST(CalcTree, EvaluateFwdBi2) {
 
     t.set(val0) = 2.0;
     t.set(val1) = 3.0;
-    // t.set(temp) = 3.0; // fails because it's not an input
     t.evaluate();
 
     double const result = t.get(temp);
@@ -48,7 +44,6 @@ TEST(CalcTree, EvaluateFwdConst2) {
 
     CalcTree t(temp);
     t.set(val0) = 1.0;
-    // t.set(temp) = 1.0; // fails because it's not an input
     t.evaluate();
 
     double const result = t.get(temp);

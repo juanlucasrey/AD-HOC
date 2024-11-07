@@ -36,6 +36,8 @@ set(StaticWorking
 
 # list of static checks that do not compile (and shouldn't)
 set(StaticFailing
+    calc_tree_fail_not_on_tree.cpp
+    calc_tree_fail_not_input.cpp
     differential_operator.t.fail.cpp)
 
 # list of normal, dynamic tests
