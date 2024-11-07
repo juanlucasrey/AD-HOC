@@ -19,5 +19,13 @@ int main() {
         static_assert(res_check == std::string_view(res.data(), res.size()));
     }
 
+    {
+        ADHOC(var);
+        ADHOC(var2);
+        constexpr auto res = name(d(var) * d(var2 * var));
+        constexpr std::string_view res_check{"d(var)*d(var2*var)"};
+        static_assert(res_check == std::string_view(res.data(), res.size()));
+    }
+
     return 0;
 }

@@ -34,6 +34,11 @@ set(StaticWorking
     combinatorics/multinomial_coefficient.cpp
 )
 
+# list of static checks that compile (only working with GCC at the moment)
+set(StaticWorkingGCC
+    name_gcc.cpp
+)
+
 # list of static checks that do not compile (and shouldn't)
 set(StaticFailing
     calc_tree_fail_not_on_tree.cpp
@@ -53,5 +58,6 @@ compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
 run_check("${Dynamic}")
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    compile_check("${StaticWorkingGCC}" false)
     run_check("${DynamicGCC}")
 endif()
