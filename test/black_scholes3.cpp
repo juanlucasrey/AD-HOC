@@ -7,6 +7,7 @@
 #include "test_tools.hpp"
 
 int main() {
+    TEST_START;
     using namespace adhoc4;
     ADHOC(S);
     ADHOC(K);
@@ -170,5 +171,5 @@ int main() {
     // print(lambdify([S, K, v, T], diff(result, (v, T, T)))(S0, K0, v0, T0))
     // print(lambdify([S, K, v, T], diff(result, (T, T, T)))(S0, K0, v0, T0))
 
-    return 0;
+    TEST_END;
 }
