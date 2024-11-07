@@ -48,9 +48,9 @@ constexpr auto less_than_single(der::d<Order1, Id1> /* in1 */,
     } else if constexpr (idx1 > idx2) {
         return true;
     } else if constexpr (Order1 < Order2) {
-        return false;
-    } else if constexpr (Order1 > Order2) {
         return true;
+    } else if constexpr (Order1 > Order2) {
+        return false;
     } else {
         static_assert(std::is_same_v<der::d<Order1, Id1>, der::d<Order2, Id2>>);
         return less_than_check_empty(id1rem, id2rem, nodes);

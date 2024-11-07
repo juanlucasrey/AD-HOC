@@ -33,6 +33,7 @@ set(StaticWorking
     combinatorics/multinomial_coefficient_index_sequence.cpp
     combinatorics/multinomial_coefficient.cpp
     utils/index_sequence.cpp
+    sort.cpp
 )
 
 # list of static checks that compile (only working with GCC at the moment)

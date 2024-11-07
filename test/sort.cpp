@@ -1,20 +1,13 @@
 #include <calc_tree.hpp>
 #include <sort.hpp>
 
-#include "type_name.hpp"
-#include <gtest/gtest.h>
+int main() {
+    using namespace adhoc4;
 
-#include <random>
-#include <tuple>
-
-namespace adhoc4 {
-
-TEST(BackPropagator, Sort) {
     ADHOC(x);
     ADHOC(y);
     ADHOC(z);
     auto res = x + (y * z);
-    auto temp = (z * y);
     CalcTree ct(res);
     using PrimalNodes = decltype(ct)::ValuesTupleInverse;
     constexpr auto primal_nodes_inverted = PrimalNodes{};
@@ -26,9 +19,10 @@ TEST(BackPropagator, Sort) {
     auto d5 = d<2>(res);
     auto d6 = d<2>(res) * d<2>(x);
 
-    constexpr auto newtuple = sort_differential_operators(
+    constexpr auto restuple = sort_differential_operators(
         std::make_tuple(d4, d3, d2, d1, d5, d6), primal_nodes_inverted);
-    std::cout << type_name2<decltype(newtuple)>() << std::endl;
-}
 
-} // namespace adhoc4
+    constexpr auto res_check = std::make_tuple(d6, d5, d2, d3, d4, d1);
+    static_assert(std::is_same_v<decltype(restuple), decltype(res_check)>);
+    return 0;
+}
