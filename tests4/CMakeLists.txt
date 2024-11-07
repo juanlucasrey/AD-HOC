@@ -6,7 +6,6 @@ add_executable(
   adhoc_test4
   finite_differences.cpp
   utils/univariate.t.cpp
-  utils/index_sequence.t.cpp
   monomial_included.t.cpp
   differential_operator.t.cpp
   univariate_vs_fd.t.cpp
