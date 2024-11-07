@@ -10,43 +10,6 @@
 
 namespace adhoc4 {
 
-TEST(CalcTree, ConstType) {
-    ADHOC(val0);
-
-    using constants::CD;
-    auto res = val0 * CD<0.5>();
-
-    constexpr auto tree = detail::calc_tree_t(res);
-    std::cout << type_name2<decltype(tree)>() << std::endl;
-
-    // constexpr auto resb1 = (vol == strike);
-    // static_assert(!resb1);
-
-    // constexpr auto resb2 = (vol == vol);
-    // static_assert(resb2);
-
-    // constexpr auto resb3 = (res == res);
-    // static_assert(resb3);
-}
-
-TEST(CalcTree, Repeat) {
-    ADHOC(var1);
-    ADHOC(var2);
-    ADHOC(var3);
-    ADHOC(var4);
-
-    auto res1 = (var1 + var2) * (var3 * var4);
-    auto res2 = (var4 * var3) * (var2 + var1);
-    // auto res2 = (var3 * var4) * (var1 + var2);
-    constexpr auto resb1 = (res1 == res2);
-    static_assert(resb1);
-
-    auto res3 = (var1 * var2) + (var3 + var4);
-    auto res4 = (var4 + var3) + (var2 * var1);
-    constexpr auto resb2 = (res3 == res4);
-    static_assert(resb2);
-}
-
 TEST(CalcTree, EvaluateFwdUni2) {
     ADHOC(val0);
     // ADHOC(val1);

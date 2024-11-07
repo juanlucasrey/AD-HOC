@@ -29,7 +29,7 @@ endfunction()
 # list of static checks that compile
 set(StaticWorking
     name.cpp
-    is_input.cpp
+    dependency.cpp
     combinatorics/multinomial_coefficient_index_sequence.cpp
     combinatorics/multinomial_coefficient.cpp
 )
