@@ -10,7 +10,6 @@ add_executable(
   univariate_vs_fd.t.cpp
   order.t.cpp
   calc_tree.t.cpp
-  utils/tuple.t.cpp
   backpropagator.t.cpp
   backpropagator_tools.t.cpp
 )
