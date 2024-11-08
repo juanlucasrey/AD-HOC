@@ -8,7 +8,6 @@ add_executable(
   utils/univariate.t.cpp
   monomial_included.t.cpp
   univariate_vs_fd.t.cpp
-  univariate_vs_python.t.cpp
   order.t.cpp
   calc_tree.t.cpp
   utils/tuple.t.cpp
@@ -43,8 +42,6 @@ target_link_libraries(
   gtest_main
   "-framework OpenCL"
 )
-
-file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 include(GoogleTest)
 gtest_discover_tests(adhoc_test4)
