@@ -3,7 +3,9 @@
 #include <base.hpp>
 
 #include <fstream>
+#include <functional>
 #include <sstream>
+#include <vector>
 
 #include "test_tools.hpp"
 
