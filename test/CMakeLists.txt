@@ -57,12 +57,14 @@ set(Dynamic
     black_scholes2.cpp
     univariate_vs_python.cpp
     utils/univariate.cpp
+    univariate_vs_fd.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)
 set(DynamicGCC
     black_scholes3.cpp
     univariate_vs_python_gcc.cpp
+    univariate_vs_fd_gcc.cpp
 )
 
 compile_check("${StaticWorking}" false)
