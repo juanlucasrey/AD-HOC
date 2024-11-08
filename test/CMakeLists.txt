@@ -58,6 +58,7 @@ set(Dynamic
     univariate_vs_python.cpp
     utils/univariate.cpp
     univariate_vs_fd.cpp
+    calc_tree.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)

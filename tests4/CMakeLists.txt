@@ -6,9 +6,9 @@ add_executable(
   adhoc_test4
   monomial_included.t.cpp
   order.t.cpp
-  calc_tree.t.cpp
   backpropagator.t.cpp
   backpropagator_tools.t.cpp
+  half_square.t.cpp
 )
 
 # fo coverage
