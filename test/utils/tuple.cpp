@@ -33,8 +33,6 @@ int main() {
 
     // Find
     {
-
-        constexpr std::tuple<double, int, char> temp;
         constexpr auto loc2 = find<std::tuple<double, int, char>, int, 1>();
         static_assert(loc2 == 1);
     }

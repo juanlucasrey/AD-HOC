@@ -26,6 +26,8 @@ function(run_check filelist)
     endforeach()
 endfunction()
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+
 # list of static checks that compile
 set(StaticWorking
     name.cpp
