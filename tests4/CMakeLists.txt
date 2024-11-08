@@ -8,7 +8,6 @@ add_executable(
   order.t.cpp
   backpropagator.t.cpp
   backpropagator_tools.t.cpp
-  half_square.t.cpp
 )
 
 # fo coverage

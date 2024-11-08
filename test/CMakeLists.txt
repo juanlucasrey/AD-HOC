@@ -38,6 +38,7 @@ set(StaticWorking
     utils/tuple.cpp
     sort.cpp
     differential_operator.cpp
+    half_square.cpp
 )
 
 # list of static checks that compile (only working with GCC at the moment)
