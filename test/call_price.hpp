@@ -1,5 +1,5 @@
-#ifndef TEST_CALL_PRICE4_HPP
-#define TEST_CALL_PRICE4_HPP
+#ifndef TEST_CALL_PRICE_HPP
+#define TEST_CALL_PRICE_HPP
 
 #include <constants_type.hpp>
 
@@ -40,4 +40,4 @@ auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 
 } // namespace adhoc4
 
-#endif // TEST_CALL_PRICE4_HPP
+#endif // TEST_CALL_PRICE_HPP

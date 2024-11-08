@@ -56,6 +56,7 @@ set(Dynamic
     black_scholes1.cpp
     black_scholes2.cpp
     univariate_vs_python.cpp
+    utils/univariate.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)

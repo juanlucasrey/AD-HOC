@@ -1,3 +1,6 @@
+#ifndef TEST_STATISTICS_HPP
+#define TEST_STATISTICS_HPP
+
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -66,3 +69,5 @@ auto statistics(std::vector<D> const &in,
 
     return std::make_tuple(rel_average, abs_rel_average, abs_rel_max);
 };
+
+#endif // TEST_STATISTICS_HPP

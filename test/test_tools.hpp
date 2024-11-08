@@ -63,6 +63,14 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
         }                                                                      \
     }
 
+#define EXPECT_NEAR_REL_ARRAY(VAL1, VAL2, TOL)                                 \
+    {                                                                          \
+        constexpr std::size_t size = std::min(VAL1.size(), VAL2.size());       \
+        for (std::size_t i = 0; i < size; i++) {                               \
+            EXPECT_NEAR_REL(VAL1[i], VAL2[i], TOL);                            \
+        }                                                                      \
+    }
+
 #define EXPECT_LESS_THAN(VAL1, VAL2)                                           \
     {                                                                          \
         if (!(VAL1 < VAL2)) {                                                  \
@@ -71,6 +79,25 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
                       << std::endl;                                            \
             std::cout << "Expected " << VAL1 << " < " << VAL2 << std::endl;    \
             _result = 1;                                                       \
+        }                                                                      \
+    }
+
+#define EXPECT_EQUAL(VAL1, VAL2)                                               \
+    {                                                                          \
+        if ((VAL1 != VAL2)) {                                                  \
+            std::cout.precision(std::numeric_limits<double>::max_digits10);    \
+            std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
+                      << std::endl;                                            \
+            std::cout << "Expected " << VAL1 << " == " << VAL2 << std::endl;   \
+            _result = 1;                                                       \
+        }                                                                      \
+    }
+
+#define EXPECT_EQUAL_ARRAY(VAL1, VAL2)                                         \
+    {                                                                          \
+        constexpr std::size_t size = std::min(VAL1.size(), VAL2.size());       \
+        for (std::size_t i = 0; i < size; i++) {                               \
+            EXPECT_EQUAL(VAL1[i], VAL2[i]);                                    \
         }                                                                      \
     }
 

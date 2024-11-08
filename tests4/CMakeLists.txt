@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(
   adhoc_test4
   finite_differences.cpp
-  utils/univariate.t.cpp
   monomial_included.t.cpp
   univariate_vs_fd.t.cpp
   order.t.cpp
