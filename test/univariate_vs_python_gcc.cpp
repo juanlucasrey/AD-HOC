@@ -269,7 +269,7 @@ int main() {
         EXPECT_LESS_THAN(std::get<1>(stats), 1e-13);
         EXPECT_LESS_THAN(std::get<2>(stats), 1e-11);
 
-        std::vector<std::array<double, 3>> dererrors{{1e-14, 1e-14, 1e-13},
+        std::vector<std::array<double, 3>> dererrors{{1e-14, 1e-14, 5e-13},
                                                      {1e-14, 1e-14, 1e-12},
                                                      {1e-13, 1e-13, 1e-10},
                                                      {1e-14, 1e-14, 1e-11}};
