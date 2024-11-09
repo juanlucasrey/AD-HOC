@@ -36,8 +36,8 @@ inline auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     using adhoc4::constants::CD;
     using std::log;
     using std::sqrt;
-    auto totalvol = v * sqrt(T);
-    auto d1 = log(S / K) / totalvol + totalvol * CD<0.5>();
+    DECL_COND_AUTO(I1) totalvol = v * sqrt(T);
+    DECL_COND_AUTO(I1) d1 = log(S / K) / totalvol + totalvol * CD<0.5>();
     auto d2 = d1 - totalvol;
     return K * cdf_n(-d2) - S * cdf_n(-d1);
 }
