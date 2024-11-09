@@ -65,5 +65,3 @@ The correctness of the derivative calculations for the first iteration can be ve
 python3 sympy_value_check.py
 
 The values being printed should correspond to the values of any program being run, with ITERATIONS=1 (or the ITERATIONS argument being absent since 1 is the default value)
-
-x
