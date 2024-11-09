@@ -24,7 +24,7 @@ int main() {
 
     using mode_t = dco::ga1s<dco::gt1s<double>::type>;
     using type = mode_t::type;
-    mode_t::global_tape = mode_t::tape_t::create();
+    dco::smart_tape_ptr_t<mode_t> tape;
 
     auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -36,17 +36,17 @@ int main() {
 
         // 1
         {
-            mode_t::global_tape->register_variable(S);
-            mode_t::global_tape->register_variable(K);
-            mode_t::global_tape->register_variable(v);
-            mode_t::global_tape->register_variable(T);
-            auto pos = mode_t::global_tape->get_position();
+            tape->register_variable(S);
+            tape->register_variable(K);
+            tape->register_variable(v);
+            tape->register_variable(T);
+            auto pos = tape->get_position();
 
             dco::derivative(dco::value(S)) = 1.0;
             type y = call_price(S, K, v, T);
-            mode_t::global_tape->register_output_variable(y);
+            tape->register_output_variable(y);
             dco::derivative(y) = 1.0;
-            mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
+            tape->interpret_adjoint_and_reset_to(pos);
 
             results_average[0] += dco::value(dco::value(y));
             results_average[1] += dco::value(dco::derivative(S));
@@ -58,75 +58,74 @@ int main() {
             results_average[7] += dco::derivative(dco::derivative(v));
             results_average[8] += dco::derivative(dco::derivative(T));
 
-            mode_t::global_tape->reset();
+            tape->reset();
             dco::derivative(dco::value(S)) = 0.0;
         }
 
         // 2
         {
-            mode_t::global_tape->register_variable(S);
-            mode_t::global_tape->register_variable(K);
-            mode_t::global_tape->register_variable(v);
-            mode_t::global_tape->register_variable(T);
-            auto pos = mode_t::global_tape->get_position();
+            tape->register_variable(S);
+            tape->register_variable(K);
+            tape->register_variable(v);
+            tape->register_variable(T);
+            auto pos = tape->get_position();
 
             dco::derivative(dco::value(K)) = 1.0;
             type y = call_price(S, K, v, T);
-            mode_t::global_tape->register_output_variable(y);
+            tape->register_output_variable(y);
             dco::derivative(y) = 1.0;
-            mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
+            tape->interpret_adjoint_and_reset_to(pos);
 
             results_average[9] += dco::derivative(dco::derivative(K));
             results_average[10] += dco::derivative(dco::derivative(v));
             results_average[11] += dco::derivative(dco::derivative(T));
 
-            mode_t::global_tape->reset();
+            tape->reset();
             dco::derivative(dco::value(K)) = 0.0;
         }
 
         // 3
         {
-            mode_t::global_tape->register_variable(S);
-            mode_t::global_tape->register_variable(K);
-            mode_t::global_tape->register_variable(v);
-            mode_t::global_tape->register_variable(T);
-            auto pos = mode_t::global_tape->get_position();
+            tape->register_variable(S);
+            tape->register_variable(K);
+            tape->register_variable(v);
+            tape->register_variable(T);
+            auto pos = tape->get_position();
 
             dco::derivative(dco::value(v)) = 1.0;
             type y = call_price(S, K, v, T);
-            mode_t::global_tape->register_output_variable(y);
+            tape->register_output_variable(y);
             dco::derivative(y) = 1.0;
-            mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
+            tape->interpret_adjoint_and_reset_to(pos);
 
             results_average[12] += dco::derivative(dco::derivative(v));
             results_average[13] += dco::derivative(dco::derivative(T));
 
-            mode_t::global_tape->reset();
+            tape->reset();
             dco::derivative(dco::value(v)) = 0.0;
         }
 
         // 4
         {
-            mode_t::global_tape->register_variable(S);
-            mode_t::global_tape->register_variable(K);
-            mode_t::global_tape->register_variable(v);
-            mode_t::global_tape->register_variable(T);
-            auto pos = mode_t::global_tape->get_position();
+            tape->register_variable(S);
+            tape->register_variable(K);
+            tape->register_variable(v);
+            tape->register_variable(T);
+            auto pos = tape->get_position();
 
             dco::derivative(dco::value(T)) = 1.0;
             type y = call_price(S, K, v, T);
-            mode_t::global_tape->register_output_variable(y);
+            tape->register_output_variable(y);
             dco::derivative(y) = 1.0;
-            mode_t::global_tape->interpret_adjoint_and_reset_to(pos);
+            tape->interpret_adjoint_and_reset_to(pos);
 
             results_average[14] += dco::derivative(dco::derivative(T));
 
-            mode_t::global_tape->reset();
+            tape->reset();
             dco::derivative(dco::value(T)) = 0.0;
         }
     }
 
-    mode_t::tape_t::remove(mode_t::global_tape);
     auto time2 = std::chrono::high_resolution_clock::now();
     auto time =
         std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1)
