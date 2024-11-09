@@ -41,6 +41,7 @@ set(StaticWorking
     half_square.cpp
     backpropagator.cpp
     backpropagator_tools.cpp
+    order.cpp
 )
 
 # list of static checks that compile (only working with GCC at the moment)
