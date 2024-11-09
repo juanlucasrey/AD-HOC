@@ -40,7 +40,7 @@
 #define LOG_VALS false
 
 #if LOG_LEVEL
-#include "../tests4/type_name.hpp"
+#include "type_name.hpp"
 #include <iostream>
 #endif
 

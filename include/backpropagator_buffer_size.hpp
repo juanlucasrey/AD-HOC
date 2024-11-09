@@ -36,7 +36,7 @@
 #define LOG false
 
 #if LOG
-#include "../tests4/type_name.hpp"
+#include "type_name.hpp"
 #include <iostream>
 #endif
 
