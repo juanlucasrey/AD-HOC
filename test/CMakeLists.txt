@@ -26,7 +26,19 @@ function(run_check filelist)
     endforeach()
 endfunction()
 
+# for coverage
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping")
+# SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wconversion -Wdouble-promotion -Wundef -Wdelete-non-virtual-dtor -Wnon-virtual-dtor -Wparentheses -Wcast-align -Wwrite-strings -Wredundant-decls -Wunused-parameter")
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unsafe-loop-optimizations -Wuseless-cast -Wlogical-op")
+endif()
+
+# if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+#   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fconstexpr-steps=1271242 -fconstexpr-depth=2300")
+# endif()
 
 # list of static checks that compile
 set(StaticWorking
@@ -42,6 +54,7 @@ set(StaticWorking
     backpropagator.cpp
     backpropagator_tools.cpp
     order.cpp
+    monomial_included.cpp
 )
 
 # list of static checks that compile (only working with GCC at the moment)

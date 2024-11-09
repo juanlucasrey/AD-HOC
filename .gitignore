@@ -9,6 +9,3 @@ build
 
 # for mac users
 .DS_Store
-
-# to be removed soon
-gtest-1.6.0
