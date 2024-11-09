@@ -39,8 +39,6 @@ Assuming [ADOL-C](https://github.com/coin-or/ADOL-C) is installed in the folder 
 /path/g++ -o adolc_order4 adolc_order4.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc\
 /path/g++ -o adolc_order5 adolc_order5.cpp -std=c++20 -O3 -I/install/adolc/include -L/install/adolc/lib  -rpath /install/adolc/lib -ladolc
 
-note: ADOL-C does not support erfc at the time of writing so a different header is used for Black-Scholes, without erfc, in the file "black_scholes_no_erfc.hpp".
-
 ## [dco/c++](https://nag.com/automatic-differentiation)
 Assuming [dco/c++](https://nag.com/automatic-differentiation/) is installed in the folder /install/dco, compile with:
 

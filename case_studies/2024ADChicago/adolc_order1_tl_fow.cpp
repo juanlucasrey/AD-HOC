@@ -1,6 +1,6 @@
 #include <adolc/adtl.h>
 
-#include "black_scholes_no_erfc.hpp"
+#include "black_scholes.hpp"
 
 #include <array>
 #include <chrono>
