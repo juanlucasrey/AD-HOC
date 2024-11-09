@@ -40,6 +40,7 @@ set(StaticWorking
     differential_operator.cpp
     half_square.cpp
     backpropagator.cpp
+    backpropagator_tools.cpp
 )
 
 # list of static checks that compile (only working with GCC at the moment)
@@ -61,6 +62,7 @@ set(Dynamic
     utils/univariate.cpp
     univariate_vs_fd.cpp
     calc_tree.cpp
+    copy_ordered.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)
