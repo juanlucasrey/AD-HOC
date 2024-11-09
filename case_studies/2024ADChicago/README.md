@@ -7,10 +7,11 @@ For example if you want to run with 1.000.000 Black-Scholes with CoDiPack at ord
 ITERATIONS=1000000 ./codi_order2
 
 You will get as a result the average price and derivatives, with the execution time in ms as follows:\
-iterations: 1000000\
-adhoc order 2 time (ms): 75\
 7.7723986486630947\
 ...
+-1.4731780924569864\
+iterations: 1000000\
+adhoc order 2 time (ms): 500\
 
 assuming /path/g++ is your path to GCC++, build the timing executables with the following commands:
 
