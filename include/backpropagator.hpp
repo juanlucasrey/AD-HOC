@@ -121,7 +121,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
   public:
     template <class CalcTree> constexpr auto buffer_size() -> std::size_t {
-        using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
+        using PrimalNodesInverse = typename CalcTree::ValuesTupleInverse;
         constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
 
         constexpr auto ordered_derivatives =
@@ -159,7 +159,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
   public:
     template <class CalcTree> inline void backpropagate(CalcTree const &ct) {
 
-        using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
+        using PrimalNodesInverse = typename CalcTree::ValuesTupleInverse;
         constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
 
         constexpr auto ordered_derivatives =
@@ -206,7 +206,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
     template <std::size_t BufferSize, class CalcTree>
     inline void backpropagate2(CalcTree const &ct) {
 
-        using PrimalNodesInverse = CalcTree::ValuesTupleInverse;
+        using PrimalNodesInverse = typename CalcTree::ValuesTupleInverse;
         constexpr auto primal_nodes_inverted = PrimalNodesInverse{};
 
         constexpr auto ordered_derivatives =

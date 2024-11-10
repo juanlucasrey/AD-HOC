@@ -679,7 +679,7 @@ inline void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
                               BufferFlags bf, BufferArray &ba,
                               DerivativeNodeInputs dnin) {
 
-    using PrimalNodes = CalcTree::ValuesTupleInverse;
+    using PrimalNodes = typename CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {
