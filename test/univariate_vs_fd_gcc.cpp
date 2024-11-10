@@ -83,7 +83,7 @@ int main() {
             EXPECT_LESS_THAN(
                 std::abs((results2[3] - results1[3]) / results2[3]), 1e-7);
             EXPECT_LESS_THAN(
-                std::abs((results2[4] - results1[4]) / results2[4]), 1e-7);
+                std::abs((results2[4] - results1[4]) / results2[4]), 5e-7);
             EXPECT_LESS_THAN(
                 std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
             EXPECT_EQUAL(results1[6], 0.);

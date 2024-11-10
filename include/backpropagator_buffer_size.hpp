@@ -55,7 +55,7 @@ treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
                                std::integral_constant<std::size_t, SizeMax>{},
                                std::integral_constant<std::size_t, SizeCur>{});
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -148,7 +148,7 @@ constexpr auto treat_nodes_mul_const_buffer_size(DerivativeNodes dn,
                                std::integral_constant<std::size_t, SizeMax>{},
                                std::integral_constant<std::size_t, SizeCur>{});
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -210,7 +210,7 @@ template <std::size_t Last, class CalcTree, std::size_t SizeMax,
 constexpr auto treat_nodes_specialized_buffer_size(
     mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
     DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
 
     constexpr auto is_const1 = is_constant(PrimalSubNode1{});
     constexpr auto is_const2 = is_constant(PrimalSubNode2{});
@@ -263,7 +263,7 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
                                std::integral_constant<std::size_t, SizeCur>{});
 
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -348,7 +348,7 @@ template <std::size_t Last, class CalcTree, std::size_t SizeMax,
 constexpr auto treat_nodes_specialized_buffer_size(
     Bivariate<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
     DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
     constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
@@ -379,7 +379,7 @@ constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
                                std::integral_constant<std::size_t, SizeCur>{});
     } else {
         constexpr std::size_t currentN = N - 1;
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<currentN>(dn));
 
@@ -469,7 +469,7 @@ constexpr auto treat_nodes_specialized_buffer_size(
     // we go over univariate derivatives in inverse lexicographic order.
     // why? because it makes sense to calculate the coefficients increasing in
     // power. the lexicographic order is decreasing in powers.
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx = find<NodesValue, PrimalSubNode>();
     return treat_nodes_univariate_buffer_size<Last, Last, idx, CalcTree,
                                               SizeMax, SizeCur, MaxOrder>(
@@ -493,7 +493,7 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodes dn,
     constexpr std::tuple_element_t<1, decltype(res)> new_size_max;
     constexpr std::tuple_element_t<2, decltype(res)> new_size_cur;
 
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
 
     constexpr auto dn_remaining = sub_tuple<Last, size(dn) - 1>(dn);
     constexpr auto dn_new_and_remaining =
@@ -512,7 +512,7 @@ constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
                                          DerivativeNodeInputsI dnin_i,
                                          DerivativeNodeInputs dnin)
     -> std::size_t {
-    using PrimalNodes = CalcTree::ValuesTupleInverse;
+    using PrimalNodes = typename CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {

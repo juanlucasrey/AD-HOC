@@ -68,7 +68,7 @@ treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -87,7 +87,7 @@ treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         constexpr auto multinomial_sequences =
             TrinomialSequencesMult<this_power, MaxOrder - rest_power>();
 
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNodeOrdered1 = std::tuple_element_t<Idx1, NodesValue>;
         using PrimalSubNodeOrdered2 = std::tuple_element_t<Idx2, NodesValue>;
         constexpr auto diff_ops = std::make_tuple(
@@ -195,7 +195,7 @@ inline auto treat_nodes_mul_const(DerivativeNodes dn,
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -210,7 +210,7 @@ inline auto treat_nodes_mul_const(DerivativeNodes dn,
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto this_power = get_power(head(current_node_der));
 
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNode = std::tuple_element_t<Idx, NodesValue>;
         constexpr auto next_derivatives_filtered = std::make_tuple(
             multiply_ordered(d<this_power>(PrimalSubNode{}),
@@ -268,7 +268,7 @@ treat_nodes_specialized(mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
                         DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
                         CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
                         BufferArray &ba, DerivativeNodeInputs dnin) {
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
 
     constexpr auto is_const1 = is_constant(PrimalSubNode1{});
     constexpr auto is_const2 = is_constant(PrimalSubNode2{});
@@ -335,7 +335,7 @@ inline auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
     if constexpr (N == Last) {
         return std::make_tuple(bf, dnn_i);
     } else {
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<N>(dn));
 
@@ -353,7 +353,7 @@ inline auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         constexpr auto multinomial_sequences =
             MultinomialSequences<2, this_power>();
 
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNodeOrdered1 = std::tuple_element_t<Idx1, NodesValue>;
         using PrimalSubNodeOrdered2 = std::tuple_element_t<Idx2, NodesValue>;
         constexpr auto diff_ops = std::make_tuple(d(PrimalSubNodeOrdered1{}),
@@ -456,7 +456,7 @@ treat_nodes_specialized(sub_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
                         DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
                         CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
                         BufferArray &ba, DerivativeNodeInputs dnin) {
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
     constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
@@ -478,7 +478,7 @@ treat_nodes_specialized(add_t<PrimalSubNode1, PrimalSubNode2> /* pn */,
                         DerivativeNodesI dn, DerivativeNodeInputsI dnin_i,
                         CalcTree const &ct, InterfaceArray &ia, BufferFlags bf,
                         BufferArray &ba, DerivativeNodeInputs dnin) {
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
     constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
@@ -505,7 +505,7 @@ inline auto treat_nodes_univariate(
         return std::make_tuple(bf, dnn);
     } else {
         constexpr std::size_t currentN = N - 1;
-        using NodesValue = CalcTree::ValuesTupleInverse;
+        using NodesValue = typename CalcTree::ValuesTupleInverse;
         constexpr auto current_dn =
             convert_to_diffop<NodesValue>(std::get<currentN>(dn));
 
@@ -639,7 +639,7 @@ treat_nodes_specialized(Univariate<PrimalSubNode> /* pn */, DerivativeNodes dn,
     // we go over univariate derivatives in inverse lexicographic order.
     // why? because it makes sense to calculate the coefficients increasing in
     // power. the lexicographic order is decreasing in powers.
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx = find<NodesValue, PrimalSubNode>();
     return treat_nodes_univariate<Last, Last, idx>(
         dn, dnin_i, std::tuple<>{}, ct, ia, bf, ba, univariate_array,
@@ -662,7 +662,7 @@ inline auto treat_node(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
     constexpr std::tuple_element_t<0, decltype(res)> bf_new;
     constexpr std::tuple_element_t<1, decltype(res)> dn_new;
 
-    using NodesValue = CalcTree::ValuesTupleInverse;
+    using NodesValue = typename CalcTree::ValuesTupleInverse;
 
     constexpr auto dn_remaining = sub_tuple<Last, size(dn) - 1>(dn);
     constexpr auto dn_new_and_remaining =
@@ -679,7 +679,7 @@ inline void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
                               BufferFlags bf, BufferArray &ba,
                               DerivativeNodeInputs dnin) {
 
-    using PrimalNodes = CalcTree::ValuesTupleInverse;
+    using PrimalNodes = typename CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {

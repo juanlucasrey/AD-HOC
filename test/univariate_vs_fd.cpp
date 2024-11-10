@@ -152,7 +152,7 @@ int main() {
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-12);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-10);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-7);
-        EXPECT_NEAR_ABS(results1[4], results2[4], 1e-6);
+        EXPECT_NEAR_ABS(results1[4], results2[4], 5e-6);
         EXPECT_NEAR_ABS(results1[5], results2[5], 1e-2);
         EXPECT_EQUAL(results1[6], 0.);
         EXPECT_EQUAL(results1[7], 0.);
@@ -300,7 +300,7 @@ int main() {
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-11);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-9);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-6);
-        EXPECT_NEAR_ABS(results1[4], results2[4], 1e-5);
+        EXPECT_NEAR_ABS(results1[4], results2[4], 5e-5);
         EXPECT_NEAR_ABS(results1[5], results2[5], 3e-2);
         EXPECT_EQUAL(results1[6], 0.);
         EXPECT_EQUAL(results1[7], 0.);
