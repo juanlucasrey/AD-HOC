@@ -512,7 +512,7 @@ constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
                                          DerivativeNodeInputsI dnin_i,
                                          DerivativeNodeInputs dnin)
     -> std::size_t {
-    using PrimalNodes = CalcTree::ValuesTupleInverse;
+    using PrimalNodes = typename CalcTree::ValuesTupleInverse;
     constexpr auto current_primal_node = std::get<N>(PrimalNodes{});
 
     if constexpr (!is_input(current_primal_node)) {
