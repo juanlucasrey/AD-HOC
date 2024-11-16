@@ -627,8 +627,8 @@ template <size_t N> struct StringLiteral {
 template <detail::StringLiteral literal>
 struct double_t : public Base<double_t<literal>> {};
 
-#define ADHOC(x) constexpr adhoc4::double_t<#x> x
-
 } // namespace adhoc4
+
+#define ADHOC(x) constexpr adhoc4::double_t<#x> x
 
 #endif // ADHOC4_ADHOC_HPP
