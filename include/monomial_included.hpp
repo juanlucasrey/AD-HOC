@@ -21,11 +21,11 @@
 #ifndef MONOMIAL_INCLUDED_HPP
 #define MONOMIAL_INCLUDED_HPP
 
+#include "add_sat.hpp"
 #include "adhoc.hpp"
 #include "constants_type.hpp"
 #include "dependency.hpp"
 #include "differential_operator.hpp"
-#include "order.hpp"
 #include "utils/flatten.hpp"
 
 #include <tuple>

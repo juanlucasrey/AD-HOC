@@ -24,9 +24,7 @@
 #include "../base.hpp"
 #include "../combinatorics/combinations.hpp"
 #include "../combinatorics/factorial.hpp"
-#include "../combinatorics/pascal.hpp"
 #include "../combinatorics/pow.hpp"
-#include "../utils/index_sequence.hpp"
 #include "tan.hpp"
 
 #include <array>
