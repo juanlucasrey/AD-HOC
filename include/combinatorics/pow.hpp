@@ -23,7 +23,7 @@
 
 #include <cstddef>
 
-namespace adhoc4::detail {
+namespace adhoc::detail {
 
 template <std::size_t N, class T> inline constexpr auto pow(T base) -> T {
     if constexpr (N == 1) {
@@ -38,6 +38,6 @@ template <std::size_t N, class T> inline constexpr auto pow(T base) -> T {
     }
 };
 
-} // namespace adhoc4::detail
+} // namespace adhoc::detail
 
 #endif // COMBINATORICS_POW_HPP

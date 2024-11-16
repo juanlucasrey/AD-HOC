@@ -38,7 +38,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -255,6 +255,6 @@ template <class... InputsAndOutputsDers> class BackPropagator {
     }
 };
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // BACKPROPAGATOR_HPP

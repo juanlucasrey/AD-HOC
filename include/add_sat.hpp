@@ -24,7 +24,7 @@
 #include <cstddef>
 #include <limits>
 
-namespace adhoc4::detail {
+namespace adhoc::detail {
 
 // constexpr version of saturation arithmetic
 // https://en.cppreference.com/w/cpp/numeric/add_sat
@@ -47,6 +47,6 @@ constexpr auto add_sat(std::size_t lhs, Args... args) -> std::size_t {
     return lhs + rhs;
 }
 
-} // namespace adhoc4::detail
+} // namespace adhoc::detail
 
 #endif // ADD_SAT_HPP

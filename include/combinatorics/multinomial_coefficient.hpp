@@ -24,7 +24,7 @@
 #include <array>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <std::size_t Bins, std::size_t Balls>
 constexpr auto FirstMultinomial() {
@@ -91,6 +91,6 @@ MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
     return res;
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_MULTINOMIAL_COEFFICIENT_HPP

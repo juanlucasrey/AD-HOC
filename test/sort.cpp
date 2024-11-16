@@ -2,7 +2,7 @@
 #include <sort.hpp>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     ADHOC(x);
     ADHOC(y);

@@ -40,7 +40,7 @@
 #include <iostream>
 #endif
 
-namespace adhoc4::detail {
+namespace adhoc::detail {
 
 template <std::size_t Last, std::size_t Idx1, std::size_t Idx2, class CalcTree,
           std::size_t SizeMax, std::size_t SizeCur, std::size_t MaxOrder,
@@ -537,6 +537,6 @@ constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
     }
 }
 
-} // namespace adhoc4::detail
+} // namespace adhoc::detail
 
 #endif // BACKPROPAGATOR_BUFFER_SIZE_HPP

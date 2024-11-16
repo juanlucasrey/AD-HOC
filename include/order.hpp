@@ -25,7 +25,7 @@
 #include "adhoc.hpp"
 #include "constants_type.hpp"
 
-namespace adhoc4 {
+namespace adhoc {
 
 //  order(Numerator, Denominator) gives the highest order for which
 //  d^n(First)/d(Second)^n is non-null
@@ -97,6 +97,6 @@ constexpr auto order(div_t<Input1, Input2> /* num */, Denominator den)
                                  order(exp_t<Input2>{}, den));
 };
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // ORDER_HPP

@@ -3,7 +3,7 @@
 #include <utils/flatten.hpp>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // FlattenTest
     {

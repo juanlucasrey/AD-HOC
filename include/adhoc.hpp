@@ -36,7 +36,7 @@
 #include <cstddef>
 #include <numbers>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <class Input> struct exp_t : public Base<exp_t<Input>> {
     static inline auto v(double in) -> double { return std::exp(in); }
@@ -627,8 +627,8 @@ template <size_t N> struct StringLiteral {
 template <detail::StringLiteral literal>
 struct double_t : public Base<double_t<literal>> {};
 
-} // namespace adhoc4
+} // namespace adhoc
 
-#define ADHOC(x) constexpr adhoc4::double_t<#x> x
+#define ADHOC(x) constexpr adhoc::double_t<#x> x
 
 #endif // ADHOC_HPP

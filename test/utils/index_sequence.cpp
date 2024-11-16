@@ -3,7 +3,7 @@
 #include <utility>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // MakeIndexSequence
     {

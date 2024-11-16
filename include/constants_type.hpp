@@ -23,7 +23,7 @@
 
 #include "base.hpp"
 
-namespace adhoc4::constants {
+namespace adhoc::constants {
 
 template <class Derived> struct ConstBase {
     operator double() const { return Derived::v(); }
@@ -49,6 +49,6 @@ template <detail::AsTemplateArg<long double> F> using CLD = C<long double, F>;
 
 using ArgType = constants::detail::AsTemplateArg<double>;
 
-} // namespace adhoc4::constants
+} // namespace adhoc::constants
 
 #endif // CONSTANTS_TYPE_HPP

@@ -34,7 +34,7 @@
 #include <cstddef>
 #include <numbers>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -301,6 +301,6 @@ template <class Derived> constexpr auto riemann_zeta(Base<Derived> /* in */) {
     return riemann_zeta_t<Derived>{};
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UNIVARIATE_ZETA_HPP

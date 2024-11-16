@@ -6,7 +6,7 @@
 #include <order.hpp>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // Inverse
     {

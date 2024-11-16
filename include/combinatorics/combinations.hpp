@@ -23,7 +23,7 @@
 
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 constexpr inline auto binomial_coefficient(std::size_t n,
                                            std::size_t k) noexcept
@@ -45,6 +45,6 @@ constexpr inline auto combinations(std::size_t bins, std::size_t balls) noexcept
     return binomial_coefficient(bins + balls - 1, bins - 1);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_COMBINATIONS_HPP

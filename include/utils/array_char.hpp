@@ -24,7 +24,7 @@
 #include <array>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -45,6 +45,6 @@ template <class... Input> constexpr auto concatenate(Input... ins) {
     return result;
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_ARRAY_CHAR_HPP

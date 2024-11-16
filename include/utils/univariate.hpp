@@ -28,7 +28,7 @@
 #include <array>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 template <std::size_t ToPow, std::size_t N, std::size_t N2 = N,
@@ -135,6 +135,6 @@ constexpr auto expand_univariate() {
     return detail::expand_univariate_aux<Id>(make_index_sequence<From, To>());
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_UNIVARIATE_HPP

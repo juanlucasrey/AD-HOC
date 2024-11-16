@@ -10,7 +10,7 @@
 #include <utility>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     {
         constexpr std::array<std::array<std::size_t, 1>, combinations(1, 1)>

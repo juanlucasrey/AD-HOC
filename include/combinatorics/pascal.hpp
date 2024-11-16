@@ -25,7 +25,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -60,6 +60,6 @@ constexpr auto NextPascal(std::integer_sequence<int, I...> i) {
         i, std::make_index_sequence<i.size() + 1>{});
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_PASCAL_HPP

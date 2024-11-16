@@ -13,7 +13,7 @@
 int main() {
     TEST_START;
 
-    using namespace adhoc4;
+    using namespace adhoc;
 
     std::string name = "data/lgamma.csv";
     std::vector<double> in;

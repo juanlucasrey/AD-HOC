@@ -8,7 +8,7 @@
 
 int main() {
     TEST_START;
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // Inverse
     {

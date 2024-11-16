@@ -29,7 +29,7 @@
 #include <array>
 #include <tuple>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -153,6 +153,6 @@ template <class... Outputs> class CalcTree {
     inline void evaluate() { this->evaluate_aux(ValuesTuple{}); }
 };
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // CALC_TREE_HPP

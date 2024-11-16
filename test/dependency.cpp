@@ -19,7 +19,7 @@ int main() {
     {
         ADHOC(val0);
 
-        using adhoc4::constants::CD;
+        using adhoc::constants::CD;
         auto constant = CD<0.5>();
         auto res = val0 * constant;
 

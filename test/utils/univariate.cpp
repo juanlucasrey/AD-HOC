@@ -7,7 +7,7 @@
 int main() {
     TEST_START;
 
-    using namespace adhoc4;
+    using namespace adhoc;
     // ElevateUnivariate
     {
         constexpr std::size_t MaxOrder = 5;

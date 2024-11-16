@@ -23,7 +23,7 @@
 
 #include <array>
 
-namespace adhoc4 {
+namespace adhoc {
 
 constexpr double factorial(unsigned i) {
     constexpr std::array<double, 171> factorials = {
@@ -204,6 +204,6 @@ constexpr double factorial(unsigned i) {
     return factorials[i];
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_FACTORIAL_HPP

@@ -26,7 +26,7 @@
 
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -63,6 +63,6 @@ constexpr auto tape_buffer_size(Output output, Input input, Nodes nodes)
     return detail::tape_buffer_size_aux<0U>(output, input, nodes);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // TAPE_BUFFER_SIZE_HPP

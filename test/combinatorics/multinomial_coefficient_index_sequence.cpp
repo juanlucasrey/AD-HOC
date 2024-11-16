@@ -3,7 +3,7 @@
 int main() {
 
     {
-        constexpr auto res = adhoc4::MultinomialSequences<4, 4>();
+        constexpr auto res = adhoc::MultinomialSequences<4, 4>();
         static_assert(std::tuple_size_v<decltype(res)> == 35);
         constexpr auto res_check = std::tuple<
             std::index_sequence<4, 0, 0, 0>, std::index_sequence<3, 1, 0, 0>,
@@ -28,7 +28,7 @@ int main() {
     }
 
     {
-        constexpr auto res = adhoc4::MultinomialSequences<4, 5>();
+        constexpr auto res = adhoc::MultinomialSequences<4, 5>();
         static_assert(std::tuple_size_v<decltype(res)> == 56);
 
         constexpr auto res_check = std::tuple<

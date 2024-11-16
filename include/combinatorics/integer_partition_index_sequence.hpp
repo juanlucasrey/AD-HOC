@@ -28,7 +28,7 @@
 #include <tuple>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -102,6 +102,6 @@ constexpr auto BellCoeff(std::index_sequence<I...> /* i */) -> std::size_t {
     return BellCoeff(temp);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_INTEGER_PARTITION_INDEX_SEQUENCE_HPP

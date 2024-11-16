@@ -24,7 +24,7 @@
 #include <array>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <std::size_t N> constexpr auto FirstPartition() {
     std::array<std::size_t, N> arr{0};
@@ -137,6 +137,6 @@ constexpr auto BellCoeff(std::array<std::size_t, N> const &str) -> std::size_t {
     return detail::factorial(N) / detail::BellDenom<N, N>(str);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_INTEGER_PARTITION_HPP

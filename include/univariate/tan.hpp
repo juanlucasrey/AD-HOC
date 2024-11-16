@@ -30,7 +30,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -106,6 +106,6 @@ template <class Derived> constexpr auto tanh(Base<Derived> /* in */) {
     return tanh_t<Derived>{};
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UNIVARIATE_TAN_HPP
