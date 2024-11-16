@@ -23,7 +23,7 @@
 
 #include <tuple>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -59,6 +59,6 @@ template <class In> constexpr auto flatten(In idx_seqs) {
     return detail::flatten_aux(std::tuple<>{}, idx_seqs);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_FLATTEN_HPP

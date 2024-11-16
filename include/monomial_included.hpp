@@ -30,7 +30,7 @@
 
 #include <tuple>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <constants::ArgType N, class Denominator>
 constexpr auto order_var(constants::CD<N> /* num */, Denominator /* den */)
@@ -514,6 +514,6 @@ constexpr auto monomial_included(Single diff_op_out, Many diff_op_inputs)
     return check_included(flat_orders_output, order_inputs_vals);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // MONOMIAL_INCLUDED_HPP

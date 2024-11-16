@@ -29,7 +29,7 @@
 #include <array>
 #include <string_view>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <detail::StringLiteral literal>
 inline constexpr auto name(double_t<literal> /* t */) {
@@ -201,6 +201,6 @@ name(std::tuple<der::d<Order1, Id1>, der::d<Order, Id>...> /* t */) {
     }
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // NAME_HPP

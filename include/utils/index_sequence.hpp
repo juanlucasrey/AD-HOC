@@ -27,7 +27,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <std::size_t Idx, class T, T... I>
 constexpr auto get(std::integer_sequence<T, I...> /* i */) {
@@ -150,6 +150,6 @@ constexpr auto find(std::integer_sequence<bool, I...> /* i */) -> std::size_t {
     return loc;
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_INDEX_SEQUENCE_HPP

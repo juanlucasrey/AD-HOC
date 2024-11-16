@@ -36,7 +36,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace adhoc4::detail {
+namespace adhoc::detail {
 
 template <class I> constexpr auto is_derivative_input(I /* in */) -> bool {
     return false;
@@ -970,6 +970,6 @@ constexpr auto add_position(std::tuple<DiffOps...> /* diff_op */,
     return std::tuple<std::pair<DiffOps, Position>...>{};
 }
 
-} // namespace adhoc4::detail
+} // namespace adhoc::detail
 
 #endif // BACKPROPAGATOR_TOOLS_HPP

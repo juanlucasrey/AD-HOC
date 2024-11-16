@@ -25,7 +25,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <class Tuple, class T, std::size_t N = 0>
 constexpr auto find() -> std::size_t {
@@ -146,6 +146,6 @@ constexpr auto sub_tuple(Tuple /* tuple */) {
     }
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_TUPLE_HPP

@@ -29,7 +29,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -201,6 +201,6 @@ constexpr auto AllTrinomialSequencesStored() {
     return filter(unfiltered, flags);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_TRINOMIAL_HPP

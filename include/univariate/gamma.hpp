@@ -34,7 +34,7 @@
 #include <numbers>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -292,6 +292,6 @@ template <class Derived> constexpr auto tgamma(Base<Derived> /* in */) {
     return tgamma_t<Derived>{};
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UNIVARIATE_GAMMA_HPP

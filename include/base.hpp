@@ -24,7 +24,7 @@
 #include <array>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <class Input1, class Input2> struct add_t;
 template <class Input1, class Input2> struct sub_t;
@@ -96,6 +96,6 @@ template <class Derived> struct Base {
     }
 };
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // BASE_HPP

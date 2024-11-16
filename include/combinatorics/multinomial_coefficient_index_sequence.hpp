@@ -30,7 +30,7 @@
 #include <tuple>
 #include <utility>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -127,6 +127,6 @@ constexpr auto MultinomialCoeff2(std::index_sequence<I...> idx_seq)
     return res;
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_MULTINOMIAL_COEFFICIENT_INDEX_SEQUENCE_HPP

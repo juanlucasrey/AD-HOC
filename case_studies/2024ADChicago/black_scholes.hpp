@@ -13,7 +13,7 @@
 #include <numbers>
 
 template <class D> inline auto cdf_n(D const &x) {
-    using adhoc4::constants::CD;
+    using adhoc::constants::CD;
     using std::erfc;
     constexpr double minus_one_over_root_two =
         -1.0 / std::numbers::sqrt2_v<double>;
@@ -22,7 +22,7 @@ template <class D> inline auto cdf_n(D const &x) {
 
 template <class I1, class I2, class I3, class I4>
 inline auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using adhoc4::constants::CD;
+    using adhoc::constants::CD;
     using std::log;
     using std::sqrt;
     DECL_COND_AUTO(I1) totalvol = v * sqrt(T);
@@ -33,7 +33,7 @@ inline auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 
 template <class I1, class I2, class I3, class I4>
 inline auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
-    using adhoc4::constants::CD;
+    using adhoc::constants::CD;
     using std::log;
     using std::sqrt;
     DECL_COND_AUTO(I1) totalvol = v * sqrt(T);

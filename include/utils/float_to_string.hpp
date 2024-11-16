@@ -28,7 +28,7 @@
 #include <array>
 #include <cmath>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 inline constexpr auto exponent(double val) {
@@ -202,6 +202,6 @@ constexpr inline auto name(constants::CD<N> val) {
     }
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UTILS_FLOAT_TO_STRING_HPP

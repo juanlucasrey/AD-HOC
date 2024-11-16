@@ -27,7 +27,7 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -149,6 +149,6 @@ constexpr auto sort_differential_operators(Ops diff_operators, Nodes nodes) {
     // }
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // SORT_HPP

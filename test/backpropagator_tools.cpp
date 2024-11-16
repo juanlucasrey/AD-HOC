@@ -13,7 +13,7 @@
 #include <utility>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // MultiplyOrdered
     {
@@ -103,31 +103,30 @@ int main() {
     {
 
         const std::tuple<
-            std::pair<std::tuple<adhoc4::der::d<
+            std::pair<std::tuple<adhoc::der::d<
                           1, std::integral_constant<unsigned long, 2>>>,
-                      std::pair<adhoc4::detail::on_buffer_t,
+                      std::pair<adhoc::detail::on_buffer_t,
                                 std::integral_constant<unsigned long, 1>>>>
             next_derivatives_new_with_pos_idx;
 
         std::tuple<std::pair<
             std::tuple<
-                adhoc4::der::d<1, std::integral_constant<unsigned long, 2>>,
-                adhoc4::der::d<1, std::integral_constant<unsigned long, 3>>>,
-            std::pair<adhoc4::detail::on_buffer_t,
+                adhoc::der::d<1, std::integral_constant<unsigned long, 2>>,
+                adhoc::der::d<1, std::integral_constant<unsigned long, 3>>>,
+            std::pair<adhoc::detail::on_buffer_t,
                       std::integral_constant<unsigned long, 0>>>>
             dnn_i;
 
         std::tuple<
-            adhoc4::erfc_t<
-                adhoc4::mul_t<adhoc4::double_t<detail::StringLiteral<2>{"x"}>,
-                              adhoc4::inv_t<adhoc4::double_t<
-                                  detail::StringLiteral<2>{"y"}>>>>,
-            adhoc4::mul_t<
-                adhoc4::double_t<detail::StringLiteral<2>{"x"}>,
-                adhoc4::inv_t<adhoc4::double_t<detail::StringLiteral<2>{"y"}>>>,
-            adhoc4::inv_t<adhoc4::double_t<detail::StringLiteral<2>{"y"}>>,
-            adhoc4::double_t<detail::StringLiteral<2>{"x"}>,
-            adhoc4::double_t<detail::StringLiteral<2>{"y"}>>
+            adhoc::erfc_t<adhoc::mul_t<
+                adhoc::double_t<detail::StringLiteral<2>{"x"}>,
+                adhoc::inv_t<adhoc::double_t<detail::StringLiteral<2>{"y"}>>>>,
+            adhoc::mul_t<
+                adhoc::double_t<detail::StringLiteral<2>{"x"}>,
+                adhoc::inv_t<adhoc::double_t<detail::StringLiteral<2>{"y"}>>>,
+            adhoc::inv_t<adhoc::double_t<detail::StringLiteral<2>{"y"}>>,
+            adhoc::double_t<detail::StringLiteral<2>{"x"}>,
+            adhoc::double_t<detail::StringLiteral<2>{"y"}>>
             nodes;
 
         constexpr auto dnn_i_new = detail::merge_sorted(
@@ -136,14 +135,13 @@ int main() {
         constexpr std::tuple<
             std::pair<
                 std::tuple<
-                    adhoc4::der::d<1, std::integral_constant<unsigned long, 2>>,
-                    adhoc4::der::d<1,
-                                   std::integral_constant<unsigned long, 3>>>,
-                std::pair<adhoc4::detail::on_buffer_t,
+                    adhoc::der::d<1, std::integral_constant<unsigned long, 2>>,
+                    adhoc::der::d<1, std::integral_constant<unsigned long, 3>>>,
+                std::pair<adhoc::detail::on_buffer_t,
                           std::integral_constant<unsigned long, 0>>>,
-            std::pair<std::tuple<adhoc4::der::d<
+            std::pair<std::tuple<adhoc::der::d<
                           1, std::integral_constant<unsigned long, 2>>>,
-                      std::pair<adhoc4::detail::on_buffer_t,
+                      std::pair<adhoc::detail::on_buffer_t,
                                 std::integral_constant<unsigned long, 1>>>>
             res_check;
 

@@ -27,7 +27,7 @@
 #include <cmath>
 #include <cstddef>
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 
@@ -93,6 +93,6 @@ template <class Derived> constexpr auto cos(Base<Derived> /* in */) {
     return cos_t<Derived>{};
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // UNIVARIATE_SINCOS_HPP

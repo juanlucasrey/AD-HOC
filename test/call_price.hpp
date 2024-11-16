@@ -6,7 +6,7 @@
 #include <cmath>
 #include <numbers>
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <class D> inline auto cdf_n(D const &x) {
     using constants::CD;
@@ -38,6 +38,6 @@ auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
     return K * cdf_n(-d2) - S * cdf_n(-d1);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // TEST_CALL_PRICE_HPP

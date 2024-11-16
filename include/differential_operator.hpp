@@ -28,7 +28,7 @@
 #include "utils/index_sequence.hpp"
 #include "utils/tuple.hpp"
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace der {
 
@@ -151,6 +151,6 @@ constexpr auto is_one(std::tuple<der::d<Orders1, Ids1>...> /* id1 */)
     return all_equal_to<1>(std::index_sequence<Orders1...>{});
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // DIFFERENTIAL_OPERATOR_HPP

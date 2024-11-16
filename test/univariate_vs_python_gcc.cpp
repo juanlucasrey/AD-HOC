@@ -17,7 +17,7 @@
 namespace {
 
 auto zeta_borwein_precision(double x, std::size_t i) {
-    using namespace adhoc4;
+    using namespace adhoc;
     if (i == 3) {
         return detail::zeta_borwein<3>(x);
     }
@@ -114,7 +114,7 @@ auto zeta_borwein_precision(double x, std::size_t i) {
 int main() {
     TEST_START;
 
-    using namespace adhoc4;
+    using namespace adhoc;
     std::cout.precision(std::numeric_limits<double>::max_digits10);
 
     // ZetaPrecision

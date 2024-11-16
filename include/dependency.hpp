@@ -24,7 +24,7 @@
 #include "adhoc.hpp"
 #include "constants_type.hpp"
 
-namespace adhoc4 {
+namespace adhoc {
 
 template <class I1, class I2>
 constexpr auto operator==(I1 /* lhs */, I2 /* rhs */) -> bool {
@@ -90,6 +90,6 @@ constexpr auto is_constant(constants::CD<N> /* in */) -> bool {
     return true;
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // DEPENDENCY_HPP

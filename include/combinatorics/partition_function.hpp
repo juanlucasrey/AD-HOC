@@ -21,7 +21,7 @@
 #ifndef COMBINATORICS_PARTITION_FUNCTION_HPP
 #define COMBINATORICS_PARTITION_FUNCTION_HPP
 
-namespace adhoc4 {
+namespace adhoc {
 
 namespace detail {
 constexpr auto partition_function_aux(int n, int k) -> int {
@@ -47,6 +47,6 @@ constexpr auto partition_function(int n) -> int {
     return detail::partition_function_aux(n, n);
 }
 
-} // namespace adhoc4
+} // namespace adhoc
 
 #endif // COMBINATORICS_PARTITION_FUNCTION_HPP

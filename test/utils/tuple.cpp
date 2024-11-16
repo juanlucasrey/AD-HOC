@@ -4,7 +4,7 @@
 #include <tuple>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
 
     // ReplaceFirst
     {

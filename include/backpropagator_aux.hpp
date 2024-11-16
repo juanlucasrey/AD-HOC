@@ -48,7 +48,7 @@
 #include <iostream>
 #endif
 
-namespace adhoc4::detail {
+namespace adhoc::detail {
 
 template <std::size_t Last, std::size_t Idx1, std::size_t Idx2,
           std::size_t MaxOrder, std::size_t N = 0, class DerivativeNodes,
@@ -699,6 +699,6 @@ inline void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
     }
 }
 
-} // namespace adhoc4::detail
+} // namespace adhoc::detail
 
 #endif // BACKPROPAGATOR_AUX_HPP

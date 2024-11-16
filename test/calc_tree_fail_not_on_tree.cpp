@@ -2,7 +2,7 @@
 #include <calc_tree.hpp>
 
 int main() {
-    using namespace adhoc4;
+    using namespace adhoc;
     ADHOC(val0);
     ADHOC(val1);
     auto temp = exp(val0);

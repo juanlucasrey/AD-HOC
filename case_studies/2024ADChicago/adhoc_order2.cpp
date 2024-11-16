@@ -22,7 +22,7 @@ int main() {
 
     std::array<double, 15> results_average{};
 
-    using namespace adhoc4;
+    using namespace adhoc;
     ADHOC(S);
     ADHOC(K);
     ADHOC(v);
