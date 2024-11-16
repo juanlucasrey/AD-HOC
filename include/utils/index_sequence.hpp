@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_INDEX_SEQUENCE_HPP
-#define ADHOC4_UTILS_INDEX_SEQUENCE_HPP
+#ifndef UTILS_INDEX_SEQUENCE_HPP
+#define UTILS_INDEX_SEQUENCE_HPP
 
 #include "../combinatorics/pow.hpp"
 
@@ -152,4 +152,4 @@ constexpr auto find(std::integer_sequence<bool, I...> /* i */) -> std::size_t {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_INDEX_SEQUENCE_HPP
+#endif // UTILS_INDEX_SEQUENCE_HPP

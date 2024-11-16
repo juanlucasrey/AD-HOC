@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_ADHOC_HPP
-#define ADHOC4_ADHOC_HPP
+#ifndef ADHOC_HPP
+#define ADHOC_HPP
 
 #include "base.hpp"
 #include "univariate/gamma.hpp"
@@ -627,8 +627,8 @@ template <size_t N> struct StringLiteral {
 template <detail::StringLiteral literal>
 struct double_t : public Base<double_t<literal>> {};
 
-#define ADHOC(x) constexpr adhoc4::double_t<#x> x
-
 } // namespace adhoc4
 
-#endif // ADHOC4_ADHOC_HPP
+#define ADHOC(x) constexpr adhoc4::double_t<#x> x
+
+#endif // ADHOC_HPP

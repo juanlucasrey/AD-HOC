@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_UNIVARIATE_HPP
-#define ADHOC4_UTILS_UNIVARIATE_HPP
+#ifndef UTILS_UNIVARIATE_HPP
+#define UTILS_UNIVARIATE_HPP
 
 #include "../combinatorics/factorial.hpp"
 #include "../differential_operator.hpp"
@@ -137,4 +137,4 @@ constexpr auto expand_univariate() {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_UNIVARIATE_HPP
+#endif // UTILS_UNIVARIATE_HPP

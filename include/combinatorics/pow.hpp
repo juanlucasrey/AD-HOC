@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_COMBINATORICS_POW_HPP
-#define ADHOC4_COMBINATORICS_POW_HPP
+#ifndef COMBINATORICS_POW_HPP
+#define COMBINATORICS_POW_HPP
 
 #include <cstddef>
 
@@ -40,4 +40,4 @@ template <std::size_t N, class T> inline constexpr auto pow(T base) -> T {
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_COMBINATORICS_POW_HPP
+#endif // COMBINATORICS_POW_HPP

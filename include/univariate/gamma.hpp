@@ -18,15 +18,13 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UNIVARIATE_GAMMA_HPP
-#define ADHOC4_UNIVARIATE_GAMMA_HPP
+#ifndef UNIVARIATE_GAMMA_HPP
+#define UNIVARIATE_GAMMA_HPP
 
 #include "../base.hpp"
 #include "../combinatorics/combinations.hpp"
 #include "../combinatorics/factorial.hpp"
-#include "../combinatorics/pascal.hpp"
 #include "../combinatorics/pow.hpp"
-#include "../utils/index_sequence.hpp"
 #include "tan.hpp"
 
 #include <array>
@@ -296,4 +294,4 @@ template <class Derived> constexpr auto tgamma(Base<Derived> /* in */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UNIVARIATE_GAMMA_HPP
+#endif // UNIVARIATE_GAMMA_HPP

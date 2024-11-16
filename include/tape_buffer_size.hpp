@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_TAPE_BUFFER_SIZE_HPP
-#define ADHOC4_TAPE_BUFFER_SIZE_HPP
+#ifndef TAPE_BUFFER_SIZE_HPP
+#define TAPE_BUFFER_SIZE_HPP
 
 #include "dependency.hpp"
 #include "utils/tuple.hpp"
@@ -65,4 +65,4 @@ constexpr auto tape_buffer_size(Output output, Input input, Nodes nodes)
 
 } // namespace adhoc4
 
-#endif // ADHOC4_TAPE_BUFFER_SIZE_HPP
+#endif // TAPE_BUFFER_SIZE_HPP

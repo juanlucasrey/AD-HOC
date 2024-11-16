@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UNIVARIATE_TAN_HPP
-#define ADHOC4_UNIVARIATE_TAN_HPP
+#ifndef UNIVARIATE_TAN_HPP
+#define UNIVARIATE_TAN_HPP
 
 #include "../base.hpp"
 #include "../combinatorics/pascal.hpp"
@@ -108,4 +108,4 @@ template <class Derived> constexpr auto tanh(Base<Derived> /* in */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UNIVARIATE_TAN_HPP
+#endif // UNIVARIATE_TAN_HPP

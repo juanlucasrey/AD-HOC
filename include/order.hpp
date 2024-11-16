@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_ORDER_HPP
-#define ADHOC4_ORDER_HPP
+#ifndef ORDER_HPP
+#define ORDER_HPP
 
 #include "add_sat.hpp"
 #include "adhoc.hpp"
@@ -99,4 +99,4 @@ constexpr auto order(div_t<Input1, Input2> /* num */, Denominator den)
 
 } // namespace adhoc4
 
-#endif // ADHOC4_ORDER_HPP
+#endif // ORDER_HPP

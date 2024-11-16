@@ -18,12 +18,11 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_ADD_SAT_HPP
-#define ADHOC4_ADD_SAT_HPP
+#ifndef ADD_SAT_HPP
+#define ADD_SAT_HPP
 
 #include <cstddef>
 #include <limits>
-#include <type_traits>
 
 namespace adhoc4::detail {
 
@@ -31,13 +30,10 @@ namespace adhoc4::detail {
 // https://en.cppreference.com/w/cpp/numeric/add_sat
 // while we wait for C++26
 
-template <typename T, typename... Types>
-concept is_all_same = (... && std::is_same<T, Types>::value);
-
 constexpr auto add_sat(std::size_t lhs) -> std::size_t { return lhs; }
 
-template <is_all_same<std::size_t>... Types>
-constexpr auto add_sat(std::size_t lhs, Types... args) -> std::size_t {
+template <class... Args>
+constexpr auto add_sat(std::size_t lhs, Args... args) -> std::size_t {
     auto const rhs = add_sat(args...);
 
     if (std::numeric_limits<std::size_t>::max() - lhs < rhs) {
@@ -53,4 +49,4 @@ constexpr auto add_sat(std::size_t lhs, Types... args) -> std::size_t {
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_ADD_SAT_HPP
+#endif // ADD_SAT_HPP

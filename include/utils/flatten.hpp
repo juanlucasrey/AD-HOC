@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_FLATTEN_HPP
-#define ADHOC4_UTILS_FLATTEN_HPP
+#ifndef UTILS_FLATTEN_HPP
+#define UTILS_FLATTEN_HPP
 
 #include <tuple>
 
@@ -61,4 +61,4 @@ template <class In> constexpr auto flatten(In idx_seqs) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_FLATTEN_HPP
+#endif // UTILS_FLATTEN_HPP

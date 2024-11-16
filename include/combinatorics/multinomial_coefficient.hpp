@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_PARTITION_MULTINOMIAL_COEFFICIENT_HPP
-#define ADHOC4_PARTITION_MULTINOMIAL_COEFFICIENT_HPP
+#ifndef COMBINATORICS_MULTINOMIAL_COEFFICIENT_HPP
+#define COMBINATORICS_MULTINOMIAL_COEFFICIENT_HPP
 
 #include <array>
 #include <cstddef>
@@ -93,4 +93,4 @@ MultinomialCoeff(std::array<std::size_t, FactorialInputs> const &factorials,
 
 } // namespace adhoc4
 
-#endif // ADHOC4_PARTITION_MULTINOMIAL_COEFFICIENT_HPP
+#endif // COMBINATORICS_MULTINOMIAL_COEFFICIENT_HPP

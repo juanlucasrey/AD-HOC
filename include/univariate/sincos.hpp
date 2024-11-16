@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UNIVARIATE_SINCOS_HPP
-#define ADHOC4_UNIVARIATE_SINCOS_HPP
+#ifndef UNIVARIATE_SINCOS_HPP
+#define UNIVARIATE_SINCOS_HPP
 
 #include "../base.hpp"
 
@@ -95,4 +95,4 @@ template <class Derived> constexpr auto cos(Base<Derived> /* in */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UNIVARIATE_SINCOS_HPP
+#endif // UNIVARIATE_SINCOS_HPP

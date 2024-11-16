@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UNIVARIATE_ZETA_HPP
-#define ADHOC4_UNIVARIATE_ZETA_HPP
+#ifndef UNIVARIATE_ZETA_HPP
+#define UNIVARIATE_ZETA_HPP
 
 #include "../base.hpp"
 #include "../combinatorics/combinations.hpp"
@@ -303,4 +303,4 @@ template <class Derived> constexpr auto riemann_zeta(Base<Derived> /* in */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UNIVARIATE_ZETA_HPP
+#endif // UNIVARIATE_ZETA_HPP

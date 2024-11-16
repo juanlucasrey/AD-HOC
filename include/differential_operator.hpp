@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_DIFFERENTIAL_OPERATOR_HPP
-#define ADHOC4_DIFFERENTIAL_OPERATOR_HPP
+#ifndef DIFFERENTIAL_OPERATOR_HPP
+#define DIFFERENTIAL_OPERATOR_HPP
 
 #include <cstddef>
 #include <tuple>
@@ -153,4 +153,4 @@ constexpr auto is_one(std::tuple<der::d<Orders1, Ids1>...> /* id1 */)
 
 } // namespace adhoc4
 
-#endif // ADHOC4_DIFFERENTIAL_OPERATOR_HPP
+#endif // DIFFERENTIAL_OPERATOR_HPP

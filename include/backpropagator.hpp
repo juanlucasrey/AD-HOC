@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BACKPROPAGATOR_HPP
-#define ADHOC4_BACKPROPAGATOR_HPP
+#ifndef BACKPROPAGATOR_HPP
+#define BACKPROPAGATOR_HPP
 
 #include "adhoc.hpp"
 #include "backpropagator_aux.hpp"
@@ -154,6 +154,10 @@ template <class... InputsAndOutputsDers> class BackPropagator {
         return detail::backpropagate_buffer_size<CalcTree>(
             outputs_sorted_with_pos_idx, inputs_with_pos_idx,
             std::get<0>(inputs_and_outputs_with_pos));
+
+        // return detail::backpropagate_buffer_size<CalcTree>(
+        //     outputs_sorted_with_pos_idx, inputs_with_pos_idx,
+        //     std::tuple<>{});
     }
 
   public:
@@ -253,4 +257,4 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_BACKPROPAGATOR_HPP
+#endif // BACKPROPAGATOR_HPP

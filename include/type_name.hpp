@@ -1,5 +1,5 @@
-#ifndef TESTS4_TYPE_NAME_HPP
-#define TESTS4_TYPE_NAME_HPP
+#ifndef TYPE_NAME_HPP
+#define TYPE_NAME_HPP
 
 #include <string>
 
@@ -101,4 +101,4 @@ template <class T> constexpr std::string type_name2() {
     return final_result;
 }
 
-#endif // TESTS4_TYPE_NAME_HPP
+#endif // TYPE_NAME_HPP

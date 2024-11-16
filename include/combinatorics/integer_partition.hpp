@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_PARTITION_INTEGER_PARTITION_HPP
-#define ADHOC4_PARTITION_INTEGER_PARTITION_HPP
+#ifndef COMBINATORICS_INTEGER_PARTITION_HPP
+#define COMBINATORICS_INTEGER_PARTITION_HPP
 
 #include <array>
 #include <cstddef>
@@ -139,4 +139,4 @@ constexpr auto BellCoeff(std::array<std::size_t, N> const &str) -> std::size_t {
 
 } // namespace adhoc4
 
-#endif // ADHOC3_PARTITION_INTEGER_PARTITION_HPP
+#endif // COMBINATORICS_INTEGER_PARTITION_HPP

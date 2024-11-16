@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_PARTITION_TRINOMIAL_HPP
-#define ADHOC4_PARTITION_TRINOMIAL_HPP
+#ifndef COMBINATORICS_TRINOMIAL_HPP
+#define COMBINATORICS_TRINOMIAL_HPP
 
 #include "../utils/tuple.hpp"
 
@@ -203,4 +203,4 @@ constexpr auto AllTrinomialSequencesStored() {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_PARTITION_TRINOMIAL_HPP
+#endif // COMBINATORICS_TRINOMIAL_HPP

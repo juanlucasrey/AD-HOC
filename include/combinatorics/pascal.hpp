@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_COMBINATORICS_PASCAL_HPP
-#define ADHOC4_COMBINATORICS_PASCAL_HPP
+#ifndef COMBINATORICS_PASCAL_HPP
+#define COMBINATORICS_PASCAL_HPP
 
 #include <array>
 #include <cstddef>
@@ -62,4 +62,4 @@ constexpr auto NextPascal(std::integer_sequence<int, I...> i) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_COMBINATORICS_PASCAL_HPP
+#endif // COMBINATORICS_PASCAL_HPP

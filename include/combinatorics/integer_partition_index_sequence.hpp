@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_PARTITION_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
-#define ADHOC4_PARTITION_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
+#ifndef COMBINATORICS_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
+#define COMBINATORICS_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
 
 #include "integer_partition.hpp"
 
@@ -104,4 +104,4 @@ constexpr auto BellCoeff(std::index_sequence<I...> /* i */) -> std::size_t {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_PARTITION_INTEGER_PARTITION_INDEX_SEQUENCE_HPP
+#endif // COMBINATORICS_INTEGER_PARTITION_INDEX_SEQUENCE_HPP

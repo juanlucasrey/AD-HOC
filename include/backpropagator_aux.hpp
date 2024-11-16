@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BACKPROPAGATOR_AUX_HPP
-#define ADHOC4_BACKPROPAGATOR_AUX_HPP
+#ifndef BACKPROPAGATOR_AUX_HPP
+#define BACKPROPAGATOR_AUX_HPP
 
 #include "backpropagator_tools.hpp"
 #include "combinatorics/pow.hpp"
@@ -701,4 +701,4 @@ inline void backpropagate_aux(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_BACKPROPAGATOR_AUX_HPP
+#endif // BACKPROPAGATOR_AUX_HPP

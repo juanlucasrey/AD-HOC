@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_CONSTANTS_TYPE_HPP
-#define ADHOC4_CONSTANTS_TYPE_HPP
+#ifndef CONSTANTS_TYPE_HPP
+#define CONSTANTS_TYPE_HPP
 
 #include "base.hpp"
 
@@ -51,4 +51,4 @@ using ArgType = constants::detail::AsTemplateArg<double>;
 
 } // namespace adhoc4::constants
 
-#endif // ADHOC4_CONSTANTS_TYPE_HPP
+#endif // CONSTANTS_TYPE_HPP

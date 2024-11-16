@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_SORT_HPP
-#define ADHOC4_SORT_HPP
+#ifndef SORT_HPP
+#define SORT_HPP
 
 #include "differential_operator.hpp"
 #include "utils/tuple.hpp"
@@ -151,4 +151,4 @@ constexpr auto sort_differential_operators(Ops diff_operators, Nodes nodes) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_SORT_HPP
+#endif // SORT_HPP

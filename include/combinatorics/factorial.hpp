@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_COMBINATORICS_FACTORIAL_HPP
-#define ADHOC4_COMBINATORICS_FACTORIAL_HPP
+#ifndef COMBINATORICS_FACTORIAL_HPP
+#define COMBINATORICS_FACTORIAL_HPP
 
 #include <array>
 
@@ -206,4 +206,4 @@ constexpr double factorial(unsigned i) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_COMBINATORICS_FACTORIAL_HPP
+#endif // COMBINATORICS_FACTORIAL_HPP

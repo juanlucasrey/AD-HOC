@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_PARTITION_PARTITION_FUNCTION_HPP
-#define ADHOC4_PARTITION_PARTITION_FUNCTION_HPP
+#ifndef COMBINATORICS_PARTITION_FUNCTION_HPP
+#define COMBINATORICS_PARTITION_FUNCTION_HPP
 
 namespace adhoc4 {
 
@@ -49,4 +49,4 @@ constexpr auto partition_function(int n) -> int {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_PARTITION_PARTITION_FUNCTION_HPP
+#endif // COMBINATORICS_PARTITION_FUNCTION_HPP

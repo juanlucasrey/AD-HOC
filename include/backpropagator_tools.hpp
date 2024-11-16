@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BACKPROPAGATOR_TOOLS_HPP
-#define ADHOC4_BACKPROPAGATOR_TOOLS_HPP
+#ifndef BACKPROPAGATOR_TOOLS_HPP
+#define BACKPROPAGATOR_TOOLS_HPP
 
 #include "adhoc.hpp"
 #include "combinatorics/multinomial_coefficient_index_sequence.hpp"
@@ -972,4 +972,4 @@ constexpr auto add_position(std::tuple<DiffOps...> /* diff_op */,
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_BACKPROPAGATOR_TOOLS_HPP
+#endif // BACKPROPAGATOR_TOOLS_HPP
