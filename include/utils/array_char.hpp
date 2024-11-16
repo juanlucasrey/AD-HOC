@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_ARRAY_CHAR_HPP
-#define ADHOC4_UTILS_ARRAY_CHAR_HPP
+#ifndef UTILS_ARRAY_CHAR_HPP
+#define UTILS_ARRAY_CHAR_HPP
 
 #include <array>
 #include <cstddef>
@@ -47,4 +47,4 @@ template <class... Input> constexpr auto concatenate(Input... ins) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_ARRAY_CHAR_HPP
+#endif // UTILS_ARRAY_CHAR_HPP

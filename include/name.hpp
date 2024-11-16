@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_NAME_HPP
-#define ADHOC4_NAME_HPP
+#ifndef NAME_HPP
+#define NAME_HPP
 
 #include "adhoc.hpp"
 #include "differential_operator.hpp"
@@ -203,4 +203,4 @@ name(std::tuple<der::d<Order1, Id1>, der::d<Order, Id>...> /* t */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_NAME_HPP
+#endif // NAME_HPP

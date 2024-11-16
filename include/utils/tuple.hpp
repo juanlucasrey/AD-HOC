@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_TUPLE_HPP
-#define ADHOC4_UTILS_TUPLE_HPP
+#ifndef UTILS_TUPLE_HPP
+#define UTILS_TUPLE_HPP
 
 #include <concepts>
 #include <cstddef>
@@ -149,4 +149,4 @@ constexpr auto sub_tuple(Tuple /* tuple */) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_TUPLE_HPP
+#endif // UTILS_TUPLE_HPP

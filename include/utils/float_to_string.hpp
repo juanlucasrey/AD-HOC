@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_UTILS_FLOAT_TO_STRING_HPP
-#define ADHOC4_UTILS_FLOAT_TO_STRING_HPP
+#ifndef UTILS_FLOAT_TO_STRING_HPP
+#define UTILS_FLOAT_TO_STRING_HPP
 
 #include "../constants_type.hpp"
 #include "../name.hpp"
@@ -204,4 +204,4 @@ constexpr inline auto name(constants::CD<N> val) {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_UTILS_FLOAT_TO_STRING_HPP
+#endif // UTILS_FLOAT_TO_STRING_HPP

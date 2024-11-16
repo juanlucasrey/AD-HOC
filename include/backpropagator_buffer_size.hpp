@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BACKPROPAGATOR_BUFFER_SIZE_HPP
-#define ADHOC4_BACKPROPAGATOR_BUFFER_SIZE_HPP
+#ifndef BACKPROPAGATOR_BUFFER_SIZE_HPP
+#define BACKPROPAGATOR_BUFFER_SIZE_HPP
 
 #include "backpropagator_tools.hpp"
 #include "combinatorics/trinomial.hpp"
@@ -539,4 +539,4 @@ constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_BACKPROPAGATOR_BUFFER_SIZE_HPP
+#endif // BACKPROPAGATOR_BUFFER_SIZE_HPP

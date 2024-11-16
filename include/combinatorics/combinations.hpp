@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_COMBINATORICS_COMBINATIONS_HPP
-#define ADHOC4_COMBINATORICS_COMBINATIONS_HPP
+#ifndef COMBINATORICS_COMBINATIONS_HPP
+#define COMBINATORICS_COMBINATIONS_HPP
 
 #include <cstddef>
 
@@ -47,4 +47,4 @@ constexpr inline auto combinations(std::size_t bins, std::size_t balls) noexcept
 
 } // namespace adhoc4
 
-#endif // ADHOC4_COMBINATORICS_COMBINATIONS_HPP
+#endif // COMBINATORICS_COMBINATIONS_HPP

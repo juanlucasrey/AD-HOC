@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_ADD_SAT_HPP
-#define ADHOC4_ADD_SAT_HPP
+#ifndef ADD_SAT_HPP
+#define ADD_SAT_HPP
 
 #include <cstddef>
 #include <limits>
@@ -53,4 +53,4 @@ constexpr auto add_sat(std::size_t lhs, Types... args) -> std::size_t {
 
 } // namespace adhoc4::detail
 
-#endif // ADHOC4_ADD_SAT_HPP
+#endif // ADD_SAT_HPP

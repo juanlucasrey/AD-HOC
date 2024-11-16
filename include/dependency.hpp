@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_DEPENDENCY_HPP
-#define ADHOC4_DEPENDENCY_HPP
+#ifndef DEPENDENCY_HPP
+#define DEPENDENCY_HPP
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
@@ -92,4 +92,4 @@ constexpr auto is_constant(constants::CD<N> /* in */) -> bool {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_DEPENDENCY_HPP
+#endif // DEPENDENCY_HPP

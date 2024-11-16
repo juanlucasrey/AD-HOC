@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_ADHOC_HPP
-#define ADHOC4_ADHOC_HPP
+#ifndef ADHOC_HPP
+#define ADHOC_HPP
 
 #include "base.hpp"
 #include "univariate/gamma.hpp"
@@ -631,4 +631,4 @@ struct double_t : public Base<double_t<literal>> {};
 
 #define ADHOC(x) constexpr adhoc4::double_t<#x> x
 
-#endif // ADHOC4_ADHOC_HPP
+#endif // ADHOC_HPP

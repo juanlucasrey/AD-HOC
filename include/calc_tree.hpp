@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_CALC_TREE_HPP
-#define ADHOC4_CALC_TREE_HPP
+#ifndef CALC_TREE_HPP
+#define CALC_TREE_HPP
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
@@ -155,4 +155,4 @@ template <class... Outputs> class CalcTree {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_CALC_TREE_HPP
+#endif // CALC_TREE_HPP

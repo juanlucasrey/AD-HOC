@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_MONOMIAL_INCLUDED_HPP
-#define ADHOC4_MONOMIAL_INCLUDED_HPP
+#ifndef MONOMIAL_INCLUDED_HPP
+#define MONOMIAL_INCLUDED_HPP
 
 #include "adhoc.hpp"
 #include "constants_type.hpp"
@@ -516,4 +516,4 @@ constexpr auto monomial_included(Single diff_op_out, Many diff_op_inputs)
 
 } // namespace adhoc4
 
-#endif // ADHOC4_MONOMIAL_INCLUDED_HPP
+#endif // MONOMIAL_INCLUDED_HPP

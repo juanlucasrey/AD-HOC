@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC4_BASE_HPP
-#define ADHOC4_BASE_HPP
+#ifndef BASE_HPP
+#define BASE_HPP
 
 #include <array>
 #include <cstddef>
@@ -98,4 +98,4 @@ template <class Derived> struct Base {
 
 } // namespace adhoc4
 
-#endif // ADHOC4_BASE_HPP
+#endif // BASE_HPP
