@@ -21,7 +21,6 @@
 #ifndef UTILS_TUPLE_HPP
 #define UTILS_TUPLE_HPP
 
-#include <concepts>
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
