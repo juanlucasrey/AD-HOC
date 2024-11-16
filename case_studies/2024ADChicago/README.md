@@ -48,6 +48,13 @@ Assuming [dco/c++](https://nag.com/automatic-differentiation/) is installed in t
 
 note: dco/c++ is a commercial package so you will need to purchase a licence.
 
+## [dco/map](https://nag.com/automatic-differentiation)
+Assuming [dco/map](https://nag.com/automatic-differentiation/) is installed in the folder /install/dcomap, compile with:
+
+/path/g++ -o dcomap_order1 dco_map_order1.cpp -std=c++20 -O3 -I/install/dcomap/src
+
+note: dco/map is a commercial package so you will need to purchase a licence.
+
 ## [CoDiPack](https://github.com/SciCompKL/CoDiPack)
 Assuming [CoDiPack](https://github.com/SciCompKL/CoDiPack) is installed in the folder /install/codi, compile with:
 
