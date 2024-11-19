@@ -64,7 +64,9 @@ Assuming [CoDiPack](https://github.com/SciCompKL/CoDiPack) is installed in the f
 ## [Enzyme](https://github.com/EnzymeAD/Enzyme)
 Assuming [Enzyme](https://github.com/EnzymeAD/Enzyme) is installed in the folder /install/enzyme, compile with:
 
-/path/g++ -o enzyme_order1 enzyme_order1.cpp -O3 -Xclang -load -Xclang /install/enzyme/lib/ClangEnzyme-19.dylib -std=c++20
+/path/clang++ -o enzyme_order1 enzyme_order1.cpp -O3 -Xclang -load -Xclang /install/enzyme/lib/ClangEnzyme-19.dylib -std=c++20
+
+note: Enzyme requires clang++ instead of GCC
 
 ## [Tapenade](https://gitlab.inria.fr/tapenade/tapenade)
 [Tapenade](https://gitlab.inria.fr/tapenade/tapenade) does not support c++ at the time of writing, so a different header, written in C ("black_scholes_c.h") has been used to generate the Tapenade code. These generated files are stored in the folder Tapenade. Compile with:
