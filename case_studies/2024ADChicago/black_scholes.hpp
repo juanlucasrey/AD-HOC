@@ -1,6 +1,12 @@
 #ifndef CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
 #define CASE_STUDIES_2024ADCHICAGO_BLACK_SCHOLES_HPP
 
+#ifdef WITHOUT_REF
+#define DECL_INPUT(D) D
+#else
+#define DECL_INPUT(D) D const &
+#endif
+
 #ifdef WITHOUT_AUTO
 #define DECL_COND_AUTO(D) D
 #else
@@ -12,7 +18,7 @@
 #include <cmath>
 #include <numbers>
 
-template <class D> inline auto cdf_n(D const &x) {
+template <class D> inline auto cdf_n(DECL_INPUT(D) x) {
     using adhoc::constants::CD;
     using std::erfc;
     constexpr double minus_one_over_root_two =
@@ -21,7 +27,8 @@ template <class D> inline auto cdf_n(D const &x) {
 }
 
 template <class I1, class I2, class I3, class I4>
-inline auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
+inline auto call_price(DECL_INPUT(I1) S, DECL_INPUT(I2) K, DECL_INPUT(I3) v,
+                       DECL_INPUT(I4) T) {
     using adhoc::constants::CD;
     using std::log;
     using std::sqrt;
@@ -32,7 +39,8 @@ inline auto call_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
 }
 
 template <class I1, class I2, class I3, class I4>
-inline auto put_price(const I1 &S, const I2 &K, const I3 &v, const I4 &T) {
+inline auto put_price(DECL_INPUT(I1) S, DECL_INPUT(I2) K, DECL_INPUT(I3) v,
+                      DECL_INPUT(I4) T) {
     using adhoc::constants::CD;
     using std::log;
     using std::sqrt;
