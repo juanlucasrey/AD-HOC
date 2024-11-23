@@ -44,11 +44,11 @@ namespace adhoc::detail {
 
 template <std::size_t Last, std::size_t Idx1, std::size_t Idx2, class CalcTree,
           std::size_t SizeMax, std::size_t SizeCur, std::size_t MaxOrder,
-          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeNew, class DerivativeNodeInputs>
-constexpr auto
-treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                            DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
+          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputs,
+          class DerivativeNodeNew>
+constexpr auto treat_nodes_mul_buffer_size(DerivativeNodes dn,
+                                           DerivativeNodeInputs dnin,
+                                           DerivativeNodeNew dnn) {
 
     if constexpr (N == Last) {
         return std::make_tuple(dnn,
@@ -92,10 +92,10 @@ treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             convert_to_index_many2<NodesValue>(next_derivatives);
 
         constexpr auto flags_next_derivatives = std::apply(
-            [dnin_i](auto... next_derivative) {
+            [dnin](auto... next_derivative) {
                 return std::integer_sequence<bool,
                                              monomial_included2<NodesValue>(
-                                                 next_derivative, dnin_i)...>{};
+                                                 next_derivative, dnin)...>{};
             },
             next_derivatives_idx);
 
@@ -106,7 +106,7 @@ treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 
         constexpr auto locations =
             locate_new_vals_update_buffer_types_size<NodesValue, Last>(
-                next_derivatives_filtered, dn, dnn, dnin_i);
+                next_derivatives_filtered, dn, dnn, dnin);
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -131,18 +131,17 @@ treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 
         return treat_nodes_mul_buffer_size<Last, Idx1, Idx2, CalcTree,
                                            size_max_new, size_cur_new, MaxOrder,
-                                           N + 1>(dn, dnin_i, dnn_new, dnin);
+                                           N + 1>(dn, dnin, dnn_new);
     }
 }
 
 template <std::size_t Idx, class PrimalSubNodeConst, std::size_t Last,
           class CalcTree, std::size_t SizeMax, std::size_t SizeCur,
-          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeNew, class DerivativeNodeInputs>
+          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputs,
+          class DerivativeNodeNew>
 constexpr auto treat_nodes_mul_const_buffer_size(DerivativeNodes dn,
-                                                 DerivativeNodeInputsI dnin_i,
-                                                 DerivativeNodeNew dnn,
-                                                 DerivativeNodeInputs dnin) {
+                                                 DerivativeNodeInputs dnin,
+                                                 DerivativeNodeNew dnn) {
 
     if constexpr (N == Last) {
         return std::make_tuple(dnn,
@@ -174,7 +173,7 @@ constexpr auto treat_nodes_mul_const_buffer_size(DerivativeNodes dn,
 
         constexpr auto locations =
             locate_new_vals_update_buffer_types_size<NodesValue, Last>(
-                next_derivatives_filtered, dn, dnn, dnin_i);
+                next_derivatives_filtered, dn, dnn, dnin);
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -199,18 +198,17 @@ constexpr auto treat_nodes_mul_const_buffer_size(DerivativeNodes dn,
 
         return treat_nodes_mul_const_buffer_size<Idx, PrimalSubNodeConst, Last,
                                                  CalcTree, size_max_new,
-                                                 size_cur_new, N + 1>(
-            dn, dnin_i, dnn_new, dnin);
+                                                 size_cur_new, N + 1>(dn, dnin,
+                                                                      dnn_new);
     }
 }
 
 template <std::size_t Last, class CalcTree, std::size_t SizeMax,
           std::size_t SizeCur, class PrimalSubNode1, class PrimalSubNode2,
-          class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeInputs>
+          class DerivativeNodes, class DerivativeNodeInputs>
 constexpr auto treat_nodes_specialized_buffer_size(
     mul_t<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
-    DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
+    DerivativeNodeInputs dnin) {
     using NodesValue = typename CalcTree::ValuesTupleInverse;
 
     constexpr auto is_const1 = is_constant(PrimalSubNode1{});
@@ -221,16 +219,16 @@ constexpr auto treat_nodes_specialized_buffer_size(
         constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
         return treat_nodes_mul_const_buffer_size<idx2, PrimalSubNode1, Last,
                                                  CalcTree, SizeMax, SizeCur>(
-            dn, dnin_i, std::tuple<>{}, dnin);
+            dn, dnin, std::tuple<>{});
     } else if constexpr (is_const2) {
         constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
         return treat_nodes_mul_const_buffer_size<idx1, PrimalSubNode2, Last,
                                                  CalcTree, SizeMax, SizeCur>(
-            dn, dnin_i, std::tuple<>{}, dnin);
+            dn, dnin, std::tuple<>{});
 
     } else {
 
-        constexpr auto MaxOrder = detail::max_orders(dnin_i);
+        constexpr auto MaxOrder = detail::max_orders(dnin);
 
         constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
         constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
@@ -239,24 +237,24 @@ constexpr auto treat_nodes_specialized_buffer_size(
         if constexpr (id1_less_than_id2) {
             return treat_nodes_mul_buffer_size<Last, idx2, idx1, CalcTree,
                                                SizeMax, SizeCur, MaxOrder>(
-                dn, dnin_i, std::tuple<>{}, dnin);
+                dn, dnin, std::tuple<>{});
         } else {
             constexpr auto ordered_pair = detail::sort_pair(
                 std::tuple<PrimalSubNode1, PrimalSubNode2>{}, NodesValue{});
             return treat_nodes_mul_buffer_size<Last, idx1, idx2, CalcTree,
                                                SizeMax, SizeCur, MaxOrder>(
-                dn, dnin_i, std::tuple<>{}, dnin);
+                dn, dnin, std::tuple<>{});
         }
     }
 }
 
 template <std::size_t Last, std::size_t Idx1, std::size_t Idx2, class CalcTree,
           std::size_t SizeMax, std::size_t SizeCur, std::size_t N = 0,
-          class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeNew, class DerivativeNodeInputs>
-constexpr auto
-treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
-                            DerivativeNodeNew dnn, DerivativeNodeInputs dnin) {
+          class DerivativeNodes, class DerivativeNodeInputs,
+          class DerivativeNodeNew>
+constexpr auto treat_nodes_add_buffer_size(DerivativeNodes dn,
+                                           DerivativeNodeInputs dnin,
+                                           DerivativeNodeNew dnn) {
 
     if constexpr (N == Last) {
         return std::make_tuple(dnn,
@@ -299,10 +297,10 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             convert_to_index_many2<NodesValue>(next_derivatives);
 
         constexpr auto flags_next_derivatives = std::apply(
-            [dnin_i](auto... next_derivative) {
+            [dnin](auto... next_derivative) {
                 return std::integer_sequence<bool,
                                              monomial_included2<NodesValue>(
-                                                 next_derivative, dnin_i)...>{};
+                                                 next_derivative, dnin)...>{};
             },
             next_derivatives_idx);
 
@@ -313,7 +311,7 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 
         constexpr auto locations =
             locate_new_vals_update_buffer_types_size<NodesValue, Last>(
-                next_derivatives_filtered, dn, dnn, dnin_i);
+                next_derivatives_filtered, dn, dnn, dnin);
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -339,7 +337,7 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 
         return treat_nodes_add_buffer_size<Last, Idx1, Idx2, CalcTree,
                                            size_max_new, size_cur_new, N + 1>(
-            dn, dnin_i, dnn_new, dnin);
+            dn, dnin, dnn_new);
     }
 }
 
@@ -347,34 +345,30 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
 template <std::size_t Last, class CalcTree, std::size_t SizeMax,
           std::size_t SizeCur, template <class, class> class Bivariate,
           class PrimalSubNode1, class PrimalSubNode2, class DerivativeNodes,
-          class DerivativeNodeInputsI, class DerivativeNodeInputs>
+          class DerivativeNodeInputs>
 constexpr auto treat_nodes_specialized_buffer_size(
     Bivariate<PrimalSubNode1, PrimalSubNode2> /* pn */, DerivativeNodes dn,
-    DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
+    DerivativeNodeInputs dnin) {
     using NodesValue = typename CalcTree::ValuesTupleInverse;
     constexpr auto idx1 = find<NodesValue, PrimalSubNode1>();
     constexpr auto idx2 = find<NodesValue, PrimalSubNode2>();
     constexpr auto id1_less_than_id2 = static_cast<bool>(idx1 >= idx2);
     if constexpr (id1_less_than_id2) {
         return treat_nodes_add_buffer_size<Last, idx2, idx1, CalcTree, SizeMax,
-                                           SizeCur>(dn, dnin_i, std::tuple<>{},
-                                                    dnin);
+                                           SizeCur>(dn, dnin, std::tuple<>{});
     } else {
         return treat_nodes_add_buffer_size<Last, idx1, idx2, CalcTree, SizeMax,
-                                           SizeCur>(dn, dnin_i, std::tuple<>{},
-                                                    dnin);
+                                           SizeCur>(dn, dnin, std::tuple<>{});
     }
 }
 
 template <std::size_t Last, std::size_t N, std::size_t Idx, class CalcTree,
           std::size_t SizeMax, std::size_t SizeCur, std::size_t MaxOrder,
           std::size_t PrevOrder = 0, class DerivativeNodes,
-          class DerivativeNodeInputsI, class DerivativeNodeNew,
-          class DerivativeNodeInputs>
+          class DerivativeNodeInputs, class DerivativeNodeNew>
 constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
-                                                  DerivativeNodeInputsI dnin_i,
-                                                  DerivativeNodeNew dnn,
-                                                  DerivativeNodeInputs dnin) {
+                                                  DerivativeNodeInputs dnin,
+                                                  DerivativeNodeNew dnn) {
 
     if constexpr (N == 0) {
         return std::make_tuple(dnn,
@@ -417,10 +411,10 @@ constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
             convert_to_index_many2<NodesValue>(next_derivatives);
 
         constexpr auto flags_next_derivatives = std::apply(
-            [dnin_i](auto... next_derivative) {
+            [dnin](auto... next_derivative) {
                 return std::integer_sequence<bool,
                                              monomial_included2<NodesValue>(
-                                                 next_derivative, dnin_i)...>{};
+                                                 next_derivative, dnin)...>{};
             },
             next_derivatives_idx);
 
@@ -431,7 +425,7 @@ constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
 
         constexpr auto locations =
             locate_new_vals_update_buffer_types_size<NodesValue, Last>(
-                next_derivatives_filtered, dn, dnn, dnin_i);
+                next_derivatives_filtered, dn, dnn, dnin);
 
         constexpr auto flags_only_new = std::apply(
             [](auto... location) {
@@ -456,20 +450,20 @@ constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
 
         return treat_nodes_univariate_buffer_size<Last, currentN, Idx, CalcTree,
                                                   size_max_new, size_cur_new,
-                                                  MaxOrder>(dn, dnin_i, dnn_new,
-                                                            dnin);
+                                                  MaxOrder>(dn, dnin, dnn_new);
     }
 }
 
 template <std::size_t Last, class CalcTree, std::size_t SizeMax,
           std::size_t SizeCur, template <class> class Univariate,
           class PrimalSubNode, class DerivativeNodes,
-          class DerivativeNodeInputsI, class DerivativeNodeInputs>
-constexpr auto treat_nodes_specialized_buffer_size(
-    Univariate<PrimalSubNode> /* pn */, DerivativeNodes dn,
-    DerivativeNodeInputsI dnin_i, DerivativeNodeInputs dnin) {
+          class DerivativeNodeInputs>
+constexpr auto
+treat_nodes_specialized_buffer_size(Univariate<PrimalSubNode> /* pn */,
+                                    DerivativeNodes dn,
+                                    DerivativeNodeInputs dnin) {
     using PrimalNode = Univariate<PrimalSubNode>;
-    constexpr auto MaxOrder = detail::max_orders(dnin_i);
+    constexpr auto MaxOrder = detail::max_orders(dnin);
 
     // we go over univariate derivatives in inverse lexicographic order.
     // why? because it makes sense to calculate the coefficients increasing in
@@ -478,21 +472,20 @@ constexpr auto treat_nodes_specialized_buffer_size(
     constexpr auto idx = find<NodesValue, PrimalSubNode>();
     return treat_nodes_univariate_buffer_size<Last, Last, idx, CalcTree,
                                               SizeMax, SizeCur, MaxOrder>(
-        dn, dnin_i, std::tuple<>{}, dnin);
+        dn, dnin, std::tuple<>{});
 }
 
 template <std::size_t CN, class CalcTree, std::size_t SizeMax,
           std::size_t SizeCur, class PrimalNode, class DerivativeNodes,
-          class DerivativeNodeInputsI, class DerivativeNodeInputs>
+          class DerivativeNodeInputs>
 constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodes dn,
-                                      DerivativeNodeInputsI dnin_i,
                                       DerivativeNodeInputs dnin) {
 
     constexpr auto Last = find_first_type_not2<DerivativeNodes, CN>();
 
     constexpr auto res =
         treat_nodes_specialized_buffer_size<Last, CalcTree, SizeMax, SizeCur>(
-            nd, dn, dnin_i, dnin);
+            nd, dn, dnin);
 
     constexpr std::tuple_element_t<0, decltype(res)> new_dn;
     constexpr std::tuple_element_t<1, decltype(res)> new_size_max;
@@ -511,10 +504,8 @@ constexpr auto treat_node_buffer_size(PrimalNode nd, DerivativeNodes dn,
 }
 
 template <class CalcTree, std::size_t SizeMax = 0, std::size_t SizeCur = 0,
-          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputsI,
-          class DerivativeNodeInputs>
+          std::size_t N = 0, class DerivativeNodes, class DerivativeNodeInputs>
 constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
-                                         DerivativeNodeInputsI dnin_i,
                                          DerivativeNodeInputs dnin)
     -> std::size_t {
     using PrimalNodes = typename CalcTree::ValuesTupleInverse;
@@ -528,15 +519,14 @@ constexpr auto backpropagate_buffer_size(DerivativeNodes dn,
 
         constexpr auto res =
             treat_node_buffer_size<N, CalcTree, SizeMax, SizeCur>(
-                current_primal_node, dn, dnin_i, dnin);
+                current_primal_node, dn, dnin);
 
         constexpr std::tuple_element_t<0, decltype(res)> new_dn;
         constexpr std::tuple_element_t<1, decltype(res)> new_size_max;
         constexpr std::tuple_element_t<2, decltype(res)> new_size_cur;
 
         return backpropagate_buffer_size<CalcTree, new_size_max(),
-                                         new_size_cur(), N + 1>(new_dn, dnin_i,
-                                                                dnin);
+                                         new_size_cur(), N + 1>(new_dn, dnin);
     } else {
         return SizeMax;
     }
