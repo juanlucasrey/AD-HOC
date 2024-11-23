@@ -197,8 +197,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
         detail::backpropagate_aux(outputs_sorted_with_pos_idx,
                                   inputs_with_pos_idx, ct, this->m_derivatives,
-                                  buffer_flags, buffer,
-                                  std::get<0>(inputs_and_outputs_with_pos));
+                                  buffer_flags, buffer);
     }
 
     template <std::size_t BufferSize, class CalcTree>
@@ -239,13 +238,7 @@ template <class... InputsAndOutputsDers> class BackPropagator {
 
         detail::backpropagate_aux(outputs_sorted_with_pos_idx,
                                   inputs_with_pos_idx, ct, this->m_derivatives,
-                                  buffer_flags, buffer,
-                                  std::get<0>(inputs_and_outputs_with_pos));
-
-        // detail::backpropagate_aux(outputs_sorted_with_pos_idx,
-        //                           inputs_with_pos_idx, ct,
-        //                           this->m_derivatives, buffer_flags, buffer,
-        //                           std::tuple<>{});
+                                  buffer_flags, buffer);
     }
 };
 
