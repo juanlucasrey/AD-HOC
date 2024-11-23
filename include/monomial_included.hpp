@@ -255,26 +255,33 @@ constexpr auto expand_aux2(Tuple tup,
     return std::make_tuple(expand_aux3(tup, Indices)...);
 }
 
-template <class Res, class Inputs>
+template <class NodesValue, class Res, class Inputs>
 constexpr auto expand_aux(Res res, std::tuple<> /* seqs */,
                           Inputs /* inputs */) {
     return res;
 }
 
-template <class Res, class DiffOpOut, class Inputs>
+template <class NodesValue, std::size_t... Ids> constexpr auto convert_to_diffop3(std::tuple<std::integral_constant<std::size_t,Ids>...> /*
+id1 */) {
+    return std::tuple<std::tuple_element_t<Ids, NodesValue>...>{};
+}
+
+template <class NodesValue, class Res, class DiffOpOut, class Inputs>
 constexpr auto expand_aux(Res res, DiffOpOut diff_op_out, Inputs inputs) {
     constexpr auto first = head(diff_op_out);
     constexpr auto last = tail(diff_op_out);
     constexpr auto new_res = std::tuple_cat(
-        res, expand_aux2(convex_hull_orders(get_id(first), inputs),
+        res, expand_aux2(convex_hull_orders(
+                             std::tuple_element_t<get_id2(first), NodesValue>{},
+                             convert_to_diffop3<NodesValue>(inputs)),
                          std::make_index_sequence<get_power(first)>()));
 
-    return expand_aux(new_res, last, inputs);
+    return expand_aux<NodesValue>(new_res, last, inputs);
 }
 
-template <class DiffOptOut, class Inputs>
+template <class NodesValue, class DiffOptOut, class Inputs>
 constexpr auto expand(DiffOptOut diff_op_out, Inputs inputs) {
-    return expand_aux(std::tuple<>{}, diff_op_out, inputs);
+    return expand_aux<NodesValue>(std::tuple<>{}, diff_op_out, inputs);
 }
 
 template <std::size_t N, std::size_t... I>
@@ -503,11 +510,11 @@ constexpr auto check_included(std::tuple<TupleIndexSequences...> /* poly */,
         ...);
 }
 
-template <class Single, class Many>
-constexpr auto monomial_included(Single diff_op_out, Many diff_op_inputs)
+template <class NodesValue, class Single, class Many>
+constexpr auto monomial_included2(Single diff_op_out, Many diff_op_inputs)
     -> bool {
     constexpr auto inputs = get_vars(diff_op_inputs);
-    constexpr auto orders = expand(diff_op_out, inputs);
+    constexpr auto orders = expand<NodesValue>(diff_op_out, inputs);
     constexpr auto flat_orders_output = flatten(orders);
 
     constexpr auto order_inputs_vals = order_inputs(diff_op_inputs, inputs);

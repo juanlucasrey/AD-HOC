@@ -110,6 +110,14 @@ constexpr auto get_id(const der::d<Order, Id> /* in */) {
     return Id{};
 }
 
+template <std::size_t Order, std::size_t Id>
+constexpr auto
+get_id2(const der::d<Order, std::integral_constant<std::size_t, Id>> /* in
+*/)
+    -> std::size_t {
+    return Id;
+}
+
 namespace detail {
 template <std::size_t P, class... Ids1, std::size_t... Orders1>
 constexpr auto

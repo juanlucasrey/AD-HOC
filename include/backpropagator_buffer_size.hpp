@@ -88,15 +88,16 @@ treat_nodes_mul_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             },
             multinomial_sequences);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);
@@ -294,15 +295,17 @@ treat_nodes_add_buffer_size(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             },
             multinomial_sequences);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
+
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);
 
@@ -410,15 +413,17 @@ constexpr auto treat_nodes_univariate_buffer_size(DerivativeNodes dn,
             },
             expansion_types);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
+
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);
 

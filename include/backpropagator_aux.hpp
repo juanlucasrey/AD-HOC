@@ -87,7 +87,6 @@ treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         constexpr auto multinomial_sequences =
             TrinomialSequencesMult<this_power, MaxOrder - rest_power>();
 
-        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNodeOrdered1 = std::tuple_element_t<Idx1, NodesValue>;
         using PrimalSubNodeOrdered2 = std::tuple_element_t<Idx2, NodesValue>;
         constexpr auto diff_ops = std::make_tuple(
@@ -102,15 +101,16 @@ treat_nodes_mul(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             },
             multinomial_sequences);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);
@@ -210,7 +210,6 @@ inline auto treat_nodes_mul_const(DerivativeNodes dn,
         constexpr auto current_derivative_subnode_rest = tail(current_node_der);
         constexpr auto this_power = get_power(head(current_node_der));
 
-        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNode = std::tuple_element_t<Idx, NodesValue>;
         constexpr auto next_derivatives_filtered = std::make_tuple(
             multiply_ordered(d<this_power>(PrimalSubNode{}),
@@ -353,7 +352,6 @@ inline auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
         constexpr auto multinomial_sequences =
             MultinomialSequences<2, this_power>();
 
-        using NodesValue = typename CalcTree::ValuesTupleInverse;
         using PrimalSubNodeOrdered1 = std::tuple_element_t<Idx1, NodesValue>;
         using PrimalSubNodeOrdered2 = std::tuple_element_t<Idx2, NodesValue>;
         constexpr auto diff_ops = std::make_tuple(d(PrimalSubNodeOrdered1{}),
@@ -367,15 +365,16 @@ inline auto treat_nodes_add(DerivativeNodes dn, DerivativeNodeInputsI dnin_i,
             },
             multinomial_sequences);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);
@@ -536,15 +535,16 @@ inline auto treat_nodes_univariate(
             },
             expansion_types);
 
-        constexpr auto flags_next_derivatives = std::apply(
-            [dnin](auto... next_derivative) {
-                return std::integer_sequence<
-                    bool, monomial_included(next_derivative, dnin)...>{};
-            },
-            next_derivatives);
-
         constexpr auto next_derivatives_idx =
             convert_to_index_many2<NodesValue>(next_derivatives);
+
+        constexpr auto flags_next_derivatives = std::apply(
+            [dnin_i](auto... next_derivative) {
+                return std::integer_sequence<bool,
+                                             monomial_included2<NodesValue>(
+                                                 next_derivative, dnin_i)...>{};
+            },
+            next_derivatives_idx);
 
         constexpr auto next_derivatives_filtered =
             filter(next_derivatives_idx, flags_next_derivatives);

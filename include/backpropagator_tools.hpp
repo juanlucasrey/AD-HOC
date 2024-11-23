@@ -274,14 +274,6 @@ constexpr auto first_type_is2(DiffOp diffop, Node node) -> bool {
     return first_type_is_aux2(head(diffop), node);
 }
 
-template <std::size_t Order, std::size_t Id>
-constexpr auto
-get_id2(const der::d<Order, std::integral_constant<std::size_t, Id>> /* in
-*/)
-    -> std::size_t {
-    return Id;
-}
-
 template <class Tuple, std::size_t T, std::size_t N = 0>
 constexpr auto find_first_type_not2() -> std::size_t {
     if constexpr (N >= std::tuple_size_v<Tuple>) {
