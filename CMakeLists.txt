@@ -10,3 +10,5 @@ endif()
 
 enable_testing()
 add_subdirectory(test)
+
+add_subdirectory(case_studies)
