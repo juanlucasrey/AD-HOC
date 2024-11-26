@@ -13,6 +13,7 @@ endfunction()
 set(BRNG
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
+    split_mix.cpp
 )
 
 run_check("${BRNG}")
