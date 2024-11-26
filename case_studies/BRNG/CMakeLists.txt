@@ -6,12 +6,13 @@ function(run_check filelist)
         set(test_name "dynamic.${target}")
         add_executable(${test_name} "${testfile}")
         add_test(NAME ${test_name} COMMAND ${test_name})
-        target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+        target_include_directories(${test_name} SYSTEM PUBLIC)
     endforeach()
 endfunction()
 
 set(BRNG
     mersenne_twister_engine.cpp
+    linear_congruential_engine.cpp
 )
 
 run_check("${BRNG}")
