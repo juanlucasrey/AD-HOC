@@ -1,5 +1,5 @@
-#ifndef CASE_STUDIES_BRNG_MT19937
-#define CASE_STUDIES_BRNG_MT19937
+#ifndef CASE_STUDIES_BRNG_MERSENNE_TWISTER_ENGINE
+#define CASE_STUDIES_BRNG_MERSENNE_TWISTER_ENGINE
 
 #include <array>
 #include <cstdint>
@@ -51,7 +51,8 @@ class mersenne_twister_engine final {
         this->x[0] = (this->x[0] & upper_mask) | (y & lower_mask);
     }
 
-    template <bool FwdDirection = true> auto operator()() -> result_type {
+    template <bool FwdDirection = true>
+    inline auto operator()() -> result_type {
         UIntType z;
 
         constexpr UIntType upper_mask = (~static_cast<UIntType>(0)) << r;
@@ -130,10 +131,10 @@ class mersenne_twister_engine final {
         return z;
     }
 
-    static constexpr UIntType min() {
+    static constexpr auto min() -> UIntType {
         return std::numeric_limits<UIntType>::min();
     }
-    static constexpr UIntType max() {
+    static constexpr auto max() -> UIntType {
         return std::numeric_limits<UIntType>::max();
     }
 
@@ -155,4 +156,4 @@ using mt19937_64 =
 
 } // namespace adhoc
 
-#endif // CASE_STUDIES_BRNG_MT19937
+#endif // CASE_STUDIES_BRNG_MERSENNE_TWISTER_ENGINE
