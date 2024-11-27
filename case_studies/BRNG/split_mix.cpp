@@ -1,100 +1,36 @@
+#include "../../test/test_tools.hpp"
+#include "test_tools_rng.hpp"
+
 #include "split_mix.hpp"
 
 #include <vector>
 
 int main() {
+    TEST_START;
 
-    // minstd_rand0 fwd and back
+    // splitmix32 fwd and back
     {
         splitmix32 rng;
-
-        std::size_t n = 100;
-        std::vector<std::uint32_t> vals(100);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            vals[i] = rng();
-        }
-
-        std::vector<std::uint32_t> vals2(100);
-        for (std::size_t i = n; i--;) {
-            vals2[i] = rng.operator()<false>();
-        }
-
-        for (std::size_t i = 0; i < n; ++i) {
-            if (vals[i] != vals2[i]) {
-                return 1;
-            }
-        }
+        TEST_FUNC(check_fwd_and_back(rng, 100));
     }
 
-    // minstd_rand0 back and fwd
+    // splitmix32 back and fwd
     {
         splitmix32 rng;
-
-        std::size_t n = 100;
-        std::vector<std::uint32_t> vals(100);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            vals[i] = rng.operator()<false>();
-        }
-
-        std::vector<std::uint32_t> vals2(100);
-        for (std::size_t i = n; i--;) {
-            vals2[i] = rng();
-        }
-
-        for (std::size_t i = 0; i < n; ++i) {
-            if (vals[i] != vals2[i]) {
-                return 1;
-            }
-        }
+        TEST_FUNC(check_back_and_fwd(rng, 100));
     }
 
-    // minstd_rand fwd and back
+    // splitmix64 fwd and back
     {
         splitmix64 rng;
-
-        std::size_t n = 100;
-        std::vector<std::uint64_t> vals(100);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            vals[i] = rng();
-        }
-
-        std::vector<std::uint64_t> vals2(100);
-        for (std::size_t i = n; i--;) {
-            vals2[i] = rng.operator()<false>();
-        }
-
-        for (std::size_t i = 0; i < n; ++i) {
-            if (vals[i] != vals2[i]) {
-                return 1;
-            }
-        }
+        TEST_FUNC(check_fwd_and_back(rng, 100));
     }
 
-    // minstd_rand back and fwd
+    // splitmix64 back and fwd
     {
         splitmix64 rng;
-
-        std::size_t n = 100;
-        std::vector<std::uint64_t> vals(100);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            vals[i] = rng.operator()<false>();
-        }
-
-        std::vector<std::uint64_t> vals2(100);
-        for (std::size_t i = n; i--;) {
-            vals2[i] = rng();
-        }
-
-        for (std::size_t i = 0; i < n; ++i) {
-            if (vals[i] != vals2[i]) {
-                return 1;
-            }
-        }
+        TEST_FUNC(check_back_and_fwd(rng, 100));
     }
 
-    return 0;
+    TEST_END;
 }

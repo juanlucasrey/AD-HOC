@@ -32,6 +32,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
 
 #define TEST_START int _result = 0
 #define TEST_END return _result
+#define TEST_FUNC(F) _result = _result || F
 
 #define EXPECT_NEAR_ABS(VAL1, VAL2, TOL)                                       \
     {                                                                          \
