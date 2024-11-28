@@ -175,6 +175,9 @@ class linear_congruential_engine final {
     using result_type = UIntType;
 
     static constexpr UIntType multiplier = a;
+    static constexpr UIntType multiplier_inverse =
+        m == 0 ? detail::modular_multiplicative_inverse_max_plus_one(a)
+               : detail::modular_multiplicative_inverse(m, a);
     static constexpr UIntType increment = c;
     static constexpr UIntType modulus = m;
     static constexpr UIntType default_seed = 1U;
@@ -184,31 +187,38 @@ class linear_congruential_engine final {
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        constexpr auto a_64 = static_cast<std::uint_fast64_t>(a);
-        constexpr auto c_64 = static_cast<std::uint_fast64_t>(c);
-        constexpr auto m_64 = static_cast<std::uint_fast64_t>(
-            m == 0 ? static_cast<std::uint_fast64_t>(
-                         std::numeric_limits<result_type>::max()) +
-                         1
-                   : static_cast<std::uint_fast64_t>(m));
 
-        if constexpr (FwdDirection) {
-            this->x = static_cast<UIntType>(
-                (a_64 * static_cast<std::uint_fast64_t>(this->x) + c_64) %
-                m_64);
-            return this->x;
+        if constexpr (m == 0) {
+            if constexpr (FwdDirection) {
+                this->x = a * this->x + c;
+                return this->x;
+            } else {
+                const auto result = this->x;
+                this->x = multiplier_inverse * (this->x - c);
+                return result;
+            }
         } else {
-            constexpr auto a_inv =
-                m == 0 ? detail::modular_multiplicative_inverse_max_plus_one(a)
-                       : detail::modular_multiplicative_inverse(m, a);
+            constexpr auto c_64 = static_cast<std::uint_fast64_t>(c);
+            constexpr auto m_64 = static_cast<std::uint_fast64_t>(m);
 
-            constexpr auto a_inv_64 = static_cast<std::uint_fast64_t>(a_inv);
+            if constexpr (FwdDirection) {
+                constexpr auto a_64 = static_cast<std::uint_fast64_t>(a);
 
-            const auto result = this->x;
-            this->x = static_cast<UIntType>(
-                (a_inv_64 * (static_cast<std::uint_fast64_t>(this->x) - c_64)) %
-                m_64);
-            return result;
+                this->x = static_cast<UIntType>(
+                    (a_64 * static_cast<std::uint_fast64_t>(this->x) + c_64) %
+                    m_64);
+                return this->x;
+            } else {
+                constexpr auto a_inv_64 =
+                    static_cast<std::uint_fast64_t>(multiplier_inverse);
+
+                const auto result = this->x;
+                this->x = static_cast<UIntType>(
+                    (a_inv_64 *
+                     (static_cast<std::uint_fast64_t>(this->x) - c_64)) %
+                    m_64);
+                return result;
+            }
         }
     }
 
