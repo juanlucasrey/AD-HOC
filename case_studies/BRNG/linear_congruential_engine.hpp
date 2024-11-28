@@ -163,13 +163,131 @@ constexpr auto modular_multiplicative_inverse_max_plus_one(UIntType b) {
     }
 }
 
+struct uint128 {
+    std::uint64_t high;
+    std::uint64_t low;
+
+    template <class T>
+    constexpr uint128(T const v)
+        : high(0), low(static_cast<std::uint64_t>(v)) {}
+
+    template <class T>
+    uint128(T h, T l)
+        : high(static_cast<std::uint64_t>(h)),
+          low(static_cast<std::uint64_t>(l)) {}
+
+    operator std::uint64_t() const { return low; }
+
+    auto operator+=(const uint128 &v) noexcept -> uint128 {
+        auto o = low;
+        low += v.low;
+        high += v.high;
+        high += (low < o);
+        return *this;
+    }
+
+    auto operator+(const uint128 &v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t += v;
+        return t;
+    }
+
+    uint128 operator-=(const uint128 &v) noexcept {
+        auto o = low;
+        low -= v.low;
+        high -= v.high;
+        high -= (low > o);
+        return *this;
+    }
+
+    auto operator-(const uint128 &v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t -= v;
+        return t;
+    }
+
+    auto operator<<(int amount) -> uint128 {
+        // uint64_t shifts of >= 64 are undefined, so we will need some
+        // special-casing.
+        return amount >= 64 ? uint128(low << (amount - 64),
+                                      static_cast<std::uint64_t>(0))
+               : amount == 0
+                   ? *this
+                   : uint128((high << amount) | (low >> (64 - amount)),
+                             low << amount);
+    }
+
+    uint128 operator<<=(uint8_t amount) noexcept {
+        high <<= amount;
+        high |= low >> (64 - amount);
+        low <<= amount;
+        return *this;
+    }
+
+    auto operator*(const uint128 &rhs) const noexcept -> uint128 {
+        uint64_t a32 = low >> 32;
+        uint64_t a00 = low & 0xffffffff;
+        uint64_t b32 = rhs.low >> 32;
+        uint64_t b00 = rhs.low & 0xffffffff;
+        uint128 result =
+            uint128(high * rhs.low + low * rhs.high + a32 * b32, a00 * b00);
+        result += uint128(a32 * b00) << 32;
+        result += uint128(a00 * b32) << 32;
+        return result;
+    }
+
+    bool operator<=(const uint128 &o) const noexcept {
+        return high < o.high || (high == o.high && low <= o.low);
+    }
+
+    bool operator>=(const uint128 &o) const noexcept {
+        return high > o.high || (high == o.high && low >= o.low);
+    }
+
+    uint128 operator>>=(uint8_t v) noexcept {
+        low >>= v;
+        low |= high << (64 - v);
+        high >>= v;
+        return *this;
+    }
+
+    uint128 operator>>(uint8_t v) const noexcept {
+        uint128 t(*this);
+        t >>= v;
+        return t;
+    }
+
+    uint128 operator%=(const uint128 &b) {
+        // if (!b)
+        //     throw std::domain_error("divide by zero");
+
+        uint128 x(b), y(*this >> static_cast<uint8_t>(1));
+        while (x <= y) {
+            x <<= 1;
+        }
+        while (*this >= b) {
+            if (*this >= x)
+                *this -= x;
+            x >>= 1;
+        }
+        return *this;
+    }
+
+    uint128 operator%(const uint128 &v) const noexcept {
+        uint128 t(*this);
+        t %= v;
+        return t;
+    }
+};
+
 } // namespace detail
 
 template <class UIntType, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine final {
     static_assert(m == 0 || a < m);
     static_assert(m == 0 || c < m);
-    static_assert(m == 0 || detail::gcd(m, a) == 1U);
+    static_assert(m == 0 ? detail::gcd(static_cast<UIntType>(2U), a) == 1U
+                         : detail::gcd(m, a) == 1U);
 
   public:
     using result_type = UIntType;
@@ -198,24 +316,31 @@ class linear_congruential_engine final {
                 return result;
             }
         } else {
-            constexpr auto c_64 = static_cast<std::uint_fast64_t>(c);
-            constexpr auto m_64 = static_cast<std::uint_fast64_t>(m);
+            constexpr auto digits = std::numeric_limits<UIntType>::digits;
+
+            using upgraded_type = std::conditional_t<
+                digits == 8, std::uint_fast16_t,
+                std::conditional_t<
+                    digits == 16, std::uint_fast32_t,
+                    std::conditional_t<digits == 32, std::uint_fast64_t,
+                                       detail::uint128>>>;
+
+            constexpr auto c_64 = static_cast<upgraded_type>(c);
+            constexpr auto m_64 = static_cast<upgraded_type>(m);
 
             if constexpr (FwdDirection) {
-                constexpr auto a_64 = static_cast<std::uint_fast64_t>(a);
+                constexpr auto a_64 = static_cast<upgraded_type>(a);
 
                 this->x = static_cast<UIntType>(
-                    (a_64 * static_cast<std::uint_fast64_t>(this->x) + c_64) %
-                    m_64);
+                    (a_64 * static_cast<upgraded_type>(this->x) + c_64) % m_64);
                 return this->x;
             } else {
                 constexpr auto a_inv_64 =
-                    static_cast<std::uint_fast64_t>(multiplier_inverse);
+                    static_cast<upgraded_type>(multiplier_inverse);
 
                 const auto result = this->x;
                 this->x = static_cast<UIntType>(
-                    (a_inv_64 *
-                     (static_cast<std::uint_fast64_t>(this->x) - c_64)) %
+                    (a_inv_64 * (static_cast<upgraded_type>(this->x) - c_64)) %
                     m_64);
                 return result;
             }
@@ -247,6 +372,10 @@ using RANDU =
 
 using Borland =
     linear_congruential_engine<std::uint_fast32_t, 22695477, 1, 2147483648>;
+
+using Newlib =
+    linear_congruential_engine<std::uint_fast64_t, 6364136223846793005, 1,
+                               9223372036854775808U>;
 
 } // namespace adhoc
 
