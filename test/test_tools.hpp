@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <tuple>
 
 template <class D>
 inline std::tuple<bool, double> expect_near_abs(D val1, D val2, D tol) {
