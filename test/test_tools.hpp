@@ -94,6 +94,17 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
         }                                                                      \
     }
 
+#define EXPECT_NOT_EQUAL(VAL1, VAL2)                                           \
+    {                                                                          \
+        if ((VAL1 == VAL2)) {                                                  \
+            std::cout.precision(std::numeric_limits<double>::max_digits10);    \
+            std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
+                      << std::endl;                                            \
+            std::cout << "Expected difference" << std::endl;                   \
+            _result = 1;                                                       \
+        }                                                                      \
+    }
+
 #define EXPECT_EQUAL_ARRAY(VAL1, VAL2)                                         \
     {                                                                          \
         constexpr std::size_t size = std::min(VAL1.size(), VAL2.size());       \

@@ -14,6 +14,7 @@ set(BRNG
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
     split_mix.cpp
+    subtract_with_carry_engine.cpp
 )
 
 run_check("${BRNG}")
