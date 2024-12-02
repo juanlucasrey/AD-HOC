@@ -30,13 +30,17 @@ class mersenne_twister_engine final {
     static constexpr UIntType default_seed = 5489U;
 
     explicit mersenne_twister_engine(result_type value = default_seed) {
+
+        constexpr UIntType mask = max();
+
         this->i = 0;
         this->x[this->i++] = value;
 
         for (this->i = 1; this->i < n; this->i++) {
             this->x[this->i] = (f * (this->x[this->i - 1] ^
                                      (this->x[this->i - 1] >> (w - 2))) +
-                                static_cast<UIntType>(this->i));
+                                static_cast<UIntType>(this->i)) &
+                               mask;
         }
 
         // this short step ensures consistency when the full_cycle is completed,
@@ -136,7 +140,12 @@ class mersenne_twister_engine final {
         return std::numeric_limits<UIntType>::min();
     }
     static constexpr auto max() -> UIntType {
-        return std::numeric_limits<UIntType>::max();
+        constexpr UIntType ach = static_cast<UIntType>(1U)
+                                 << static_cast<std::size_t>(w - 1U);
+
+        // this is equivalent to 2^w - 1 but working for w or 2*w or 4*w ...
+        // bits
+        return ach | (ach - static_cast<UIntType>(1U));
     }
 
   private:
@@ -148,10 +157,6 @@ using mt19937 =
     mersenne_twister_engine<std::uint_fast32_t, 32, 624, 397, 31, 0x9908b0df,
                             11, 0xffffffff, 7, 0x9d2c5680, 15, 0xefc60000, 18,
                             1812433253>;
-// using mt19937 =
-//     mersenne_twister_engine<std::uint32_t, 32, 624, 397, 31, 0x9908b0df, 11,
-//                             0xffffffff, 7, 0x9d2c5680, 15, 0xefc60000, 18,
-//                             1812433253>;
 
 using mt19937_64 =
     mersenne_twister_engine<std::uint_fast64_t, 64, 312, 156, 31,
