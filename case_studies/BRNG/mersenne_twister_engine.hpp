@@ -30,7 +30,8 @@ class mersenne_twister_engine final {
     static constexpr UIntType default_seed = 5489U;
 
     explicit mersenne_twister_engine(result_type value = default_seed) {
-        this->x[0] = value;
+        this->i = 0;
+        this->x[this->i++] = value;
 
         for (this->i = 1; this->i < n; this->i++) {
             this->x[this->i] = (f * (this->x[this->i - 1] ^
@@ -139,8 +140,8 @@ class mersenne_twister_engine final {
     }
 
   private:
-    std::array<UIntType, n> x{};
-    std::size_t i{};
+    std::array<UIntType, n> x{0};
+    std::size_t i{0};
 };
 
 using mt19937 =
