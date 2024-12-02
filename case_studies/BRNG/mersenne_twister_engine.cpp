@@ -14,6 +14,7 @@ int main() {
         std::mt19937 rng1;
         adhoc::mt19937 rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // check against std 64
@@ -21,6 +22,7 @@ int main() {
         std::mt19937_64 rng1;
         adhoc::mt19937_64 rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // 32 fwd and back

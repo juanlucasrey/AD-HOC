@@ -8,19 +8,21 @@
 template <class RNG1, class RNG2>
 auto compare_rng(RNG1 &rng1, RNG2 &rng2, std::size_t n) -> int {
     TEST_START;
+
     for (std::size_t i = 0; i < n; ++i) {
         EXPECT_EQUAL(rng1(), rng2());
     }
 
-    std::uniform_real_distribution<> dist_r(1.0, 2.0);
-    for (std::size_t i = 0; i < n; ++i) {
-        EXPECT_EQUAL(dist_r(rng1), dist_r(rng2));
-    }
+    TEST_END;
+}
 
-    std::uniform_int_distribution<> dist_i(1, 6);
-    for (std::size_t i = 0; i < n; ++i) {
-        EXPECT_EQUAL(dist_i(rng1), dist_i(rng2));
-    }
+template <class RNG1, class RNG2>
+auto compare_rng_limits(RNG1 & /* rng1 */, RNG2 & /* rng2 */) -> int {
+    TEST_START;
+
+    EXPECT_EQUAL(RNG1::min(), RNG2::min());
+    EXPECT_EQUAL(RNG1::max(), RNG2::max());
+
     TEST_END;
 }
 

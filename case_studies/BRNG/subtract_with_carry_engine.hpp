@@ -3,13 +3,9 @@
 
 #include "linear_congruential_engine.hpp"
 
-#include "../../include/combinatorics/pow.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cmath>
-
-#include <iostream>
 
 namespace adhoc {
 
@@ -30,8 +26,34 @@ namespace adhoc {
 // periodic.
 
 template <class UIntType, std::size_t w, std::size_t s, std::size_t r,
-          bool corrected = false>
+          bool original = false>
 class subtract_with_carry_engine final {
+  private:
+    static constexpr std::size_t n = std::size_t(w / 32) + 1;
+
+    void init(std::array<std::uint_least32_t, n * r> const &seeds) {
+        auto iter = seeds.begin();
+        for (std::size_t j = 0; j < r; j++) {
+            UIntType val = 0;
+            for (std::size_t k = 0; k < n; ++k) {
+                val += static_cast<UIntType>(*iter++) << 32 * k;
+            }
+            this->x[j] = val % modulus;
+        }
+
+        this->k = 0;
+
+        this->carry = (this->x[long_lag - 1] == 0);
+        if constexpr (!original) {
+            for (unsigned long long i = 0; i < long_lag; ++i) {
+                this->operator()();
+            }
+            for (unsigned long long i = 0; i < long_lag; ++i) {
+                this->operator()<false>();
+            }
+        }
+    }
+
   public:
     using result_type = UIntType;
 
@@ -42,103 +64,85 @@ class subtract_with_carry_engine final {
 
     static constexpr result_type modulus = static_cast<result_type>(1U) << w;
 
+    template <class SeedSeq> explicit subtract_with_carry_engine(SeedSeq &seq) {
+        std::array<std::uint_least32_t, n * r> seeds;
+        seq.generate(seeds.begin(), seeds.end());
+        this->init(seeds);
+    }
+
     explicit subtract_with_carry_engine(result_type value = default_seed) {
         linear_congruential_engine<std::uint_least32_t, 40014U, 0U, 2147483563U>
             e(value == 0U ? default_seed : value);
         constexpr auto n = std::size_t(w / 32) + 1;
-
-        for (std::size_t j = 0; j < r; j++) {
-            UIntType val = 0;
-            for (std::size_t k = 0; k < n; ++k) {
-                val += static_cast<UIntType>(e()) << 32 * k;
-            }
-            x[j] = val % modulus;
-        }
-
-        k = 0;
-
-        if constexpr (corrected) {
-            std::size_t k_prev = k == 0 ? (long_lag - 1) : (k - 1);
-            std::size_t short_index_prev = (k_prev < short_lag)
-                                               ? (k_prev + long_lag - short_lag)
-                                               : (k_prev - short_lag);
-
-            UIntType temp_prev = x[k_prev];
-            if (temp_prev > x[short_index_prev]) {
-                temp_prev = modulus - temp_prev + x[short_index_prev];
-            } else {
-                temp_prev = x[short_index_prev] - temp_prev;
-            }
-
-            if (x[short_index_prev] >= temp_prev) {
-                carry = 0;
-            } else {
-                carry = 1;
-            }
-        } else {
-            carry = (x[long_lag - 1] == 0);
-        }
+        std::array<std::uint_least32_t, n * r> seeds;
+        std::generate(seeds.begin(), seeds.end(), e);
+        this->init(seeds);
     }
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
 
         if constexpr (FwdDirection) {
-            std::size_t short_index =
-                (k < short_lag) ? (k + long_lag - short_lag) : (k - short_lag);
+            const std::size_t short_index =
+                (this->k < short_lag) ? (this->k + long_lag - short_lag)
+                                      : (this->k - short_lag);
 
-            UIntType temp = x[k] + carry;
-            if (x[short_index] >= temp) {
-                x[k] = x[short_index] - temp;
-                carry = 0;
+            const UIntType carry_prev = carry;
+            const UIntType x_prev = this->x[k];
+            const UIntType temp = this->x[k] + carry;
+            if (this->x[short_index] >= temp) {
+                this->x[k] = this->x[short_index] - temp;
+                this->carry = 0;
             } else {
-                x[k] = modulus - temp + x[short_index];
-                carry = 1;
+                this->x[k] = modulus - temp + this->x[short_index];
+                this->carry = 1;
             }
 
-            UIntType result = x[k];
-            ++k;
-            if (k >= long_lag) {
-                k = 0;
-            }
+            const UIntType result = this->x[this->k];
+            this->k = (this->k == (long_lag - 1)) ? 0 : (this->k + 1);
             return result;
         } else {
-            if (k == 0) {
-                k = long_lag - 1;
+            this->k = (this->k == 0) ? (long_lag - 1) : (this->k - 1);
+            const UIntType result = this->x[this->k];
+
+            const std::size_t short_index =
+                (this->k < short_lag) ? (this->k + long_lag - short_lag)
+                                      : (this->k - short_lag);
+
+            const UIntType temp =
+                this->carry ? modulus - this->x[k] + this->x[short_index]
+                            : this->x[short_index] - this->x[k];
+
+            if (temp == 0) {
+                this->carry = 0;
+            } else if (temp == modulus) {
+                this->carry = 1;
             } else {
-                --k;
-            }
-            UIntType result = x[k];
+                std::size_t k_prev = this->k;
+                UIntType temp_prev = 0;
+                std::size_t short_index_prev = short_index;
+                do {
+                    k_prev = (k_prev == 0) ? (long_lag - 1) : (k_prev - 1);
+                    short_index_prev = (k_prev < short_lag)
+                                           ? (k_prev + long_lag - short_lag)
+                                           : (k_prev - short_lag);
+                    temp_prev = this->x[k_prev];
+                    if (temp_prev > this->x[short_index_prev]) {
+                        temp_prev =
+                            modulus - temp_prev + this->x[short_index_prev];
+                    } else {
+                        temp_prev = this->x[short_index_prev] - temp_prev;
+                    }
+                } while (temp_prev == 0 && k_prev != this->k);
 
-            std::size_t short_index =
-                (k < short_lag) ? (k + long_lag - short_lag) : (k - short_lag);
-
-            UIntType temp;
-            if (carry) {
-                temp = modulus - x[k] + x[short_index];
-            } else {
-                temp = x[short_index] - x[k];
-            }
-
-            std::size_t k_prev = k == 0 ? (long_lag - 1) : (k - 1);
-            std::size_t short_index_prev = (k_prev < short_lag)
-                                               ? (k_prev + long_lag - short_lag)
-                                               : (k_prev - short_lag);
-
-            UIntType temp_prev = x[k_prev];
-            if (temp_prev > x[short_index_prev]) {
-                temp_prev = modulus - temp_prev + x[short_index_prev];
-            } else {
-                temp_prev = x[short_index_prev] - temp_prev;
+                if (this->x[short_index_prev] >= temp_prev) {
+                    this->carry = 0;
+                } else {
+                    this->carry = 1;
+                }
             }
 
-            if (x[short_index_prev] >= temp_prev) {
-                carry = 0;
-            } else {
-                carry = 1;
-            }
-
-            x[k] = temp - carry;
+            this->x[k] = temp - this->carry;
 
             return result;
         }
@@ -148,11 +152,6 @@ class subtract_with_carry_engine final {
         for (unsigned long long i = 0; i < z; ++i) {
             this->operator()();
         }
-    }
-
-    static constexpr auto period() -> unsigned long long {
-        // return std::pow(w, r) - std::pow(w, s);
-        return adhoc::detail::pow<r>(w) - adhoc::detail::pow<s>(w);
     }
 
     static constexpr auto min() -> UIntType {
@@ -177,8 +176,6 @@ using ranlux24_base =
     subtract_with_carry_engine<std::uint_fast32_t, 24, 10, 24>;
 
 using ranlux48_base = subtract_with_carry_engine<std::uint_fast64_t, 48, 5, 12>;
-using ranlux48_base_correct =
-    subtract_with_carry_engine<std::uint_fast64_t, 48, 5, 12, true>;
 
 } // namespace adhoc
 

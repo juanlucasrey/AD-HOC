@@ -14,6 +14,7 @@ int main() {
         std::minstd_rand0 rng1;
         adhoc::minstd_rand0 rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // minstd_rand0 fwd and back
@@ -33,6 +34,7 @@ int main() {
         std::minstd_rand rng1;
         adhoc::minstd_rand rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // minstd_rand fwd and back
@@ -52,6 +54,7 @@ int main() {
         std::linear_congruential_engine<std::uint_fast16_t, 75, 74, 0> rng1;
         adhoc::ZX81 rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // ZX81 fwd and back
@@ -73,6 +76,7 @@ int main() {
             rng1;
         adhoc::ranqd1 rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // ranqd1 fwd and back
@@ -94,6 +98,7 @@ int main() {
             rng1;
         adhoc::RANDU rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // RANDU fwd and back
@@ -115,6 +120,7 @@ int main() {
             rng1;
         adhoc::Borland rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // Borland fwd and back
@@ -136,6 +142,7 @@ int main() {
             rng1;
         adhoc::Newlib rng2;
         TEST_FUNC(compare_rng(rng1, rng2, 100));
+        TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
     // Newlib fwd and back
