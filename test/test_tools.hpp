@@ -33,7 +33,17 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
 
 #define TEST_START int _result = 0
 #define TEST_END return _result
-#define TEST_FUNC(F) _result = _result || F
+#define TEST_FUNC(F)                                                           \
+    {                                                                          \
+        auto _result_temp = F;                                                 \
+        if (_result_temp) {                                                    \
+            std::cout.precision(std::numeric_limits<double>::max_digits10);    \
+            std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
+                      << std::endl;                                            \
+            std::cout << #F << " failed" << std::endl;                         \
+        }                                                                      \
+        _result = _result || _result_temp;                                     \
+    }
 
 #define EXPECT_NEAR_ABS(VAL1, VAL2, TOL)                                       \
     {                                                                          \
@@ -90,7 +100,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
                       << std::endl;                                            \
-            std::cout << "Expected Equal" << std::endl;                        \
+            std::cout << "Expected " << #VAL1 << " == " << #VAL2 << std::endl; \
             _result = 1;                                                       \
         }                                                                      \
     }
@@ -101,7 +111,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
                       << std::endl;                                            \
-            std::cout << "Expected difference" << std::endl;                   \
+            std::cout << "Expected " << #VAL1 << " != " << #VAL2 << std::endl; \
             _result = 1;                                                       \
         }                                                                      \
     }

@@ -9,6 +9,13 @@
 int main() {
     TEST_START;
 
+    std::cout << "32 digits " << std::numeric_limits<std::uint32_t>::digits
+              << std::endl;
+    std::cout << "64 digits " << std::numeric_limits<std::uint64_t>::digits
+              << std::endl;
+    std::cout << "32fast digits "
+              << std::numeric_limits<std::uint_fast32_t>::digits << std::endl;
+
     // check against std
     {
         std::mt19937 rng1;
