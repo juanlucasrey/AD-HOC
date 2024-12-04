@@ -6,7 +6,7 @@ function(run_check filelist)
         set(test_name "dynamic.${target}")
         add_executable(${test_name} "${testfile}")
         add_test(NAME ${test_name} COMMAND ${test_name})
-        target_include_directories(${test_name} SYSTEM PUBLIC)
+        target_include_directories(${test_name} SYSTEM PUBLIC ../include ../../../boost_1_85_0 ../../../cpp-counter-based-engine)
     endforeach()
 endfunction()
 
@@ -15,6 +15,7 @@ set(BRNG
     linear_congruential_engine.cpp
     split_mix.cpp
     subtract_with_carry_engine.cpp
+    philox_engine.cpp
 )
 
 run_check("${BRNG}")
