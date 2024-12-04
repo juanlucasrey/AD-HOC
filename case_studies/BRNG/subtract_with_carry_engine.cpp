@@ -62,6 +62,9 @@ int main() {
         EXPECT_EQUAL(gen48(), 61'839'128'582'725);
     }
 
+    // NOT WORKING!!
+    // { adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 2, 4> rng1; }
+
     // to be corrected on std!!
     {
         std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1;

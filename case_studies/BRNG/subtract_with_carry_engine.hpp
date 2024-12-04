@@ -64,6 +64,11 @@ class subtract_with_carry_engine final {
 
     static constexpr result_type modulus = static_cast<result_type>(1U) << w;
 
+    static_assert(s >= 1U);
+    static_assert(s < r);
+    static_assert(w >= 1U);
+    static_assert(w <= std::numeric_limits<UIntType>::digits);
+
     template <class SeedSeq> explicit subtract_with_carry_engine(SeedSeq &seq) {
         std::array<std::uint_least32_t, n * r> seeds;
         seq.generate(seeds.begin(), seeds.end());
@@ -158,7 +163,13 @@ class subtract_with_carry_engine final {
         return static_cast<result_type>(0U);
     }
     static constexpr auto max() -> UIntType {
-        return (static_cast<result_type>(1U) << w) - 1;
+        constexpr UIntType ach = static_cast<UIntType>(1U)
+                                 << static_cast<std::size_t>(w - 1U);
+
+        return ach | (ach - static_cast<UIntType>(1U));
+
+        // equivalent to the following but shift does not overflow
+        // return (static_cast<result_type>(1U) << w) - 1U;
     }
 
     auto operator==(const subtract_with_carry_engine &rhs) const -> bool {
