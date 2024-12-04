@@ -11,6 +11,15 @@ template <class UIntType, std::size_t w, std::size_t n, std::size_t m,
           std::size_t r, UIntType a, std::size_t u, UIntType d, std::size_t s,
           UIntType b, std::size_t t, UIntType c, std::size_t l, UIntType f>
 class mersenne_twister_engine final {
+    static_assert(1 <= m && m <= n);
+    static_assert(w >= 3);
+    static_assert(w >= r);
+    static_assert(w >= u);
+    static_assert(w >= s);
+    static_assert(w >= t);
+    static_assert(w >= l);
+    static_assert(w <= std::numeric_limits<UIntType>::digits);
+
   public:
     using result_type = UIntType;
 
@@ -136,16 +145,23 @@ class mersenne_twister_engine final {
         return z;
     }
 
+    void discard(unsigned long long z) {
+        for (unsigned long long i = 0; i < z; ++i) {
+            this->operator()();
+        }
+    }
+
     static constexpr auto min() -> UIntType {
-        return std::numeric_limits<UIntType>::min();
+        return static_cast<result_type>(0U);
     }
     static constexpr auto max() -> UIntType {
         constexpr UIntType ach = static_cast<UIntType>(1U)
                                  << static_cast<std::size_t>(w - 1U);
 
-        // this is equivalent to 2^w - 1 but working for w or 2*w or 4*w ...
-        // bits
         return ach | (ach - static_cast<UIntType>(1U));
+
+        // equivalent to the following but shift does not overflow
+        // return (static_cast<result_type>(1U) << w) - 1U;
     }
 
   private:

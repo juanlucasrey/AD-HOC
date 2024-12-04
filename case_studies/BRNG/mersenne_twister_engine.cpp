@@ -9,6 +9,16 @@
 int main() {
     TEST_START;
 
+    // std check
+    {
+        adhoc::mt19937 gen32;    // overload (1)
+        adhoc::mt19937_64 gen64; // overload (1)
+        gen32.discard(10000 - 1);
+        gen64.discard(10000 - 1);
+        EXPECT_EQUAL(gen32(), 4123659995);
+        EXPECT_EQUAL(gen64(), 9981545732273789042ull);
+    }
+
     // check against std
     {
         std::mt19937 rng1;
