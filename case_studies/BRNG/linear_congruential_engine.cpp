@@ -9,6 +9,16 @@
 int main() {
     TEST_START;
 
+    // std check
+    {
+        adhoc::minstd_rand0 gen1; // overload (1)
+        adhoc::minstd_rand gen2;  // overload (1)
+        gen1.discard(10000 - 1);
+        gen2.discard(10000 - 1);
+        EXPECT_EQUAL(gen1(), 1043618065);
+        EXPECT_EQUAL(gen2(), 399268537);
+    }
+
     // check against std minstd_rand0
     {
         std::minstd_rand0 rng1;

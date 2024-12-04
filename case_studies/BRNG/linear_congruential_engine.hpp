@@ -347,6 +347,12 @@ class linear_congruential_engine final {
         }
     }
 
+    void discard(unsigned long long z) {
+        for (unsigned long long i = 0; i < z; ++i) {
+            this->operator()();
+        }
+    }
+
     static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
     static constexpr auto max() -> UIntType {
         return m == 0 ? std::numeric_limits<result_type>::max() : m - 1U;
