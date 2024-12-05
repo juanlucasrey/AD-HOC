@@ -2,6 +2,7 @@
 #define CASE_STUDIES_BRNG_PHILOX_ENGINE
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <iterator>
 #include <ranges>
@@ -61,18 +62,6 @@ static auto mulhilo(U a, U b) -> std::pair<U, U> {
     return {U(ab >> W), U((ab << (xwidth - W)) >> (xwidth - W))};
 }
 
-template <typename UIntType, typename Tuple, size_t... Is>
-constexpr auto get_even_array_from_tuple(Tuple t, std::index_sequence<Is...>) {
-    return std::array<UIntType, std::index_sequence<Is...>::size()>{
-        std::get<Is * 2>(t)...};
-}
-
-template <typename UIntType, typename Tuple, size_t... Is>
-constexpr auto get_odd_array_from_tuple(Tuple t, std::index_sequence<Is...>) {
-    return std::array<UIntType, std::index_sequence<Is...>::size()>{
-        std::get<Is * 2 + 1>(t)...};
-}
-
 } // namespace detail
 
 template <typename UIntType, std::size_t w, std::size_t n, std::size_t r,
@@ -83,25 +72,18 @@ class philox_engine {
     static_assert(0 < r);
     static_assert(0 < w && w <= std::numeric_limits<UIntType>::digits);
 
-    static constexpr std::size_t array_size = n / 2;
-    // static constexpr std::size_t key_count = n / 2; // keys_count
-
   public:
     using result_type = UIntType;
 
     static constexpr std::size_t word_size = w;
     static constexpr std::size_t word_count = n;
     static constexpr std::size_t round_count = r;
-    static constexpr std::array<result_type, array_size> multipliers =
-        detail::get_even_array_from_tuple<UIntType>(
-            std::make_tuple(consts...), std::make_index_sequence<array_size>{});
-    static constexpr std::array<result_type, array_size> round_consts =
-        detail::get_odd_array_from_tuple<UIntType>(
-            std::make_tuple(consts...), std::make_index_sequence<array_size>{});
     static constexpr result_type default_seed = 20111115U;
 
-    static constexpr result_type min() { return static_cast<result_type>(0U); }
-    static constexpr result_type max() {
+    static constexpr auto min() -> result_type {
+        return static_cast<result_type>(0U);
+    }
+    static constexpr auto max() -> result_type {
         return (result_type(~(result_type(0))) >>
                 (std::numeric_limits<result_type>::digits - w));
 
@@ -109,170 +91,78 @@ class philox_engine {
         // return (static_cast<result_type>(1U) << w) - 1U;
     }
 
-    // constructors and seeding functions
     philox_engine() : philox_engine(default_seed) {}
     explicit philox_engine(result_type value) {
-        std::size_t i = 0;
-        for (i = 0; i < word_count; i++) {
-            state[i] = 0;
-        }
-
         constexpr result_type mask = max();
-
-        state[i] = value & mask;
-        // auto start = value.begin();
-        // auto end = value.end();
-        // for (; i < state_size; i++) { // keys are set as seed
-        //     state[i] = (start == end) ? 0 : (*start++) & mask;
-        // }
-        results[0] = 0;
-    }
-    // template <class Sseq> explicit philox_engine(Sseq &q);
-    // void seed(result_type value = default_seed);
-    // template <class Sseq> void seed(Sseq &q);
-    // void set_counter(const std::array<result_type, n> &counter);
-    // generating functions
-
-    static constexpr std::size_t period_counter_count = 1;
-    using counter_type = detail::uint_fast<period_counter_count *
-                                           word_size>; // WARNING: doesn't scale
-                                                       // for word_count > 4
-
-  private:
-    static constexpr size_t state_size = 3 * n / 2; // counters + keys
-    std::array<result_type, state_size> state{
-        0}; // state: [counter_0,..., counter_n, key_0, ..., key_n/2-1];
-
-    std::array<result_type, word_count> results{0};
-
-    counter_type get_counter_internal() const { // need to check
-        std::uint64_t ret = 0;
-        for (size_t i = 0; i < period_counter_count; ++i) {
-            ret |= std::uint64_t(state[i]) << (word_size * i);
-        }
-        return ret;
+        this->K[0] = value & mask;
     }
 
-    void set_counter_internal(std::array<result_type, state_size> &s,
-                              counter_type newctr) { // need to check
-        constexpr auto in_mask = max();
-        static_assert(word_size * period_counter_count <=
-                      std::numeric_limits<counter_type>::digits);
-        for (size_t i = 0; i < period_counter_count; ++i)
-            s[i] = (newctr >> (word_size * i)) & in_mask;
-    }
+    auto operator()() -> result_type {
+        this->j++;
+        if (this->j == n) {
+            this->generate();
 
-    void increase_counter_internal() { // need to check
-        constexpr auto in_mask = max();
-        state[0] = (state[0] + 1) & in_mask;
-        for (size_t i = 1; i < period_counter_count; ++i) {
-            if (state[i - 1]) {
-                [[likely]] return;
-            }
-            state[i] = (state[i] + 1) & in_mask;
+            constexpr auto in_mask = max();
+            std::size_t i = 0;
+            do {
+                this->X[i] = (this->X[i] + 1) & in_mask;
+                ++i;
+            } while (i < n && !this->X[i - 1]);
+
+            this->j = 0;
         }
-    }
-
-    template <std::ranges::input_range InRange,
-              std::weakly_incrementable Output>
-    requires std::ranges::sized_range<InRange> &&
-             std::integral<
-                 std::iter_value_t<std::ranges::range_value_t<InRange>>> &&
-             std::integral<std::iter_value_t<Output>> &&
-             std::indirectly_writable<Output, std::iter_value_t<Output>>
-    Output generate(InRange &&inrange, Output output) {
-        constexpr auto in_mask = max();
-        for (auto initer : inrange) {
-            if constexpr (n == 2) {
-                result_type R0 = (*initer++) & in_mask;
-                result_type L0 = (*initer++) & in_mask;
-                result_type K0 = (*initer++) & in_mask;
-                for (size_t i = 0; i < round_count; ++i) {
-                    auto [hi, lo] =
-                        detail::mulhilo<word_size>(R0, multipliers[0]);
-                    R0 = hi ^ K0 ^ L0;
-                    L0 = lo;
-                    K0 = (K0 + round_consts[0]) & in_mask;
-                }
-                *output++ = R0;
-                *output++ = L0;
-            } else if constexpr (n == 4) {
-                result_type R0 = (*initer++) & in_mask;
-                result_type L0 = (*initer++) & in_mask;
-                result_type R1 = (*initer++) & in_mask;
-                result_type L1 = (*initer++) & in_mask;
-                result_type K0 = (*initer++) & in_mask;
-                result_type K1 = (*initer++) & in_mask;
-                for (size_t i = 0; i < r; ++i) {
-                    auto [hi0, lo0] =
-                        detail::mulhilo<word_size>(R0, multipliers[0]);
-                    auto [hi1, lo1] =
-                        detail::mulhilo<word_size>(R1, multipliers[1]);
-                    R0 = hi1 ^ L0 ^ K0;
-                    L0 = lo1;
-                    R1 = hi0 ^ L1 ^ K1;
-                    L1 = lo0;
-                    K0 = (K0 + round_consts[0]) & in_mask;
-                    K1 = (K1 + round_consts[1]) & in_mask;
-                }
-                *output++ = R0;
-                *output++ = L0;
-                *output++ = R1;
-                *output++ = L1;
-            }
-            // No more cases.  See the static_assert(n==2 || n==4) at the top of
-            // the class
-        }
-        return output;
-    }
-
-  public:
-    result_type operator()() {
-        result_type ret;
-        auto out = &ret;
-        std::size_t len = 1;
-        auto ri = results[0];
-        if (ri && len) {
-            while (ri < word_count && len) {
-                *out++ = results[ri++];
-                --len;
-            }
-            if (ri == word_count)
-                ri = 0;
-        }
-
-        auto nprf = len / word_count;
-
-        auto c0 = get_counter_internal();
-        std::array<result_type, state_size> state_tmp;
-        out = generate(std::ranges::views::iota(c0, c0 + nprf) |
-                           std::ranges::views::transform([&](auto ctr) {
-                               state_tmp = state;
-                               set_counter_internal(state_tmp, ctr);
-                               return std::ranges::begin(state_tmp);
-                           }),
-                       out);
-        len -= nprf * word_count;
-        set_counter_internal(state, c0 + nprf);
-
-        // Restock the results array
-        if (ri == 0 && len) {
-            generate(std::ranges::single_view(state.data()), results.data());
-            increase_counter_internal();
-        }
-
-        // Finish off any stragglers.
-        while (len--)
-            *out++ = results[ri++];
-        results[0] = ri;
-        // return *out;
-        return ret;
+        return Y[this->j];
     }
     void discard(unsigned long long z) {
         for (unsigned long long i = 0; i < z; ++i) {
             this->operator()();
         }
     }
+
+  private:
+    void generate() {
+        constexpr auto in_mask = max();
+        constexpr std::array<UIntType, n> consts_arr{consts...};
+        if constexpr (n == 2) {
+            result_type R0 = this->X[0];
+            result_type L0 = this->X[1];
+            result_type K0 = this->K[0];
+            for (size_t i = 0; i < round_count; ++i) {
+                auto [hi, lo] = detail::mulhilo<word_size>(R0, consts_arr[0]);
+                R0 = hi ^ L0 ^ K0;
+                L0 = lo;
+                K0 = (K0 + consts_arr[1]) & in_mask;
+            }
+            Y[0] = R0;
+            Y[1] = L0;
+        } else if constexpr (n == 4) {
+            result_type R0 = this->X[0];
+            result_type L0 = this->X[1];
+            result_type R1 = this->X[2];
+            result_type L1 = this->X[3];
+            result_type K0 = this->K[0];
+            result_type K1 = this->K[1];
+            for (size_t i = 0; i < r; ++i) {
+                auto [hi0, lo0] = detail::mulhilo<word_size>(R0, consts_arr[0]);
+                auto [hi1, lo1] = detail::mulhilo<word_size>(R1, consts_arr[2]);
+                R0 = hi1 ^ L0 ^ K0;
+                L0 = lo1;
+                R1 = hi0 ^ L1 ^ K1;
+                L1 = lo0;
+                K0 = (K0 + consts_arr[1]) & in_mask;
+                K1 = (K1 + consts_arr[3]) & in_mask;
+            }
+            Y[0] = R0;
+            Y[1] = L0;
+            Y[2] = R1;
+            Y[3] = L1;
+        }
+    }
+
+    std::array<UIntType, n> X{0};
+    std::array<UIntType, n / 2> K{0};
+    std::array<UIntType, n> Y{0};
+    std::size_t j{n - 1};
 };
 
 using philox4x32 = philox_engine<std::uint_fast32_t, 32, 4, 10, 0xD2511F53,
