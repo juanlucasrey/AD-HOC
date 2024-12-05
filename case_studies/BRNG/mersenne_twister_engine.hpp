@@ -164,6 +164,10 @@ class mersenne_twister_engine final {
         // return (static_cast<result_type>(1U) << w) - 1U;
     }
 
+    auto operator==(const mersenne_twister_engine &rhs) const -> bool {
+        return (this->x == rhs.x) && (this->i == rhs.i);
+    }
+
   private:
     std::array<UIntType, n> x{0};
     std::size_t i{0};

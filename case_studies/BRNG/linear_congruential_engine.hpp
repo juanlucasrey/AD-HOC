@@ -243,6 +243,10 @@ class linear_congruential_engine final {
         return m == 0 ? std::numeric_limits<result_type>::max() : m - 1U;
     }
 
+    auto operator==(const linear_congruential_engine &rhs) const -> bool {
+        return (this->x == rhs.x);
+    }
+
   private:
     UIntType x;
 };

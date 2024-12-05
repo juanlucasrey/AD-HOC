@@ -39,6 +39,16 @@ int main() {
         TEST_FUNC(compare_rng_limits(rng1, rng2));
     }
 
+    {
+        adhoc::philox4x32 rng;  // overload (1)
+        adhoc::philox4x32 rng2; // overload (1)
+
+        TEST_FUNC(check_fwd_and_back(rng, 1000));
+        TEST_FUNC(check_back_and_fwd(rng, 1000));
+
+        EXPECT_EQUAL(rng, rng2);
+    }
+
     // check 32->64
     {
         adhoc::philox4x32 rng1; // overload (1)

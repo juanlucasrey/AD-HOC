@@ -40,38 +40,72 @@ class philox_engine {
     explicit philox_engine(result_type value) {
         constexpr result_type mask = max();
         this->K[0] = value & mask;
+        this->decrease_counter();
+        this->generate<2>();
+        this->increase_counter();
     }
 
     // version 0: STD
     // version 1: correction, working
     // version 2: correction, efficient
-    template <std::size_t Version = 2> auto operator()() -> result_type {
-        this->j++;
-        if (this->j == n) {
-            this->generate<Version>();
-
-            constexpr auto in_mask = max();
-            std::size_t i = 0;
-            do {
-                this->X[i] = (this->X[i] + 1) & in_mask;
-                ++i;
-            } while (i < n && !this->X[i - 1]);
-
-            this->j = 0;
+    template <bool FwdDirection = true, std::size_t Version = 2>
+    inline auto operator()() -> result_type {
+        if constexpr (FwdDirection) {
+            ++this->j;
+            if (this->j == n) {
+                this->generate<Version>();
+                this->increase_counter();
+                this->j = 0;
+            }
+            return Y[this->j];
+        } else {
+            const result_type result = Y[this->j];
+            if (this->j == 0) {
+                this->j = n;
+                this->decrease_counter();
+                this->decrease_counter();
+                this->generate<Version>();
+                this->increase_counter();
+            }
+            --this->j;
+            return result;
         }
-        return Y[this->j];
     }
 
     // version 0: STD
     // version 1: correction, working
     // version 2: correction, efficient
-    template <std::size_t Version = 2> void discard(unsigned long long z) {
+    template <std::size_t Version = 2>
+    inline void discard(unsigned long long z) {
         for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()<Version>();
+            this->operator()<true, Version>();
         }
+    }
+
+    auto operator==(const philox_engine &rhs) const -> bool {
+        return (this->X == rhs.X) && (this->K == rhs.K) && (this->Y == rhs.Y) &&
+               (this->j == rhs.j);
     }
 
   private:
+    inline void increase_counter() {
+        constexpr auto in_mask = max();
+        std::size_t i = 0;
+        do {
+            this->X[i] = (this->X[i] + 1) & in_mask;
+            ++i;
+        } while (i < n && !this->X[i - 1]);
+    }
+
+    inline void decrease_counter() {
+        constexpr auto in_mask = max();
+        std::size_t i = 0;
+        do {
+            this->X[i] = (this->X[i] - 1) & in_mask;
+            ++i;
+        } while (i < n && (this->X[i - 1] == in_mask));
+    }
+
     template <std::unsigned_integral U>
     inline auto mulhilo(U a, U b) -> std::pair<U, U> {
 
@@ -86,7 +120,7 @@ class philox_engine {
         return {static_cast<U>(ab >> w), static_cast<U>(ab) & this->max()};
     }
 
-    template <std::size_t Version> void generate() {
+    template <std::size_t Version> inline void generate() {
         constexpr auto in_mask = max();
         constexpr std::array<UIntType, n> consts_arr{consts...};
         if constexpr (n == 2) {
