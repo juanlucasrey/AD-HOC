@@ -21,6 +21,16 @@ int main() {
         EXPECT_EQUAL(rng2(), 3409172418970261260U);
     }
 
+    // literal std description does not work!
+    {
+        adhoc::philox4x32 rng1; // overload (1)
+        adhoc::philox4x64 rng2; // overload (1)
+        rng1.discard<0>(10000 - 1);
+        rng2.discard<0>(10000 - 1);
+        EXPECT_NOT_EQUAL(rng1(), 1955073260U);
+        EXPECT_NOT_EQUAL(rng2(), 3409172418970261260U);
+    }
+
     // check against ref impl
     {
         philox4x32 rng1;        // overload (1)
@@ -61,7 +71,8 @@ int main() {
 
     // check against ref impl
     {
-        philox_engine<std::uint_fast32_t, 32, 2, 10, 1, 0xD2511F53, 0x9E3779B9>
+        philox_engine<std::uint_fast32_t, 32, 2, 10, 1, 0xD2511F53,
+                      0x9E3779B9>
             rng1; // overload (1)
         adhoc::philox_engine<std::uint_fast32_t, 32, 2, 10, 0xD2511F53,
                              0x9E3779B9>

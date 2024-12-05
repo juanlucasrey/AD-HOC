@@ -1,6 +1,8 @@
 #ifndef CASE_STUDIES_BRNG_LINEAR_CONGRUENTIAL_ENGINE
 #define CASE_STUDIES_BRNG_LINEAR_CONGRUENTIAL_ENGINE
 
+#include "uint128.hpp"
+
 #include <cstdint>
 #include <limits>
 
@@ -163,123 +165,6 @@ constexpr auto modular_multiplicative_inverse_max_plus_one(UIntType b) {
     }
 }
 
-struct uint128 {
-    std::uint64_t high;
-    std::uint64_t low;
-
-    template <class T>
-    constexpr uint128(T const v)
-        : high(0), low(static_cast<std::uint64_t>(v)) {}
-
-    template <class T>
-    uint128(T h, T l)
-        : high(static_cast<std::uint64_t>(h)),
-          low(static_cast<std::uint64_t>(l)) {}
-
-    operator std::uint64_t() const { return low; }
-
-    auto operator+=(const uint128 &v) noexcept -> uint128 {
-        auto o = low;
-        low += v.low;
-        high += v.high;
-        high += (low < o);
-        return *this;
-    }
-
-    auto operator+(const uint128 &v) const noexcept -> uint128 {
-        uint128 t(*this);
-        t += v;
-        return t;
-    }
-
-    uint128 operator-=(const uint128 &v) noexcept {
-        auto o = low;
-        low -= v.low;
-        high -= v.high;
-        high -= (low > o);
-        return *this;
-    }
-
-    auto operator-(const uint128 &v) const noexcept -> uint128 {
-        uint128 t(*this);
-        t -= v;
-        return t;
-    }
-
-    auto operator<<(int amount) -> uint128 {
-        // uint64_t shifts of >= 64 are undefined, so we will need some
-        // special-casing.
-        return amount >= 64 ? uint128(low << (amount - 64),
-                                      static_cast<std::uint64_t>(0))
-               : amount == 0
-                   ? *this
-                   : uint128((high << amount) | (low >> (64 - amount)),
-                             low << amount);
-    }
-
-    uint128 operator<<=(uint8_t amount) noexcept {
-        high <<= amount;
-        high |= low >> (64 - amount);
-        low <<= amount;
-        return *this;
-    }
-
-    auto operator*(const uint128 &rhs) const noexcept -> uint128 {
-        uint64_t a32 = low >> 32;
-        uint64_t a00 = low & 0xffffffff;
-        uint64_t b32 = rhs.low >> 32;
-        uint64_t b00 = rhs.low & 0xffffffff;
-        uint128 result =
-            uint128(high * rhs.low + low * rhs.high + a32 * b32, a00 * b00);
-        result += uint128(a32 * b00) << 32;
-        result += uint128(a00 * b32) << 32;
-        return result;
-    }
-
-    bool operator<=(const uint128 &o) const noexcept {
-        return high < o.high || (high == o.high && low <= o.low);
-    }
-
-    bool operator>=(const uint128 &o) const noexcept {
-        return high > o.high || (high == o.high && low >= o.low);
-    }
-
-    uint128 operator>>=(uint8_t v) noexcept {
-        low >>= v;
-        low |= high << (64 - v);
-        high >>= v;
-        return *this;
-    }
-
-    uint128 operator>>(uint8_t v) const noexcept {
-        uint128 t(*this);
-        t >>= v;
-        return t;
-    }
-
-    uint128 operator%=(const uint128 &b) {
-        // if (!b)
-        //     throw std::domain_error("divide by zero");
-
-        uint128 x(b), y(*this >> static_cast<uint8_t>(1));
-        while (x <= y) {
-            x <<= 1;
-        }
-        while (*this >= b) {
-            if (*this >= x)
-                *this -= x;
-            x >>= 1;
-        }
-        return *this;
-    }
-
-    uint128 operator%(const uint128 &v) const noexcept {
-        uint128 t(*this);
-        t %= v;
-        return t;
-    }
-};
-
 } // namespace detail
 
 template <class UIntType, UIntType a, UIntType c, UIntType m>
@@ -319,11 +204,11 @@ class linear_congruential_engine final {
             constexpr auto digits = std::numeric_limits<UIntType>::digits;
 
             using upgraded_type = std::conditional_t<
-                digits == 8, std::uint_fast16_t,
+                digits <= 8, std::uint_fast16_t,
                 std::conditional_t<
-                    digits == 16, std::uint_fast32_t,
-                    std::conditional_t<digits == 32, std::uint_fast64_t,
-                                       detail::uint128>>>;
+                    digits <= 16, std::uint_fast32_t,
+                    std::conditional_t<digits <= 32, std::uint_fast64_t,
+                                       uint128>>>;
 
             constexpr auto c_64 = static_cast<upgraded_type>(c);
             constexpr auto m_64 = static_cast<upgraded_type>(m);
