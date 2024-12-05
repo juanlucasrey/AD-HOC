@@ -13,7 +13,7 @@ auto compare_rng(RNG1 &rng1, RNG2 &rng2, std::size_t n) -> int {
         auto val1 = rng1();
         auto val2 = rng2();
         if (val1 != val2) {
-            std::cout << "diff" << val1 << ", " << val2 << ", " << i
+            std::cout << "diff: " << val1 << ", " << val2 << ", " << i
                       << std::endl;
         }
         EXPECT_EQUAL(rng1(), rng2());
