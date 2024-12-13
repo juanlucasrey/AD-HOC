@@ -29,26 +29,24 @@ template <class UIntType, std::size_t w, std::size_t s, std::size_t r,
           bool original = false>
 class subtract_with_carry_engine final {
   private:
-    static constexpr std::size_t n = std::size_t(w / 32) + 1;
+    static constexpr std::size_t k = std::size_t(w / 32) + 1;
 
-    void init(std::array<std::uint_least32_t, n * r> const &seeds) {
+    void init(std::array<std::uint_least32_t, r * k> const &seeds) {
         auto iter = seeds.begin();
         for (std::size_t j = 0; j < r; j++) {
             UIntType val = 0;
-            for (std::size_t k = 0; k < n; ++k) {
-                val += static_cast<UIntType>(*iter++) << 32 * k;
+            for (std::size_t ki = 0; ki < k; ++ki) {
+                val += static_cast<UIntType>(*iter++) << 32 * ki;
             }
             this->x[j] = val % modulus;
         }
 
-        this->k = 0;
-
         this->carry = (this->x[long_lag - 1] == 0);
         if constexpr (!original) {
-            for (unsigned long long i = 0; i < long_lag; ++i) {
+            for (std::size_t j = 0; j < long_lag; ++j) {
                 this->operator()();
             }
-            for (unsigned long long i = 0; i < long_lag; ++i) {
+            for (std::size_t j = 0; j < long_lag; ++j) {
                 this->operator()<false>();
             }
         }
@@ -69,19 +67,20 @@ class subtract_with_carry_engine final {
     static_assert(w >= 1U);
     static_assert(w <= std::numeric_limits<UIntType>::digits);
 
-    template <class SeedSeq> explicit subtract_with_carry_engine(SeedSeq &seq) {
-        std::array<std::uint_least32_t, n * r> seeds;
-        seq.generate(seeds.begin(), seeds.end());
+    subtract_with_carry_engine() : subtract_with_carry_engine(0U) {}
+
+    explicit subtract_with_carry_engine(result_type value) {
+        linear_congruential_engine<std::uint_least32_t, 40014U, 0U, 2147483563U>
+            e(value == 0U ? default_seed : value);
+        std::array<std::uint_least32_t, r * k> seeds;
+        std::generate(seeds.begin(), seeds.end(), e);
         this->init(seeds);
     }
 
-    explicit subtract_with_carry_engine(result_type value = default_seed) {
-        linear_congruential_engine<std::uint_least32_t, 40014U, 0U, 2147483563U>
-            e(value == 0U ? default_seed : value);
-        constexpr auto n = std::size_t(w / 32) + 1;
-        std::array<std::uint_least32_t, n * r> seeds;
-        std::generate(seeds.begin(), seeds.end(), e);
-        this->init(seeds);
+    template <class SeedSeq> explicit subtract_with_carry_engine(SeedSeq &seq) {
+        std::array<std::uint_least32_t, r * k> a;
+        seq.generate(a.begin(), a.end());
+        this->init(a);
     }
 
     template <bool FwdDirection = true>
@@ -89,41 +88,41 @@ class subtract_with_carry_engine final {
 
         if constexpr (FwdDirection) {
             const std::size_t short_index =
-                (this->k < short_lag) ? (this->k + long_lag - short_lag)
-                                      : (this->k - short_lag);
+                (this->i < short_lag) ? (this->i + long_lag - short_lag)
+                                      : (this->i - short_lag);
 
             const UIntType carry_prev = carry;
-            const UIntType x_prev = this->x[k];
-            const UIntType temp = this->x[k] + carry;
+            const UIntType x_prev = this->x[this->i];
+            const UIntType temp = this->x[this->i] + carry;
             if (this->x[short_index] >= temp) {
-                this->x[k] = this->x[short_index] - temp;
+                this->x[this->i] = this->x[short_index] - temp;
                 this->carry = 0;
             } else {
-                this->x[k] = modulus - temp + this->x[short_index];
+                this->x[this->i] = modulus - temp + this->x[short_index];
                 this->carry = 1;
             }
 
-            const UIntType result = this->x[this->k];
-            this->k = (this->k == (long_lag - 1)) ? 0 : (this->k + 1);
+            const UIntType result = this->x[this->i];
+            this->i = (this->i == (long_lag - 1)) ? 0 : (this->i + 1);
             return result;
         } else {
-            this->k = (this->k == 0) ? (long_lag - 1) : (this->k - 1);
-            const UIntType result = this->x[this->k];
+            this->i = (this->i == 0) ? (long_lag - 1) : (this->i - 1);
+            const UIntType result = this->x[this->i];
 
             const std::size_t short_index =
-                (this->k < short_lag) ? (this->k + long_lag - short_lag)
-                                      : (this->k - short_lag);
+                (this->i < short_lag) ? (this->i + long_lag - short_lag)
+                                      : (this->i - short_lag);
 
             const UIntType temp =
-                this->carry ? modulus - this->x[k] + this->x[short_index]
-                            : this->x[short_index] - this->x[k];
+                this->carry ? modulus - this->x[this->i] + this->x[short_index]
+                            : this->x[short_index] - this->x[this->i];
 
             if (temp == 0) {
                 this->carry = 0;
             } else if (temp == modulus) {
                 this->carry = 1;
             } else {
-                std::size_t k_prev = this->k;
+                std::size_t k_prev = this->i;
                 UIntType temp_prev = 0;
                 std::size_t short_index_prev = short_index;
                 do {
@@ -138,7 +137,7 @@ class subtract_with_carry_engine final {
                     } else {
                         temp_prev = this->x[short_index_prev] - temp_prev;
                     }
-                } while (temp_prev == 0 && k_prev != this->k);
+                } while (temp_prev == 0 && k_prev != this->i);
 
                 if (this->x[short_index_prev] >= temp_prev) {
                     this->carry = 0;
@@ -147,14 +146,14 @@ class subtract_with_carry_engine final {
                 }
             }
 
-            this->x[k] = temp - this->carry;
+            this->x[this->i] = temp - this->carry;
 
             return result;
         }
     }
 
     void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
+        for (unsigned long long j = 0; j < z; ++j) {
             this->operator()();
         }
     }
@@ -173,14 +172,14 @@ class subtract_with_carry_engine final {
     }
 
     auto operator==(const subtract_with_carry_engine &rhs) const -> bool {
-        return (this->carry == rhs.carry) && (this->k == rhs.k) &&
+        return (this->carry == rhs.carry) && (this->i == rhs.i) &&
                (this->x == rhs.x);
     }
 
   private:
-    std::array<UIntType, long_lag> x;
-    std::size_t k{};
-    UIntType carry;
+    std::array<UIntType, long_lag> x{0};
+    std::size_t i{0};
+    UIntType carry{0};
 };
 
 using ranlux24_base =

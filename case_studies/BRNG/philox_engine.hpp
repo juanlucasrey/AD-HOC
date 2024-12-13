@@ -12,10 +12,29 @@ namespace adhoc {
 template <typename UIntType, std::size_t w, std::size_t n, std::size_t r,
           UIntType... consts>
 class philox_engine {
+  private:
     static_assert(sizeof...(consts) == n);
     static_assert(n == 2 || n == 4 || n == 8 || n == 16);
     static_assert(0 < r);
     static_assert(0 < w && w <= std::numeric_limits<UIntType>::digits);
+
+    inline void increase_counter() {
+        constexpr auto in_mask = max();
+        std::size_t i = 0;
+        do {
+            this->X[i] = (this->X[i] + 1) & in_mask;
+            ++i;
+        } while (i < n && !this->X[i - 1]);
+    }
+
+    inline void decrease_counter() {
+        constexpr auto in_mask = max();
+        std::size_t i = 0;
+        do {
+            this->X[i] = (this->X[i] - 1) & in_mask;
+            ++i;
+        } while (i < n && (this->X[i - 1] == in_mask));
+    }
 
   public:
     using result_type = UIntType;
@@ -37,6 +56,7 @@ class philox_engine {
     }
 
     philox_engine() : philox_engine(default_seed) {}
+
     explicit philox_engine(result_type value) {
         constexpr result_type mask = max();
         this->K[0] = value & mask;
@@ -45,6 +65,34 @@ class philox_engine {
         this->increase_counter();
     }
 
+    template <class SeedSeq> explicit philox_engine(SeedSeq &seq) {
+        constexpr std::size_t p = (w - 1) / 32 + 1;
+        constexpr std::size_t n_half = n / 2;
+
+        std::array<std::uint_least32_t, n_half * p> a;
+        seq.generate(a.begin(), a.end());
+
+        constexpr result_type mask = max();
+        auto iter = a.begin();
+        for (std::size_t n_idx = 0; n_idx < n_half; n_idx++) {
+            UIntType val = 0;
+            for (std::size_t p_idx = 0; p_idx < p; ++p_idx) {
+                val += static_cast<UIntType>(*iter++) << 32 * p_idx;
+            }
+            this->K[n_idx] = val & mask;
+        }
+    }
+
+    void set_counter(const std::array<result_type, n> &c) {
+        constexpr result_type mask = max();
+        for (std::size_t i = 0; i < n; ++i) {
+            this->X[i] = c[i] & mask;
+        }
+        this->j = n - 1;
+        this->decrease_counter();
+        this->generate<2>();
+        this->increase_counter();
+    }
     // version 0: STD
     // version 1: correction, working
     // version 2: correction, efficient
@@ -88,24 +136,6 @@ class philox_engine {
     }
 
   private:
-    inline void increase_counter() {
-        constexpr auto in_mask = max();
-        std::size_t i = 0;
-        do {
-            this->X[i] = (this->X[i] + 1) & in_mask;
-            ++i;
-        } while (i < n && !this->X[i - 1]);
-    }
-
-    inline void decrease_counter() {
-        constexpr auto in_mask = max();
-        std::size_t i = 0;
-        do {
-            this->X[i] = (this->X[i] - 1) & in_mask;
-            ++i;
-        } while (i < n && (this->X[i - 1] == in_mask));
-    }
-
     template <std::unsigned_integral U>
     inline auto mulhilo(U a, U b) -> std::pair<U, U> {
 
