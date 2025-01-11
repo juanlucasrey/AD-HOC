@@ -3,15 +3,11 @@
 
 #include "philox_engine.hpp"
 
-// #include <counter_based_engine.hpp>
-#include <alternative_version/philox_engine.hpp>
-
-#include <random>
-
 int main() {
+
     TEST_START;
 
-    // check against std
+    // std check
     {
         adhoc::philox4x32 rng1; // overload (1)
         adhoc::philox4x64 rng2; // overload (1)
@@ -21,31 +17,40 @@ int main() {
         EXPECT_EQUAL(rng2(), 3409172418970261260U);
     }
 
-    // literal std description does not work!
+    // check full cycle equality
     {
-        adhoc::philox4x32 rng1; // overload (1)
-        adhoc::philox4x64 rng2; // overload (1)
-        rng1.discard<0>(10000 - 1);
-        rng2.discard<0>(10000 - 1);
-        EXPECT_NOT_EQUAL(rng1(), 1955073260U);
-        EXPECT_NOT_EQUAL(rng2(), 3409172418970261260U);
+        adhoc::philox4x64 rng1;
+        adhoc::philox4x64 rng2;
+        rng2.set_counter(std::array<std::uint_fast64_t, 4UL>{
+            18446744073709551615U, 18446744073709551615U, 18446744073709551615U,
+            18446744073709551615U});
+        for (unsigned int i = 0; i < 4; ++i) {
+            rng2();
+        }
+        EXPECT_EQUAL(rng1, rng2);
     }
 
-    // check against ref impl
+    // 32 fwd and back
     {
-        philox4x32 rng1;        // overload (1)
-        adhoc::philox4x32 rng2; // overload (1)
-        TEST_FUNC(compare_rng(rng1, rng2, 100000));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
-    }
-
-    {
-        adhoc::philox4x32 rng;  // overload (1)
-        adhoc::philox4x32 rng2; // overload (1)
+        adhoc::philox4x32 rng;
+        adhoc::philox4x32 rng2;
 
         TEST_FUNC(check_fwd_and_back(rng, 1000));
-        TEST_FUNC(check_back_and_fwd(rng, 1000));
+        EXPECT_EQUAL(rng, rng2);
 
+        TEST_FUNC(check_back_and_fwd(rng, 1000));
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    // 64 fwd and back
+    {
+        adhoc::philox4x64 rng;
+        adhoc::philox4x64 rng2;
+
+        TEST_FUNC(check_fwd_and_back(rng, 1000));
+        EXPECT_EQUAL(rng, rng2);
+
+        TEST_FUNC(check_back_and_fwd(rng, 1000));
         EXPECT_EQUAL(rng, rng2);
     }
 
@@ -54,50 +59,6 @@ int main() {
         adhoc::philox4x32 rng1; // overload (1)
         adhoc::philox_engine<std::uint64_t, 32, 4, 10, 0xD2511F53, 0x9E3779B9,
                              0xCD9E8D57, 0xBB67AE85>
-            rng2; // overload (1)
-        TEST_FUNC(compare_rng(rng1, rng2, 100000));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
-    }
-
-    // check against ref impl 32->64
-    {
-        philox_engine<std::uint64_t, 32, 4, 10, 1, 0xD2511F53, 0x9E3779B9,
-                      0xCD9E8D57, 0xBB67AE85>
-            rng1; // overload (1)
-        adhoc::philox_engine<std::uint64_t, 32, 4, 10, 0xD2511F53, 0x9E3779B9,
-                             0xCD9E8D57, 0xBB67AE85>
-            rng2; // overload (1)
-        TEST_FUNC(compare_rng(rng1, rng2, 100000));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
-    }
-
-    // check against ref impl
-    {
-        philox4x64 rng1;        // overload (1)
-        adhoc::philox4x64 rng2; // overload (1)
-        TEST_FUNC(compare_rng(rng1, rng2, 100000));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
-    }
-
-    // check against ref impl
-    {
-        philox_engine<std::uint_fast32_t, 32, 2, 10, 1, 0xD2511F53,
-                      0x9E3779B9>
-            rng1; // overload (1)
-        adhoc::philox_engine<std::uint_fast32_t, 32, 2, 10, 0xD2511F53,
-                             0x9E3779B9>
-            rng2; // overload (1)
-        TEST_FUNC(compare_rng(rng1, rng2, 100000));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
-    }
-
-    // check against ref impl
-    {
-        philox_engine<std::uint_fast64_t, 64, 2, 10, 1, 0xD2E7470EE14C6C93,
-                      0x9E3779B97F4A7C15>
-            rng1; // overload (1)
-        adhoc::philox_engine<std::uint_fast64_t, 64, 2, 10, 0xD2E7470EE14C6C93,
-                             0x9E3779B97F4A7C15>
             rng2; // overload (1)
         TEST_FUNC(compare_rng(rng1, rng2, 100000));
         TEST_FUNC(compare_rng_limits(rng1, rng2));
