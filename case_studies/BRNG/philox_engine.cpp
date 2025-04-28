@@ -57,8 +57,8 @@ int main() {
     // check 32->64
     {
         adhoc::philox4x32 rng1; // overload (1)
-        adhoc::philox_engine<std::uint64_t, 32, 4, 10, 0xD2511F53, 0x9E3779B9,
-                             0xCD9E8D57, 0xBB67AE85>
+        adhoc::philox_engine<std::uint64_t, 32, 4, 10, 0xCD9E8D57, 0x9E3779B9,
+                             0xD2511F53, 0xBB67AE85>
             rng2; // overload (1)
         TEST_FUNC(compare_rng(rng1, rng2, 100000));
         TEST_FUNC(compare_rng_limits(rng1, rng2));
