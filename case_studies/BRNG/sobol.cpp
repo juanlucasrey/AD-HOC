@@ -9,6 +9,7 @@
 int main() {
     TEST_START;
 
+    // first vals 1
     {
         std::vector<std::uint32_t> results{
             2147483648, 3221225472, 1073741824, 1610612736, 3758096384,
@@ -58,6 +59,7 @@ int main() {
         }
     }
 
+    // first vals 2
     {
         std::vector<std::uint32_t> results{
             2147483648, 3221225472, 1073741824, 1610612736, 3758096384,
@@ -96,6 +98,7 @@ int main() {
         }
     }
 
+    // all different values check
     {
         std::vector<std::uint32_t> results{4160749568, 1744830464, 134217728,
                                            402653184,  939524096,  2818572288,
@@ -152,6 +155,7 @@ int main() {
         EXPECT_EQUAL(rng8(), results[7]);
     }
 
+    // initial value check (skip first)
     {
         auto check_first = [&_result]<adhoc::qrng_table T>() {
             std::size_t ndims = 200;
@@ -182,6 +186,7 @@ int main() {
             .template operator()<adhoc::qrng_table::new_joe_kuo_7_21201>();
     }
 
+    // initial value check (no skip first)
     {
         auto check_first = [&_result]<adhoc::qrng_table T>() {
             std::size_t ndims = 200;
@@ -217,6 +222,7 @@ int main() {
             .template operator()<adhoc::qrng_table::new_joe_kuo_7_21201>();
     }
 
+    // initial discard
     {
         auto check_discard = [&_result]<adhoc::qrng_table T, bool First>() {
             std::size_t ndims = 30;
@@ -273,6 +279,7 @@ int main() {
         operator()<adhoc::qrng_table::new_joe_kuo_7_21201, false>();
     }
 
+    // full cycle discard
     {
         auto check_discard = [&_result]<adhoc::qrng_table T, bool First>() {
             std::size_t ndims = 200;
@@ -280,7 +287,59 @@ int main() {
                 adhoc::sobol_engine<std::uint32_t, 32, First, T> rng1(i);
                 adhoc::sobol_engine<std::uint32_t, 32, First, T> rng2(i);
 
-                rng1.discard(4294967295 * i);
+                rng1.discard(4294967296 * i);
+                EXPECT_EQUAL(rng1, rng2);
+            }
+        };
+
+        check_discard
+            .template operator()<adhoc::qrng_table::joe_kuo_old_1111, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_0_7600, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_2_3900, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_3_7300, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_4_5600, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_5_21201, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_6_21201, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_7_21201, false>();
+
+        check_discard
+            .template operator()<adhoc::qrng_table::joe_kuo_old_1111, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_0_7600, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_2_3900, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_3_7300, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_other_4_5600, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_5_21201, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_6_21201, true>();
+        check_discard.template
+        operator()<adhoc::qrng_table::new_joe_kuo_7_21201, true>();
+    }
+
+    // right before full cycle discard
+    {
+        auto check_discard = [&_result]<adhoc::qrng_table T, bool First>() {
+            std::size_t ndims = 200;
+            for (std::size_t i = 180; i < ndims; i++) {
+                // std::size_t i = 180;
+                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng1(i);
+                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng2(i);
+
+                rng1.discard(4294967296 * i - 10);
+                for (std::size_t j = 0; j < 10; j++) {
+                    rng1();
+                }
                 EXPECT_EQUAL(rng1, rng2);
             }
         };
@@ -321,8 +380,47 @@ int main() {
     }
 
     // {
-    //     adhoc::sobol_engine<std::uint32_t, 32> rng1(3);
-    //     adhoc::sobol_engine<std::uint32_t, 31> rng2(3);
+    //     std::size_t dims = 30;
+    //     adhoc::sobol_engine<std::uint32_t, 32, true,
+    //                         adhoc::qrng_table::new_joe_kuo_7_21201>
+    //         rng1(dims);
+
+    //     for (unsigned int j = 0; j < dims; j++) {
+    //         std::cout << rng1() << std::endl;
+    //     }
+    //     std::cout << "end first" << std::endl;
+
+    //     auto discardsize = 4294967294 * dims - 10;
+
+    //     rng1.discard(discardsize);
+
+    //     for (unsigned int j = 0; j < 20; j++) {
+    //         auto val = rng1();
+    //         // if (val == first) {
+    //         //   std::cout << "first" << std::endl;
+    //         // }
+    //         std::cout << val << std::endl;
+    //     }
+
+    //     std::cout << std::endl;
+
+    //     for (unsigned int j = 0; j < dims; j++) {
+    //         std::cout << rng1() << std::endl;
+    //     }
+
+    //     for (unsigned int j = 0; j < dims; j++) {
+    //         std::cout << rng1() << std::endl;
+    //     }
+    // }
+
+    // {
+    //     auto ndims = 1111;
+    //     // adhoc::sobol_engine<std::uint32_t, 32, true,
+    //     //                     adhoc::qrng_table::new_joe_kuo_5_21201>
+    //     //     rng1(ndims);
+    //     adhoc::sobol_engine<std::uint32_t, 32, true,
+    //                         adhoc::qrng_table::joe_kuo_old_1111>
+    //         rng2(ndims);
 
     //     // std::cout << "32" << std::endl;
     //     // rng1.discard(4294967294 * 3 / 2 - 10);
@@ -334,15 +432,41 @@ int main() {
     //     // std::cout << std::endl;
 
     //     std::cout << "31" << std::endl;
-    //     // auto disc = 4294967294 * 3 / 2 - 2;
-    //     // std::cout << disc << std::endl;
-    //     rng2.discard(6442450940);
-    //     for (std::size_t i = 1; i < 20; i++) {
+    //     // auto disc = 4294967294 * ndims / 2 - 6;
+    //     // auto disc = 4294967294 * ndims / 536870912 - 6;
+    //     auto disc = 32768 * ndims - 6;
+    //     std::cout << disc << std::endl;
+
+    //     std::uint32_t mask = 1 << 20;
+    //     std::bitset<32> maskbitset(mask);
+    //     std::cout << maskbitset << std::endl;
+    //     std::size_t i = 0;
+    //     while (i < 3000000) {
     //         auto val = rng2();
-    //         std::bitset<32> valbitset(val);
-    //         std::cout << valbitset << std::endl;
+
+    //         auto valmask = val & mask;
+    //         if (valmask) {
+    //             std::cout << i << ", ";
+    //             std::cout << val << ", ";
+    //             std::bitset<32> valbitset(val);
+    //             std::cout << valbitset << ", ";
+    //             break;
+    //         }
+    //         i++;
     //     }
     //     std::cout << std::endl;
+    //     // for (std::size_t i = 0; i < 200000; i++) {
+    //     // }
+
+    //     // std::cout << disc << std::endl;
+    //     // rng2.discard(6442450940);
+    //     // rng2.discard(disc);
+    //     // for (std::size_t i = 1; i < 20; i++) {
+    //     //     auto val = rng2();
+    //     //     std::bitset<32> valbitset(val);
+    //     //     std::cout << valbitset << std::endl;
+    //     // }
+    //     // std::cout << std::endl;
     // }
 
     // std::cout << std::numeric_limits<unsigned int>::digits << std::endl;

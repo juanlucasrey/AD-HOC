@@ -308,7 +308,6 @@ class sobol_engine final {
                     }
                 }
             }
-            this->v[i].back() = 1;
         }
 
         unsigned int kk = 1;
@@ -318,6 +317,10 @@ class sobol_engine final {
             for (unsigned int j = 0; j < this->N; ++j) {
                 this->v[j][i] *= kk;
             }
+        }
+
+        for (unsigned int i = 0; i < this->N; ++i) {
+            this->v[i][MAX_BIT] = this->v[i][MAX_BIT - 1];
         }
 
         this->generate_from_num();
@@ -367,8 +370,9 @@ class sobol_engine final {
         uint64_t const ref_n_sims = (static_cast<uint64_t>(this->m_seq_num) *
                                      static_cast<uint64_t>(this->N)) +
                                     (static_cast<uint64_t>(this->j));
-        uint64_t const full_cycle = static_cast<uint64_t>(sobol_engine::max()) *
-                                    static_cast<uint64_t>(this->N);
+        uint64_t const full_cycle =
+            static_cast<uint64_t>(sobol_engine::max() + 1) *
+            static_cast<uint64_t>(this->N);
         uint64_t z_rem = (z % full_cycle);
 
         z_rem += ref_n_sims;
