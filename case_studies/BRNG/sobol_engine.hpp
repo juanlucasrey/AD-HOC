@@ -290,21 +290,21 @@ class sobol_engine final {
             unsigned int const poly_d = detail::highestBitIndex(poly_e);
             std::bitset<MAX_BIT> includ(poly_e);
 
-            unsigned int j = 0;
-            for (; j < poly_d; ++j) {
-                this->v[i][j] = detail::v_init<t>(i, j);
+            unsigned int ii = 0;
+            for (; ii < poly_d; ++ii) {
+                this->v[i][ii] = detail::v_init<t>(i, ii);
             }
 
-            for (; j < MAX_BIT; ++j) {
-                auto &v_new = this->v[i][j];
-                v_new = this->v[i][j - poly_d];
-                // unsigned int v_new = this->v[i][j - poly_d];
+            for (; ii < MAX_BIT; ++ii) {
+                auto &v_new = this->v[i][ii];
+                v_new = this->v[i][ii - poly_d];
+                // unsigned int v_new = this->v[i][ii - poly_d];
                 unsigned int kk = 1;
 
                 for (unsigned int k = 0; k < poly_d; ++k) {
                     kk *= 2;
                     if (includ[poly_d - k - 1]) {
-                        v_new ^= (kk * v[i][j - k - 1]);
+                        v_new ^= (kk * v[i][ii - k - 1]);
                     }
                 }
             }
@@ -314,8 +314,8 @@ class sobol_engine final {
         for (unsigned int i = MAX_BIT - 1; i-- > 0;) {
             kk *= 2;
 
-            for (unsigned int j = 0; j < this->N; ++j) {
-                this->v[j][i] *= kk;
+            for (unsigned int ii = 0; ii < this->N; ++ii) {
+                this->v[ii][i] *= kk;
             }
         }
 
@@ -347,13 +347,13 @@ class sobol_engine final {
                 this->m_seq_num ^ (this->m_seq_num >> 1U);
             // construct x[i] based on seq_num_gray
 
-            for (unsigned int j = 0; j < MAX_BIT; ++j) {
+            for (unsigned int ii = 0; ii < MAX_BIT; ++ii) {
                 if (seq_num_gray == 0) {
                     break;
                 }
 
                 if ((seq_num_gray & 1U) != 0U) {
-                    this->Y[i] ^= this->v[i][j];
+                    this->Y[i] ^= this->v[i][ii];
                 }
 
                 seq_num_gray >>= 1U;
