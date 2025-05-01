@@ -281,19 +281,31 @@ int main() {
 
     // full cycle discard
     {
-        auto check_discard = [&_result]<adhoc::qrng_table T, bool First>() {
-            std::size_t ndims = 200;
-            for (std::size_t i = 1; i < ndims; i++) {
-                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng1(i);
-                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng2(i);
+        auto check_discard =
+            [&_result]<adhoc::qrng_table T, bool First, std::size_t w = 32>() {
+                std::size_t ndims = 200;
+                for (std::size_t i = 1; i < ndims; i++) {
+                    adhoc::sobol_engine<std::uint32_t, w, First, T> rng1(i);
+                    adhoc::sobol_engine<std::uint32_t, w, First, T> rng2(i);
 
-                rng1.discard(4294967296 * i);
-                EXPECT_EQUAL(rng1, rng2);
-            }
-        };
+                    rng1.discard((static_cast<unsigned long long>(
+                                      adhoc::sobol_engine<std::uint32_t, w,
+                                                          First, T>::max()) +
+                                  1) *
+                                 i);
+                    EXPECT_EQUAL(rng1, rng2);
+                }
+            };
 
         check_discard
             .template operator()<adhoc::qrng_table::joe_kuo_old_1111, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 31>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 30>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 23>();
+
         check_discard.template
         operator()<adhoc::qrng_table::joe_kuo_other_0_7600, false>();
         check_discard.template
@@ -329,23 +341,39 @@ int main() {
 
     // right before full cycle discard
     {
-        auto check_discard = [&_result]<adhoc::qrng_table T, bool First>() {
-            std::size_t ndims = 200;
-            for (std::size_t i = 180; i < ndims; i++) {
-                // std::size_t i = 180;
-                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng1(i);
-                adhoc::sobol_engine<std::uint32_t, 32, First, T> rng2(i);
+        auto check_discard =
+            [&_result]<adhoc::qrng_table T, bool First, std::size_t w = 32>() {
+                std::size_t ndims = 200;
+                for (std::size_t i = 180; i < ndims; i++) {
+                    // std::size_t i = 180;
+                    adhoc::sobol_engine<std::uint32_t, w, First, T> rng1(i);
+                    adhoc::sobol_engine<std::uint32_t, w, First, T> rng2(i);
 
-                rng1.discard(4294967296 * i - 10);
-                for (std::size_t j = 0; j < 10; j++) {
-                    rng1();
+                    rng1.discard(((static_cast<unsigned long long>(
+                                       adhoc::sobol_engine<std::uint32_t, w,
+                                                           First, T>::max()) +
+                                   1) *
+                                  i) -
+                                 10);
+
+                    for (std::size_t j = 0; j < 10; j++) {
+                        rng1();
+                    }
+                    EXPECT_EQUAL(rng1, rng2);
                 }
-                EXPECT_EQUAL(rng1, rng2);
-            }
-        };
+            };
 
         check_discard
             .template operator()<adhoc::qrng_table::joe_kuo_old_1111, false>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 31>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 30>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 29>();
+        check_discard.template
+        operator()<adhoc::qrng_table::joe_kuo_old_1111, false, 23>();
+
         check_discard.template
         operator()<adhoc::qrng_table::joe_kuo_other_0_7600, false>();
         check_discard.template
