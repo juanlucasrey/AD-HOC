@@ -202,8 +202,7 @@ inline auto highestBitIndex(unsigned int b) -> unsigned int {
 template <class UIntType, std::size_t w, bool skip_first = true,
           qrng_table t = qrng_table::joe_kuo_old_1111>
 class sobol_engine final {
-    static constexpr unsigned int max_dim = detail::max_dimension(t);
-    static constexpr int MAX_BIT = 32;
+    static_assert(w <= std::numeric_limits<UIntType>::digits);
 
     inline void increase_counter() {
         constexpr auto in_mask = sobol_engine::max();
@@ -279,23 +278,24 @@ class sobol_engine final {
     explicit sobol_engine(unsigned int n_dims = 1U)
         : N{n_dims}, v(n_dims), Y(n_dims) {
 
+        constexpr unsigned int max_dim = detail::max_dimension(t);
         if (n_dims < 1 || n_dims > max_dim) {
             throw std::runtime_error("dimension error");
         }
 
-        std::fill(this->v.front().begin(), this->v.front().end(), 1);
+        this->v.front().fill(1U);
 
         for (unsigned int i = 1; i < this->N; ++i) {
             unsigned int poly_e = detail::poly(t, i);
             unsigned int const poly_d = detail::highestBitIndex(poly_e);
-            std::bitset<MAX_BIT> includ(poly_e);
+            std::bitset<w> includ(poly_e);
 
             unsigned int ii = 0;
             for (; ii < poly_d; ++ii) {
                 this->v[i][ii] = detail::v_init<t>(i, ii);
             }
 
-            for (; ii < MAX_BIT; ++ii) {
+            for (; ii < w; ++ii) {
                 auto &v_new = this->v[i][ii];
                 v_new = this->v[i][ii - poly_d];
                 // unsigned int v_new = this->v[i][ii - poly_d];
@@ -311,7 +311,7 @@ class sobol_engine final {
         }
 
         unsigned int kk = 1;
-        for (unsigned int i = MAX_BIT - 1; i-- > 0;) {
+        for (unsigned int i = w - 1; i-- > 0;) {
             kk *= 2;
 
             for (unsigned int ii = 0; ii < this->N; ++ii) {
@@ -320,7 +320,7 @@ class sobol_engine final {
         }
 
         for (unsigned int i = 0; i < this->N; ++i) {
-            this->v[i][MAX_BIT] = this->v[i][MAX_BIT - 1];
+            this->v[i][w] = this->v[i][w - 1];
         }
 
         this->generate_from_num();
@@ -347,7 +347,7 @@ class sobol_engine final {
                 this->m_seq_num ^ (this->m_seq_num >> 1U);
             // construct x[i] based on seq_num_gray
 
-            for (unsigned int ii = 0; ii < MAX_BIT; ++ii) {
+            for (unsigned int ii = 0; ii < w; ++ii) {
                 if (seq_num_gray == 0) {
                     break;
                 }
@@ -417,7 +417,7 @@ class sobol_engine final {
     unsigned int m_seq_num{
         static_cast<unsigned int>(skip_first)}; // sequence number
 
-    std::vector<std::array<unsigned int, MAX_BIT + 1>> v; // direction numbers
+    std::vector<std::array<unsigned int, w + 1>> v; // direction numbers
     std::vector<UIntType> Y;
 };
 

@@ -379,6 +379,97 @@ int main() {
         operator()<adhoc::qrng_table::new_joe_kuo_7_21201, true>();
     }
 
+    // 20 to 31 bits val check
+    {
+        auto full_range = []<class Generator>() {
+            if constexpr (std::is_integral_v<std::invoke_result_t<Generator>>) {
+                return static_cast<double>(Generator::max()) + 1.0;
+            } else {
+                return 1.0;
+            }
+        };
+
+        auto generate_canonical =
+            [&full_range]<class RealType, class Generator>(Generator &g) {
+                constexpr auto fullrange =
+                    full_range.template operator()<Generator>();
+
+                constexpr RealType step =
+                    (static_cast<RealType>(fullrange) -
+                     (static_cast<RealType>(Generator::max()) -
+                      static_cast<RealType>(Generator::min()))) /
+                    static_cast<RealType>(2.0);
+
+                constexpr RealType denominator =
+                    ((static_cast<RealType>(1.0) * step *
+                      static_cast<RealType>(2.0)) +
+                     static_cast<RealType>(Generator::max()) -
+                     static_cast<RealType>(Generator::min()));
+
+                constexpr RealType one_over_range =
+                    static_cast<RealType>(1.0) / denominator;
+
+                constexpr RealType left_shift =
+                    -static_cast<RealType>(Generator::min());
+                return (static_cast<RealType>(g()) + left_shift) *
+                       one_over_range;
+            };
+
+        auto check_uniform_vals =
+            [&_result, &generate_canonical]<adhoc::qrng_table T, bool First,
+                                            std::size_t w>() {
+                std::size_t ndims = 20;
+                adhoc::sobol_engine<std::uint32_t, w, true,
+                                    adhoc::qrng_table::joe_kuo_old_1111>
+                    rng(ndims);
+
+                adhoc::sobol_engine<std::uint32_t, 32, true,
+                                    adhoc::qrng_table::joe_kuo_old_1111>
+                    rng32(ndims);
+
+                for (std::size_t i = 0; i < 1000; i++) {
+                    auto val1 =
+                        generate_canonical.template operator()<float>(rng32);
+                    auto val2 =
+                        generate_canonical.template operator()<float>(rng);
+                    EXPECT_EQUAL(val1, val2);
+                }
+            };
+
+        auto check_uniform_vals_mult =
+            [&_result, &check_uniform_vals]<adhoc::qrng_table T, bool First>() {
+                check_uniform_vals.template operator()<T, First, 31>();
+                check_uniform_vals.template operator()<T, First, 30>();
+                check_uniform_vals.template operator()<T, First, 29>();
+                check_uniform_vals.template operator()<T, First, 28>();
+                check_uniform_vals.template operator()<T, First, 27>();
+                check_uniform_vals.template operator()<T, First, 26>();
+                check_uniform_vals.template operator()<T, First, 25>();
+                check_uniform_vals.template operator()<T, First, 24>();
+                check_uniform_vals.template operator()<T, First, 23>();
+                check_uniform_vals.template operator()<T, First, 22>();
+                check_uniform_vals.template operator()<T, First, 21>();
+                check_uniform_vals.template operator()<T, First, 20>();
+            };
+
+        check_uniform_vals_mult
+            .template operator()<adhoc::qrng_table::joe_kuo_old_1111, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_0_7600, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_2_3900, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_3_7300, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_4_5600, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_5_21201, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_6_21201, false>();
+        check_uniform_vals_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_7_21201, false>();
+    }
+
     // {
     //     std::size_t dims = 30;
     //     adhoc::sobol_engine<std::uint32_t, 32, true,
