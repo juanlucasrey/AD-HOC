@@ -16,6 +16,8 @@ set(BRNG
     split_mix.cpp
     subtract_with_carry_engine.cpp
     philox_engine.cpp
+    sobol.cpp
+    bit_find.cpp
 )
 
 run_check("${BRNG}")
