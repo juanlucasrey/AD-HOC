@@ -1,6 +1,7 @@
 #ifndef CASE_STUDIES_BRNG_SOBOL_ENGINE
 #define CASE_STUDIES_BRNG_SOBOL_ENGINE
 
+#include "bit_find.hpp"
 #include "sobol_tables/joe_kuo_old_1111.hpp"
 #include "sobol_tables/joe_kuo_other_0_7600.hpp"
 #include "sobol_tables/joe_kuo_other_2_3900.hpp"
@@ -179,24 +180,6 @@ inline auto v_init<qrng_table::new_joe_kuo_7_21201>(std::size_t i,
                                         [j - new_joe_kuo_7_21201_cut_degree];
 }
 
-inline auto keepHighestBit(unsigned int n) -> unsigned int {
-    n |= (n >> 1);
-    n |= (n >> 2);
-    n |= (n >> 4);
-    n |= (n >> 8);
-    n |= (n >> 16);
-    return n - (n >> 1);
-}
-
-inline auto highestBitIndex(unsigned int b) -> std::size_t {
-    constexpr unsigned int deBruijnMagic = 0x06EB14F9;
-    constexpr std::array<std::size_t, 32> deBruijnTable = {
-        0,  1,  16, 2,  29, 17, 3,  22, 30, 20, 18, 11, 13, 4, 7,  23,
-        31, 15, 28, 21, 19, 10, 12, 6,  14, 27, 9,  5,  26, 8, 25, 24,
-    };
-    return deBruijnTable[(keepHighestBit(b) * deBruijnMagic) >> 27];
-}
-
 } // namespace detail
 
 template <class UIntType, std::size_t w, bool skip_first = true,
@@ -216,58 +199,14 @@ class sobol_engine final {
             this->m_seq_num == 0 ? in_mask : (this->m_seq_num - 1);
     }
 
-    inline auto findLeastSignificantZeroNaive(UIntType n) {
-        UIntType c = 0;
-        while ((n & 1)) {
-            n >>= 1;
-            ++c;
-        }
-        return c;
-    }
-
-    // Returns the position of the least significant 0 bit (0-based index from
-    // right) Returns 32 if no 0 bits exist (i.e., input is all 1s)
-    inline auto findLeastSignificantZero32(uint32_t n) -> uint32_t {
-        // Invert bits: 1s become 0s and 0s become 1s
-        n = ~n;
-
-        static const int deBruijnTable[32] = {
-            0,  1,  28, 2,  29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4,  8,
-            31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6,  11, 5,  10, 9};
-
-        uint32_t isolated = n & -n;
-        // Prevent multiplication by 0 and ensure valid table index
-        uint32_t adjusted = isolated | (isolated == 0);
-        uint32_t index = ((adjusted * 0x077CB531U) >> 27);
-        // Use bitwise ops to select between table value and 32
-        uint32_t is_zero = (isolated == 0);
-        return (deBruijnTable[index] & ~(-is_zero)) | (32 & (-is_zero));
-    }
-
-    // Returns the position of the least significant 0 bit (0-based index from
-    // right) Returns 64 if no 0 bits exist (i.e., input is all 1s)
-    inline auto findLeastSignificantZero64(uint64_t n) -> uint64_t {
-        // Invert bits: 1s become 0s and 0s become 1s
-        n = ~n;
-
-        static const int deBruijnTable[64] = {
-            0,  1,  2,  7,  3,  13, 8,  19, 4,  25, 14, 33, 9,  36, 20, 44,
-            5,  28, 26, 38, 15, 46, 34, 51, 10, 39, 37, 52, 21, 54, 45, 57,
-            63, 6,  12, 18, 24, 32, 35, 43, 27, 47, 50, 56, 62, 11, 17, 23,
-            31, 42, 49, 55, 61, 16, 22, 30, 41, 48, 60, 29, 40, 59, 58, 53};
-
-        uint64_t isolated = n & -n;
-        // Prevent multiplication by 0 and ensure valid table index
-        uint64_t adjusted = isolated | (isolated == 0);
-        uint64_t index = ((adjusted * 0x03F79D71B4CB0A89ULL) >> 58);
-        // Use bitwise ops to select between table value and 64
-        uint64_t is_zero = (isolated == 0);
-        return (deBruijnTable[index] & ~(-is_zero)) | (64 & (-is_zero));
-    }
-
     inline void generate() {
-        auto const c =
-            findLeastSignificantZero32(static_cast<uint32_t>(this->m_seq_num));
+
+        constexpr auto digits = std::numeric_limits<UIntType>::digits;
+        using ceiling_type =
+            std::conditional_t<digits <= 32, std::uint32_t, std::uint64_t>;
+
+        auto const c = findLeastSignificantZero(
+            static_cast<ceiling_type>(this->m_seq_num));
         for (std::size_t i = 0; i < this->N; ++i) {
             this->Y[i] ^= this->v[i][c];
         }
@@ -288,7 +227,7 @@ class sobol_engine final {
 
         for (std::size_t i = 1; i < this->N; ++i) {
             unsigned int poly_e = detail::poly(t, i);
-            std::size_t const poly_d = detail::highestBitIndex(poly_e);
+            std::size_t const poly_d = highestBitIndex(poly_e);
             std::bitset<w> includ(poly_e);
 
             std::size_t ii = 0;
