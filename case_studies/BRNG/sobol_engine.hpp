@@ -188,9 +188,9 @@ inline auto keepHighestBit(unsigned int n) -> unsigned int {
     return n - (n >> 1);
 }
 
-inline auto highestBitIndex(unsigned int b) -> unsigned int {
+inline auto highestBitIndex(unsigned int b) -> std::size_t {
     constexpr unsigned int deBruijnMagic = 0x06EB14F9;
-    constexpr std::array<unsigned int, 32> deBruijnTable = {
+    constexpr std::array<std::size_t, 32> deBruijnTable = {
         0,  1,  16, 2,  29, 17, 3,  22, 30, 20, 18, 11, 13, 4, 7,  23,
         31, 15, 28, 21, 19, 10, 12, 6,  14, 27, 9,  5,  26, 8, 25, 24,
     };
@@ -203,6 +203,7 @@ template <class UIntType, std::size_t w, bool skip_first = true,
           qrng_table t = qrng_table::joe_kuo_old_1111>
 class sobol_engine final {
     static_assert(w <= std::numeric_limits<UIntType>::digits);
+    static_assert(w <= 64);
 
     inline void increase_counter() {
         constexpr auto in_mask = sobol_engine::max();
@@ -285,12 +286,12 @@ class sobol_engine final {
 
         this->v.front().fill(1U);
 
-        for (unsigned int i = 1; i < this->N; ++i) {
+        for (std::size_t i = 1; i < this->N; ++i) {
             unsigned int poly_e = detail::poly(t, i);
-            unsigned int const poly_d = detail::highestBitIndex(poly_e);
+            std::size_t const poly_d = detail::highestBitIndex(poly_e);
             std::bitset<w> includ(poly_e);
 
-            unsigned int ii = 0;
+            std::size_t ii = 0;
             for (; ii < poly_d; ++ii) {
                 this->v[i][ii] = detail::v_init<t>(i, ii);
             }
@@ -298,10 +299,9 @@ class sobol_engine final {
             for (; ii < w; ++ii) {
                 auto &v_new = this->v[i][ii];
                 v_new = this->v[i][ii - poly_d];
-                // unsigned int v_new = this->v[i][ii - poly_d];
-                unsigned int kk = 1;
 
-                for (unsigned int k = 0; k < poly_d; ++k) {
+                UIntType kk = 1;
+                for (std::size_t k = 0; k < poly_d; ++k) {
                     kk *= 2;
                     if (includ[poly_d - k - 1]) {
                         v_new ^= (kk * v[i][ii - k - 1]);
@@ -310,16 +310,16 @@ class sobol_engine final {
             }
         }
 
-        unsigned int kk = 1;
-        for (unsigned int i = w - 1; i-- > 0;) {
+        UIntType kk = 1;
+        for (std::size_t i = w - 1; i-- > 0;) {
             kk *= 2;
 
-            for (unsigned int ii = 0; ii < this->N; ++ii) {
+            for (std::size_t ii = 0; ii < this->N; ++ii) {
                 this->v[ii][i] *= kk;
             }
         }
 
-        for (unsigned int i = 0; i < this->N; ++i) {
+        for (std::size_t i = 0; i < this->N; ++i) {
             this->v[i][w] = this->v[i][w - 1];
         }
 
@@ -341,13 +341,12 @@ class sobol_engine final {
         std::fill(this->Y.begin(), this->Y.end(), 0);
 
         // skip to sequence number seq_num
-        for (unsigned int i = 0; i < this->N; ++i) {
+        for (std::size_t i = 0; i < this->N; ++i) {
             // figure out Gray code of seq_num
-            unsigned int seq_num_gray =
-                this->m_seq_num ^ (this->m_seq_num >> 1U);
+            UIntType seq_num_gray = this->m_seq_num ^ (this->m_seq_num >> 1U);
             // construct x[i] based on seq_num_gray
 
-            for (unsigned int ii = 0; ii < w; ++ii) {
+            for (std::size_t ii = 0; ii < w; ++ii) {
                 if (seq_num_gray == 0) {
                     break;
                 }
@@ -381,7 +380,7 @@ class sobol_engine final {
 
         this->m_seq_num = static_cast<unsigned int>(z_rem / this->N);
         this->j =
-            static_cast<unsigned int>(z_rem % static_cast<uint64_t>(this->N));
+            static_cast<std::size_t>(z_rem % static_cast<uint64_t>(this->N));
 
         if constexpr (skip_first) {
             this->increase_counter();
@@ -411,13 +410,13 @@ class sobol_engine final {
     }
 
   private:
-    unsigned int j{0};
-    unsigned int N{1};
+    std::size_t j{0};
+    std::size_t N{1};
 
-    unsigned int m_seq_num{
+    UIntType m_seq_num{
         static_cast<unsigned int>(skip_first)}; // sequence number
 
-    std::vector<std::array<unsigned int, w + 1>> v; // direction numbers
+    std::vector<std::array<UIntType, w + 1>> v; // direction numbers
     std::vector<UIntType> Y;
 };
 

@@ -445,13 +445,13 @@ int main() {
 
         auto check_uniform_vals =
             [&_result, &generate_canonical]<adhoc::qrng_table T, bool First,
-                                            std::size_t w>() {
+                                            class UIntType, std::size_t w>() {
                 std::size_t ndims = 20;
-                adhoc::sobol_engine<std::uint32_t, w, true,
+                adhoc::sobol_engine<UIntType, w, true,
                                     adhoc::qrng_table::joe_kuo_old_1111>
                     rng(ndims);
 
-                adhoc::sobol_engine<std::uint32_t, 32, true,
+                adhoc::sobol_engine<UIntType, 32, true,
                                     adhoc::qrng_table::joe_kuo_old_1111>
                     rng32(ndims);
 
@@ -466,18 +466,35 @@ int main() {
 
         auto check_uniform_vals_mult =
             [&_result, &check_uniform_vals]<adhoc::qrng_table T, bool First>() {
-                check_uniform_vals.template operator()<T, First, 31>();
-                check_uniform_vals.template operator()<T, First, 30>();
-                check_uniform_vals.template operator()<T, First, 29>();
-                check_uniform_vals.template operator()<T, First, 28>();
-                check_uniform_vals.template operator()<T, First, 27>();
-                check_uniform_vals.template operator()<T, First, 26>();
-                check_uniform_vals.template operator()<T, First, 25>();
-                check_uniform_vals.template operator()<T, First, 24>();
-                check_uniform_vals.template operator()<T, First, 23>();
-                check_uniform_vals.template operator()<T, First, 22>();
-                check_uniform_vals.template operator()<T, First, 21>();
-                check_uniform_vals.template operator()<T, First, 20>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint64_t, 34>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint64_t, 33>();
+
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 31>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 30>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 29>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 28>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 27>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 26>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 25>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 24>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 23>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 22>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 21>();
+                check_uniform_vals
+                    .template operator()<T, First, std::uint32_t, 20>();
             };
 
         check_uniform_vals_mult
