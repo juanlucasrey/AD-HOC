@@ -10,6 +10,7 @@
 #include "sobol_tables/new_joe_kuo_5_21201.hpp"
 #include "sobol_tables/new_joe_kuo_6_21201.hpp"
 #include "sobol_tables/new_joe_kuo_7_21201.hpp"
+#include "uint128.hpp"
 
 #include <array>
 #include <bitset>
@@ -305,21 +306,35 @@ class sobol_engine final {
             this->decrease_counter();
         }
 
-        uint64_t const ref_n_sims = (static_cast<uint64_t>(this->m_seq_num) *
-                                     static_cast<uint64_t>(this->N)) +
-                                    (static_cast<uint64_t>(this->j));
-        uint64_t const full_cycle =
-            static_cast<uint64_t>(sobol_engine::max() + 1) *
-            static_cast<uint64_t>(this->N);
-        uint64_t z_rem = (z % full_cycle);
+        constexpr auto digits = std::numeric_limits<UIntType>::digits;
+        using upgraded_type =
+            std::conditional_t<digits <= 32, std::uint64_t, uint128>;
+
+        upgraded_type zup{z};
+
+        upgraded_type const ref_n_sims =
+            (static_cast<upgraded_type>(this->m_seq_num) *
+             static_cast<upgraded_type>(this->N)) +
+            (static_cast<upgraded_type>(this->j));
+
+        upgraded_type const full_cycle =
+            (static_cast<upgraded_type>(sobol_engine::max()) +
+             upgraded_type(1)) *
+            static_cast<upgraded_type>(this->N);
+        upgraded_type z_rem = (zup % full_cycle);
 
         z_rem += ref_n_sims;
         // we might have gone over when adding curent paths
         z_rem %= full_cycle;
 
-        this->m_seq_num = static_cast<unsigned int>(z_rem / this->N);
-        this->j =
-            static_cast<std::size_t>(z_rem % static_cast<uint64_t>(this->N));
+        upgraded_type Nup{this->N};
+
+        using adhoc::lldiv;
+        using std::lldiv;
+        auto const res = lldiv(z_rem, Nup);
+
+        this->m_seq_num = static_cast<UIntType>(res.quot);
+        this->j = static_cast<std::size_t>(res.rem);
 
         if constexpr (skip_first) {
             this->increase_counter();

@@ -515,6 +515,34 @@ int main() {
         operator()<adhoc::qrng_table::new_joe_kuo_7_21201, false>();
     }
 
+    // discard for w>32
+    {
+        unsigned long long z = 0;
+        z--;
+        std::cout << z << std::endl;
+        std::size_t dim = 20;
+        adhoc::sobol_engine<std::uint64_t, 64, true,
+                            adhoc::qrng_table::new_joe_kuo_5_21201>
+            rng1(dim);
+        adhoc::sobol_engine<std::uint64_t, 64, true,
+                            adhoc::qrng_table::new_joe_kuo_5_21201>
+            rng2(dim);
+
+        for (std::size_t i = 0; i < dim - 1; i++) {
+            rng1();
+            rng1.discard(z);
+        }
+
+        rng1();
+        rng1.discard(z - 10);
+
+        for (std::size_t i = 0; i < 10; i++) {
+            rng1();
+        }
+
+        EXPECT_EQUAL(rng1, rng2)
+    }
+
     // {
     //     std::size_t dims = 30;
     //     adhoc::sobol_engine<std::uint32_t, 32, true,
