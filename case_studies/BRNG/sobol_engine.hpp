@@ -54,131 +54,61 @@ constexpr auto max_dimension(qrng_table table) -> unsigned int {
     }
 }
 
-constexpr auto poly(qrng_table table, std::size_t i) -> unsigned int {
+inline auto poly(qrng_table table) {
     switch (table) {
     case qrng_table::joe_kuo_old_1111:
-        return joe_kuo_old_1111_poly[i];
+        return joe_kuo_old_1111_poly.begin();
     case qrng_table::joe_kuo_other_0_7600:
-        return joe_kuo_other_0_7600_poly[i];
+        return joe_kuo_other_0_7600_poly.begin();
     case qrng_table::joe_kuo_other_2_3900:
-        return joe_kuo_other_2_3900_poly[i];
+        return joe_kuo_other_2_3900_poly.begin();
     case qrng_table::joe_kuo_other_3_7300:
-        return joe_kuo_other_3_7300_poly[i];
+        return joe_kuo_other_3_7300_poly.begin();
     case qrng_table::joe_kuo_other_4_5600:
-        return joe_kuo_other_4_5600_poly[i];
+        return joe_kuo_other_4_5600_poly.begin();
     case qrng_table::new_joe_kuo_5_21201:
-        return new_joe_kuo_5_21201_poly[i];
+        return new_joe_kuo_5_21201_poly.begin();
     case qrng_table::new_joe_kuo_6_21201:
-        return new_joe_kuo_6_21201_poly[i];
+        return new_joe_kuo_6_21201_poly.begin();
     case qrng_table::new_joe_kuo_7_21201:
-        return new_joe_kuo_7_21201_poly[i];
+        return new_joe_kuo_7_21201_poly.begin();
     }
-    return 0;
+    return joe_kuo_old_1111_poly.begin();
 }
 
-template <qrng_table t>
-auto v_init(std::size_t i, std::size_t j) -> unsigned int;
-
-template <>
-inline auto v_init<qrng_table::joe_kuo_old_1111>(std::size_t i, std::size_t j)
-    -> unsigned int {
-    return static_cast<unsigned int>(joe_kuo_old_1111_init[i][j]);
+inline auto init(qrng_table table) {
+    switch (table) {
+    case qrng_table::joe_kuo_old_1111:
+        return joe_kuo_old_1111_init2.begin();
+    case qrng_table::joe_kuo_other_0_7600:
+        return joe_kuo_other_0_7600_init2.begin();
+    case qrng_table::joe_kuo_other_2_3900:
+        return joe_kuo_other_2_3900_init2.begin();
+    case qrng_table::joe_kuo_other_3_7300:
+        return joe_kuo_other_3_7300_init2.begin();
+    case qrng_table::joe_kuo_other_4_5600:
+        return joe_kuo_other_4_5600_init2.begin();
+    case qrng_table::new_joe_kuo_5_21201:
+        return new_joe_kuo_5_21201_init2.begin();
+    case qrng_table::new_joe_kuo_6_21201:
+        return new_joe_kuo_6_21201_init2.begin();
+    case qrng_table::new_joe_kuo_7_21201:
+        return new_joe_kuo_7_21201_init2.begin();
+    }
+    return joe_kuo_old_1111_init2.begin();
 }
 
-template <>
-inline auto v_init<qrng_table::joe_kuo_other_0_7600>(std::size_t i,
-                                                     std::size_t j)
-    -> unsigned int {
-    if (j < joe_kuo_other_0_7600_cut_degree) {
-        return static_cast<unsigned int>(joe_kuo_other_0_7600_init[i][j]);
-    }
-
-    if (i < joe_kuo_other_0_7600_cut_dimension) {
+inline auto mask(std::size_t w) -> std::uint32_t {
+    if (w == 0) {
         return 0;
     }
+    std::uint32_t ach = static_cast<std::uint32_t>(1U)
+                        << static_cast<std::size_t>(w - 1U);
 
-    return joe_kuo_other_0_7600_init_last[i -
-                                          joe_kuo_other_0_7600_cut_dimension]
-                                         [j - joe_kuo_other_0_7600_cut_degree];
-}
+    return ach | (ach - static_cast<std::uint32_t>(1U));
 
-template <>
-inline auto v_init<qrng_table::joe_kuo_other_2_3900>(std::size_t i,
-                                                     std::size_t j)
-    -> unsigned int {
-    return static_cast<unsigned int>(joe_kuo_other_2_3900_init[i][j]);
-}
-
-template <>
-inline auto v_init<qrng_table::joe_kuo_other_3_7300>(std::size_t i,
-                                                     std::size_t j)
-    -> unsigned int {
-    if (j < joe_kuo_other_3_7300_cut_degree) {
-        return static_cast<unsigned int>(joe_kuo_other_3_7300_init[i][j]);
-    }
-
-    if (i < joe_kuo_other_3_7300_cut_dimension) {
-        return 0;
-    }
-
-    return joe_kuo_other_3_7300_init_last[i -
-                                          joe_kuo_other_3_7300_cut_dimension]
-                                         [j - joe_kuo_other_3_7300_cut_degree];
-}
-
-template <>
-inline auto v_init<qrng_table::joe_kuo_other_4_5600>(std::size_t i,
-                                                     std::size_t j)
-    -> unsigned int {
-    return static_cast<unsigned int>(joe_kuo_other_4_5600_init[i][j]);
-}
-
-template <>
-inline auto v_init<qrng_table::new_joe_kuo_5_21201>(std::size_t i,
-                                                    std::size_t j)
-    -> unsigned int {
-    if (j < new_joe_kuo_5_21201_cut_degree) {
-        return static_cast<unsigned int>(new_joe_kuo_5_21201_init[i][j]);
-    }
-
-    if (i < new_joe_kuo_5_21201_cut_dimension) {
-        return 0;
-    }
-
-    return new_joe_kuo_5_21201_init_last[i - new_joe_kuo_5_21201_cut_dimension]
-                                        [j - new_joe_kuo_5_21201_cut_degree];
-}
-
-template <>
-inline auto v_init<qrng_table::new_joe_kuo_6_21201>(std::size_t i,
-                                                    std::size_t j)
-    -> unsigned int {
-    if (j < new_joe_kuo_6_21201_cut_degree) {
-        return static_cast<unsigned int>(new_joe_kuo_6_21201_init[i][j]);
-    }
-
-    if (i < new_joe_kuo_6_21201_cut_dimension) {
-        return 0;
-    }
-
-    return new_joe_kuo_6_21201_init_last[i - new_joe_kuo_6_21201_cut_dimension]
-                                        [j - new_joe_kuo_6_21201_cut_degree];
-}
-
-template <>
-inline auto v_init<qrng_table::new_joe_kuo_7_21201>(std::size_t i,
-                                                    std::size_t j)
-    -> unsigned int {
-    if (j < new_joe_kuo_7_21201_cut_degree) {
-        return static_cast<unsigned int>(new_joe_kuo_7_21201_init[i][j]);
-    }
-
-    if (i < new_joe_kuo_7_21201_cut_dimension) {
-        return 0;
-    }
-
-    return new_joe_kuo_7_21201_init_last[i - new_joe_kuo_7_21201_cut_dimension]
-                                        [j - new_joe_kuo_7_21201_cut_degree];
+    // equivalent to the following but shift does not overflow
+    // return (static_cast<result_type>(1U) << w) - 1U;
 }
 
 } // namespace detail
@@ -226,14 +156,45 @@ class sobol_engine final {
 
         this->v.front().fill(1U);
 
+        const auto *poly_p = detail::poly(t);
+        poly_p++;
+
+        const auto *init_p = detail::init(t);
+        std::size_t idx = 0;
+        std::uint32_t val = (*init_p++);
+
         for (std::size_t i = 1; i < this->N; ++i) {
-            unsigned int poly_e = detail::poly(t, i);
+            unsigned int const poly_e = (*poly_p++);
             std::size_t const poly_d = highestBitIndex(poly_e);
             std::bitset<w> includ(poly_e);
 
             std::size_t ii = 0;
             for (; ii < poly_d; ++ii) {
-                this->v[i][ii] = detail::v_init<t>(i, ii);
+                std::uint32_t init = 0;
+                {
+                    std::size_t bits = ii;
+                    std::size_t shift = 0;
+                    std::size_t rembits = 32U - idx;
+                    while (bits) {
+                        std::size_t bits_here = std::min(rembits, bits);
+                        std::uint32_t m = detail::mask(bits_here);
+                        init |= (val & m) << shift;
+                        val >>= bits_here;
+                        idx += bits_here;
+                        bits -= bits_here;
+                        shift += bits_here;
+
+                        if (idx == 32) {
+                            idx = 0;
+                            val = (*init_p++);
+                        }
+                        rembits = 32U - idx;
+                    }
+
+                    init = (init << 1U) | 1U;
+                }
+
+                this->v[i][ii] = init;
             }
 
             for (; ii < w; ++ii) {
@@ -367,8 +328,7 @@ class sobol_engine final {
     std::size_t j{0};
     std::size_t N{1};
 
-    UIntType m_seq_num{
-        static_cast<unsigned int>(skip_first)}; // sequence number
+    UIntType m_seq_num{static_cast<UIntType>(skip_first)}; // sequence number
 
     std::vector<std::array<UIntType, w + 1>> v; // direction numbers
     std::vector<UIntType> Y;
