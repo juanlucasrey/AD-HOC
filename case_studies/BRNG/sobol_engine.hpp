@@ -79,23 +79,23 @@ inline auto poly(qrng_table table) {
 inline auto init(qrng_table table) {
     switch (table) {
     case qrng_table::joe_kuo_old_1111:
-        return joe_kuo_old_1111_init2.begin();
+        return joe_kuo_old_1111_init.begin();
     case qrng_table::joe_kuo_other_0_7600:
-        return joe_kuo_other_0_7600_init2.begin();
+        return joe_kuo_other_0_7600_init.begin();
     case qrng_table::joe_kuo_other_2_3900:
-        return joe_kuo_other_2_3900_init2.begin();
+        return joe_kuo_other_2_3900_init.begin();
     case qrng_table::joe_kuo_other_3_7300:
-        return joe_kuo_other_3_7300_init2.begin();
+        return joe_kuo_other_3_7300_init.begin();
     case qrng_table::joe_kuo_other_4_5600:
-        return joe_kuo_other_4_5600_init2.begin();
+        return joe_kuo_other_4_5600_init.begin();
     case qrng_table::new_joe_kuo_5_21201:
-        return new_joe_kuo_5_21201_init2.begin();
+        return new_joe_kuo_5_21201_init.begin();
     case qrng_table::new_joe_kuo_6_21201:
-        return new_joe_kuo_6_21201_init2.begin();
+        return new_joe_kuo_6_21201_init.begin();
     case qrng_table::new_joe_kuo_7_21201:
-        return new_joe_kuo_7_21201_init2.begin();
+        return new_joe_kuo_7_21201_init.begin();
     }
-    return joe_kuo_old_1111_init2.begin();
+    return joe_kuo_old_1111_init.begin();
 }
 
 inline auto mask(std::size_t w) -> std::uint32_t {
