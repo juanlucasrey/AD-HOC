@@ -131,7 +131,6 @@ class sobol_engine final {
     }
 
     inline void generate() {
-
         constexpr auto digits = std::numeric_limits<UIntType>::digits;
         using ceiling_type =
             std::conditional_t<digits <= 32, std::uint32_t, std::uint64_t>;
@@ -224,7 +223,11 @@ class sobol_engine final {
             this->v[i][w] = this->v[i][w - 1];
         }
 
-        this->generate_from_num();
+        std::fill(this->Y.begin(), this->Y.end(), 0);
+        if constexpr (skip_first) {
+            this->generate();
+            this->increase_counter();
+        }
     }
 
     template <bool FwdDirection = true>
@@ -248,29 +251,6 @@ class sobol_engine final {
             return this->Y[this->j];
         }
     };
-
-    inline void generate_from_num() {
-        std::fill(this->Y.begin(), this->Y.end(), 0);
-
-        // skip to sequence number seq_num
-        for (std::size_t i = 0; i < this->N; ++i) {
-            // figure out Gray code of seq_num
-            UIntType seq_num_gray = this->m_seq_num ^ (this->m_seq_num >> 1U);
-            // construct x[i] based on seq_num_gray
-
-            for (std::size_t ii = 0; ii < w; ++ii) {
-                if (seq_num_gray == 0) {
-                    break;
-                }
-
-                if ((seq_num_gray & 1U) != 0U) {
-                    this->Y[i] ^= this->v[i][ii];
-                }
-
-                seq_num_gray >>= 1U;
-            }
-        }
-    }
 
     inline void discard(unsigned long long z) {
 
@@ -312,7 +292,27 @@ class sobol_engine final {
             this->increase_counter();
         }
 
-        this->generate_from_num();
+        // generate from sequence number
+        std::fill(this->Y.begin(), this->Y.end(), 0);
+
+        // skip to sequence number seq_num
+        for (std::size_t i = 0; i < this->N; ++i) {
+            // figure out Gray code of seq_num
+            UIntType seq_num_gray = this->m_seq_num ^ (this->m_seq_num >> 1U);
+            // construct x[i] based on seq_num_gray
+
+            for (std::size_t ii = 0; ii < w; ++ii) {
+                if (seq_num_gray == 0) {
+                    break;
+                }
+
+                if ((seq_num_gray & 1U) != 0U) {
+                    this->Y[i] ^= this->v[i][ii];
+                }
+
+                seq_num_gray >>= 1U;
+            }
+        }
     }
 
     static constexpr auto min() -> UIntType {
@@ -339,13 +339,15 @@ class sobol_engine final {
     std::size_t j{0};
     std::size_t N{1};
 
-    UIntType m_seq_num{static_cast<UIntType>(skip_first)}; // sequence number
+    UIntType m_seq_num{static_cast<UIntType>(0)}; // sequence number
 
     std::vector<std::array<UIntType, w + 1>> v; // direction numbers
     std::vector<UIntType> Y;
 };
 
 using sobol = sobol_engine<std::uint_fast32_t, 32>;
+
+using sobol64 = sobol_engine<std::uint_fast64_t, 64>;
 
 } // namespace adhoc
 

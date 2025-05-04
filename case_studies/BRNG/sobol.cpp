@@ -543,131 +543,72 @@ int main() {
         EXPECT_EQUAL(rng1, rng2)
     }
 
-    // {
-    //     std::size_t dims = 30;
-    //     adhoc::sobol_engine<std::uint32_t, 32, true,
-    //                         adhoc::qrng_table::new_joe_kuo_7_21201>
-    //         rng1(dims);
+    // fwd and back
+    {
 
-    //     for (unsigned int j = 0; j < dims; j++) {
-    //         std::cout << rng1() << std::endl;
-    //     }
-    //     std::cout << "end first" << std::endl;
+        auto check_bwd = [&_result]<adhoc::qrng_table T, bool First,
+                                    class UIntType, std::size_t w>() {
+            for (unsigned int i = i; i < 20; i++) {
+                unsigned int n_dims = i;
+                adhoc::sobol_engine<UIntType, w, true,
+                                    adhoc::qrng_table::joe_kuo_old_1111>
+                    rng(n_dims);
 
-    //     auto discardsize = 4294967294 * dims - 10;
+                adhoc::sobol_engine<UIntType, w, true,
+                                    adhoc::qrng_table::joe_kuo_old_1111>
+                    rng2(n_dims);
 
-    //     rng1.discard(discardsize);
+                TEST_FUNC(check_fwd_and_back(rng, 1000));
+                EXPECT_EQUAL(rng, rng2);
 
-    //     for (unsigned int j = 0; j < 20; j++) {
-    //         auto val = rng1();
-    //         // if (val == first) {
-    //         //   std::cout << "first" << std::endl;
-    //         // }
-    //         std::cout << val << std::endl;
-    //     }
+                TEST_FUNC(check_back_and_fwd(rng, 1000));
+                EXPECT_EQUAL(rng, rng2);
+            }
+        };
 
-    //     std::cout << std::endl;
+        auto check_bwd_mult = [&_result,
+                               &check_bwd]<adhoc::qrng_table T, bool First>() {
+            check_bwd.template operator()<T, First, std::uint64_t, 64>();
+            check_bwd.template operator()<T, First, std::uint64_t, 52>();
+            check_bwd.template operator()<T, First, std::uint32_t, 32>();
+            check_bwd.template operator()<T, First, std::uint32_t, 31>();
+            check_bwd.template operator()<T, First, std::uint32_t, 27>();
+        };
 
-    //     for (unsigned int j = 0; j < dims; j++) {
-    //         std::cout << rng1() << std::endl;
-    //     }
+        check_bwd_mult
+            .template operator()<adhoc::qrng_table::joe_kuo_old_1111, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_0_7600, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_2_3900, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_3_7300, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_4_5600, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_5_21201, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_6_21201, false>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_7_21201, false>();
 
-    //     for (unsigned int j = 0; j < dims; j++) {
-    //         std::cout << rng1() << std::endl;
-    //     }
-    // }
-
-    // {
-    //     auto ndims = 1111;
-    //     // adhoc::sobol_engine<std::uint32_t, 32, true,
-    //     //                     adhoc::qrng_table::new_joe_kuo_5_21201>
-    //     //     rng1(ndims);
-    //     adhoc::sobol_engine<std::uint32_t, 32, true,
-    //                         adhoc::qrng_table::joe_kuo_old_1111>
-    //         rng2(ndims);
-
-    //     // std::cout << "32" << std::endl;
-    //     // rng1.discard(4294967294 * 3 / 2 - 10);
-    //     // for (std::size_t i = 1; i < 20; i++) {
-    //     //     auto val = rng1();
-    //     //     std::bitset<32> valbitset(val);
-    //     //     std::cout << valbitset << std::endl;
-    //     // }
-    //     // std::cout << std::endl;
-
-    //     std::cout << "31" << std::endl;
-    //     // auto disc = 4294967294 * ndims / 2 - 6;
-    //     // auto disc = 4294967294 * ndims / 536870912 - 6;
-    //     auto disc = 32768 * ndims - 6;
-    //     std::cout << disc << std::endl;
-
-    //     std::uint32_t mask = 1 << 20;
-    //     std::bitset<32> maskbitset(mask);
-    //     std::cout << maskbitset << std::endl;
-    //     std::size_t i = 0;
-    //     while (i < 3000000) {
-    //         auto val = rng2();
-
-    //         auto valmask = val & mask;
-    //         if (valmask) {
-    //             std::cout << i << ", ";
-    //             std::cout << val << ", ";
-    //             std::bitset<32> valbitset(val);
-    //             std::cout << valbitset << ", ";
-    //             break;
-    //         }
-    //         i++;
-    //     }
-    //     std::cout << std::endl;
-    //     // for (std::size_t i = 0; i < 200000; i++) {
-    //     // }
-
-    //     // std::cout << disc << std::endl;
-    //     // rng2.discard(6442450940);
-    //     // rng2.discard(disc);
-    //     // for (std::size_t i = 1; i < 20; i++) {
-    //     //     auto val = rng2();
-    //     //     std::bitset<32> valbitset(val);
-    //     //     std::cout << valbitset << std::endl;
-    //     // }
-    //     // std::cout << std::endl;
-    // }
-
-    // std::cout << std::numeric_limits<unsigned int>::digits << std::endl;
-    // auto const max = std::numeric_limits<std::uint32_t>::max();
-    // std::cout << max << std::endl;
-
-    // // std::cout << std::numeric_limits<std::uint32_t>::max() << std::endl;
-    // adhoc::sobol_engine<std::uint32_t, 32, false> rng;
-
-    // for (std::size_t i = 0; i < 20; ++i) {
-    //     auto valui = rng();
-    //     auto val = static_cast<double>(valui) / static_cast<double>(max);
-    //     std::cout << valui << std::endl;
-    //     std::cout << val << std::endl;
-    // }
-
-    // // rng();
-    // // adhoc::sobol_engine<std::uint32_t> rng;
-    // rng.discard(max - 30);
-    // // auto val = static_cast<double>(rng()) / static_cast<double>(max);
-    // // std::cout << val << std::endl; // 2147483648
-
-    // for (std::size_t i = 0; i < 20; ++i) {
-    //     auto valui = rng();
-    //     auto val = static_cast<double>(valui) / static_cast<double>(max);
-    //     std::cout << valui << std::endl;
-    //     std::cout << val << std::endl;
-    // }
-
-    // std::uniform_real_distribution<double> temp;
-    // std::cout << temp(rng) << std::endl;
-
-    // auto max = std::numeric_limits<std::uint32_t>::max() - 2;
-    // rng.discard(static_cast<uint64_t>(max));
-
-    // std::cout << rng() << std::endl; // 2147483648
-    // std::cout << rng() << std::endl; // 3221225472
+        check_bwd_mult
+            .template operator()<adhoc::qrng_table::joe_kuo_old_1111, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_0_7600, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_2_3900, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_3_7300, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::joe_kuo_other_4_5600, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_5_21201, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_6_21201, true>();
+        check_bwd_mult.template
+        operator()<adhoc::qrng_table::new_joe_kuo_7_21201, true>();
+    }
 
     TEST_END;
 }
