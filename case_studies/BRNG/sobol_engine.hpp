@@ -227,15 +227,26 @@ class sobol_engine final {
         this->generate_from_num();
     }
 
+    template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        auto const result = this->Y[this->j++];
-        if (this->j == this->N) {
-            this->generate();
-            this->increase_counter();
-            this->j = 0;
-        }
+        if constexpr (FwdDirection) {
+            auto const result = this->Y[this->j++];
+            if (this->j == this->N) {
+                this->generate();
+                this->increase_counter();
+                this->j = 0;
+            }
 
-        return result;
+            return result;
+        } else {
+            if (this->j == 0) {
+                this->j = this->N;
+                this->decrease_counter();
+                this->generate();
+            }
+            --this->j;
+            return this->Y[this->j];
+        }
     };
 
     inline void generate_from_num() {
