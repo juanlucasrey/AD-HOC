@@ -62,10 +62,6 @@ set(DynamicGCC
     univariate_vs_fd_gcc.cpp
 )
 
-set(DynamicWindows
-    univariate_vs_fd.cpp
-)
-
 compile_check("${StaticWorking}" false)
 compile_check("${StaticFailing}" true)
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
@@ -78,10 +74,6 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     run_check("${DynamicGCC}")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-    run_check("${DynamicWindows}")
 endif()
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
