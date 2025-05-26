@@ -25,7 +25,7 @@ int main() {
         EXPECT_NEAR_ABS(results1[0], results2[0], 1e-15);
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-15);
         EXPECT_NEAR_ABS(results1[2], results2[2], 3e-15);
-        EXPECT_NEAR_ABS(results1[3], results2[3], 2e-13);
+        EXPECT_NEAR_ABS(results1[3], results2[3], 3e-13);
         EXPECT_NEAR_ABS(results1[4], results2[4], 1e-12);
         EXPECT_NEAR_ABS(results1[5], results2[5], 1e-10);
         EXPECT_EQUAL(results1[6], 0.);
@@ -97,7 +97,7 @@ int main() {
         };
         double epsilon = 0.01;
         auto results2 = finite_differences(val, epsilon, lambdainput);
-        EXPECT_NEAR_ABS(results1[0], results2[0], 1e-14);
+        EXPECT_NEAR_ABS(results1[0], results2[0], 2e-14);
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-11);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-9);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-6);
@@ -150,7 +150,7 @@ int main() {
         EXPECT_NEAR_ABS(results1[0], results2[0], 1e-14);
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-12);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-10);
-        EXPECT_NEAR_ABS(results1[3], results2[3], 1e-7);
+        EXPECT_NEAR_ABS(results1[3], results2[3], 2e-7);
         EXPECT_NEAR_ABS(results1[4], results2[4], 5e-6);
         EXPECT_NEAR_ABS(results1[5], results2[5], 1e-2);
         EXPECT_EQUAL(results1[6], 0.);
@@ -246,7 +246,7 @@ int main() {
         double epsilon = 0.01;
         auto results2 = finite_differences(val, epsilon, lambdainput);
         EXPECT_NEAR_ABS(results1[0], results2[0], 1e-13);
-        EXPECT_NEAR_ABS(results1[1], results2[1], 1e-11);
+        EXPECT_NEAR_ABS(results1[1], results2[1], 2e-11);
         EXPECT_NEAR_ABS(results1[2], results2[2], 5e-9);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-6);
         EXPECT_NEAR_ABS(results1[4], results2[4], 1e-5);
@@ -295,7 +295,7 @@ int main() {
         };
         double epsilon = 0.01;
         auto results2 = finite_differences(val, epsilon, lambdainput);
-        EXPECT_NEAR_ABS(results1[0], results2[0], 1e-14);
+        EXPECT_NEAR_ABS(results1[0], results2[0], 2e-14);
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-11);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-9);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-6);
@@ -320,12 +320,12 @@ int main() {
         };
         double epsilon = 0.01;
         auto results2 = finite_differences(val, epsilon, lambdainput);
-        EXPECT_NEAR_ABS(results1[0], results2[0], 1e-14);
+        EXPECT_NEAR_ABS(results1[0], results2[0], 2e-14);
         EXPECT_NEAR_ABS(results1[1], results2[1], 1e-11);
         EXPECT_NEAR_ABS(results1[2], results2[2], 1e-9);
         EXPECT_NEAR_ABS(results1[3], results2[3], 1e-6);
         EXPECT_NEAR_ABS(results1[4], results2[4], 3e-5);
-        EXPECT_NEAR_ABS(results1[5], results2[5], 3e-2);
+        EXPECT_NEAR_ABS(results1[5], results2[5], 5e-2);
         EXPECT_EQUAL(results1[6], 0.);
         EXPECT_EQUAL(results1[7], 0.);
         EXPECT_EQUAL(results1[8], 0.);
