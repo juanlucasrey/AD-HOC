@@ -71,7 +71,6 @@ set(DynamicWindows
     utils/univariate.cpp
     univariate_vs_fd.cpp
     calc_tree.cpp
-    copy_ordered.cpp
 )
 
 # list of normal, dynamic tests (only working with GCC at the moment)
