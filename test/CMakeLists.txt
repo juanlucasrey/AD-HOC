@@ -38,6 +38,7 @@ set(StaticWorkingGCC
     name_gcc.cpp
 )
 
+# list of static checks that only work on windows
 set(StaticWorkingWindows
     dependency.cpp
     combinatorics/multinomial_coefficient_index_sequence.cpp
@@ -57,6 +58,15 @@ set(StaticFailing
 set(Dynamic
     black_scholes1.cpp
     black_scholes2.cpp
+    univariate_vs_python.cpp
+    utils/univariate.cpp
+    univariate_vs_fd.cpp
+    calc_tree.cpp
+    copy_ordered.cpp
+)
+
+# list of dynamic checks that only work on windows
+set(DynamicWindows
     univariate_vs_python.cpp
     utils/univariate.cpp
     univariate_vs_fd.cpp
@@ -90,6 +100,10 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     run_check("${DynamicGCC}")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+    run_check("${DynamicWindows}")
 endif()
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
