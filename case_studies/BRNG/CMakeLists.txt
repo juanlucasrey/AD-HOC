@@ -11,7 +11,6 @@ function(run_check filelist)
 endfunction()
 
 set(BRNG
-    linear_congruential_engine.cpp
     split_mix.cpp
     subtract_with_carry_engine.cpp
 )

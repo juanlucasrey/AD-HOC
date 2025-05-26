@@ -1,0 +1,176 @@
+/*
+ * AD-HOC, Automatic Differentiation for High Order Calculations
+ *
+ * This file is part of the AD-HOC distribution
+ * (https://github.com/juanlucasrey/AD-HOC).
+ * Copyright (c) 2024 Juan Lucas Rey
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef BRNG_LINEAR_CONGRUENTIAL_ENGINE
+#define BRNG_LINEAR_CONGRUENTIAL_ENGINE
+
+#include "tools/modular_arithmetic.hpp"
+#include "tools/uint128.hpp"
+
+#include <cstdint>
+#include <limits>
+
+namespace adhoc {
+
+namespace detail {
+
+template <class UIntType>
+constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
+    while (b != 0) {
+        auto tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+    return a;
+};
+
+} // namespace detail
+
+template <class UIntType, UIntType a, UIntType c, UIntType m>
+class linear_congruential_engine final {
+    static_assert(m == 0 || a < m);
+    static_assert(m == 0 || c < m);
+    static_assert(m == 0 ? detail::gcd(static_cast<UIntType>(2U), a) == 1U
+                         : detail::gcd(m, a) == 1U);
+
+  public:
+    using result_type = UIntType;
+
+    static constexpr UIntType multiplier = a;
+    static constexpr UIntType multiplier_inverse =
+        m == 0 ? modular_multiplicative_inverse_max_plus_one(a)
+               : modular_multiplicative_inverse(m, a);
+    static constexpr UIntType increment = c;
+    static constexpr UIntType modulus = m;
+    static constexpr UIntType default_seed = 1U;
+
+    explicit linear_congruential_engine(result_type value = default_seed)
+        : x(value) {}
+
+    template <bool FwdDirection = true>
+    inline auto operator()() -> result_type {
+
+        if constexpr (m == 0) {
+            if constexpr (FwdDirection) {
+                this->x = a * this->x + c;
+                return this->x;
+            } else {
+                const auto result = this->x;
+                this->x = multiplier_inverse * (this->x - c);
+                return result;
+            }
+        } else {
+            constexpr auto digits = std::numeric_limits<UIntType>::digits;
+
+            using upgraded_type = std::conditional_t<
+                digits <= 8, std::uint_fast16_t,
+                std::conditional_t<
+                    digits <= 16, std::uint_fast32_t,
+                    std::conditional_t<digits <= 32, std::uint_fast64_t,
+                                       uint128>>>;
+
+            constexpr auto m_64 = static_cast<upgraded_type>(m);
+            if constexpr (c == 0) {
+                if constexpr (FwdDirection) {
+                    constexpr auto a_64 = static_cast<upgraded_type>(a);
+
+                    this->x = static_cast<UIntType>(
+                        (a_64 * static_cast<upgraded_type>(this->x)) % m_64);
+                    return this->x;
+                } else {
+                    constexpr auto a_inv_64 =
+                        static_cast<upgraded_type>(multiplier_inverse);
+
+                    const auto result = this->x;
+                    this->x = static_cast<UIntType>(
+                        (a_inv_64 * static_cast<upgraded_type>(this->x)) %
+                        m_64);
+                    return result;
+                }
+            } else {
+                constexpr auto c_64 = static_cast<upgraded_type>(c);
+
+                if constexpr (FwdDirection) {
+                    constexpr auto a_64 = static_cast<upgraded_type>(a);
+
+                    this->x = static_cast<UIntType>(
+                        (a_64 * static_cast<upgraded_type>(this->x) + c_64) %
+                        m_64);
+                    return this->x;
+                } else {
+                    constexpr auto a_inv_64 =
+                        static_cast<upgraded_type>(multiplier_inverse);
+
+                    constexpr auto c_inv_64 = static_cast<upgraded_type>(m - c);
+
+                    const auto result = this->x;
+                    this->x = static_cast<UIntType>(
+                        (a_inv_64 *
+                         (static_cast<upgraded_type>(this->x) + c_inv_64)) %
+                        m_64);
+                    return result;
+                }
+            }
+        }
+    }
+
+    void discard(unsigned long long z) {
+        for (unsigned long long i = 0; i < z; ++i) {
+            this->operator()();
+        }
+    }
+
+    static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
+    static constexpr auto max() -> UIntType {
+        return m == 0 ? std::numeric_limits<result_type>::max() : m - 1U;
+    }
+
+    auto operator==(const linear_congruential_engine &rhs) const -> bool {
+        return (this->x == rhs.x);
+    }
+
+  private:
+    UIntType x;
+};
+
+using minstd_rand0 =
+    linear_congruential_engine<std::uint_fast32_t, 16807, 0, 2147483647>;
+
+using minstd_rand =
+    linear_congruential_engine<std::uint_fast32_t, 48271, 0, 2147483647>;
+
+using ZX81 = linear_congruential_engine<std::uint_fast16_t, 75, 74, 0>;
+
+using ranqd1 =
+    linear_congruential_engine<std::uint_fast32_t, 1664525, 1013904223, 0>;
+
+using RANDU =
+    linear_congruential_engine<std::uint_fast32_t, 65539, 0, 2147483648>;
+
+using Borland =
+    linear_congruential_engine<std::uint_fast32_t, 22695477, 1, 2147483648>;
+
+using Newlib =
+    linear_congruential_engine<std::uint_fast64_t, 6364136223846793005, 1,
+                               9223372036854775808U>;
+
+} // namespace adhoc
+
+#endif // BRNG_LINEAR_CONGRUENTIAL_ENGINE
