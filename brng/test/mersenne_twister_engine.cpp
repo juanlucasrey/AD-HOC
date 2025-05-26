@@ -4,11 +4,11 @@
 #include "../include/mersenne_twister_engine.hpp"
 #include "seed_seq.hpp"
 
-#include <random>
-#include <vector>
-
 #include <chrono>
 #include <iostream>
+#include <numeric>
+#include <random>
+#include <vector>
 
 auto main() -> int {
     // std check
@@ -164,25 +164,31 @@ auto main() -> int {
             std::uint64_t, 32, 624, 397, 31, 0x9908b0df, 11, 0xffffffff, 7,
             0x9d2c5680, 15, 0xefc60000, 18, 1812433253>
             rng2(1234), rng2b(1234);
+
+        check_back_and_fwd(rng1, 1000000);
+        check_back_and_fwd(rng2, 1000000);
+
+        EXPECT_EQUAL(rng1, rng1b);
+        EXPECT_EQUAL(rng2, rng2b);
+
+#ifndef _MSC_VER
         adhoc::mersenne_twister_engine<
             __uint128_t, 32, 624, 397, 31, 0x9908b0df, 11, 0xffffffff, 7,
             0x9d2c5680, 15, 0xefc60000, 18, 1812433253>
             rng3(1234), rng3b(1234);
-
-        check_back_and_fwd(rng1, 1000000);
-        check_back_and_fwd(rng2, 1000000);
         check_back_and_fwd(rng3, 1000000);
-
-        EXPECT_EQUAL(rng1, rng1b);
-        EXPECT_EQUAL(rng2, rng2b);
         EXPECT_EQUAL(rng3, rng3b);
+#endif
 
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng1();
             auto val2 = rng2();
-            auto val3 = rng3b();
             EXPECT_EQUAL(val1, val2);
+
+#ifndef _MSC_VER
+            auto val3 = rng3b();
             EXPECT_EQUAL(val1, val3);
+#endif
         }
     }
 
