@@ -43,6 +43,7 @@ constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
 
 } // namespace detail
 
+// TODO add w parameter for consistency with the rest of std
 template <class UIntType, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine final {
     static_assert(m == 0 || a < m);
@@ -62,18 +63,18 @@ class linear_congruential_engine final {
     static constexpr UIntType default_seed = 1U;
 
     explicit linear_congruential_engine(result_type value = default_seed)
-        : x(value) {}
+        : state(value) {}
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
 
         if constexpr (m == 0) {
             if constexpr (FwdDirection) {
-                this->x = a * this->x + c;
-                return this->x;
+                this->state = a * this->state + c;
+                return this->state;
             } else {
-                const auto result = this->x;
-                this->x = multiplier_inverse * (this->x - c);
+                const auto result = this->state;
+                this->state = multiplier_inverse * (this->state - c);
                 return result;
             }
         } else {
@@ -91,16 +92,17 @@ class linear_congruential_engine final {
                 if constexpr (FwdDirection) {
                     constexpr auto a_64 = static_cast<upgraded_type>(a);
 
-                    this->x = static_cast<UIntType>(
-                        (a_64 * static_cast<upgraded_type>(this->x)) % m_64);
-                    return this->x;
+                    this->state = static_cast<UIntType>(
+                        (a_64 * static_cast<upgraded_type>(this->state)) %
+                        m_64);
+                    return this->state;
                 } else {
                     constexpr auto a_inv_64 =
                         static_cast<upgraded_type>(multiplier_inverse);
 
-                    const auto result = this->x;
-                    this->x = static_cast<UIntType>(
-                        (a_inv_64 * static_cast<upgraded_type>(this->x)) %
+                    const auto result = this->state;
+                    this->state = static_cast<UIntType>(
+                        (a_inv_64 * static_cast<upgraded_type>(this->state)) %
                         m_64);
                     return result;
                 }
@@ -110,20 +112,21 @@ class linear_congruential_engine final {
                 if constexpr (FwdDirection) {
                     constexpr auto a_64 = static_cast<upgraded_type>(a);
 
-                    this->x = static_cast<UIntType>(
-                        (a_64 * static_cast<upgraded_type>(this->x) + c_64) %
+                    this->state = static_cast<UIntType>(
+                        (a_64 * static_cast<upgraded_type>(this->state) +
+                         c_64) %
                         m_64);
-                    return this->x;
+                    return this->state;
                 } else {
                     constexpr auto a_inv_64 =
                         static_cast<upgraded_type>(multiplier_inverse);
 
                     constexpr auto c_inv_64 = static_cast<upgraded_type>(m - c);
 
-                    const auto result = this->x;
-                    this->x = static_cast<UIntType>(
+                    const auto result = this->state;
+                    this->state = static_cast<UIntType>(
                         (a_inv_64 *
-                         (static_cast<upgraded_type>(this->x) + c_inv_64)) %
+                         (static_cast<upgraded_type>(this->state) + c_inv_64)) %
                         m_64);
                     return result;
                 }
@@ -143,11 +146,11 @@ class linear_congruential_engine final {
     }
 
     auto operator==(const linear_congruential_engine &rhs) const -> bool {
-        return (this->x == rhs.x);
+        return (this->state == rhs.state);
     }
 
   private:
-    UIntType x;
+    UIntType state;
 };
 
 using minstd_rand0 =

@@ -4,6 +4,7 @@ set(BRNG
     tools/circular_buffer.cpp
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
+    subtract_with_carry_engine.cpp
 )
 
 run_check("${BRNG}")

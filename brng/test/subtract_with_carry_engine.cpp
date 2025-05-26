@@ -1,10 +1,12 @@
 #include "../../test_simple/test_simple_include.hpp"
+#include "seed_seq.hpp"
 #include "test_tools_rng.hpp"
 
 #include "../../include/combinatorics/pow.hpp"
-#include "subtract_with_carry_engine.hpp"
+#include "../include/subtract_with_carry_engine.hpp"
 
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <random>
 
@@ -16,33 +18,18 @@ constexpr auto period(RNG const & /* rng */) -> unsigned long long {
     return adhoc::detail::pow<r>(w) - adhoc::detail::pow<s>(w);
 }
 
-class initseq : public std::seed_seq {
-  public:
-    template <class RandomIt> void generate(RandomIt first, RandomIt last) {
-        if (first == last)
-            return;
-
-        std::size_t i = 0;
-        for (; first != last; ++first) {
-            *first = vals[i];
-            i++;
-        }
-    }
-    std::vector<std::uint_least32_t> vals;
-};
-
 auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
-    initseq seed;
-    seed.vals = init;
+    adhoc::seed_seq<std::uint_least32_t> seq;
+    seq.vals = init;
 
-    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(seed);
-    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2(seed);
+    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(seq);
+    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2(seq);
     constexpr unsigned long long full_cycle = period(rng1); // 65280
     rng2.discard(full_cycle);
     EXPECT_EQUAL(rng1, rng2);
 
-    TEST_FUNC(check_fwd_and_back(rng2, full_cycle));
-    TEST_FUNC(check_back_and_fwd(rng2, full_cycle));
+    check_fwd_and_back(rng2, full_cycle);
+    check_back_and_fwd(rng2, full_cycle);
 
     TEST_END;
 }
@@ -58,6 +45,9 @@ int main() {
         EXPECT_EQUAL(gen48(), 61'839'128'582'725);
     }
 
+    // NOT WORKING!!
+    // { adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 2, 4> rng1; }
+
     // to be corrected on std!!
     {
         std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1;
@@ -71,13 +61,13 @@ int main() {
         EXPECT_NOT_EQUAL(rng1, rng2);
 
         // but they give the same values!!!
-        TEST_FUNC(compare_rng(rng1, rng2, full_cycle));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
+        compare_rng(rng1, rng2, full_cycle);
+        compare_rng_limits(rng1, rng2);
     }
 
     // default
     {
-        initseq seed;
+        adhoc::seed_seq<std::uint_least32_t> seed;
         seed.vals = std::vector<std::uint_least32_t>{63026, 2533, 52484, 29490};
         std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(
             seed);
@@ -150,40 +140,96 @@ int main() {
     {
         std::ranlux24_base rng1;
         adhoc::ranlux24_base rng2;
-        TEST_FUNC(compare_rng(rng1, rng2, 100));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
+        compare_rng(rng1, rng2, 100);
+        compare_rng_limits(rng1, rng2);
     }
 
-    // ranlux24_base fwd and back
     {
         adhoc::ranlux24_base rng;
-        TEST_FUNC(check_fwd_and_back(rng, 100));
+        check_fwd_and_back(rng, 100);
+        adhoc::ranlux24_base rng2;
+        EXPECT_EQUAL(rng, rng2);
     }
 
-    // ranlux24_base back and fwd
     {
         adhoc::ranlux24_base rng;
-        TEST_FUNC(check_back_and_fwd(rng, 100));
+        check_back_and_fwd(rng, 100);
+        adhoc::ranlux24_base rng2;
+        EXPECT_EQUAL(rng, rng2);
     }
 
-    // check against std ranlux48_base
     {
         std::ranlux48_base rng1;
         adhoc::ranlux48_base rng2;
-        TEST_FUNC(compare_rng(rng1, rng2, 100));
-        TEST_FUNC(compare_rng_limits(rng1, rng2));
+        compare_rng(rng1, rng2, 100);
+        compare_rng_limits(rng1, rng2);
     }
 
-    // ranlux48_base fwd and back
     {
         adhoc::ranlux48_base rng;
-        TEST_FUNC(check_fwd_and_back(rng, 100));
+        check_fwd_and_back(rng, 100);
+        adhoc::ranlux48_base rng2;
+        EXPECT_EQUAL(rng, rng2);
     }
 
-    // ranlux48_base corrected back and fwd
     {
         adhoc::ranlux48_base rng;
-        TEST_FUNC(check_back_and_fwd(rng, 100));
+        check_back_and_fwd(rng, 100);
+        adhoc::ranlux48_base rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    int sims = 0;
+    if (auto env_p = std::getenv("TIMING_SIMS")) {
+        sims = std::atoi(env_p);
+    }
+
+    if (sims) {
+        std::uint64_t res1 = 0;
+        adhoc::ranlux48_base rng;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res1 += rng();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "new" << std::endl;
+            std::cout << time << std::endl;
+        }
+
+        std::uint64_t res2 = 0;
+        std::ranlux48_base rng2;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res2 += rng2();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "old" << std::endl;
+            std::cout << time << std::endl;
+        }
+        EXPECT_EQUAL(res1, res2);
+
+        std::uint64_t res1b = 0;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res1b += rng.operator()<false>();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "new back" << std::endl;
+            std::cout << time << std::endl;
+        }
+        EXPECT_EQUAL(res1, res1b);
     }
 
     TEST_END;
