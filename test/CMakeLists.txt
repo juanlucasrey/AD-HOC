@@ -38,6 +38,15 @@ set(StaticWorkingGCC
     name_gcc.cpp
 )
 
+set(StaticWorkingWindows
+    dependency.cpp
+    combinatorics/multinomial_coefficient_index_sequence.cpp
+    combinatorics/multinomial_coefficient.cpp
+    utils/index_sequence.cpp
+    utils/tuple.cpp
+    half_square.cpp
+)
+
 # list of static checks that do not compile (and shouldn't)
 set(StaticFailing
     calc_tree_fail_not_on_tree.cpp
@@ -62,8 +71,15 @@ set(DynamicGCC
     univariate_vs_fd_gcc.cpp
 )
 
-compile_check("${StaticWorking}" false)
-compile_check("${StaticFailing}" true)
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU OR CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    compile_check("${StaticWorking}" false)
+    compile_check("${StaticFailing}" true)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+    compile_check("${StaticWorkingWindows}" false)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     compile_check("${StaticWorkingGCC}" false)
 endif()
