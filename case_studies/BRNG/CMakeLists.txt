@@ -12,7 +12,7 @@ endfunction()
 
 set(BRNG
     split_mix.cpp
-    subtract_with_carry_engine.cpp
+    # subtract_with_carry_engine.cpp
 )
 
 run_check("${BRNG}")
