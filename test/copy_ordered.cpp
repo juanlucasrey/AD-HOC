@@ -1,13 +1,12 @@
 #include <backpropagator_tools.hpp>
 
-#include "test_tools.hpp"
+#include "../test_simple/test_simple_include.hpp"
 
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 int main() {
-    TEST_START;
     using namespace adhoc;
 
     // FilteredCopy

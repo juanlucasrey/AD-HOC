@@ -4,8 +4,8 @@
 
 #include <functional>
 
+#include "../test_simple/test_simple_include.hpp"
 #include "statistics.hpp"
-#include "test_tools.hpp"
 
 #define TIMING_TEST false
 
@@ -112,8 +112,6 @@ auto zeta_borwein_precision(double x, std::size_t i) {
 } // namespace
 
 int main() {
-    TEST_START;
-
     using namespace adhoc;
     std::cout.precision(std::numeric_limits<double>::max_digits10);
 

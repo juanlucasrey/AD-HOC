@@ -6,6 +6,8 @@
 #include <limits>
 #include <tuple>
 
+static int _result = 0;
+
 template <class D>
 inline std::tuple<bool, double> expect_near_abs(D val1, D val2, D tol) {
     const D abs_diff = std::abs(val1 - val2);
@@ -31,10 +33,9 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
     return std::make_tuple(rel_diff < tol, rel_diff);
 }
 
-#define TEST_START int _result = 0
 #define TEST_END return _result
 #define TEST_FUNC(F)                                                           \
-    {                                                                          \
+    do {                                                                       \
         auto _result_temp = F;                                                 \
         if (_result_temp) {                                                    \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
@@ -43,10 +44,10 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << #F << " failed" << std::endl;                         \
         }                                                                      \
         _result = _result || _result_temp;                                     \
-    }
+    } while (0)
 
 #define EXPECT_NEAR_ABS(VAL1, VAL2, TOL)                                       \
-    {                                                                          \
+    do {                                                                       \
         auto [is_near, tol] = expect_near_abs(VAL1, VAL2, TOL);                \
         if (!is_near) {                                                        \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
@@ -58,10 +59,10 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << "val2 evaluates to " << VAL2 << std::endl;            \
             _result = 1;                                                       \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_NEAR_REL(VAL1, VAL2, TOL)                                       \
-    {                                                                          \
+    do {                                                                       \
         auto [is_near, tol] = expect_near_rel(VAL1, VAL2, TOL);                \
         if (!is_near) {                                                        \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
@@ -73,18 +74,18 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << "val2 evaluates to " << VAL2 << std::endl;            \
             _result = 1;                                                       \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_NEAR_REL_ARRAY(VAL1, VAL2, TOL)                                 \
-    {                                                                          \
+    do {                                                                       \
         constexpr std::size_t size = std::min(VAL1.size(), VAL2.size());       \
         for (std::size_t i = 0; i < size; i++) {                               \
             EXPECT_NEAR_REL(VAL1[i], VAL2[i], TOL);                            \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_LESS_THAN(VAL1, VAL2)                                           \
-    {                                                                          \
+    do {                                                                       \
         if (!(VAL1 < VAL2)) {                                                  \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
@@ -92,10 +93,10 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << "Expected " << VAL1 << " < " << VAL2 << std::endl;    \
             _result = 1;                                                       \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_EQUAL(VAL1, VAL2)                                               \
-    {                                                                          \
+    do {                                                                       \
         if ((VAL1 != VAL2)) {                                                  \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
@@ -103,10 +104,10 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << "Expected " << #VAL1 << " == " << #VAL2 << std::endl; \
             _result = 1;                                                       \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_NOT_EQUAL(VAL1, VAL2)                                           \
-    {                                                                          \
+    do {                                                                       \
         if ((VAL1 == VAL2)) {                                                  \
             std::cout.precision(std::numeric_limits<double>::max_digits10);    \
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
@@ -114,14 +115,14 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << "Expected " << #VAL1 << " != " << #VAL2 << std::endl; \
             _result = 1;                                                       \
         }                                                                      \
-    }
+    } while (0)
 
 #define EXPECT_EQUAL_ARRAY(VAL1, VAL2)                                         \
-    {                                                                          \
+    do {                                                                       \
         constexpr std::size_t size = std::min(VAL1.size(), VAL2.size());       \
         for (std::size_t i = 0; i < size; i++) {                               \
             EXPECT_EQUAL(VAL1[i], VAL2[i]);                                    \
         }                                                                      \
-    }
+    } while (0)
 
 #endif // TEST_TOOLS_HPP

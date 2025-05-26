@@ -5,13 +5,12 @@
 #include <sort.hpp>
 #include <utils/tuple.hpp>
 
+#include "../test_simple/test_simple_include.hpp"
 #include "call_price.hpp"
-#include "test_tools.hpp"
 
 #include <random>
 
 int main() {
-    TEST_START;
     using namespace adhoc;
 
     // UnivariateLogExp

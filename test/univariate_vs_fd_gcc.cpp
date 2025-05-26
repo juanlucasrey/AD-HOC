@@ -1,13 +1,12 @@
 #include <adhoc.hpp>
 #include <base.hpp>
 
+#include "../test_simple/test_simple_include.hpp"
 #include "finite_differences.hpp"
-#include "test_tools.hpp"
 
 #include <cmath>
 
 int main() {
-    TEST_START;
     using namespace adhoc;
 
     // CompEllint1
