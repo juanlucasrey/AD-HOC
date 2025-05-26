@@ -80,9 +80,9 @@ auto main() -> int {
         }
     }
 
-    // std flaw 2
+    // std flaw 2 (only in gcc)
     {
-#ifndef __GNUC__
+#if defined(__GNUC__)
         {
             adhoc::seed_seq<std::uint_fast32_t> seq;
             seq.vals.resize(624);
@@ -103,6 +103,25 @@ auto main() -> int {
 
             // same check again..
             EXPECT_NOT_EQUAL(rng1, rng2);
+            compare_rng(rng1, rng2, 624);
+        }
+#else
+        // this does not happen with clang and windows cl
+        {
+            adhoc::seed_seq<std::uint_fast32_t> seq;
+            seq.vals.resize(624);
+            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::mt19937 rng1(seq);
+            rng1();
+
+            std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
+            seq.vals.back() = 2567483729U;
+            std::mt19937 rng2(seq);
+
+            // both rng are seen as equal
+            EXPECT_EQUAL(rng1, rng2);
+
+            // and they of course generate the same values
             compare_rng(rng1, rng2, 624);
         }
 #endif
