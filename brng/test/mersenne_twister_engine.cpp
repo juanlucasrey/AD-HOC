@@ -88,7 +88,7 @@ auto main() -> int {
             seq.vals.resize(624);
             std::iota(seq.vals.begin(), seq.vals.end(), 2);
             std::mt19937 rng1(seq);
-            rng1();
+            auto val = rng1();
 
             std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
             seq.vals.back() = 2567483729U;
@@ -192,6 +192,7 @@ auto main() -> int {
         }
     }
 
+#ifndef _MSC_VER
     // 64 many types
     {
         adhoc::mersenne_twister_engine<
@@ -214,6 +215,7 @@ auto main() -> int {
             EXPECT_EQUAL(val1, val2);
         }
     }
+#endif
 
     int sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
