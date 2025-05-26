@@ -7,11 +7,10 @@
 #include <sstream>
 #include <vector>
 
+#include "../test_simple/test_simple_include.hpp"
 #include "statistics.hpp"
-#include "test_tools.hpp"
 
 int main() {
-    TEST_START;
 
     using namespace adhoc;
 

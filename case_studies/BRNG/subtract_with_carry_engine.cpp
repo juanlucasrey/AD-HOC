@@ -1,4 +1,4 @@
-#include "../../test/test_tools.hpp"
+#include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
 #include "../../include/combinatorics/pow.hpp"
@@ -32,8 +32,6 @@ class initseq : public std::seed_seq {
 };
 
 auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
-    TEST_START;
-
     initseq seed;
     seed.vals = init;
 
@@ -50,8 +48,6 @@ auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
 }
 
 int main() {
-    TEST_START;
-
     // std check
     {
         adhoc::ranlux24_base gen24; // overload (1)

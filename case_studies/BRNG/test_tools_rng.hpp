@@ -1,14 +1,12 @@
 #ifndef TEST_TOOLS_RNG_HPP
 #define TEST_TOOLS_RNG_HPP
 
-#include "../../test/test_tools.hpp"
+#include "../../test_simple/test_simple_include.hpp"
 
 #include <random>
 
 template <class RNG1, class RNG2>
 auto compare_rng(RNG1 &rng1, RNG2 &rng2, std::size_t n) -> int {
-    TEST_START;
-
     for (std::size_t i = 0; i < n; ++i) {
         auto val1 = rng1();
         auto val2 = rng2();
@@ -24,8 +22,6 @@ auto compare_rng(RNG1 &rng1, RNG2 &rng2, std::size_t n) -> int {
 
 template <class RNG1, class RNG2>
 auto compare_rng_limits(RNG1 & /* rng1 */, RNG2 & /* rng2 */) -> int {
-    TEST_START;
-
     EXPECT_EQUAL(RNG1::min(), RNG2::min());
     EXPECT_EQUAL(RNG1::max(), RNG2::max());
 
@@ -33,7 +29,6 @@ auto compare_rng_limits(RNG1 & /* rng1 */, RNG2 & /* rng2 */) -> int {
 }
 
 template <class RNG> auto check_fwd_and_back(RNG &rng, std::size_t n) -> int {
-    TEST_START;
     std::vector<typename RNG::result_type> vals1(n);
 
     for (std::size_t i = 0; i < n; ++i) {
@@ -52,7 +47,6 @@ template <class RNG> auto check_fwd_and_back(RNG &rng, std::size_t n) -> int {
 }
 
 template <class RNG> auto check_back_and_fwd(RNG &rng, std::size_t n) -> int {
-    TEST_START;
     std::vector<typename RNG::result_type> vals1(n);
 
     for (std::size_t i = 0; i < n; ++i) {

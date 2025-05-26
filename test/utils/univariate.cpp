@@ -1,12 +1,10 @@
 #include <utils/univariate.hpp>
 
-#include "../test_tools.hpp"
+#include "../../test_simple/test_simple_include.hpp"
 
 #include <array>
 
 int main() {
-    TEST_START;
-
     using namespace adhoc;
     // ElevateUnivariate
     {

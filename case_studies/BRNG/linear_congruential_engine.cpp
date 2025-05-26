@@ -1,4 +1,4 @@
-#include "../../test/test_tools.hpp"
+#include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
 #include "linear_congruential_engine.hpp"
@@ -7,8 +7,6 @@
 #include <random>
 
 int main() {
-    TEST_START;
-
     // check against std minstd_rand0
     {
         std::minstd_rand0 rng1;

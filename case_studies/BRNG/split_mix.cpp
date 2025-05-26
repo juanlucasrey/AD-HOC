@@ -1,4 +1,4 @@
-#include "../../test/test_tools.hpp"
+#include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
 #include "split_mix.hpp"
@@ -6,8 +6,6 @@
 #include <vector>
 
 int main() {
-    TEST_START;
-
     // splitmix32 fwd and back
     {
         splitmix32 rng;
