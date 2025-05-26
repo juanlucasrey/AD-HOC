@@ -57,10 +57,6 @@ class uint128 {
         return static_cast<std::uint32_t>(this->low);
     }
 
-    explicit operator std::size_t() const {
-        return static_cast<std::size_t>(this->low);
-    }
-
     explicit operator std::uint64_t() const { return this->low; }
 
     auto operator+=(const uint128 &v) noexcept -> uint128 {
