@@ -50,16 +50,18 @@ template <class UIntType, std::size_t w, std::size_t s, std::size_t r,
           bool original = false>
 class subtract_with_carry_engine final {
   private:
-    static constexpr std::size_t k = (w / 32U) + 1U;
+    static constexpr std::size_t k = (w + 31U) / 32U;
 
     void init(std::array<std::uint_least32_t, r * k> const &seeds) {
+        constexpr auto mask = subtract_with_carry_engine::max();
+
         auto iter = seeds.begin();
         for (std::size_t j = 0; j < r; j++) {
             UIntType val = 0;
             for (std::size_t ki = 0; ki < k; ++ki) {
-                val += static_cast<UIntType>(*iter++) << 32 * ki;
+                val += static_cast<UIntType>(*iter++) << (32 * ki);
             }
-            this->state[j] = val % modulus;
+            this->state[j] = val & mask;
         }
 
         this->carry = (this->state[long_lag - 1] == 0);
@@ -107,25 +109,21 @@ class subtract_with_carry_engine final {
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
 
+        constexpr auto mask = subtract_with_carry_engine::max();
+
         if constexpr (FwdDirection) {
             const std::size_t short_index =
                 (this->index < short_lag) ? (this->index + long_lag - short_lag)
                                           : (this->index - short_lag);
 
-            const UIntType temp = this->state[this->index] + this->carry;
-            if (this->state[short_index] >= temp) {
-                this->state[this->index] = this->state[short_index] - temp;
-                this->carry = 0;
-            } else {
-                this->state[this->index] =
-                    modulus - temp + this->state[short_index];
-                this->carry = 1;
-            }
+            const result_type &xs = this->state[short_index];
+            result_type &xr = this->state[this->index];
+            const result_type new_carry = this->carry == 0 ? xs < xr : xs <= xr;
 
-            const UIntType result = this->state[this->index];
-            this->index =
-                (this->index == (long_lag - 1)) ? 0 : (this->index + 1);
-            return result;
+            xr = (xs - xr - this->carry) & mask;
+            this->carry = new_carry;
+            this->index = (this->index + 1) % long_lag;
+            return xr;
         } else {
             this->index =
                 (this->index == 0) ? (long_lag - 1) : (this->index - 1);
@@ -135,15 +133,11 @@ class subtract_with_carry_engine final {
                 (this->index < short_lag) ? (this->index + long_lag - short_lag)
                                           : (this->index - short_lag);
 
-            const UIntType temp =
-                this->carry
-                    ? modulus - this->state[this->index] +
-                          this->state[short_index]
-                    : this->state[short_index] - this->state[this->index];
-
-            if (temp == 0) {
+            if (this->state[short_index] == this->state[this->index] &&
+                this->carry == 0) {
                 this->carry = 0;
-            } else if (temp == modulus) {
+            } else if (this->state[short_index] == this->state[this->index] &&
+                       this->carry == 1) {
                 this->carry = 1;
             } else {
                 std::size_t k_prev = this->index;
@@ -166,7 +160,9 @@ class subtract_with_carry_engine final {
                 }
             }
 
-            this->state[this->index] = temp - this->carry;
+            const result_type &xs = this->state[short_index];
+            result_type &xr = this->state[this->index];
+            xr = (xs - xr - this->carry) & mask;
 
             return result;
         }
