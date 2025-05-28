@@ -112,9 +112,7 @@ class subtract_with_carry_engine final {
                 (this->index < short_lag) ? (this->index + long_lag - short_lag)
                                           : (this->index - short_lag);
 
-            const UIntType carry_prev = carry;
-            const UIntType x_prev = this->state[this->index];
-            const UIntType temp = this->state[this->index] + carry;
+            const UIntType temp = this->state[this->index] + this->carry;
             if (this->state[short_index] >= temp) {
                 this->state[this->index] = this->state[short_index] - temp;
                 this->carry = 0;
@@ -149,23 +147,19 @@ class subtract_with_carry_engine final {
                 this->carry = 1;
             } else {
                 std::size_t k_prev = this->index;
-                UIntType temp_prev = 0;
                 std::size_t short_index_prev = short_index;
                 do {
                     k_prev = (k_prev == 0) ? (long_lag - 1) : (k_prev - 1);
                     short_index_prev = (k_prev < short_lag)
                                            ? (k_prev + long_lag - short_lag)
                                            : (k_prev - short_lag);
-                    temp_prev = this->state[k_prev];
-                    if (temp_prev > this->state[short_index_prev]) {
-                        temp_prev =
-                            modulus - temp_prev + this->state[short_index_prev];
-                    } else {
-                        temp_prev = this->state[short_index_prev] - temp_prev;
-                    }
-                } while (temp_prev == 0 && k_prev != this->index);
+                    // this termination is safe:
+                    // -if it never terminates, it means all states are equal
+                    // but if all states are equal then either temp == 0
+                    // or temp == modulus in which case we would never be here.
+                } while (this->state[short_index_prev] == this->state[k_prev]);
 
-                if (this->state[short_index_prev] >= temp_prev) {
+                if (this->state[short_index_prev] >= this->state[k_prev]) {
                     this->carry = 0;
                 } else {
                     this->carry = 1;
