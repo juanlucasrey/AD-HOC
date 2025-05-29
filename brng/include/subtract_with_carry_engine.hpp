@@ -125,8 +125,6 @@ class subtract_with_carry_engine final {
         } else {
             this->index =
                 (this->index == 0) ? (long_lag - 1) : (this->index - 1);
-            const UIntType result = this->state[this->index];
-
             const std::size_t short_index =
                 (this->index < short_lag) ? (this->index + long_lag - short_lag)
                                           : (this->index - short_lag);
@@ -134,26 +132,25 @@ class subtract_with_carry_engine final {
             const result_type &xs = this->state[short_index];
             result_type &xr = this->state[this->index];
 
-            // if (this->state[short_index] == this->state[this->index]), carry
-            // remains the same
+            // if (xs == xr), carry remains the same
             if (xs != xr) {
-                std::size_t k_prev = this->index;
-                std::size_t short_index_prev = short_index;
+                std::size_t xri_prev = this->index;
+                std::size_t xsi_prev = short_index;
                 do {
-                    k_prev = (k_prev == 0) ? (long_lag - 1) : (k_prev - 1);
-                    short_index_prev = (k_prev < short_lag)
-                                           ? (k_prev + long_lag - short_lag)
-                                           : (k_prev - short_lag);
+                    xri_prev =
+                        (xri_prev == 0) ? (long_lag - 1) : (xri_prev - 1);
+                    xsi_prev =
+                        (xsi_prev == 0) ? (long_lag - 1) : (xsi_prev - 1);
                     // this termination is safe:
                     // -if it never terminates, it means all states are equal
                     // but if all states are equal then either temp == 0
                     // or temp == modulus in which case we would never be here.
-                } while (this->state[short_index_prev] == this->state[k_prev]);
+                } while (this->state[xsi_prev] == this->state[xri_prev]);
 
-                this->carry =
-                    this->state[short_index_prev] < this->state[k_prev];
+                this->carry = this->state[xsi_prev] < this->state[xri_prev];
             }
 
+            const UIntType result = xr;
             xr = (xs - xr - this->carry) & mask;
             return result;
         }
