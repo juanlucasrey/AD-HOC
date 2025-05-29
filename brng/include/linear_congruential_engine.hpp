@@ -21,6 +21,7 @@
 #ifndef BRNG_LINEAR_CONGRUENTIAL_ENGINE
 #define BRNG_LINEAR_CONGRUENTIAL_ENGINE
 
+#include "tools/mask.hpp"
 #include "tools/modular_arithmetic.hpp"
 #include "tools/uint128.hpp"
 
@@ -44,12 +45,13 @@ constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
 } // namespace detail
 
 // TODO add w parameter for consistency with the rest of std
-template <class UIntType, UIntType a, UIntType c, UIntType m>
+template <class UIntType, std::size_t w, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine final {
     static_assert(m == 0 || a < m);
     static_assert(m == 0 || c < m);
     static_assert(m == 0 ? detail::gcd(static_cast<UIntType>(2U), a) == 1U
                          : detail::gcd(m, a) == 1U);
+    static_assert(w <= std::numeric_limits<UIntType>::digits);
 
   public:
     using result_type = UIntType;
@@ -69,23 +71,21 @@ class linear_congruential_engine final {
     inline auto operator()() -> result_type {
 
         if constexpr (m == 0) {
+            constexpr auto mask = linear_congruential_engine::max();
             if constexpr (FwdDirection) {
-                this->state = a * this->state + c;
+                this->state = (a * this->state + c) & mask;
                 return this->state;
             } else {
                 const auto result = this->state;
-                this->state = multiplier_inverse * (this->state - c);
+                this->state = (multiplier_inverse * (this->state - c)) & mask;
                 return result;
             }
         } else {
-            constexpr auto digits = std::numeric_limits<UIntType>::digits;
-
             using upgraded_type = std::conditional_t<
-                digits <= 8, std::uint_fast16_t,
+                w <= 8, std::uint_fast16_t,
                 std::conditional_t<
-                    digits <= 16, std::uint_fast32_t,
-                    std::conditional_t<digits <= 32, std::uint_fast64_t,
-                                       uint128>>>;
+                    w <= 16, std::uint_fast32_t,
+                    std::conditional_t<w <= 32, std::uint_fast64_t, uint128>>>;
 
             constexpr auto m_64 = static_cast<upgraded_type>(m);
             if constexpr (c == 0) {
@@ -142,7 +142,7 @@ class linear_congruential_engine final {
 
     static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
     static constexpr auto max() -> UIntType {
-        return m == 0 ? std::numeric_limits<result_type>::max() : m - 1U;
+        return m == 0 ? mask<UIntType, w>() : m - 1U;
     }
 
     auto operator==(const linear_congruential_engine &rhs) const -> bool {
@@ -154,24 +154,24 @@ class linear_congruential_engine final {
 };
 
 using minstd_rand0 =
-    linear_congruential_engine<std::uint_fast32_t, 16807, 0, 2147483647>;
+    linear_congruential_engine<std::uint_fast32_t, 32, 16807, 0, 2147483647>;
 
 using minstd_rand =
-    linear_congruential_engine<std::uint_fast32_t, 48271, 0, 2147483647>;
+    linear_congruential_engine<std::uint_fast32_t, 32, 48271, 0, 2147483647>;
 
-using ZX81 = linear_congruential_engine<std::uint_fast16_t, 75, 74, 0>;
+using ZX81 = linear_congruential_engine<std::uint_fast16_t, 16, 75, 74, 0>;
 
 using ranqd1 =
-    linear_congruential_engine<std::uint_fast32_t, 1664525, 1013904223, 0>;
+    linear_congruential_engine<std::uint_fast32_t, 32, 1664525, 1013904223, 0>;
 
 using RANDU =
-    linear_congruential_engine<std::uint_fast32_t, 65539, 0, 2147483648>;
+    linear_congruential_engine<std::uint_fast32_t, 32, 65539, 0, 2147483648>;
 
 using Borland =
-    linear_congruential_engine<std::uint_fast32_t, 22695477, 1, 2147483648>;
+    linear_congruential_engine<std::uint_fast32_t, 32, 22695477, 1, 2147483648>;
 
 using Newlib =
-    linear_congruential_engine<std::uint_fast64_t, 6364136223846793005, 1,
+    linear_congruential_engine<std::uint_fast64_t, 64, 6364136223846793005, 1,
                                9223372036854775808U>;
 
 } // namespace adhoc

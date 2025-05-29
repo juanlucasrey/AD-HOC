@@ -175,8 +175,19 @@ int main() {
         EXPECT_EQUAL(rng, rng2);
     }
 
+    {
+        adhoc::linear_congruential_engine<std::uint32_t, 32, 22695477, 1,
+                                          2147483648>
+            rng1;
+        adhoc::linear_congruential_engine<std::uint64_t, 32, 22695477, 1,
+                                          2147483648>
+            rng2;
+        compare_rng(rng1, rng2, 1000000);
+        compare_rng_limits(rng1, rng2);
+    }
+
     using whatever =
-        adhoc::linear_congruential_engine<std::uint_fast32_t, 1664525,
+        adhoc::linear_congruential_engine<std::uint_fast32_t, 32, 1664525,
                                           1013904223, 2147483647>;
 
     {
