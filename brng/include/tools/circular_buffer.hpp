@@ -42,6 +42,7 @@ template <class T, std::size_t N> class circular_buffer final {
     using const_reference = const T &;
 
     auto data() -> std::array<T, N> & { return this->data_; }
+    auto index() -> std::size_t { return this->index_; }
 
     auto operator++() {
         if constexpr (is_power_of_two(N)) {
@@ -60,6 +61,26 @@ template <class T, std::size_t N> class circular_buffer final {
             this->index_ &= m;
         } else {
             this->index_ = this->index_ == 0 ? (N - 1) : this->index_ - 1;
+        }
+    }
+
+    auto operator+=(std::size_t incr) {
+        this->index_ += incr;
+        if constexpr (is_power_of_two(N)) {
+            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+            this->index_ &= m;
+        } else {
+            this->index_ %= N;
+        }
+    }
+
+    auto operator-=(std::size_t incr) {
+        this->index_ -= incr;
+        if constexpr (is_power_of_two(N)) {
+            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+            this->index_ &= m;
+        } else {
+            this->index_ %= N;
         }
     }
 
