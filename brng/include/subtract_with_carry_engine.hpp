@@ -22,6 +22,7 @@
 #define BRNG_SUBTRACT_WITH_CARRY_ENGINE
 
 #include "linear_congruential_engine.hpp"
+#include "tools/circular_buffer.hpp"
 #include "tools/mask.hpp"
 
 #include <algorithm>
@@ -46,30 +47,31 @@ namespace adhoc {
 // corrected = true ensures that f has an inverse and is therefore strictly
 // periodic.
 
-template <class UIntType, std::size_t w, std::size_t s, std::size_t r,
-          bool original = false>
+template <class UIntType, std::size_t w, std::size_t s, std::size_t r>
 class subtract_with_carry_engine final {
   private:
-    static constexpr std::size_t k = (w / 32U) + 1U;
+    static constexpr std::size_t k = (w + 31U) / 32U;
 
     void init(std::array<std::uint_least32_t, r * k> const &seeds) {
+        constexpr auto mask = subtract_with_carry_engine::max();
+
         auto iter = seeds.begin();
-        for (std::size_t j = 0; j < r; j++) {
+        auto &data = this->state.data();
+        for (auto &entry : data) {
             UIntType val = 0;
             for (std::size_t ki = 0; ki < k; ++ki) {
                 val += static_cast<UIntType>(*iter++) << 32 * ki;
             }
-            this->state[j] = val % modulus;
+            entry = val & mask;
         }
 
-        this->carry = (this->state[long_lag - 1] == 0);
-        if constexpr (!original) {
-            for (std::size_t j = 0; j < long_lag; ++j) {
-                this->operator()();
-            }
-            for (std::size_t j = 0; j < long_lag; ++j) {
-                this->operator()<false>();
-            }
+        this->carry = (this->state.template at<long_lag - 1>() == 0);
+
+        for (std::size_t j = 0; j < long_lag; ++j) {
+            this->operator()<true>();
+        }
+        for (std::size_t j = 0; j < long_lag; ++j) {
+            this->operator()<false>();
         }
     }
 
@@ -107,73 +109,48 @@ class subtract_with_carry_engine final {
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
 
+        constexpr auto mask = subtract_with_carry_engine::max();
+
         if constexpr (FwdDirection) {
-            const std::size_t short_index =
-                (this->index < short_lag) ? (this->index + long_lag - short_lag)
-                                          : (this->index - short_lag);
+            const result_type &xs =
+                this->state.template at<long_lag - short_lag>();
+            result_type &xr = this->state.at();
 
-            const UIntType carry_prev = carry;
-            const UIntType x_prev = this->state[this->index];
-            const UIntType temp = this->state[this->index] + carry;
-            if (this->state[short_index] >= temp) {
-                this->state[this->index] = this->state[short_index] - temp;
-                this->carry = 0;
-            } else {
-                this->state[this->index] =
-                    modulus - temp + this->state[short_index];
-                this->carry = 1;
-            }
-
-            const UIntType result = this->state[this->index];
-            this->index =
-                (this->index == (long_lag - 1)) ? 0 : (this->index + 1);
-            return result;
+            const result_type new_carry = this->carry == 0 ? xs < xr : xs <= xr;
+            xr = (xs - xr - this->carry) & mask;
+            this->carry = new_carry;
+            ++this->state;
+            return xr;
         } else {
-            this->index =
-                (this->index == 0) ? (long_lag - 1) : (this->index - 1);
-            const UIntType result = this->state[this->index];
+            --this->state;
 
-            const std::size_t short_index =
-                (this->index < short_lag) ? (this->index + long_lag - short_lag)
-                                          : (this->index - short_lag);
+            // DON'T use the circular buffer for speed
+            auto const &state_data = this->state.data();
+            std::size_t xri_prev = this->state.index();
+            std::size_t xsi_prev = (xri_prev < short_lag)
+                                       ? (xri_prev + long_lag - short_lag)
+                                       : (xri_prev - short_lag);
 
-            const UIntType temp =
-                this->carry
-                    ? modulus - this->state[this->index] +
-                          this->state[short_index]
-                    : this->state[short_index] - this->state[this->index];
+            const result_type &xs = state_data[xsi_prev];
+            result_type &xr = this->state.at();
 
-            if (temp == 0) {
-                this->carry = 0;
-            } else if (temp == modulus) {
-                this->carry = 1;
-            } else {
-                std::size_t k_prev = this->index;
-                UIntType temp_prev = 0;
-                std::size_t short_index_prev = short_index;
+            if (xs != xr) {
                 do {
-                    k_prev = (k_prev == 0) ? (long_lag - 1) : (k_prev - 1);
-                    short_index_prev = (k_prev < short_lag)
-                                           ? (k_prev + long_lag - short_lag)
-                                           : (k_prev - short_lag);
-                    temp_prev = this->state[k_prev];
-                    if (temp_prev > this->state[short_index_prev]) {
-                        temp_prev =
-                            modulus - temp_prev + this->state[short_index_prev];
-                    } else {
-                        temp_prev = this->state[short_index_prev] - temp_prev;
-                    }
-                } while (temp_prev == 0 && k_prev != this->index);
+                    xri_prev =
+                        (xri_prev == 0) ? (long_lag - 1) : (xri_prev - 1);
+                    xsi_prev =
+                        (xsi_prev == 0) ? (long_lag - 1) : (xsi_prev - 1);
+                    // this termination is safe:
+                    // -if it never terminates, it means all states are equal
+                    // but if all states are equal then either temp == 0
+                    // or temp == modulus in which case we would never be here.
+                } while (state_data[xsi_prev] == state_data[xri_prev]);
 
-                if (this->state[short_index_prev] >= temp_prev) {
-                    this->carry = 0;
-                } else {
-                    this->carry = 1;
-                }
+                this->carry = state_data[xsi_prev] < state_data[xri_prev];
             }
 
-            this->state[this->index] = temp - this->carry;
-
+            const UIntType result = xr;
+            xr = (xs - xr - this->carry) & mask;
             return result;
         }
     }
@@ -190,14 +167,11 @@ class subtract_with_carry_engine final {
     static constexpr auto max() -> UIntType { return mask<UIntType, w>(); }
 
     auto operator==(const subtract_with_carry_engine &rhs) const -> bool {
-        return (this->carry == rhs.carry) && (this->index == rhs.index) &&
-               (this->state == rhs.state);
+        return (this->state == rhs.state) && (this->carry == rhs.carry);
     }
 
   private:
-    // TODO: replace with circular_buffer
-    std::array<UIntType, long_lag> state{0};
-    std::size_t index{0};
+    circular_buffer<UIntType, long_lag> state{};
     UIntType carry{0};
 };
 

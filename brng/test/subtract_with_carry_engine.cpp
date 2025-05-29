@@ -45,8 +45,45 @@ int main() {
         EXPECT_EQUAL(gen48(), 61'839'128'582'725);
     }
 
-    // NOT WORKING!!
-    // { adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 2, 4> rng1; }
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng1;
+        std::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng2;
+        compare_rng(rng1, rng2, 1000000);
+    }
+
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng1;
+        std::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng2;
+        compare_rng(rng1, rng2, 1000000);
+    }
+
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng;
+        check_fwd_and_back(rng, 1000000);
+        adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng;
+        check_back_and_fwd(rng, 1000000);
+        adhoc::subtract_with_carry_engine<std::uint_fast32_t, 32, 10, 24> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng;
+        check_fwd_and_back(rng, 1000000);
+        adhoc::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng;
+        check_back_and_fwd(rng, 1000000);
+        adhoc::subtract_with_carry_engine<std::uint_fast64_t, 64, 5, 12> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
 
     // to be corrected on std!!
     {
@@ -140,43 +177,46 @@ int main() {
     {
         std::ranlux24_base rng1;
         adhoc::ranlux24_base rng2;
-        compare_rng(rng1, rng2, 100);
+        compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
-    }
-
-    {
-        adhoc::ranlux24_base rng;
-        check_fwd_and_back(rng, 100);
-        adhoc::ranlux24_base rng2;
-        EXPECT_EQUAL(rng, rng2);
-    }
-
-    {
-        adhoc::ranlux24_base rng;
-        check_back_and_fwd(rng, 100);
-        adhoc::ranlux24_base rng2;
-        EXPECT_EQUAL(rng, rng2);
     }
 
     {
         std::ranlux48_base rng1;
         adhoc::ranlux48_base rng2;
-        compare_rng(rng1, rng2, 100);
+        compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
 
-    {
-        adhoc::ranlux48_base rng;
-        check_fwd_and_back(rng, 100);
-        adhoc::ranlux48_base rng2;
-        EXPECT_EQUAL(rng, rng2);
-    }
+    for (std::size_t i = 0; i < 3; i++) {
 
-    {
-        adhoc::ranlux48_base rng;
-        check_back_and_fwd(rng, 100);
-        adhoc::ranlux48_base rng2;
-        EXPECT_EQUAL(rng, rng2);
+        {
+            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            check_fwd_and_back(rng, 1000000);
+            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
+            EXPECT_EQUAL(rng, rng2);
+        }
+
+        {
+            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            check_back_and_fwd(rng, 1000000);
+            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
+            EXPECT_EQUAL(rng, rng2);
+        }
+
+        {
+            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
+            check_fwd_and_back(rng, 1000000);
+            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
+            EXPECT_EQUAL(rng, rng2);
+        }
+
+        {
+            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
+            check_back_and_fwd(rng, 1000000);
+            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
+            EXPECT_EQUAL(rng, rng2);
+        }
     }
 
     int sims = 0;
