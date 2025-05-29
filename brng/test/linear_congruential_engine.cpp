@@ -3,7 +3,9 @@
 
 #include "linear_congruential_engine.hpp"
 
+#include <chrono>
 #include <cstdint>
+#include <iostream>
 #include <random>
 
 int main() {
@@ -189,6 +191,59 @@ int main() {
         check_back_and_fwd(rng, 1000000);
         whatever rng2;
         EXPECT_EQUAL(rng, rng2);
+    }
+
+    int sims = 0;
+    if (auto env_p = std::getenv("TIMING_SIMS")) {
+        sims = std::atoi(env_p);
+    }
+
+    if (sims) {
+        std::uint64_t res1 = 0;
+        adhoc::minstd_rand0 rng;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res1 += rng();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "new" << std::endl;
+            std::cout << time << std::endl;
+        }
+
+        std::uint64_t res2 = 0;
+        std::minstd_rand0 rng2;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res2 += rng2();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "old" << std::endl;
+            std::cout << time << std::endl;
+        }
+        EXPECT_EQUAL(res1, res2);
+
+        std::uint64_t res1b = 0;
+        {
+            auto time1 = std::chrono::high_resolution_clock::now();
+            for (std::size_t i = 0; i < sims; i++) {
+                res1b += rng.operator()<false>();
+            }
+            auto time2 = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            time2 - time1)
+                            .count();
+            std::cout << "new back" << std::endl;
+            std::cout << time << std::endl;
+        }
+        EXPECT_EQUAL(res1, res1b);
     }
 
     TEST_END;
