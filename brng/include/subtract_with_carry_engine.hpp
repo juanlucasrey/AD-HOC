@@ -46,8 +46,7 @@ namespace adhoc {
 // corrected = true ensures that f has an inverse and is therefore strictly
 // periodic.
 
-template <class UIntType, std::size_t w, std::size_t s, std::size_t r,
-          bool original = false>
+template <class UIntType, std::size_t w, std::size_t s, std::size_t r>
 class subtract_with_carry_engine final {
   private:
     static constexpr std::size_t k = (w + 31U) / 32U;
@@ -65,13 +64,12 @@ class subtract_with_carry_engine final {
         }
 
         this->carry = (this->state[long_lag - 1] == 0);
-        if constexpr (!original) {
-            for (std::size_t j = 0; j < long_lag; ++j) {
-                this->operator()();
-            }
-            for (std::size_t j = 0; j < long_lag; ++j) {
-                this->operator()<false>();
-            }
+
+        for (std::size_t j = 0; j < long_lag; ++j) {
+            this->operator()<true>();
+        }
+        for (std::size_t j = 0; j < long_lag; ++j) {
+            this->operator()<false>();
         }
     }
 
@@ -133,13 +131,12 @@ class subtract_with_carry_engine final {
                 (this->index < short_lag) ? (this->index + long_lag - short_lag)
                                           : (this->index - short_lag);
 
-            if (this->state[short_index] == this->state[this->index] &&
-                this->carry == 0) {
-                this->carry = 0;
-            } else if (this->state[short_index] == this->state[this->index] &&
-                       this->carry == 1) {
-                this->carry = 1;
-            } else {
+            const result_type &xs = this->state[short_index];
+            result_type &xr = this->state[this->index];
+
+            // if (this->state[short_index] == this->state[this->index]), carry
+            // remains the same
+            if (xs != xr) {
                 std::size_t k_prev = this->index;
                 std::size_t short_index_prev = short_index;
                 do {
@@ -153,17 +150,11 @@ class subtract_with_carry_engine final {
                     // or temp == modulus in which case we would never be here.
                 } while (this->state[short_index_prev] == this->state[k_prev]);
 
-                if (this->state[short_index_prev] >= this->state[k_prev]) {
-                    this->carry = 0;
-                } else {
-                    this->carry = 1;
-                }
+                this->carry =
+                    this->state[short_index_prev] < this->state[k_prev];
             }
 
-            const result_type &xs = this->state[short_index];
-            result_type &xr = this->state[this->index];
             xr = (xs - xr - this->carry) & mask;
-
             return result;
         }
     }
