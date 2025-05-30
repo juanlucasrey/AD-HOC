@@ -6,6 +6,7 @@ set(BRNG
     linear_congruential_engine.cpp
     subtract_with_carry_engine.cpp
     philox_engine.cpp
+    sobol_engine.cpp
 )
 
 run_check("${BRNG}")
