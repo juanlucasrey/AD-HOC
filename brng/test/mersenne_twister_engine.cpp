@@ -10,6 +10,10 @@
 #include <random>
 #include <vector>
 
+#if defined(__GNUC__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
+#define REAL_GCC __GNUC__ // probably
+#endif
+
 auto main() -> int {
     // std check
     {
@@ -82,7 +86,7 @@ auto main() -> int {
 
     // std flaw 2 (only in gcc)
     {
-#if defined(__GNUC__)
+#if defined(REAL_GCC)
         {
             adhoc::seed_seq<std::uint_fast32_t> seq;
             seq.vals.resize(624);
@@ -112,7 +116,7 @@ auto main() -> int {
             seq.vals.resize(624);
             std::iota(seq.vals.begin(), seq.vals.end(), 2);
             std::mt19937 rng1(seq);
-            rng1();
+            auto val = rng1();
 
             std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
             seq.vals.back() = 2567483729U;
