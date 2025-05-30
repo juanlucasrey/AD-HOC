@@ -3,11 +3,13 @@ include(../../test_simple/test_simple_cmake.cmake)
 set(BRNG
     tools/circular_buffer.cpp
     tools/bit_find.cpp
+    tools/unshift.cpp
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
     subtract_with_carry_engine.cpp
     philox_engine.cpp
     sobol_engine.cpp
+    lfsr_xor_engine.cpp
 )
 
 run_check("${BRNG}")
