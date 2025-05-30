@@ -101,11 +101,13 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
+#ifndef _MSC_VER
     {
         adhoc::lfsr258<std::uint64_t> rng1;
         adhoc::lfsr258<__uint128_t> rng2;
         compare_rng(rng1, rng2, 1000000);
     }
+#endif
 
     // taus88
     {
