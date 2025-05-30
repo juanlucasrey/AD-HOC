@@ -125,34 +125,66 @@ class subtract_with_carry_engine final {
         } else {
             --this->state;
 
-            // DON'T use the circular buffer for speed
-            auto const &state_data = this->state.data();
-            std::size_t xri_prev = this->state.index();
-            std::size_t xsi_prev = (xri_prev < short_lag)
-                                       ? (xri_prev + long_lag - short_lag)
-                                       : (xri_prev - short_lag);
+            // usingn circular buffer is slower because of modulo ops
+            constexpr bool use_circular_buffer = false;
 
-            const result_type &xs = state_data[xsi_prev];
-            result_type &xr = this->state.at();
+            if constexpr (use_circular_buffer) {
+                const result_type &xs =
+                    this->state.template at<long_lag - short_lag>();
+                result_type &xr = this->state.at();
 
-            if (xs != xr) {
-                do {
-                    xri_prev =
-                        (xri_prev == 0) ? (long_lag - 1) : (xri_prev - 1);
-                    xsi_prev =
-                        (xsi_prev == 0) ? (long_lag - 1) : (xsi_prev - 1);
-                    // this termination is safe:
-                    // -if it never terminates, it means all states are equal
-                    // but if all states are equal then either temp == 0
-                    // or temp == modulus in which case we would never be here.
-                } while (state_data[xsi_prev] == state_data[xri_prev]);
+                if (xs != xr) {
+                    std::size_t count = 0;
+                    do {
+                        --this->state;
+                        count++;
+                        // this termination is safe:
+                        // -if it never terminates, it means all states are
+                        // equal but if all states are equal then either temp ==
+                        // 0 or temp == modulus in which case we would never be
+                        // here.
+                    } while (this->state.template at<long_lag - short_lag>() ==
+                             this->state.at());
 
-                this->carry = state_data[xsi_prev] < state_data[xri_prev];
+                    this->carry =
+                        this->state.template at<long_lag - short_lag>() <
+                        this->state.at();
+
+                    this->state += count;
+                }
+                const UIntType result = xr;
+                xr = (xs - xr - this->carry) & mask;
+                return result;
+            } else {
+                auto const &state_data = this->state.data();
+                std::size_t xri_prev = this->state.index();
+                std::size_t xsi_prev = (xri_prev < short_lag)
+                                           ? (xri_prev + long_lag - short_lag)
+                                           : (xri_prev - short_lag);
+
+                const result_type &xs = state_data[xsi_prev];
+                result_type &xr = this->state.at();
+
+                if (xs != xr) {
+                    do {
+                        xri_prev =
+                            (xri_prev == 0) ? (long_lag - 1) : (xri_prev - 1);
+                        xsi_prev =
+                            (xsi_prev == 0) ? (long_lag - 1) : (xsi_prev - 1);
+                        // this termination is safe:
+                        // -if it never terminates, it means all states are
+                        // equal but if all states are equal then either temp ==
+                        // 0 or temp == modulus in which case we would never be
+                        // here.
+                    } while (state_data[xsi_prev] == state_data[xri_prev]);
+
+                    this->carry = state_data[xsi_prev] < state_data[xri_prev];
+                }
+
+                const UIntType result = xr;
+                xr = (xs - xr - this->carry) & mask;
+                return result;
             }
-
-            const UIntType result = xr;
-            xr = (xs - xr - this->carry) & mask;
-            return result;
         }
     }
 
