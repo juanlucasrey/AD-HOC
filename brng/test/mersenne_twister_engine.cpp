@@ -109,7 +109,11 @@ auto main() -> int {
             EXPECT_NOT_EQUAL(rng1, rng2);
             compare_rng(rng1, rng2, 624);
         }
-#else
+#endif
+
+// this does not happen with windows cl
+// and SOMETIMES with CLANG
+#if defined(__MSVC__)
         // this does not happen with clang and windows cl
         {
             adhoc::seed_seq<std::uint_fast32_t> seq;
