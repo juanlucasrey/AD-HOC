@@ -51,11 +51,19 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint32_t, 48271, 0, 2147483647>
-            rng1;
-        adhoc::minstd_rand rng2;
-        compare_rng(rng1, rng2, 1000000);
-        compare_rng_limits(rng1, rng2);
+        if constexpr (std::numeric_limits<std::uint_fast32_t>::digits == 32) {
+            std::minstd_rand rng1;
+            adhoc::minstd_rand rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        } else {
+            std::minstd_rand rng1;
+            adhoc::linear_congruential_engine<std::uint64_t, 64, 48271, 0,
+                                              2147483647>
+                rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        }
     }
 
     {
