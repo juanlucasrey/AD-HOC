@@ -328,7 +328,10 @@ class sobol_engine final {
         auto const res = lldiv(z_rem, Nup);
 
         this->m_seq_num = static_cast<UIntType>(res.quot);
-        this->j = static_cast<std::size_t>(res.rem);
+
+        // double cast because for some reason uint128 cannot have conversion
+        // to both std::size_t and std::uint64_t
+        this->j = static_cast<std::size_t>(static_cast<std::uint64_t>(res.rem));
 
         if constexpr (skip_first) {
             this->increase_counter();
