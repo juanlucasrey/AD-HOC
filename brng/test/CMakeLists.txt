@@ -5,6 +5,7 @@ set(BRNG
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
     subtract_with_carry_engine.cpp
+    philox_engine.cpp
 )
 
 run_check("${BRNG}")
