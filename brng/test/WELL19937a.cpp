@@ -147,10 +147,15 @@ auto main() -> int {
             772028817,  247244410,  276497511,  3021644578};
         InitWELLRNG19937a(seed.data());
 
+        std::cout.precision(std::numeric_limits<double>::max_digits10);
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
             auto val2 = WELLRNG19937a();
             EXPECT_EQUAL(val1, val2);
+            if (val1 != val2) {
+                std::cout << val1 << std::endl;
+                std::cout << val2 << std::endl;
+            }
         }
     }
 
