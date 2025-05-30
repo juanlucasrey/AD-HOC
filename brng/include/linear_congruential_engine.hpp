@@ -73,11 +73,20 @@ class linear_congruential_engine final {
         if constexpr (m == 0) {
             constexpr auto mask = linear_congruential_engine::max();
             if constexpr (FwdDirection) {
-                this->state = (a * this->state + c) & mask;
+                if constexpr (w == std::numeric_limits<UIntType>::digits) {
+                    this->state = a * this->state + c;
+                } else {
+                    this->state = (a * this->state + c) & mask;
+                }
                 return this->state;
             } else {
                 const auto result = this->state;
-                this->state = (multiplier_inverse * (this->state - c)) & mask;
+                if constexpr (w == std::numeric_limits<UIntType>::digits) {
+                    this->state = multiplier_inverse * (this->state - c);
+                } else {
+                    this->state =
+                        (multiplier_inverse * (this->state - c)) & mask;
+                }
                 return result;
             }
         } else {
