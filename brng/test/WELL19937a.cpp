@@ -17,7 +17,7 @@ extern "C" {
 auto main() -> int {
     {
         std::seed_seq seq{1, 2, 3, 4, 5};
-        adhoc::canonical<adhoc::WELL19937a<std::uint_fast32_t>> rng(seq);
+        adhoc::canonical<adhoc::WELL19937a<std::uint32_t>> rng(seq);
 
         std::array<unsigned int, 624> seed = {
             495488687,  2980659413, 606040790,  1963951750, 3030748455,
