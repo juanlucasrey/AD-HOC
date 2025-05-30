@@ -12,6 +12,7 @@ extern "C" {
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <numeric>
 #include <random>
 
 auto main() -> int {
