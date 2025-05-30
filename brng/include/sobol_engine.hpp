@@ -75,29 +75,29 @@ constexpr auto max_dimension(qrng_table table) -> unsigned int {
     }
 }
 
-inline const unsigned int *poly(qrng_table table) {
+inline auto poly(qrng_table table) -> const unsigned int * {
     switch (table) {
     case qrng_table::joe_kuo_old_1111:
-        return joe_kuo_old_1111_poly.data();
+        return joe_kuo_old_1111_poly.begin();
     case qrng_table::joe_kuo_other_0_7600:
-        return joe_kuo_other_0_7600_poly.data();
+        return joe_kuo_other_0_7600_poly.begin();
     case qrng_table::joe_kuo_other_2_3900:
-        return joe_kuo_other_2_3900_poly.data();
+        return joe_kuo_other_2_3900_poly.begin();
     case qrng_table::joe_kuo_other_3_7300:
-        return joe_kuo_other_3_7300_poly.data();
+        return joe_kuo_other_3_7300_poly.begin();
     case qrng_table::joe_kuo_other_4_5600:
-        return joe_kuo_other_4_5600_poly.data();
+        return joe_kuo_other_4_5600_poly.begin();
     case qrng_table::new_joe_kuo_5_21201:
-        return new_joe_kuo_5_21201_poly.data();
+        return new_joe_kuo_5_21201_poly.begin();
     case qrng_table::new_joe_kuo_6_21201:
-        return new_joe_kuo_6_21201_poly.data();
+        return new_joe_kuo_6_21201_poly.begin();
     case qrng_table::new_joe_kuo_7_21201:
-        return new_joe_kuo_7_21201_poly.data();
+        return new_joe_kuo_7_21201_poly.begin();
     }
     return joe_kuo_old_1111_poly.data();
 }
 
-inline auto init(qrng_table table) {
+inline auto init(qrng_table table) -> const std::uint32_t * {
     switch (table) {
     case qrng_table::joe_kuo_old_1111:
         return joe_kuo_old_1111_init.begin();
