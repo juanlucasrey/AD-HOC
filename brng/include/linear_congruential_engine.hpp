@@ -44,7 +44,6 @@ constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
 
 } // namespace detail
 
-// TODO add w parameter for consistency with the rest of std
 template <class UIntType, std::size_t w, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine final {
     static_assert(m == 0 || a < m);
