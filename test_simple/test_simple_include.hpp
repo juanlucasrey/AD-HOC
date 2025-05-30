@@ -8,14 +8,24 @@
 
 static int _result = 0;
 
+#define INCREASE                                                               \
+    do {                                                                       \
+        _result++;                                                             \
+        constexpr int limit = 10;                                              \
+        if (_result == limit) {                                                \
+            std::cout << "maximum number of errors exceeded" << std::endl;     \
+            throw std::runtime_error("maximum number of errors exceeded");     \
+        }                                                                      \
+    } while (0)
+
 template <class D>
-inline std::tuple<bool, double> expect_near_abs(D val1, D val2, D tol) {
+inline auto expect_near_abs(D val1, D val2, D tol) -> std::tuple<bool, double> {
     const D abs_diff = std::abs(val1 - val2);
     return std::make_tuple(abs_diff < std::abs(tol), abs_diff);
 }
 
 template <class D>
-inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
+inline auto expect_near_rel(D val1, D val2, D tol) -> std::tuple<bool, double> {
 
     // should take care of the val1=val2=0 case
     if (val1 == val2) {
@@ -43,7 +53,9 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
                       << std::endl;                                            \
             std::cout << #F << " failed" << std::endl;                         \
         }                                                                      \
-        _result = _result || _result_temp;                                     \
+        if (_result_temp) {                                                    \
+            INCREASE;                                                          \
+        }                                                                      \
     } while (0)
 
 #define EXPECT_NEAR_ABS(VAL1, VAL2, TOL)                                       \
@@ -57,7 +69,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
                       << ", where" << std::endl;                               \
             std::cout << "val1 evaluates to " << VAL1 << std::endl;            \
             std::cout << "val2 evaluates to " << VAL2 << std::endl;            \
-            _result = 1;                                                       \
+            INCREASE;                                                          \
         }                                                                      \
     } while (0)
 
@@ -72,7 +84,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
                       << ", where" << std::endl;                               \
             std::cout << "val1 evaluates to " << VAL1 << std::endl;            \
             std::cout << "val2 evaluates to " << VAL2 << std::endl;            \
-            _result = 1;                                                       \
+            INCREASE;                                                          \
         }                                                                      \
     } while (0)
 
@@ -91,7 +103,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
                       << std::endl;                                            \
             std::cout << "Expected " << VAL1 << " < " << VAL2 << std::endl;    \
-            _result = 1;                                                       \
+            INCREASE;                                                          \
         }                                                                      \
     } while (0)
 
@@ -102,7 +114,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
                       << std::endl;                                            \
             std::cout << "Expected " << #VAL1 << " == " << #VAL2 << std::endl; \
-            _result = 1;                                                       \
+            INCREASE;                                                          \
         }                                                                      \
     } while (0)
 
@@ -113,7 +125,7 @@ inline std::tuple<bool, double> expect_near_rel(D val1, D val2, D tol) {
             std::cout << __FILE__ << ":" << __LINE__ << " Failure"             \
                       << std::endl;                                            \
             std::cout << "Expected " << #VAL1 << " != " << #VAL2 << std::endl; \
-            _result = 1;                                                       \
+            INCREASE;                                                          \
         }                                                                      \
     } while (0)
 

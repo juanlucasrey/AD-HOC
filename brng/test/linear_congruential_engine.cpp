@@ -21,10 +21,19 @@ int main() {
 
     // check against std minstd_rand0
     {
-        std::minstd_rand0 rng1;
-        adhoc::minstd_rand0 rng2;
-        compare_rng(rng1, rng2, 100);
-        compare_rng_limits(rng1, rng2);
+        if constexpr (std::numeric_limits<std::uint_fast32_t>::digits == 32) {
+            std::minstd_rand0 rng1;
+            adhoc::minstd_rand0 rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        } else {
+            std::minstd_rand0 rng1;
+            adhoc::linear_congruential_engine<std::uint64_t, 64, 16807, 0,
+                                              2147483647>
+                rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        }
     }
 
     {
@@ -42,10 +51,19 @@ int main() {
     }
 
     {
-        std::minstd_rand rng1;
-        adhoc::minstd_rand rng2;
-        compare_rng(rng1, rng2, 1000000);
-        compare_rng_limits(rng1, rng2);
+        if constexpr (std::numeric_limits<std::uint_fast32_t>::digits == 32) {
+            std::minstd_rand rng1;
+            adhoc::minstd_rand rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        } else {
+            std::minstd_rand rng1;
+            adhoc::linear_congruential_engine<std::uint64_t, 64, 48271, 0,
+                                              2147483647>
+                rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        }
     }
 
     {
@@ -63,7 +81,7 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint_fast16_t, 75, 74, 0> rng1;
+        std::linear_congruential_engine<std::uint16_t, 75, 74, 0> rng1;
         adhoc::ZX81 rng2;
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
@@ -84,8 +102,7 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint_fast32_t, 1664525, 1013904223,
-                                        0>
+        std::linear_congruential_engine<std::uint32_t, 1664525, 1013904223, 0>
             rng1;
         adhoc::ranqd1 rng2;
         compare_rng(rng1, rng2, 1000000);
@@ -107,8 +124,7 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint_fast32_t, 65539, 0,
-                                        2147483648>
+        std::linear_congruential_engine<std::uint32_t, 65539, 0, 2147483648>
             rng1;
         adhoc::RANDU rng2;
         compare_rng(rng1, rng2, 1000000);
@@ -130,8 +146,7 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint_fast32_t, 22695477, 1,
-                                        2147483648>
+        std::linear_congruential_engine<std::uint32_t, 22695477, 1, 2147483648>
             rng1;
         adhoc::Borland rng2;
         compare_rng(rng1, rng2, 1000000);
@@ -153,8 +168,8 @@ int main() {
     }
 
     {
-        std::linear_congruential_engine<std::uint_fast64_t, 6364136223846793005,
-                                        1, 9223372036854775808U>
+        std::linear_congruential_engine<std::uint64_t, 6364136223846793005, 1,
+                                        9223372036854775808U>
             rng1;
         adhoc::Newlib rng2;
         compare_rng(rng1, rng2, 1000000);
@@ -173,10 +188,21 @@ int main() {
         check_back_and_fwd(rng, 1000000);
         adhoc::Newlib rng2;
         EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::linear_congruential_engine<std::uint32_t, 32, 22695477, 1,
+                                          2147483648>
+            rng1;
+        adhoc::linear_congruential_engine<std::uint64_t, 32, 22695477, 1,
+                                          2147483648>
+            rng2;
+        compare_rng(rng1, rng2, 1000000);
+        compare_rng_limits(rng1, rng2);
     }
 
     using whatever =
-        adhoc::linear_congruential_engine<std::uint_fast32_t, 1664525,
+        adhoc::linear_congruential_engine<std::uint_fast32_t, 32, 1664525,
                                           1013904223, 2147483647>;
 
     {
