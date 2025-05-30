@@ -8,6 +8,7 @@ set(BRNG
     subtract_with_carry_engine.cpp
     philox_engine.cpp
     sobol_engine.cpp
+    lfsr_xor_engine.cpp
 )
 
 run_check("${BRNG}")
