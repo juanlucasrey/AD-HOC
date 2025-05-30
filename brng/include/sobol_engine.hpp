@@ -75,7 +75,7 @@ constexpr auto max_dimension(qrng_table table) -> unsigned int {
     }
 }
 
-inline auto poly(qrng_table table) {
+inline const auto *poly(qrng_table table) {
     switch (table) {
     case qrng_table::joe_kuo_old_1111:
         return joe_kuo_old_1111_poly.data();
