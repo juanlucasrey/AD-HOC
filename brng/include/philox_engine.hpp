@@ -222,4 +222,4 @@ using philox4x64 =
 
 } // namespace adhoc
 
-#endif // CASE_STUDIES_BRNG_PHILOX_ENGINE
+#endif // BRNG_PHILOX_ENGINE
