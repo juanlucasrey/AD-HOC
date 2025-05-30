@@ -636,7 +636,7 @@ auto main() -> int {
 
         {
             std::uint64_t res1 = 0;
-            adhoc::sobol rng;
+            adhoc::sobol<> rng;
             auto time1 = std::chrono::high_resolution_clock::now();
             for (std::size_t i = 0; i < sims; i++) {
                 res1 += rng();
@@ -668,7 +668,7 @@ auto main() -> int {
 
         {
             std::uint64_t res1 = 0;
-            adhoc::sobol rng;
+            adhoc::sobol<> rng;
             auto time1 = std::chrono::high_resolution_clock::now();
             for (std::size_t i = 0; i < sims; i++) {
                 res1 += rng();
