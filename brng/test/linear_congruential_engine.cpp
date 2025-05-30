@@ -21,11 +21,19 @@ int main() {
 
     // check against std minstd_rand0
     {
-        std::linear_congruential_engine<std::uint32_t, 16807, 0, 2147483647>
-            rng1;
-        adhoc::minstd_rand0 rng2;
-        compare_rng(rng1, rng2, 100);
-        compare_rng_limits(rng1, rng2);
+        if constexpr (std::numeric_limits<std::uint_fast32_t>::digits == 32) {
+            std::minstd_rand0 rng1;
+            adhoc::minstd_rand0 rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        } else {
+            std::minstd_rand0 rng1;
+            adhoc::linear_congruential_engine<std::uint64_t, 64, 16807, 0,
+                                              2147483647>
+                rng2;
+            compare_rng(rng1, rng2, 100);
+            compare_rng_limits(rng1, rng2);
+        }
     }
 
     {
