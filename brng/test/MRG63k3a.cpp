@@ -36,12 +36,14 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
+#ifndef _MSC_VER
     {
         adhoc::MRG63k3a<std::uint64_t> rng1;
         adhoc::MRG63k3a<__uint128_t> rng2;
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
+#endif
 
     TEST_END;
 }
