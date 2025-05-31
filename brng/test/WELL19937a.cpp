@@ -23,7 +23,9 @@ auto main() -> int {
 
         adhoc::canonical<adhoc::WELL19937a<std::uint_fast32_t>> rng(seq);
 
-        InitWELLRNG19937a(seq.vals.data());
+        std::array<unsigned int, 624> seed;
+        std::iota(seed.begin(), seed.end(), 1000);
+        InitWELLRNG19937a(seed.data());
 
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
