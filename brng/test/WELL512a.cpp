@@ -14,9 +14,10 @@ extern "C" {
 #include <random>
 
 auto main() -> int {
+
     {
         std::seed_seq seq{1, 2, 3, 4, 5};
-        adhoc::canonical<adhoc::WELL512a<std::uint32_t>> rng(seq);
+        adhoc::canonical<adhoc::WELL512a<std::uint_fast32_t>> rng(seq);
 
         std::array<unsigned int, 16> seed = {
             1508785627, 1535137093, 2152320059, 966876834,
@@ -47,6 +48,33 @@ auto main() -> int {
         check_back_and_fwd(rng1, 1000000);
         std::seed_seq seq2{1, 2, 3, 4, 5};
         adhoc::WELL512a<std::uint32_t> rng2(seq2);
+        EXPECT_EQUAL(rng1, rng2);
+    }
+
+    {
+        std::seed_seq seq1{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint32_t> rng1(seq1);
+        std::seed_seq seq2{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint64_t> rng2(seq2);
+        compare_rng(rng1, rng2, 100000);
+        compare_rng_limits(rng1, rng2);
+    }
+
+    {
+        std::seed_seq seq1{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint64_t> rng1(seq1);
+        check_fwd_and_back(rng1, 1000000);
+        std::seed_seq seq2{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint64_t> rng2(seq2);
+        EXPECT_EQUAL(rng1, rng2);
+    }
+
+    {
+        std::seed_seq seq1{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint64_t> rng1(seq1);
+        check_back_and_fwd(rng1, 1000000);
+        std::seed_seq seq2{1, 2, 3, 4, 5};
+        adhoc::WELL512a<std::uint64_t> rng2(seq2);
         EXPECT_EQUAL(rng1, rng2);
     }
 

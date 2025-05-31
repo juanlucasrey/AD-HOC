@@ -74,6 +74,7 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
     template <bool FwdDirection = true> inline auto operator()() -> UIntType {
         constexpr auto lower_mask = mask<UIntType, 31>();
         constexpr auto upper_mask = ~lower_mask;
+        constexpr auto global_mask = WELL19937a::max();
 
         UIntType result;
         if constexpr (FwdDirection) {
@@ -88,10 +89,16 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
 
             this->cache[0] = (VRm1 & upper_mask) | (VRm2 & lower_mask);
             this->cache[1] = (VM0 ^ (VM0 << 25)) ^ (VM1 ^ (VM1 >> 27));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                this->cache[1] &= global_mask;
+            }
             UIntType const z2 = (VM2 >> 9) ^ (VM3 ^ (VM3 >> 1));
             newV1 = this->cache[1] ^ z2;
             newV0 = this->cache[0] ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
                     (z2 ^ (z2 << 21)) ^ (newV1 ^ (newV1 >> 21));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                newV0 &= global_mask;
+            }
 
             --this->state;
             result = this->state.at();
@@ -114,6 +121,10 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
             this->cache[1] = newV1P ^ z2P;
             this->cache[0] = VM0 ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
                              (z2P ^ (z2P << 21)) ^ (newV1P ^ (newV1P >> 21));
+
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                this->cache[0] &= global_mask;
+            }
 
             auto &VRm1 = this->state.template at<623>();
             VRm1 = (cache0_prev & upper_mask) | (this->cache[0] & lower_mask);

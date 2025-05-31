@@ -61,6 +61,8 @@ template <class UIntType> class WELL1024a final {
     }
 
     template <bool FwdDirection = true> inline auto operator()() -> UIntType {
+        constexpr auto global_mask = WELL1024a::max();
+
         if constexpr (FwdDirection) {
             auto const &VM0 = this->state.at();
             auto const &VM1 = this->state.template at<3>();
@@ -71,10 +73,16 @@ template <class UIntType> class WELL1024a final {
             auto &newV1 = this->state.at();
 
             UIntType const z1 = VM0 ^ (VM1 ^ (VM1 >> 8U));
-            UIntType const z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+            UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                z2 &= global_mask;
+            }
             newV1 = z1 ^ z2;
             newV0 =
                 (VRm1 ^ (VRm1 << 11U)) ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                newV0 &= global_mask;
+            }
 
             --this->state;
             return this->state.at();
@@ -90,7 +98,10 @@ template <class UIntType> class WELL1024a final {
             auto const &newV0 = this->state.template at<31>();
             auto const &newV1 = this->state.at();
 
-            UIntType const z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+            UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                z2 &= global_mask;
+            }
             UIntType const z1 = newV1 ^ z2;
             UIntType const VRm1Scrambled =
                 newV0 ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));

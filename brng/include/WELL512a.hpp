@@ -61,6 +61,8 @@ template <class UIntType> class WELL512a final {
     }
 
     template <bool FwdDirection = true> inline auto operator()() -> UIntType {
+        constexpr auto global_mask = WELL512a::max();
+
         if constexpr (FwdDirection) {
             auto const &VM0 = this->state.at();
             auto const &VM1 = this->state.template at<13>();
@@ -69,11 +71,17 @@ template <class UIntType> class WELL512a final {
             auto &newV0 = this->state.template at<15>();
             auto &newV1 = this->state.at();
 
-            UIntType const z1 = (VM0 ^ (VM0 << 16U)) ^ (VM1 ^ (VM1 << 15U));
+            UIntType z1 = (VM0 ^ (VM0 << 16U)) ^ (VM1 ^ (VM1 << 15U));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                z1 &= global_mask;
+            }
             UIntType const z2 = (VM2 ^ (VM2 >> 11U));
             newV1 = z1 ^ z2;
             newV0 = (VRm1 ^ (VRm1 << 2U)) ^ (z1 ^ (z1 << 18U)) ^ (z2 << 28U) ^
                     (newV1 ^ ((newV1 << 5U) & 0xDA442D24U));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                newV0 &= global_mask;
+            }
 
             --this->state;
             return this->state.at();

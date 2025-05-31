@@ -74,6 +74,7 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
     template <bool FwdDirection = true> inline auto operator()() -> UIntType {
         constexpr auto lower_mask = mask<UIntType, 15>();
         constexpr auto upper_mask = ~lower_mask;
+        constexpr auto global_mask = WELL44497a::max();
 
         UIntType result;
         if constexpr (FwdDirection) {
@@ -88,13 +89,22 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
 
             this->cache[0] = (VRm1 & upper_mask) | (VRm2 & lower_mask);
             this->cache[1] = (VM0 ^ (VM0 << 24)) ^ (VM1 ^ (VM1 >> 30));
-            UIntType const z2 = (VM2 ^ (VM2 << 10)) ^ (VM3 << 26);
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                this->cache[1] &= global_mask;
+            }
+            UIntType z2 = (VM2 ^ (VM2 << 10)) ^ (VM3 << 26);
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                z2 &= global_mask;
+            }
             newV1 = this->cache[1] ^ z2;
-            UIntType const MAT5 =
+            UIntType MAT5 =
                 ((z2 & 0x00020000U)
                      ? ((((z2 << 9) ^ (z2 >> (32 - 9))) & 0xfbffffffU) ^
                         0xb729fcecU)
                      : (((z2 << 9) ^ (z2 >> (32 - 9))) & 0xfbffffffU));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                MAT5 &= global_mask;
+            }
 
             newV0 = this->cache[0] ^ (this->cache[1] ^ (this->cache[1] >> 20)) ^
                     MAT5 ^ newV1;
@@ -115,12 +125,18 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
             auto const newV1P = this->state.template at<1>();
             auto const VM2P = this->state.template at<482>();
             auto const VM3P = this->state.template at<230>();
-            UIntType const z2P = (VM2P ^ (VM2P << 10)) ^ (VM3P << 26);
-            UIntType const MAT5P =
+            UIntType z2P = (VM2P ^ (VM2P << 10)) ^ (VM3P << 26);
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                z2P &= global_mask;
+            }
+            UIntType MAT5P =
                 ((z2P & 0x00020000U)
                      ? ((((z2P << 9) ^ (z2P >> (32 - 9))) & 0xfbffffffU) ^
                         0xb729fcecU)
                      : (((z2P << 9) ^ (z2P >> (32 - 9))) & 0xfbffffffU));
+            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+                MAT5P &= global_mask;
+            }
 
             this->cache[1] = newV1P ^ z2P;
             this->cache[0] = VM0 ^ (this->cache[1] ^ (this->cache[1] >> 20)) ^
