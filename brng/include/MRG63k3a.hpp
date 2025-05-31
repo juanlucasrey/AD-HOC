@@ -84,7 +84,7 @@ template <class UIntType> class MRG63k3a final {
     inline auto operator()() -> result_type {
         constexpr bool use128 = false;
         if constexpr (use128) {
-#if !defined(__MSVC__)
+#if !defined(_MSC_VER)
             if constexpr (FwdDirection) {
                 static constexpr __uint128_t a13 = mod1 - a13n;
                 static_assert(a13 == 9223372033672665121);
