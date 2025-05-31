@@ -39,3 +39,23 @@ set(test_name "dynamic.WELL44497a")
 add_executable(${test_name} WELL44497a.cpp external/WELL44497a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.MRG31k3p")
+add_executable(${test_name} MRG31k3p.cpp external/MRG31k3p.c)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.MRG32k3a")
+add_executable(${test_name} MRG32k3a.cpp external/MRG32k3a.c)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.MRG32k5a")
+add_executable(${test_name} MRG32k5a.cpp external/MRG32k5a.c)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.MRG63k3a")
+add_executable(${test_name} MRG63k3a.cpp external/MRG63k3a.c)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
