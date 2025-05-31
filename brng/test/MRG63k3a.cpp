@@ -19,6 +19,11 @@ auto main() -> int {
             auto val1 = rng();
             auto val2 = MRG63k3a();
             EXPECT_EQUAL(val1, val2);
+            if (val1 != val2) {
+                std::cout << val1 << std::endl;
+                std::cout << val2 << std::endl;
+                std::cout << i << std::endl;
+            }
         }
     }
 
