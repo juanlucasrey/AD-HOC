@@ -7,6 +7,9 @@
            47, 1 (1999), 159--164.
    ---------------------------------------------------------
 */
+
+// Juan Lucas Rey: changed long to long long 
+// because of windows having long at 32 bit
 #include "MRG63k3a.h"
 
 
@@ -35,13 +38,13 @@ The seeds for s20, s21, s22 must be integers in [0, m2 - 1] and not all 0.
 
 #define SEED 123456789
 
-static long s10 = SEED, s11 = SEED, s12 = SEED,
+static long long s10 = SEED, s11 = SEED, s12 = SEED,
             s20 = SEED, s21 = SEED, s22 = SEED;
 
 
 double MRG63k3a (void)
 {
-   long h, p12, p13, p21, p23;
+   long long h, p12, p13, p21, p23;
    /* Component 1 */
    h = s10 / q13;
    p13 = a13n * (s10 - h * q13) - h * r13;
