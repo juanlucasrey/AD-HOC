@@ -10,6 +10,7 @@ set(BRNG
     philox_engine.cpp
     sobol_engine.cpp
     lfsr_xor_engine.cpp
+    arc4_engine.cpp
 )
 
 run_check("${BRNG}")
