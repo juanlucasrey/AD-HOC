@@ -60,3 +60,8 @@ set(test_name "dynamic.MRG63k3a")
 add_executable(${test_name} MRG63k3a.cpp external/MRG63k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.PCG_engine")
+add_executable(${test_name} PCG_engine.cpp external/pcg_basic.c)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
