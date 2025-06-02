@@ -56,7 +56,7 @@ double MRG31k3p() {
     }
 }
 
-// Juan Lucas Rey: aded initialiser
+// Juan Lucas Rey: add initialiser
 void InitMRG31k3p (unsigned long *init)
 {
     x12 = init[0];
