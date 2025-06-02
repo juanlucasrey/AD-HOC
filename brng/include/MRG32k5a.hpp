@@ -28,7 +28,12 @@
 
 namespace adhoc {
 
-template <class UIntType> class MRG32k5a final {
+// The original implementation has logic that purposely avoids outputing 0.
+// However this adds some branching that is a little convoluted when compared
+// with the purely modular operator logic. I prefer using Original = false, and
+// a wrapper that ensures 0 is never output in the left boundary of a
+// uniform_real_distribution by other means.
+template <class UIntType, bool Original = false> class MRG32k5a final {
     static_assert(std::numeric_limits<UIntType>::digits >= 32);
     static_assert(std::is_unsigned_v<UIntType>);
 
@@ -117,11 +122,29 @@ template <class UIntType> class MRG32k5a final {
             this->State[8] = this->State[9];
             this->State[9] = p2;
 
-            return static_cast<UIntType>(
-                (this->State[4] + (mod1 - this->State[9])) % mod1);
+            if constexpr (Original) {
+                return this->State[4] == this->State[9]
+                           ? static_cast<UIntType>(mod1)
+                           : static_cast<UIntType>(
+                                 (this->State[4] + (mod1 - this->State[9])) %
+                                 mod1);
+
+            } else {
+                return static_cast<UIntType>(
+                    (this->State[4] + (mod1 - this->State[9])) % mod1);
+            }
         } else {
-            auto const result = static_cast<UIntType>(
-                (this->State[4] + (mod1 - this->State[9])) % mod1);
+            UIntType result = 0;
+            if constexpr (Original) {
+                result = this->State[4] == this->State[9]
+                             ? static_cast<UIntType>(mod1)
+                             : static_cast<UIntType>(
+                                   (this->State[4] + (mod1 - this->State[9])) %
+                                   mod1);
+            } else {
+                result = static_cast<UIntType>(
+                    (this->State[4] + (mod1 - this->State[9])) % mod1);
+            }
 
             constexpr auto a25_inv = modular_multiplicative_inverse(mod2, a25);
             constexpr auto a21_inv = mod2 - a21;
@@ -157,11 +180,19 @@ template <class UIntType> class MRG32k5a final {
     }
 
     static constexpr auto min() -> UIntType {
-        return static_cast<UIntType>(0U);
+        if constexpr (Original) {
+            return static_cast<UIntType>(1U);
+        } else {
+            return static_cast<UIntType>(0U);
+        }
     }
 
     static constexpr auto max() -> UIntType {
-        return static_cast<UIntType>(mod1);
+        if constexpr (Original) {
+            return static_cast<UIntType>(mod1);
+        } else {
+            return static_cast<UIntType>(mod1 - 1);
+        }
     }
 
     auto operator==(const MRG32k5a &rhs) const -> bool {

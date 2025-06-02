@@ -55,3 +55,14 @@ double MRG31k3p() {
         return ((x10 - x20) * norm);
     }
 }
+
+// Juan Lucas Rey: add initialiser
+void InitMRG31k3p (unsigned long *init)
+{
+    x12 = init[0];
+    x11 = init[1];
+    x10 = init[2];
+    x22 = init[3];
+    x21 = init[4];
+    x20 = init[5];
+}

@@ -74,3 +74,18 @@ double MRG32k5a (void)
    else
       return ((p1 - p2) * norm);
 }
+
+// Juan Lucas Rey: add initialiser
+void InitMRG32k5a (unsigned long *init)
+{
+   s10 = init[0];
+   s11 = init[1];
+   s12 = init[2];
+   s13 = init[3];
+   s14 = init[4];
+   s20 = init[5];
+   s21 = init[6];
+   s22 = init[7];
+   s23 = init[8];
+   s24 = init[9];
+}

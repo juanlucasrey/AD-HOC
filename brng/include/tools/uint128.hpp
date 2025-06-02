@@ -33,7 +33,7 @@ class uint128 {
 
   public:
     template <class T>
-    constexpr explicit uint128(T const v)
+    constexpr uint128(T const v)
         : high(0), low(static_cast<std::uint64_t>(v)) {}
 
     template <class T>
@@ -58,6 +58,10 @@ class uint128 {
     }
 
     explicit operator std::uint64_t() const { return this->low; }
+
+    auto constexpr operator==(const uint128 &v) const noexcept -> bool {
+        return (this->low == v.low) && (this->high == v.high);
+    }
 
     auto operator+=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
