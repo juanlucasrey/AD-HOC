@@ -22,13 +22,22 @@
 #define BRNG_MRG63k3a
 
 #include "tools/modular_arithmetic.hpp"
+#if !defined(__GNUC__) && !defined(__clang__)
+#include "tools/uint128.hpp"
+#endif
 
 #include <array>
 #include <cstdint>
 
 namespace adhoc {
 
-template <class UIntType> class MRG63k3a final {
+// The original implementation has logic that purposely avoids outputing 0.
+// However this adds some branching that is a little convoluted when compared
+// with the purely modular operator logic. I prefer using Original = false, and
+// a wrapper that ensures 0 is never output in the left boundary of a
+// uniform_real_distribution by other means.
+template <class UIntType, bool Use128 = false, bool Original = false>
+class MRG63k3a final {
     static_assert(std::numeric_limits<UIntType>::digits >= 64);
     static_assert(std::is_unsigned_v<UIntType>);
 
@@ -82,77 +91,100 @@ template <class UIntType> class MRG63k3a final {
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        constexpr bool use128 = false;
-        if constexpr (use128) {
-#ifndef _MSC_VER
+        if constexpr (Use128) {
+
+#if !defined(__GNUC__) && !defined(__clang__)
+            using uint128type = uint128;
+#else
+            using uint128type = __uint128_t;
+#endif
+
             if constexpr (FwdDirection) {
-                static constexpr __uint128_t a13 = mod1 - a13n;
+                static constexpr uint128type a13 = mod1 - a13n;
                 static_assert(a13 == 9223372033672665121);
-                static constexpr __uint128_t a12l = a12;
-                static constexpr __uint128_t m1l = mod1;
+                static constexpr uint128type a12l = a12;
+                static constexpr uint128type m1l = mod1;
 
                 auto const p1 =
-                    ((a12l * static_cast<__uint128_t>(this->State[1])) +
-                     (a13 * static_cast<__uint128_t>(this->State[0]))) %
+                    ((a12l * static_cast<uint128type>(this->State[1])) +
+                     (a13 * static_cast<uint128type>(this->State[0]))) %
                     m1l;
                 this->State[0] = this->State[1];
                 this->State[1] = this->State[2];
                 this->State[2] = static_cast<std::uint64_t>(p1);
 
-                static constexpr __uint128_t a23 = mod2 - a23n;
-                static constexpr __uint128_t a21l = a21;
-                static constexpr __uint128_t m2l = mod2;
+                static constexpr uint128type a23 = mod2 - a23n;
+                static constexpr uint128type a21l = a21;
+                static constexpr uint128type m2l = mod2;
                 auto const p2 =
-                    ((a21l * static_cast<__uint128_t>(this->State[5])) +
-                     (a23 * static_cast<__uint128_t>(this->State[3]))) %
+                    ((a21l * static_cast<uint128type>(this->State[5])) +
+                     (a23 * static_cast<uint128type>(this->State[3]))) %
                     m2l;
                 this->State[3] = this->State[4];
                 this->State[4] = this->State[5];
                 this->State[5] = static_cast<std::uint64_t>(p2);
 
-                return static_cast<UIntType>(
-                    (this->State[2] + (mod1 - this->State[5])) % mod1);
+                if constexpr (Original) {
+                    return this->State[2] == this->State[5]
+                               ? static_cast<UIntType>(mod1)
+                               : static_cast<UIntType>(
+                                     (this->State[2] +
+                                      (mod1 - this->State[5])) %
+                                     mod1);
+                } else {
+                    return static_cast<UIntType>(
+                        (this->State[2] + (mod1 - this->State[5])) % mod1);
+                }
             } else {
-                auto const result =
-                    (this->State[2] + (mod1 - this->State[5])) % mod1;
+                UIntType result = 0;
+                if constexpr (Original) {
+                    result =
+                        this->State[2] == this->State[5]
+                            ? static_cast<UIntType>(mod1)
+                            : static_cast<UIntType>(
+                                  (this->State[2] + (mod1 - this->State[5])) %
+                                  mod1);
+                } else {
+                    result = static_cast<UIntType>(
+                        (this->State[2] + (mod1 - this->State[5])) % mod1);
+                }
 
                 static constexpr auto a23 = mod2 - a23n;
-                static constexpr __uint128_t m2l = mod2;
-                static constexpr __uint128_t a21l_inv = mod2 - a21;
+                static constexpr uint128type m2l = mod2;
+                static constexpr uint128type a21l_inv = mod2 - a21;
 
-                constexpr __uint128_t a23_inv =
+                constexpr uint128type a23_inv =
                     modular_multiplicative_inverse(mod2, a23);
 
                 auto const p2 =
-                    (((static_cast<__uint128_t>(this->State[5]) +
-                       a21l_inv * static_cast<__uint128_t>(this->State[4])) %
+                    (((static_cast<uint128type>(this->State[5]) +
+                       a21l_inv * static_cast<uint128type>(this->State[4])) %
                       m2l) *
                      a23_inv) %
                     m2l;
                 this->State[5] = this->State[4];
                 this->State[4] = this->State[3];
-                this->State[3] = p2;
+                this->State[3] = static_cast<std::uint64_t>(p2);
 
                 static constexpr auto a13 = mod1 - a13n;
-                static constexpr __uint128_t m1l = mod1;
-                static constexpr __uint128_t a12l_inv = mod1 - a12;
+                static constexpr uint128type m1l = mod1;
+                static constexpr uint128type a12l_inv = mod1 - a12;
 
-                constexpr __uint128_t a13_inv =
+                constexpr uint128type a13_inv =
                     modular_multiplicative_inverse(mod1, a13);
 
                 auto const p1 =
-                    (((static_cast<__uint128_t>(this->State[2]) +
-                       (a12l_inv * static_cast<__uint128_t>(this->State[0]))) %
+                    (((static_cast<uint128type>(this->State[2]) +
+                       (a12l_inv * static_cast<uint128type>(this->State[0]))) %
                       m1l) *
                      a13_inv) %
                     m1l;
                 this->State[2] = this->State[1];
                 this->State[1] = this->State[0];
-                this->State[0] = p1;
+                this->State[0] = static_cast<std::uint64_t>(p1);
 
                 return static_cast<UIntType>(result);
             }
-#endif
         } else {
             if constexpr (FwdDirection) {
                 std::uint64_t h = 0;
@@ -202,20 +234,26 @@ template <class UIntType> class MRG63k3a final {
                 this->State[4] = this->State[5];
                 this->State[5] = p2;
 
-                // !!! original implementation has ">" instead of ">="!!!
-                // I prefer boundaries to be [0, m1-1]. This is because the RNG
-                // would be closer to its original intent: sum(ai*State[i]) % m1
-                // Any strict exclusion of boundaries can be handled by the
-                // canonical simulation
-                return (this->State[2] >= this->State[5])
-                           ? this->State[2] - this->State[5]
-                           : (this->State[2] + (mod1 - this->State[5]));
+                if constexpr (Original) {
+                    return (this->State[2] > this->State[5])
+                               ? this->State[2] - this->State[5]
+                               : (this->State[2] + (mod1 - this->State[5]));
+                } else {
+                    return (this->State[2] >= this->State[5])
+                               ? this->State[2] - this->State[5]
+                               : (this->State[2] + (mod1 - this->State[5]));
+                }
             } else {
-
-                auto const result =
-                    (this->State[2] >= this->State[5])
-                        ? this->State[2] - this->State[5]
-                        : (this->State[2] + (mod1 - this->State[5]));
+                UIntType result = 0;
+                if constexpr (Original) {
+                    result = (this->State[2] > this->State[5])
+                                 ? this->State[2] - this->State[5]
+                                 : (this->State[2] + (mod1 - this->State[5]));
+                } else {
+                    result = (this->State[2] >= this->State[5])
+                                 ? this->State[2] - this->State[5]
+                                 : (this->State[2] + (mod1 - this->State[5]));
+                }
 
                 std::uint64_t h = 0;
                 std::uint64_t v1 = 0;
@@ -302,11 +340,19 @@ template <class UIntType> class MRG63k3a final {
     }
 
     static constexpr auto min() -> UIntType {
-        return static_cast<UIntType>(0U);
+        if constexpr (Original) {
+            return static_cast<UIntType>(1U);
+        } else {
+            return static_cast<UIntType>(0U);
+        }
     }
 
     static constexpr auto max() -> UIntType {
-        return static_cast<UIntType>(mod1);
+        if constexpr (Original) {
+            return static_cast<UIntType>(mod1);
+        } else {
+            return static_cast<UIntType>(mod1 - 1);
+        }
     }
 
     auto operator==(const MRG63k3a &rhs) const -> bool {

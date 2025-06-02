@@ -108,7 +108,6 @@ template <class UIntType, bool Original = false> class MRG32k3a final {
                            : static_cast<UIntType>(
                                  (this->State[2] + (mod1 - this->State[5])) %
                                  mod1);
-
             } else {
                 return static_cast<UIntType>(
                     (this->State[2] + (mod1 - this->State[5])) % mod1);
