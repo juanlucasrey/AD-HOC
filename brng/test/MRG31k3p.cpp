@@ -13,7 +13,7 @@ extern "C" {
 
 auto main() -> int {
     {
-        // 0, 0
+        // x, x, 0, x, x, 0 precedent
         adhoc::seed_seq<std::uint_fast32_t> seq;
         seq.vals = {1618958054, 267881243,  156255863,
                     1730679216, 1079478356, 1334495809};
@@ -31,7 +31,7 @@ auto main() -> int {
     }
 
     {
-        // 0, x
+        // x, x, 0, x, x, x precedent
         adhoc::seed_seq<std::uint_fast32_t> seq;
         seq.vals = {856965515, 1525874275, 784371780,
                     313650421, 1918098087, 748752505};
@@ -49,7 +49,7 @@ auto main() -> int {
     }
 
     {
-        // x, 0
+        // x, x, x, x, x, 0 precedent
         adhoc::seed_seq<std::uint_fast32_t> seq;
         seq.vals = {122304568,  1137184201, 506722251,
                     1815112525, 291659175,  431495294};
