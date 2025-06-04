@@ -37,11 +37,6 @@ template <class RealType = double> class exponential_distribution {
   public:
     using result_type = RealType;
 
-  private:
-    result_type _lambda;
-    result_type _lambda_inv;
-
-  public:
     exponential_distribution() : exponential_distribution(1) {}
 
     explicit exponential_distribution(result_type lambda_in)
@@ -60,11 +55,11 @@ template <class RealType = double> class exponential_distribution {
         return -std::log(-val) * _lambda_inv;
     }
 
-    result_type lambda() const { return _lambda; }
+    auto lambda() const -> result_type { return _lambda; }
 
-    result_type min() const { return 0; }
-    result_type max() const {
-        return std::numeric_limits<result_type>::infinity();
+    static constexpr auto min() -> result_type { return 0; }
+    static constexpr auto max() -> result_type {
+        return std::numeric_limits<RealType>::max();
     }
 
     auto operator==(const exponential_distribution &rhs) const -> bool {
@@ -75,6 +70,10 @@ template <class RealType = double> class exponential_distribution {
     auto operator!=(const exponential_distribution &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
+
+  private:
+    result_type _lambda;
+    result_type _lambda_inv;
 };
 
 } // namespace adhoc
