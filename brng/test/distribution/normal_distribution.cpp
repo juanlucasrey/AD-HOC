@@ -7,12 +7,9 @@
 
 #include <cstdint>
 #include <map>
+#include <vector>
 
 auto main() -> int {
-
-    std::cout.precision(std::numeric_limits<double>::max_digits10);
-    constexpr double small_val = 5.4210108624275222e-20;
-
     {
         constexpr std::uint64_t min64 = 0;
         constexpr std::uint64_t max64 =
