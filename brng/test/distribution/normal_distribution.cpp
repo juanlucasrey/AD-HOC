@@ -11,47 +11,62 @@
 
 auto main() -> int {
     {
-        constexpr std::uint64_t min64 = 0;
-        constexpr std::uint64_t max64 =
-            std::numeric_limits<std::uint64_t>::max();
-
-        constexpr double largest_normal = 9.0801551248736114;
+        constexpr std::uint32_t min = 0;
+        constexpr std::uint32_t max = std::numeric_limits<std::uint32_t>::max();
+        constexpr double largest_normal = 6.2302601380255185;
 
         {
-            adhoc::standard_normal<RNGtest<std::uint64_t, min64, max64>> gen(
-                max64);
+            adhoc::standard_normal<RNGtest<std::uint32_t, min, max>> gen(max);
             auto val = gen();
             EXPECT_EQUAL(val, largest_normal);
         }
 
         {
-            adhoc::standard_normal<RNGtest<std::uint64_t, min64, max64>> gen(
-                min64);
+            adhoc::standard_normal<RNGtest<std::uint32_t, min, max>> gen(min);
             auto val = gen();
             EXPECT_EQUAL(val, -largest_normal);
         }
     }
 
     {
-        constexpr std::uint32_t min32 = 0;
-        constexpr std::uint32_t max32 =
-            std::numeric_limits<std::uint32_t>::max();
-        constexpr double largest_normal = 6.2302601380255185;
+        constexpr std::uint64_t min = 0;
+        constexpr std::uint64_t max = std::numeric_limits<std::uint64_t>::max();
+
+        constexpr double largest_normal = 9.0801551248736114;
 
         {
-            adhoc::standard_normal<RNGtest<std::uint32_t, min32, max32>> gen(
-                max32);
+            adhoc::standard_normal<RNGtest<std::uint64_t, min, max>> gen(max);
             auto val = gen();
             EXPECT_EQUAL(val, largest_normal);
         }
 
         {
-            adhoc::standard_normal<RNGtest<std::uint32_t, min32, max32>> gen(
-                min32);
+            adhoc::standard_normal<RNGtest<std::uint64_t, min, max>> gen(min);
             auto val = gen();
             EXPECT_EQUAL(val, -largest_normal);
         }
     }
+
+#ifndef _MSC_VER
+    {
+        constexpr __uint128_t min = 0;
+        constexpr __uint128_t max = std::numeric_limits<__uint128_t>::max();
+
+        constexpr double largest_normal = 13.055946840098045;
+
+        {
+            adhoc::standard_normal<RNGtest<__uint128_t, min, max>> gen(max);
+            auto val = gen();
+            EXPECT_EQUAL(val, largest_normal);
+        }
+
+        {
+            adhoc::standard_normal<RNGtest<__uint128_t, min, max>> gen(min);
+            auto val = gen();
+            EXPECT_EQUAL(val, -largest_normal);
+        }
+    }
+#endif
 
     {
         adhoc::standard_normal<adhoc::mt19937_64> gen;
