@@ -204,33 +204,35 @@ int main() {
         compare_rng_limits(rng1, rng2);
     }
 
-    for (std::size_t i = 0; i < 3; i++) {
+    for (std::uint_fast32_t i = 0; i < 3; i++) {
 
         {
-            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng(i);
             check_fwd_and_back(rng, 1000000);
-            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
 
         {
-            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng(i);
             check_back_and_fwd(rng, 1000000);
-            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
+    }
 
+    for (std::uint_fast64_t i = 0; i < 3; i++) {
         {
-            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
+            adhoc::ranlux48_base rng(i);
             check_fwd_and_back(rng, 1000000);
-            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
+            adhoc::ranlux48_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
 
         {
-            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
+            adhoc::ranlux48_base rng(i);
             check_back_and_fwd(rng, 1000000);
-            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
+            adhoc::ranlux48_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
     }
