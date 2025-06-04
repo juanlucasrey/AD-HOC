@@ -49,7 +49,7 @@ auto main() -> int {
     // std flaw 1
     {
         {
-            adhoc::seed_seq<std::uint_fast32_t> seq;
+            adhoc::seed_seq<unsigned int> seq;
             seq.vals.resize(624);
             std::iota(seq.vals.begin(), seq.vals.end(), 2);
             std::mt19937 rng1(seq);
@@ -88,11 +88,11 @@ auto main() -> int {
     {
 #if defined(REAL_GCC)
         {
-            adhoc::seed_seq<std::uint_fast32_t> seq;
+            adhoc::seed_seq<unsigned int> seq;
             seq.vals.resize(624);
             std::iota(seq.vals.begin(), seq.vals.end(), 2);
             std::mt19937 rng1(seq);
-            auto val = rng1();
+            rng1.discard(1);
 
             std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
             seq.vals.back() = 2567483729U;
