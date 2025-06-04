@@ -1,5 +1,5 @@
-#ifndef TEST_TOOLS_RNG_HPP
-#define TEST_TOOLS_RNG_HPP
+#ifndef BRNG_TEST_TOOLS_RNG
+#define BRNG_TEST_TOOLS_RNG
 
 #include "../../test_simple/test_simple_include.hpp"
 
@@ -65,4 +65,4 @@ template <class RNG> void check_back_and_fwd(RNG &rng, std::size_t n) {
     }
 }
 
-#endif // TEST_TOOLS_RNG_HPP
+#endif // BRNG_TEST_TOOLS_RNG

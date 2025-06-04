@@ -5,6 +5,7 @@ set(BRNG
     tools/bit_find.cpp
     tools/unshift.cpp
     distribution/centered_canonical_distribution.cpp
+    distribution/normal_distribution.cpp
     mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
     subtract_with_carry_engine.cpp

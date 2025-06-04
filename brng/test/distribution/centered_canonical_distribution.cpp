@@ -1,28 +1,12 @@
 #include "../../test_simple/test_simple_include.hpp"
 
+#include "RNGtest.hpp"
+
 #include <distribution/centered_canonical_distribution.hpp>
 #include <distribution/exponential_distribution.hpp>
 
 #include <cstdint>
 #include <iostream>
-
-template <class UIntType, UIntType Min, UIntType Max> struct RNGtest final {
-
-    using result_type = UIntType;
-
-    explicit RNGtest(result_type value_in) : value(value_in) {}
-
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        return value;
-    }
-
-    static constexpr auto min() -> UIntType { return Min; }
-    static constexpr auto max() -> UIntType { return Max; }
-
-  private:
-    UIntType value = Min;
-};
 
 auto main() -> int {
 
