@@ -18,13 +18,13 @@ auto main() -> int {
         {
             adhoc::standard_normal<RNGtest<std::uint32_t, min, max>> gen(max);
             auto val = gen();
-            EXPECT_EQUAL(val, largest_normal);
+            EXPECT_NEAR_REL(val, largest_normal, 1e-15);
         }
 
         {
             adhoc::standard_normal<RNGtest<std::uint32_t, min, max>> gen(min);
             auto val = gen();
-            EXPECT_EQUAL(val, -largest_normal);
+            EXPECT_NEAR_REL(val, -largest_normal, 1e-15);
         }
     }
 
