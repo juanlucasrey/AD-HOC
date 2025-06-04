@@ -55,7 +55,7 @@ auto main() -> int {
         std::size_t nsims = 20;
         std::size_t ndims = 4;
         std::size_t counter = 0;
-        for (std::size_t i = 1; i < ndims; i++) {
+        for (unsigned int i = 1; i < ndims; i++) {
             adhoc::sobol_engine<std::uint32_t, 32, true,
                                 adhoc::qrng_table::joe_kuo_old_1111>
                 rng1(i);
@@ -105,7 +105,7 @@ auto main() -> int {
         std::size_t nsims = 20;
         std::size_t ndims = 4;
         std::size_t counter = 0;
-        for (std::size_t i = 1; i < ndims; i++) {
+        for (unsigned int i = 1; i < ndims; i++) {
             adhoc::sobol_engine<std::uint32_t, 32, true,
                                 adhoc::qrng_table::new_joe_kuo_5_21201>
                 rng6(i);
@@ -131,7 +131,7 @@ auto main() -> int {
                                            402653184,  939524096,  2818572288,
                                            2281701376, 2550136832};
 
-        std::size_t ndims = 15;
+        unsigned int ndims = 15;
         adhoc::sobol_engine<std::uint32_t, 32, true,
                             adhoc::qrng_table::joe_kuo_old_1111>
             rng1(ndims);
@@ -186,7 +186,7 @@ auto main() -> int {
     {
         auto check_first = []<adhoc::qrng_table T>() {
             std::size_t ndims = 200;
-            for (std::size_t i = 1; i < ndims; i++) {
+            for (unsigned int i = 1; i < ndims; i++) {
                 adhoc::sobol_engine<std::uint32_t, 32, true, T> rng(i);
 
                 for (std::size_t j = 0; j < i; j++) {
@@ -217,7 +217,7 @@ auto main() -> int {
     {
         auto check_first = []<adhoc::qrng_table T>() {
             std::size_t ndims = 200;
-            for (std::size_t i = 1; i < ndims; i++) {
+            for (unsigned int i = 1; i < ndims; i++) {
                 adhoc::sobol_engine<std::uint32_t, 32, false, T> rng(i);
 
                 for (std::size_t j = 0; j < i; j++) {
@@ -253,7 +253,7 @@ auto main() -> int {
     {
         auto check_discard = []<adhoc::qrng_table T, bool First>() {
             std::size_t ndims = 30;
-            for (std::size_t i = 1; i < ndims; i++) {
+            for (unsigned int i = 1; i < ndims; i++) {
                 adhoc::sobol_engine<std::uint32_t, 32, true,
                                     adhoc::qrng_table::joe_kuo_old_1111>
                     gen(i);
@@ -311,7 +311,7 @@ auto main() -> int {
         auto check_discard =
             []<adhoc::qrng_table T, bool First, std::size_t w = 32>() {
                 std::size_t ndims = 200;
-                for (std::size_t i = 1; i < ndims; i++) {
+                for (unsigned int i = 1; i < ndims; i++) {
                     adhoc::sobol_engine<std::uint32_t, w, First, T> rng1(i);
                     adhoc::sobol_engine<std::uint32_t, w, First, T> rng2(i);
 
@@ -371,7 +371,7 @@ auto main() -> int {
         auto check_discard =
             []<adhoc::qrng_table T, bool First, std::size_t w = 32>() {
                 std::size_t ndims = 200;
-                for (std::size_t i = 180; i < ndims; i++) {
+                for (unsigned int i = 180; i < ndims; i++) {
                     // std::size_t i = 180;
                     adhoc::sobol_engine<std::uint32_t, w, First, T> rng1(i);
                     adhoc::sobol_engine<std::uint32_t, w, First, T> rng2(i);
@@ -439,7 +439,7 @@ auto main() -> int {
 
         auto check_uniform_vals = []<adhoc::qrng_table T, bool First,
                                      class UIntType, std::size_t w>() {
-            std::size_t ndims = 20;
+            unsigned int ndims = 20;
             adhoc::open<
                 adhoc::sobol_engine<UIntType, w, true,
                                     adhoc::qrng_table::joe_kuo_old_1111>,
@@ -514,7 +514,7 @@ auto main() -> int {
     {
         unsigned long long z = 0;
         z--;
-        std::size_t dim = 20;
+        unsigned int dim = 20;
         adhoc::sobol_engine<std::uint64_t, 64, true,
                             adhoc::qrng_table::new_joe_kuo_5_21201>
             rng1(dim);
@@ -603,7 +603,7 @@ auto main() -> int {
         operator()<adhoc::qrng_table::new_joe_kuo_7_21201, true>();
     }
 
-    int sims = 0;
+    std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);
     }
