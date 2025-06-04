@@ -406,5 +406,94 @@ auto main() -> int {
         }
     }
 
+#ifndef _MSC_VER
+    // 0, max, __uint128_t
+    constexpr double small_val_128 = 2.9387358770557188e-39;
+    {
+        constexpr __uint128_t min = 0;
+        constexpr __uint128_t max = std::numeric_limits<__uint128_t>::max();
+
+        // open, double, max
+        {
+            adhoc::centered_canonical_open<RNGtest<__uint128_t, min, max>> gen(
+                max);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, -small_val_128);
+        }
+
+        // open, float, max
+        {
+            adhoc::centered_canonical_open<RNGtest<__uint128_t, min, max>,
+                                           float>
+                gen(max);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, -small_val_128);
+        }
+
+        // open, double, min
+        {
+            adhoc::centered_canonical_open<RNGtest<__uint128_t, min, max>> gen(
+                min);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, small_val_128);
+        }
+
+        // open, float, min
+        {
+            adhoc::centered_canonical_open<RNGtest<__uint128_t, min, max>,
+                                           float>
+                gen(min);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, small_val_128);
+        }
+
+        // closed, double, max
+        {
+            adhoc::centered_canonical_closed<RNGtest<__uint128_t, min, max>>
+                gen(max);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, 0);
+            EXPECT_EQUAL(std::copysign(1.0, val), -1.0);
+        }
+
+        // closed, float, max
+        {
+            adhoc::centered_canonical_closed<RNGtest<__uint128_t, min, max>,
+                                             float>
+                gen(max);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, 0);
+            EXPECT_EQUAL(std::copysign(1.0, val), -1.0);
+        }
+
+        // closed, double, min
+        {
+            adhoc::centered_canonical_closed<RNGtest<__uint128_t, min, max>>
+                gen(min);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, 0);
+            EXPECT_EQUAL(std::copysign(1.0, val), 1.0);
+        }
+
+        // closed, float, min
+        {
+            adhoc::centered_canonical_closed<RNGtest<__uint128_t, min, max>,
+                                             float>
+                gen(min);
+
+            auto val = gen();
+            EXPECT_EQUAL(val, 0);
+            EXPECT_EQUAL(std::copysign(1.0, val), 1.0);
+        }
+    }
+#endif
+
     TEST_END;
 }

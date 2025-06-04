@@ -78,13 +78,16 @@ class centered_canonical {
         constexpr auto cutoff =
             (full_range_int & 1) + (full_range_int / 2) + RNG::min();
 
+        // we use the highest possible float precision. why? because this might
+        // be infinity if we use float
         constexpr auto full_range =
-            static_cast<RealType>(full_range_int) +
-            static_cast<RealType>(
-                !RightClosed) + // right interval might be closed
-            static_cast<RealType>(!LeftClosed); // left interval might be open
+            static_cast<double>(full_range_int) +
+            static_cast<double>(
+                !RightClosed) +               // right interval might be closed
+            static_cast<double>(!LeftClosed); // left interval might be open
 
-        constexpr RealType one_over_range = 1.0 / full_range;
+        // we (potentially) downgrade
+        constexpr auto one_over_range = static_cast<RealType>(1.0 / full_range);
 
         constexpr auto stub_left = static_cast<RNG::result_type>(!LeftClosed);
         constexpr auto stub_right = static_cast<RNG::result_type>(!RightClosed);
