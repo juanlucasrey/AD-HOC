@@ -1,6 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 
 #include <distribution/centered_canonical_distribution.hpp>
+#include <distribution/exponential_distribution.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -494,6 +495,16 @@ auto main() -> int {
         }
     }
 #endif
+
+    // LWG issue 2524 not there!
+    {
+        adhoc::exponential_distribution<float> dis(1.0);
+        RNGtest<std::uint64_t, 0, std::numeric_limits<std::uint64_t>::max()>
+            rng(std::numeric_limits<std::uint64_t>::max());
+
+        auto val = dis(rng);
+        EXPECT_NOT_EQUAL(val, std::numeric_limits<float>::infinity());
+    }
 
     TEST_END;
 }
