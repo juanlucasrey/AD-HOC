@@ -21,6 +21,8 @@
 #ifndef BRNG_DISTRIBUTION_UNIFORM_DISTRIBUTION
 #define BRNG_DISTRIBUTION_UNIFORM_DISTRIBUTION
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace adhoc {
@@ -47,31 +49,21 @@ class uniform_real_distribution final {
 
         constexpr auto stub = static_cast<RNG::result_type>(!LeftClosed);
 
+        RealType result = 0;
         if constexpr (RNG::min() == stub) {
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            g.template operator()<FwdDirection>()) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           g.template operator()<FwdDirection>()) *
-                       one_over_range;
-            }
+
+            result =
+                (static_cast<RealType>(g.template operator()<FwdDirection>()) *
+                 one_over_range) +
+                a;
 
         } else if constexpr (RNG::min() > stub) {
             constexpr auto rem = RNG::min() - stub;
 
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            g.template operator()<FwdDirection>() - rem) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           g.template operator()<FwdDirection>() - rem) *
-                       one_over_range;
-            }
+            result = (static_cast<RealType>(
+                          g.template operator()<FwdDirection>() - rem) *
+                      one_over_range) +
+                     a;
 
         } else if constexpr (std::numeric_limits<
                                  typename RNG::result_type>::max() ==
@@ -81,32 +73,28 @@ class uniform_real_distribution final {
 
             // we treat this separately because there is a tiny chance it might
             // overflow. we convert to float BEFORE adding to stub
-            if constexpr (a) {
-                return ((static_cast<RealType>(
-                             g.template operator()<FwdDirection>()) +
-                         static_cast<RealType>(stub)) *
-                        one_over_range) +
-                       a;
-            } else {
-                return (static_cast<RealType>(
-                            g.template operator()<FwdDirection>()) +
-                        static_cast<RealType>(stub)) *
-                       one_over_range;
-            }
+
+            result =
+                ((static_cast<RealType>(g.template operator()<FwdDirection>()) +
+                  static_cast<RealType>(stub)) *
+                 one_over_range) +
+                a;
+
         } else {
             static_assert(RNG::min() == 0);
             static_assert(stub == 1);
 
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            g.template operator()<FwdDirection>() + stub) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           g.template operator()<FwdDirection>() + stub) *
-                       one_over_range;
-            }
+            result = turn(static_cast<RealType>(
+                              g.template operator()<FwdDirection>() + stub) *
+                          one_over_range) +
+                     a;
+        }
+
+        if constexpr (RightClosed) {
+            return result;
+        } else {
+            RealType rightlimit_m_eps = std::nextafter(b, 0.0);
+            return std::min(result, rightlimit_m_eps);
         }
     }
 };
@@ -142,33 +130,21 @@ class uniform_real {
 
         constexpr auto stub = static_cast<RNG::result_type>(!LeftClosed);
 
+        RealType result = 0;
         if constexpr (RNG::min() == stub) {
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            this->rng_.template operator()<FwdDirection>()) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           this->rng_.template operator()<FwdDirection>()) *
-                       one_over_range;
-            }
+            result = (static_cast<RealType>(
+                          this->rng_.template operator()<FwdDirection>()) *
+                      one_over_range) +
+                     a;
 
         } else if constexpr (RNG::min() > stub) {
             constexpr auto rem = RNG::min() - stub;
 
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            this->rng_.template operator()<FwdDirection>() -
-                            rem) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           this->rng_.template operator()<FwdDirection>() -
-                           rem) *
-                       one_over_range;
-            }
+            result =
+                (static_cast<RealType>(
+                     this->rng_.template operator()<FwdDirection>() - rem) *
+                 one_over_range) +
+                a;
 
         } else if constexpr (std::numeric_limits<
                                  typename RNG::result_type>::max() ==
@@ -178,35 +154,28 @@ class uniform_real {
 
             // we treat this separately because there is a tiny chance it might
             // overflow. we convert to float BEFORE adding to stub
-            if constexpr (a) {
-                return ((static_cast<RealType>(
-                             this->rng_.template operator()<FwdDirection>()) +
-                         static_cast<RealType>(stub)) *
-                        one_over_range) +
-                       a;
-            } else {
-                return (static_cast<RealType>(
-                            this->rng_.template operator()<FwdDirection>()) +
-                        static_cast<RealType>(stub)) *
-                       one_over_range;
-            }
+            result = ((static_cast<RealType>(
+                           this->rng_.template operator()<FwdDirection>()) +
+                       static_cast<RealType>(stub)) *
+                      one_over_range) +
+                     a;
 
         } else {
             static_assert(RNG::min() == 0);
             static_assert(stub == 1);
 
-            if constexpr (a) {
-                return (static_cast<RealType>(
-                            this->rng_.template operator()<FwdDirection>() +
-                            stub) *
-                        one_over_range) +
-                       a;
-            } else {
-                return static_cast<RealType>(
-                           this->rng_.template operator()<FwdDirection>() +
-                           stub) *
-                       one_over_range;
-            }
+            result =
+                (static_cast<RealType>(
+                     this->rng_.template operator()<FwdDirection>() + stub) *
+                 one_over_range) +
+                a;
+        }
+
+        if constexpr (RightClosed) {
+            return result;
+        } else {
+            RealType rightlimit_m_eps = std::nextafter(b, 0.0);
+            return std::min(result, rightlimit_m_eps);
         }
     };
 
