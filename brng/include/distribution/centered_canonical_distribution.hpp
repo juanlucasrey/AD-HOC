@@ -73,7 +73,7 @@ class centered_canonical_distribution final {
 
 // why do we use (-0.5, -0) union (0, 0.5) instead of (0, 1)? because in IEEE
 // 754, subnormal numbers near 0 allow more precision. in this representation,
-// we allow more precision in the ", 1)" border, now represented by ", -0)""
+// we allow more precision in the ", 1)" border, now represented by ", -0)"
 template <class RNG, class RealType = double, bool LeftClosed = true,
           bool RightClosed = false>
 class centered_canonical {
