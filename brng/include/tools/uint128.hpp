@@ -77,6 +77,11 @@ class uint128 {
         return (this->low == v.low) && (this->high == v.high);
     }
 
+    template <typename T>
+    auto constexpr operator==(T amount) const noexcept -> bool {
+        return static_cast<std::uint64_t>(amount) == this->low;
+    }
+
     auto constexpr operator+=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
         this->low += v.low;
