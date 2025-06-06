@@ -250,4 +250,225 @@ auto main() -> int {
             EXPECT_EQUAL(val1, val2);
         }
     }
+
+    {
+        pcg32_c64_fast rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rs,
+                          true, 6, 32, false, false, false>
+            rng2(14627392581883831783ULL, 0);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_k32 rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 16>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_k32_oneseq rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 128>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_k32_fast rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 128, false, true>
+            rng2{14627392581883831783ULL, 0, 0, 0};
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_c32 rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 16, false, true, false>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_c32_oneseq rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 128, false, true, false>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_c32_fast rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 5, 128, false, true, false>
+            rng2{14627392581883831783ULL, 0, 0, 0};
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_k1024 rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+                          true, 10, 16>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_k1024_fast rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rs,
+                          true, 10, 32>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_c1024 rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+                          true, 10, 16, false, false, false>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_c1024_fast rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rs,
+                          true, 10, 32, false, false, false>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_k1024 rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 10, 16>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_k1024_fast rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 10, 128>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_c1024 rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 10, 16, false, true, false>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg64_c1024_fast rng1;
+        adhoc::PCG_engine<std::uint64_t, 64, adhoc::tempering_type::xsl_rr,
+                          true, 10, 128, false, true, false>
+            rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_k16384 rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+                          true, 14, 16>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        pcg32_k16384_fast rng1;
+        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rs,
+                          true, 14, 32>
+            rng2(5573589319906701683ULL, 1442695040888963407ULL);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
 }

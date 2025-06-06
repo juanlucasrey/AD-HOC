@@ -356,9 +356,7 @@ class PCG_engine final {
 
     PCG_engine()
         : PCG_engine(default_state_low, default_state_high, default_seq_low,
-                     default_seq_high) {
-        this->selfinit();
-    }
+                     default_seq_high) {}
 
     explicit PCG_engine(upgraded_type initstate, upgraded_type initseq)
         : state(initstate), inc(initseq) {
@@ -372,6 +370,7 @@ class PCG_engine final {
           inc(detail::init_upgraded<UIntType, w, upgraded_type>(initseq_low,
                                                                 initseq_high)) {
         static_assert(upgrade);
+        this->selfinit();
     }
 
     auto external_step(result_type &randval, std::size_t i) -> bool {
