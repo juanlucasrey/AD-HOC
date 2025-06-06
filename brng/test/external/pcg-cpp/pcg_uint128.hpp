@@ -404,7 +404,7 @@ public:
     friend uint_x4<U,V> operator+(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
     template<typename U, typename V>
-    friend uint_x4<U,V> operator-(const uint_x4<U,V>&, const uint_x4<U,V>&);
+    friend uint_x4<U,V> constexpr operator-(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
     template<typename U, typename V>
     friend uint_x4<U,V> constexpr operator<<(const uint_x4<U,V>&, const bitcount_t shift);
@@ -451,7 +451,7 @@ public:
     friend uint_x4<U,V> constexpr operator~(const uint_x4<U,V>&);
 
     template<typename U, typename V>
-    friend uint_x4<U,V> operator-(const uint_x4<U,V>&);
+    friend uint_x4<U,V> constexpr operator-(const uint_x4<U,V>&);
 
     template<typename U, typename V>
     friend bitcount_t flog2(const uint_x4<U,V>&);
@@ -776,7 +776,7 @@ uint_x4<UInt,UIntX2> operator+(const uint_x4<UInt,UIntX2>& a,
 }
 
 template <typename UInt, typename UIntX2>
-uint_x4<UInt,UIntX2> operator-(const uint_x4<UInt,UIntX2>& a,
+uint_x4<UInt,UIntX2> constexpr operator-(const uint_x4<UInt,UIntX2>& a,
                                const uint_x4<UInt,UIntX2>& b)
 {
     uint_x4<UInt,UIntX2> r = {0U, 0U, 0U, 0U};
@@ -811,7 +811,7 @@ uint_x4<UInt32,uint64_t> operator+(const uint_x4<UInt32,uint64_t>& a,
 }
 
 template <typename UInt32>
-uint_x4<UInt32,uint64_t> operator-(const uint_x4<UInt32,uint64_t>& a,
+uint_x4<UInt32,uint64_t> constexpr operator-(const uint_x4<UInt32,uint64_t>& a,
 				   const uint_x4<UInt32,uint64_t>& b)
 {
     uint_x4<UInt32,uint64_t> r = {uint64_t(0u), uint64_t(0u)};
@@ -854,7 +854,7 @@ uint_x4<UInt,UIntX2> constexpr operator~(const uint_x4<UInt,UIntX2>& v)
 }
 
 template <typename UInt, typename UIntX2>
-uint_x4<UInt,UIntX2> operator-(const uint_x4<UInt,UIntX2>& v)
+uint_x4<UInt,UIntX2> constexpr operator-(const uint_x4<UInt,UIntX2>& v)
 {
     return uint_x4<UInt,UIntX2>(0UL,0UL) - v;
 }

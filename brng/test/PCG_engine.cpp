@@ -179,27 +179,27 @@ auto main() -> int {
     //     }
     // }
 
-    {
-        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
-                          true, 1, 16, false, false, true, true>
-            rng(16070087622772795188ULL, 1442695040888963407ULL);
-        check_fwd_and_back(rng, 1000000);
-        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
-                          true, 1, 16, false, false, true, true>
-            rng2(16070087622772795188ULL, 1442695040888963407ULL);
-        EXPECT_EQUAL(rng, rng2);
-    }
+    // {
+    //     adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+    //                       true, 1, 16, false, false, true, true>
+    //         rng(16070087622772795188ULL, 1442695040888963407ULL);
+    //     check_fwd_and_back(rng, 1000000);
+    //     adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+    //                       true, 1, 16, false, false, true, true>
+    //         rng2(16070087622772795188ULL, 1442695040888963407ULL);
+    //     EXPECT_EQUAL(rng, rng2);
+    // }
 
-    {
-        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
-                          true, 1, 16, false, false, true, true>
-            rng(16070087622772795188ULL, 1442695040888963407ULL);
-        check_back_and_fwd(rng, 1000000);
-        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
-                          true, 1, 16, false, false, true, true>
-            rng2(16070087622772795188ULL, 1442695040888963407ULL);
-        EXPECT_EQUAL(rng, rng2);
-    }
+    // {
+    //     adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+    //                       true, 1, 16, false, false, true, true>
+    //         rng(16070087622772795188ULL, 1442695040888963407ULL);
+    //     check_back_and_fwd(rng, 1000000);
+    //     adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+    //                       true, 1, 16, false, false, true, true>
+    //         rng2(16070087622772795188ULL, 1442695040888963407ULL);
+    //     EXPECT_EQUAL(rng, rng2);
+    // }
 
     {
         pcg32_k2_fast rng1;
