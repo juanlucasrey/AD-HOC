@@ -53,31 +53,15 @@ class uint128 {
         return static_cast<bool>(this->high | this->low);
     }
 
-    explicit constexpr operator std::uint8_t() const noexcept {
-        return static_cast<std::uint8_t>(this->low);
-    }
-
-    explicit constexpr operator std::uint16_t() const noexcept {
-        return static_cast<std::uint16_t>(this->low);
-    }
-
-    explicit constexpr operator std::uint32_t() const noexcept {
-        return static_cast<std::uint32_t>(this->low);
-    }
-
-    explicit constexpr operator std::uint64_t() const noexcept {
-        return this->low;
-    }
-
-    operator std::size_t() const noexcept {
-        return static_cast<std::uint32_t>(this->low);
+    template <class T> constexpr operator T() const noexcept {
+        return static_cast<T>(this->low);
     }
 
     auto constexpr operator==(const uint128 &v) const noexcept -> bool {
         return (this->low == v.low) && (this->high == v.high);
     }
 
-    template <typename T>
+    template <class T>
     auto constexpr operator==(T amount) const noexcept -> bool {
         return static_cast<std::uint64_t>(amount) == this->low;
     }
@@ -110,7 +94,7 @@ class uint128 {
         return t;
     }
 
-    template <typename T>
+    template <class T>
     auto constexpr operator<<(T amount) const noexcept -> uint128 {
         // uint64_t shifts of >= 64 are undefined, so we will need some
         // special-casing.
@@ -163,7 +147,7 @@ class uint128 {
                (this->high == o.high && this->low >= o.low);
     }
 
-    template <typename T>
+    template <class T>
     auto constexpr operator>>=(T amount) noexcept -> uint128 {
         static_assert(std::is_integral_v<T>);
 
@@ -177,7 +161,7 @@ class uint128 {
         return *this;
     }
 
-    template <typename T>
+    template <class T>
     auto constexpr operator>>(T v) const noexcept -> uint128 {
         uint128 t(*this);
         t >>= v;
