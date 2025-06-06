@@ -407,14 +407,14 @@ public:
     friend uint_x4<U,V> operator-(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
     template<typename U, typename V>
-    friend uint_x4<U,V> operator<<(const uint_x4<U,V>&, const bitcount_t shift);
+    friend uint_x4<U,V> constexpr operator<<(const uint_x4<U,V>&, const bitcount_t shift);
 
     template<typename U, typename V>
     friend uint_x4<U,V> operator>>(const uint_x4<U,V>&, const bitcount_t shift);
 
 #if PCG_64BIT_SPECIALIZATIONS
     template<typename U>
-    friend uint_x4<U,uint64_t> operator<<(const uint_x4<U,uint64_t>&, const bitcount_t shift);
+    friend uint_x4<U,uint64_t> constexpr operator<<(const uint_x4<U,uint64_t>&, const bitcount_t shift);
 
     template<typename U>
     friend uint_x4<U,uint64_t> operator>>(const uint_x4<U,uint64_t>&, const bitcount_t shift);
@@ -848,7 +848,7 @@ uint_x4<UInt,UIntX2> operator^(const uint_x4<UInt,UIntX2>& a,
 }
 
 template <typename UInt, typename UIntX2>
-uint_x4<UInt,UIntX2> operator~(const uint_x4<UInt,UIntX2>& v)
+uint_x4<UInt,UIntX2> constexpr operator~(const uint_x4<UInt,UIntX2>& v)
 {
     return uint_x4<UInt,UIntX2>(~v.d.v23, ~v.d.v01);
 }
@@ -900,7 +900,7 @@ bool operator>=(const uint_x4<UInt,UIntX2>& a, const uint_x4<UInt,UIntX2>& b)
 
 
 template <typename UInt, typename UIntX2>
-uint_x4<UInt,UIntX2> operator<<(const uint_x4<UInt,UIntX2>& v,
+uint_x4<UInt,UIntX2> constexpr operator<<(const uint_x4<UInt,UIntX2>& v,
                                 const bitcount_t shift)
 {
     uint_x4<UInt,UIntX2> r = {0U, 0U, 0U, 0U};
@@ -971,7 +971,7 @@ uint_x4<UInt,UIntX2> operator>>(const uint_x4<UInt,UIntX2>& v,
 
 #if PCG_64BIT_SPECIALIZATIONS
 template <typename UInt32>
-uint_x4<UInt32,uint64_t> operator<<(const uint_x4<UInt32,uint64_t>& v,
+uint_x4<UInt32,uint64_t> constexpr operator<<(const uint_x4<UInt32,uint64_t>& v,
 				    const bitcount_t shift)
 {
     constexpr bitcount_t bits2   = uint_x4<UInt32,uint64_t>::UINT_BITS * 2;
