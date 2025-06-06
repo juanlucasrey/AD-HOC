@@ -261,7 +261,7 @@ template <class UIntType = std::uint32_t, std::size_t w = 32U,
           tempering_type TemperingType = tempering_type::xsh_rr,
           bool upgrade = true, std::size_t table_pow2 = 0U,
           std::size_t advance_pow2 = 0U, bool upgrade_table = false,
-          bool mcg = false, bool kdd = true>
+          bool mcg = false, bool kdd = true, bool invert_upgrade_call = false>
 class PCG_engine final {
 
 #if !defined(__GNUC__) && !defined(__clang__)
@@ -373,85 +373,129 @@ class PCG_engine final {
         this->selfinit();
     }
 
+    template <bool FwdDirection = true>
     auto external_step(result_type &randval, std::size_t i) -> bool {
-        upgraded_type_table state = detail::rxs_m_xs_back<w>(randval);
+        if constexpr (FwdDirection) {
+            upgraded_type_table state = detail::rxs_m_xs_back<w>(randval);
 
-        state = state * multiplier_table + increment_table +
-                upgraded_type_table(i * 2);
-        result_type result = detail::rxs_m_xs<result_type, w>(state);
-        randval = result;
-        upgraded_type_table zero =
-            mcg ? state & upgraded_type_table(3U) : upgraded_type_table(0U);
+            state = state * multiplier_table + increment_table +
+                    upgraded_type_table(i * 2);
+            result_type result = detail::rxs_m_xs<result_type, w>(state);
+            randval = result;
+            upgraded_type_table zero =
+                mcg ? state & upgraded_type_table(3U) : upgraded_type_table(0U);
 
-        return result == zero;
+            return result == zero;
+        } else {
+            result_type const result = randval;
+            upgraded_type_table const state_prev =
+                detail::rxs_m_xs_back<w>(result);
+            upgraded_type_table state = state_prev;
+            state -= increment_table + upgraded_type_table(i * 2);
+
+            static constexpr upgraded_type multiplier_table_inverse =
+                modular_multiplicative_inverse_max_plus_one(multiplier_table);
+            state *= multiplier_table_inverse;
+
+            randval = detail::rxs_m_xs<result_type, w>(state);
+
+            upgraded_type_table zero =
+                mcg ? state_prev & upgraded_type_table(3U)
+                    : upgraded_type_table(0U);
+
+            return result == zero;
+        }
     }
 
-    void advance_table() {
+    template <bool FwdDirection = true> void advance_table() {
         bool carry = false;
         for (size_t i = 0; i < table_size; ++i) {
             if (carry) {
-                carry = external_step(data_[i], i + 1);
+                carry = external_step<FwdDirection>(data_[i], i + 1);
             }
-            bool carry2 = external_step(data_[i], i + 1);
+            bool carry2 = external_step<FwdDirection>(data_[i], i + 1);
             carry = carry || carry2;
         }
     }
 
-    auto get_extended_value() -> result_type & {
+    template <bool FwdDirection = true>
+    auto get_extended_value() -> result_type {
         upgraded_type state_temp = this->state;
         if (kdd && mcg) {
             // The low order bits of an MCG are constant, so drop them.
             state_temp >>= 2;
         }
+
         size_t index =
             kdd ? state_temp & table_mask : state_temp >> table_shift;
 
-        if constexpr (may_tick) {
-            bool tick = kdd ? (state_temp & tick_mask) == upgraded_type(0u)
-                            : (state_temp >> tick_shift) == upgraded_type(0u);
-            if (tick) {
-                this->advance_table();
+        if constexpr (FwdDirection) {
+            if constexpr (may_tick) {
+                bool tick =
+                    kdd ? (state_temp & tick_mask) == upgraded_type(0u)
+                        : (state_temp >> tick_shift) == upgraded_type(0u);
+                if (tick) {
+                    this->advance_table<FwdDirection>();
+                }
             }
+            return data_[index];
+        } else {
+            result_type result = data_[index];
+            if constexpr (may_tick) {
+                bool tick =
+                    kdd ? (state_temp & tick_mask) == upgraded_type(0u)
+                        : (state_temp >> tick_shift) == upgraded_type(0u);
+                if (tick) {
+                    this->advance_table<FwdDirection>();
+                }
+            }
+            return result;
         }
-        return data_[index];
     }
 
     template <bool FwdDirection = true>
     inline auto sub_operator() -> result_type {
+        upgraded_type result = 0;
         if constexpr (FwdDirection) {
-            upgraded_type result = 0;
-            if constexpr (w_upgraded > 64) {
-                this->state = this->state * multiplier + this->inc;
-                result = this->state;
-            } else {
-                result = this->state;
-                this->state = result * multiplier + this->inc;
-            }
-
-            if constexpr (TemperingType == tempering_type::xsh_rr) {
-                return detail::xsh_rr<result_type>(result);
-            } else if constexpr (TemperingType == tempering_type::xsh_rs) {
-                return detail::xsh_rs<result_type>(result);
-            } else if constexpr (TemperingType == tempering_type::xsl_rr) {
-                return detail::xsl_rr<result_type>(result);
-            } else if constexpr (TemperingType == tempering_type::rxs_m_xs) {
-                return detail::rxs_m_xs<result_type, w>(result);
-            } else if constexpr (TemperingType == tempering_type::xsl_rr_rr) {
-                return detail::xsl_rr_rr<result_type>(result);
-            }
+            this->state = this->state * multiplier + this->inc;
+            result = this->state;
         } else {
-            return 0;
+            static constexpr upgraded_type multiplier_inverse =
+                modular_multiplicative_inverse_max_plus_one(multiplier);
+
+            result = this->state;
+            this->state = (this->state - this->inc) * multiplier_inverse;
+        }
+
+        if constexpr (TemperingType == tempering_type::xsh_rr) {
+            return detail::xsh_rr<result_type>(result);
+        } else if constexpr (TemperingType == tempering_type::xsh_rs) {
+            return detail::xsh_rs<result_type>(result);
+        } else if constexpr (TemperingType == tempering_type::xsl_rr) {
+            return detail::xsl_rr<result_type>(result);
+        } else if constexpr (TemperingType == tempering_type::rxs_m_xs) {
+            return detail::rxs_m_xs<result_type, w>(result);
+        } else if constexpr (TemperingType == tempering_type::xsl_rr_rr) {
+            return detail::xsl_rr_rr<result_type>(result);
         }
     }
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
         if constexpr (table_pow2) {
-            result_type const rhs = this->get_extended_value();
-            result_type const lhs = sub_operator<FwdDirection>();
-            return lhs ^ rhs;
+            if constexpr (FwdDirection == invert_upgrade_call) {
+                result_type const lhs = this->sub_operator<FwdDirection>();
+                result_type const rhs =
+                    this->get_extended_value<FwdDirection>();
+                return lhs ^ rhs;
+            } else {
+                result_type const rhs =
+                    this->get_extended_value<FwdDirection>();
+                result_type const lhs = this->sub_operator<FwdDirection>();
+                return lhs ^ rhs;
+            }
         } else {
-            return sub_operator<FwdDirection>();
+            return this->sub_operator<FwdDirection>();
         }
     }
 
