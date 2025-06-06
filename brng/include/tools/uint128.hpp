@@ -23,7 +23,7 @@
 
 #include <cstdlib>
 
-#define FORCE_ENABLE 0
+#define FORCE_ENABLE 1
 
 #if (!defined(__GNUC__) && !defined(__clang__)) || FORCE_ENABLE
 
