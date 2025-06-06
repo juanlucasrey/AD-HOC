@@ -9,22 +9,6 @@
 
 #include <tools/mask.hpp>
 
-namespace {
-
-constexpr auto operator""_ULLL(const char *digits) -> adhoc::uint128type {
-    adhoc::uint128type result{};
-
-    while (*digits != 0) {
-        result *= 10;
-        result += *digits - '0';
-        ++digits;
-    }
-
-    return result;
-}
-
-} // namespace
-
 auto main() -> int {
 
     std::size_t const sims = 1000000;
@@ -150,8 +134,8 @@ auto main() -> int {
 
     {
         pcg128_once_insecure rng1;
-        adhoc::PCG_engine<adhoc::uint128type, 128,
-                          adhoc::tempering_type::xsl_rr_rr, false>
+        adhoc::PCG_engine<adhoc::uint128, 128, adhoc::tempering_type::xsl_rr_rr,
+                          false>
             rng2(245720598905631564143578724636268694099_ULLL,
                  117397592171526113268558934119004209487_ULLL);
 

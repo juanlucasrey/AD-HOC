@@ -21,6 +21,12 @@
 #ifndef BRNG_TOOLS_UINT128
 #define BRNG_TOOLS_UINT128
 
+#include <cstdlib>
+
+#define FORCE_ENABLE 0
+
+#if (!defined(__GNUC__) && !defined(__clang__)) || FORCE_ENABLE
+
 #include <cstddef>
 #include <cstdint>
 
@@ -293,5 +299,29 @@ template <> struct std::numeric_limits<adhoc::uint128> {
     static constexpr bool is_exact = true;
     static constexpr int radix = 2;
 };
+
+#else
+
+namespace adhoc {
+
+using uint128 = __uint128_t;
+
+inline void lldiv() {}
+
+} // namespace adhoc
+
+#endif
+
+constexpr auto operator""_ULLL(const char *digits) -> adhoc::uint128 {
+    adhoc::uint128 result{};
+
+    while (*digits != 0) {
+        result *= 10;
+        result += *digits - '0';
+        ++digits;
+    }
+
+    return result;
+}
 
 #endif // BRNG_TOOLS_UINT128
