@@ -320,15 +320,6 @@ class PCG_engine final {
     static constexpr std::size_t table_shift = stypebits - table_pow2;
 
     static constexpr std::size_t tick_limit_pow2 = 64U;
-    static constexpr bool may_tick =
-        (advance_pow2 < stypebits) && (advance_pow2 < tick_limit_pow2);
-
-    static constexpr std::size_t tick_shift = stypebits - advance_pow2;
-    static constexpr upgraded_type tick_mask =
-        may_tick
-            ? upgraded_type((std::uint64_t(1) << (advance_pow2 * may_tick)) - 1)
-            // ^-- stupidity to appease GCC warnings
-            : ~upgraded_type(0U);
 
     void selfinit() {
         if constexpr (table_pow2) {
@@ -374,51 +365,6 @@ class PCG_engine final {
     }
 
     template <bool FwdDirection = true>
-    auto external_step(result_type &randval, std::size_t i) -> bool {
-        if constexpr (FwdDirection) {
-            upgraded_type_table state = detail::rxs_m_xs_back<w>(randval);
-
-            state = state * multiplier_table + increment_table +
-                    upgraded_type_table(i * 2);
-            result_type result = detail::rxs_m_xs<result_type, w>(state);
-            randval = result;
-            upgraded_type_table zero =
-                mcg ? state & upgraded_type_table(3U) : upgraded_type_table(0U);
-
-            return result == zero;
-        } else {
-            result_type const result = randval;
-            upgraded_type_table const state_prev =
-                detail::rxs_m_xs_back<w>(result);
-            upgraded_type_table state = state_prev;
-            state -= increment_table + upgraded_type_table(i * 2);
-
-            static constexpr upgraded_type multiplier_table_inverse =
-                modular_multiplicative_inverse_max_plus_one(multiplier_table);
-            state *= multiplier_table_inverse;
-
-            randval = detail::rxs_m_xs<result_type, w>(state);
-
-            upgraded_type_table zero =
-                mcg ? state_prev & upgraded_type_table(3U)
-                    : upgraded_type_table(0U);
-
-            return result == zero;
-        }
-    }
-
-    template <bool FwdDirection = true> void advance_table() {
-        bool carry = false;
-        for (size_t i = 0; i < table_size; ++i) {
-            if (carry) {
-                carry = external_step<FwdDirection>(data_[i], i + 1);
-            }
-            bool carry2 = external_step<FwdDirection>(data_[i], i + 1);
-            carry = carry || carry2;
-        }
-    }
-
-    template <bool FwdDirection = true>
     auto get_extended_value() -> result_type {
         upgraded_type state_temp = this->state;
         if (kdd && mcg) {
@@ -429,26 +375,72 @@ class PCG_engine final {
         size_t index =
             kdd ? state_temp & table_mask : state_temp >> table_shift;
 
-        if constexpr (FwdDirection) {
-            if constexpr (may_tick) {
-                bool tick =
-                    kdd ? (state_temp & tick_mask) == upgraded_type(0u)
-                        : (state_temp >> tick_shift) == upgraded_type(0u);
-                if (tick) {
-                    this->advance_table<FwdDirection>();
+        result_type result = 0;
+        if constexpr (!FwdDirection) {
+            result = data_[index];
+        }
+
+        static constexpr bool may_tick =
+            (advance_pow2 < stypebits) && (advance_pow2 < tick_limit_pow2);
+        if constexpr (may_tick) {
+            static constexpr std::size_t tick_shift = stypebits - advance_pow2;
+            static constexpr upgraded_type tick_mask =
+                upgraded_type((std::uint64_t(1) << advance_pow2) - 1);
+
+            bool tick = kdd ? (state_temp & tick_mask) == upgraded_type(0u)
+                            : (state_temp >> tick_shift) == upgraded_type(0u);
+            if (tick) {
+                bool carry = false;
+                for (std::size_t i = 0; i < table_size; ++i) {
+                    upgraded_type_table new_incr =
+                        upgraded_type_table((i + 1) * 2);
+
+                    bool new_carry;
+
+                    upgraded_type_table state =
+                        detail::rxs_m_xs_back<w>(this->data_[i]);
+
+                    if constexpr (FwdDirection) {
+                        state = state * multiplier_table + increment_table +
+                                new_incr;
+                        this->data_[i] =
+                            detail::rxs_m_xs<result_type, w>(state);
+                        upgraded_type_table const zero =
+                            mcg ? state & upgraded_type_table(3U)
+                                : upgraded_type_table(0U);
+
+                        new_carry = this->data_[i] == zero;
+                    } else {
+                        upgraded_type_table const zero =
+                            mcg ? state & upgraded_type_table(3U)
+                                : upgraded_type_table(0U);
+
+                        new_carry = this->data_[i] == zero;
+
+                        state -= increment_table + new_incr;
+
+                        static constexpr upgraded_type
+                            multiplier_table_inverse =
+                                modular_multiplicative_inverse_max_plus_one(
+                                    multiplier_table);
+                        state *= multiplier_table_inverse;
+
+                        this->data_[i] =
+                            detail::rxs_m_xs<result_type, w>(state);
+                    }
+
+                    if (carry) {
+                        carry = new_carry;
+                    } else {
+                        carry = carry || new_carry;
+                    }
                 }
             }
+        }
+
+        if constexpr (FwdDirection) {
             return data_[index];
         } else {
-            result_type result = data_[index];
-            if constexpr (may_tick) {
-                bool tick =
-                    kdd ? (state_temp & tick_mask) == upgraded_type(0u)
-                        : (state_temp >> tick_shift) == upgraded_type(0u);
-                if (tick) {
-                    this->advance_table<FwdDirection>();
-                }
-            }
             return result;
         }
     }
