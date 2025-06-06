@@ -380,10 +380,9 @@ class PCG_engine final {
                 upgraded_type_table(i * 2);
         result_type result = detail::rxs_m_xs<result_type, w>(state);
         randval = result;
-        upgraded_type_table zero = upgraded_type_table(0U);
-        // upgraded_type zero =
-        //     baseclass::is_mcg ? state & upgraded_type(3U) :
-        //     upgraded_type(0U);
+        upgraded_type_table zero =
+            mcg ? state & upgraded_type_table(3U) : upgraded_type_table(0U);
+
         return result == zero;
     }
 
@@ -399,10 +398,8 @@ class PCG_engine final {
     }
 
     auto get_extended_value() -> result_type & {
-        // constexpr bool kdd = true;
         upgraded_type state_temp = this->state;
         if (kdd && mcg) {
-            // if (kdd) {
             // The low order bits of an MCG are constant, so drop them.
             state_temp >>= 2;
         }
@@ -410,20 +407,12 @@ class PCG_engine final {
             kdd ? state_temp & table_mask : state_temp >> table_shift;
 
         if constexpr (may_tick) {
-            auto val1 = tick_mask;
-            auto val2 = tick_shift;
-            auto val3 = static_cast<unsigned int>(advance_pow2);
             bool tick = kdd ? (state_temp & tick_mask) == upgraded_type(0u)
                             : (state_temp >> tick_shift) == upgraded_type(0u);
             if (tick) {
                 this->advance_table();
             }
         }
-        // if (may_tock) {
-        //     bool tock = state == state_type(0u);
-        //     if (tock)
-        //         advance_table();
-        // }
         return data_[index];
     }
 
@@ -467,7 +456,9 @@ class PCG_engine final {
     }
 
     auto operator==(const PCG_engine &rhs) const -> bool {
-        return (this->state == rhs.state) && (this->inc == rhs.inc);
+        return (this->state == rhs.state) && (this->inc == rhs.inc) &&
+               (this->data_ == rhs.data_);
+        ;
     }
 
   private:
