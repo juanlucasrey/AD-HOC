@@ -1,5 +1,6 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
+#include <iostream>
 
 extern "C" {
 #include "external/MRG63k3a.h"
@@ -12,22 +13,20 @@ extern "C" {
 #include <cstdint>
 
 auto main() -> int {
-
-    // TODO: open and canonical distributions are not enough to avoid 1.0 or 0.0
-    // when using uint64_t as results. more padding on the borders of the
-    // interval
-    // {
-    //     adhoc::seed_seq<std::uint_fast64_t> seq;
-    //     seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-    //                 7509699444841106451ULL, 5670463998974203631ULL,
-    //                 3539266752878466645ULL, 229387088646599462ULL};
-    //     adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
-    //     for (std::size_t i = 0; i < 15; ++i) {
-    //         auto val1 = rng();
-    //         EXPECT_NOT_EQUAL(val1, 0.);
-    //         EXPECT_NOT_EQUAL(val1, 1.);
-    //     }
-    // }
+    // this case is designed to have the max value and the uniform open
+    // distribution does not touch 1.0
+    {
+        adhoc::seed_seq<std::uint_fast64_t> seq;
+        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
+                    7509699444841106451ULL, 5670463998974203631ULL,
+                    3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
+        for (std::size_t i = 0; i < 15; ++i) {
+            auto val1 = rng();
+            EXPECT_NOT_EQUAL(val1, 0.);
+            EXPECT_NOT_EQUAL(val1, 1.);
+        }
+    }
 
     {
         // p2 == 0 case, using uint128
@@ -64,11 +63,19 @@ auto main() -> int {
             3539266752878466645ULL, 229387088646599462ULL};
         InitMRG63k3a(init.data());
 
+        bool hasone = false;
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
             auto val2 = MRG63k3a();
-            EXPECT_EQUAL(val1, val2);
+
+            hasone |= (val2 == 1.0);
+            if (val2 != 1.0) {
+                EXPECT_EQUAL(val1, val2);
+            }
         }
+
+        // original MRG63k3a returns 1!!! should not happen
+        EXPECT_EQUAL(hasone, true);
     }
 
     {
@@ -85,11 +92,19 @@ auto main() -> int {
             3539266752878466645ULL, 229387088646599462ULL};
         InitMRG63k3a(init.data());
 
+        bool hasone = false;
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
             auto val2 = MRG63k3a();
-            EXPECT_EQUAL(val1, val2);
+
+            hasone |= (val2 == 1.0);
+            if (val2 != 1.0) {
+                EXPECT_EQUAL(val1, val2);
+            }
         }
+
+        // original MRG63k3a returns 1!!! should not happen
+        EXPECT_EQUAL(hasone, true);
     }
 
     {
@@ -127,11 +142,18 @@ auto main() -> int {
             3539266752878466645ULL, 229387088646599462ULL};
         InitMRG63k3a(init.data());
 
+        bool hasone = false;
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
             auto val2 = MRG63k3a();
-            EXPECT_EQUAL(val1, val2);
+            hasone |= (val2 == 1.0);
+            if (val2 != 1.0) {
+                EXPECT_EQUAL(val1, val2);
+            }
         }
+
+        // original MRG63k3a returns 1!!! should not happen
+        EXPECT_EQUAL(hasone, true);
     }
 
     {
@@ -148,11 +170,18 @@ auto main() -> int {
             3539266752878466645ULL, 229387088646599462ULL};
         InitMRG63k3a(init.data());
 
+        bool hasone = false;
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
             auto val2 = MRG63k3a();
-            EXPECT_EQUAL(val1, val2);
+            hasone |= (val2 == 1.0);
+            if (val2 != 1.0) {
+                EXPECT_EQUAL(val1, val2);
+            }
         }
+
+        // original MRG63k3a returns 1!!! should not happen
+        EXPECT_EQUAL(hasone, true);
     }
 
     // default not using 128

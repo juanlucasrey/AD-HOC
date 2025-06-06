@@ -1,5 +1,5 @@
-#ifndef CASE_STUDIES_BRNG_SEED_SEQ
-#define CASE_STUDIES_BRNG_SEED_SEQ
+#ifndef BRNG_SEED_SEQ
+#define BRNG_SEED_SEQ
 
 #include <vector>
 
@@ -20,4 +20,4 @@ template <class UIntType> struct seed_seq final {
 
 } // namespace adhoc
 
-#endif // CASE_STUDIES_BRNG_SEED_SEQ
+#endif // BRNG_SEED_SEQ

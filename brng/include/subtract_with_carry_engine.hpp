@@ -95,7 +95,8 @@ class subtract_with_carry_engine final {
     explicit subtract_with_carry_engine(result_type value) {
         linear_congruential_engine<std::uint_least32_t, 32, 40014U, 0U,
                                    2147483563U>
-            e(value == 0U ? default_seed : value);
+            e(static_cast<std::uint_least32_t>(value == 0U ? default_seed
+                                                           : value));
         std::array<std::uint_least32_t, r * k> seeds;
         std::generate(seeds.begin(), seeds.end(), e);
         this->init(seeds);

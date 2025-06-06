@@ -30,7 +30,7 @@
 
 namespace adhoc {
 
-template <typename UIntType, std::size_t w, std::size_t n, std::size_t r,
+template <class UIntType, std::size_t w, std::size_t n, std::size_t r,
           UIntType... consts>
 class philox_engine {
   private:

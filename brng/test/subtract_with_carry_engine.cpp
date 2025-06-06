@@ -2,7 +2,6 @@
 #include "seed_seq.hpp"
 #include "test_tools_rng.hpp"
 
-#include "../../include/combinatorics/pow.hpp"
 #include "../include/subtract_with_carry_engine.hpp"
 
 #include <cassert>
@@ -10,12 +9,27 @@
 #include <cstdint>
 #include <random>
 
+namespace {
+
+template <std::size_t N, class T> inline constexpr auto pow(T base) -> T {
+    if constexpr (N == 1) {
+        return base;
+    } else if constexpr (N % 2 == 0) {
+        T power = pow<N / 2>(base);
+        return power * power;
+
+    } else {
+        T power = pow<N / 2>(base);
+        return base * power * power;
+    }
+};
+
 template <class RNG>
 constexpr auto period(RNG const & /* rng */) -> unsigned long long {
     constexpr auto w = RNG::word_size;
     constexpr auto r = RNG::long_lag;
     constexpr auto s = RNG::short_lag;
-    return adhoc::detail::pow<r>(w) - adhoc::detail::pow<s>(w);
+    return pow<r>(w) - pow<s>(w);
 }
 
 auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
@@ -33,6 +47,8 @@ auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
 
     TEST_END;
 }
+
+} // namespace
 
 int main() {
     // std check
@@ -188,38 +204,40 @@ int main() {
         compare_rng_limits(rng1, rng2);
     }
 
-    for (std::size_t i = 0; i < 3; i++) {
+    for (std::uint_fast32_t i = 0; i < 3; i++) {
 
         {
-            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng(i);
             check_fwd_and_back(rng, 1000000);
-            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
 
         {
-            adhoc::ranlux24_base rng(static_cast<std::uint_fast32_t>(i));
+            adhoc::ranlux24_base rng(i);
             check_back_and_fwd(rng, 1000000);
-            adhoc::ranlux24_base rng2(static_cast<std::uint_fast32_t>(i));
-            EXPECT_EQUAL(rng, rng2);
-        }
-
-        {
-            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
-            check_fwd_and_back(rng, 1000000);
-            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
-            EXPECT_EQUAL(rng, rng2);
-        }
-
-        {
-            adhoc::ranlux48_base rng(static_cast<std::uint_fast64_t>(i));
-            check_back_and_fwd(rng, 1000000);
-            adhoc::ranlux48_base rng2(static_cast<std::uint_fast64_t>(i));
+            adhoc::ranlux24_base rng2(i);
             EXPECT_EQUAL(rng, rng2);
         }
     }
 
-    int sims = 0;
+    for (std::uint_fast64_t i = 0; i < 3; i++) {
+        {
+            adhoc::ranlux48_base rng(i);
+            check_fwd_and_back(rng, 1000000);
+            adhoc::ranlux48_base rng2(i);
+            EXPECT_EQUAL(rng, rng2);
+        }
+
+        {
+            adhoc::ranlux48_base rng(i);
+            check_back_and_fwd(rng, 1000000);
+            adhoc::ranlux48_base rng2(i);
+            EXPECT_EQUAL(rng, rng2);
+        }
+    }
+
+    std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);
     }

@@ -75,7 +75,7 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
-    int sims = 0;
+    std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);
     }
