@@ -11,8 +11,8 @@
 
 namespace {
 
-constexpr auto operator""_ULLL(const char *digits) -> __uint128_t {
-    __uint128_t result{};
+constexpr auto operator""_ULLL(const char *digits) -> adhoc::uint128type {
+    adhoc::uint128type result{};
 
     while (*digits != 0) {
         result *= 10;
@@ -150,15 +150,20 @@ auto main() -> int {
 
     {
         pcg128_once_insecure rng1;
-        adhoc::PCG_engine<__uint128_t, 128, adhoc::tempering_type::xsl_rr_rr,
-                          false>
+        adhoc::PCG_engine<adhoc::uint128type, 128,
+                          adhoc::tempering_type::xsl_rr_rr, false>
             rng2(245720598905631564143578724636268694099_ULLL,
                  117397592171526113268558934119004209487_ULLL);
 
         for (std::size_t i = 0; i < sims; ++i) {
             auto val1 = rng1();
             auto val2 = rng2();
-            EXPECT_EQUAL(val1, val2);
+            auto val1_low = static_cast<std::uint64_t>(val1);
+            auto val2_low = static_cast<std::uint64_t>(val2);
+            EXPECT_EQUAL(val1_low, val2_low);
+            auto val1_high = static_cast<std::uint64_t>(val1 >> 64U);
+            auto val2_high = static_cast<std::uint64_t>(val2 >> 64U);
+            EXPECT_EQUAL(val1_high, val2_high);
         }
     }
 

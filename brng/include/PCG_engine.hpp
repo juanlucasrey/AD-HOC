@@ -29,10 +29,16 @@
 
 namespace adhoc {
 
+#if !defined(__GNUC__) && !defined(__clang__)
+using uint128type = uint128;
+#else
+using uint128type = __uint128_t;
+#endif
+
 namespace detail {
 
 template <class UIntType, std::size_t w, class UpgradedType>
-constexpr auto init_upgraded(UIntType low, UIntType high) -> UpgradedType {
+auto constexpr init_upgraded(UIntType low, UIntType high) -> UpgradedType {
     UpgradedType const low_up = static_cast<UpgradedType>(low);
     UpgradedType const high_up = static_cast<UpgradedType>(high);
     return low_up + (high_up << w);
@@ -142,7 +148,7 @@ auto rxs_m_xs(itype internal) -> xtype {
         internal *= 12605985483714917081ULL;
     } else if constexpr (w <= 128) {
         constexpr itype multiplier =
-            init_upgraded<std::uint64_t, 64, __uint128_t>(
+            init_upgraded<std::uint64_t, 64, uint128type>(
                 12605985483714917081ULL, 17766728186571221404ULL);
         internal *= multiplier;
     }
@@ -190,7 +196,7 @@ auto rxs_m_xs_back(itype internal) -> itype {
         internal *= 15009553638781119849ULL;
     } else if constexpr (w <= 128) {
         constexpr itype multiplier =
-            init_upgraded<std::uint64_t, 64, __uint128_t>(
+            init_upgraded<std::uint64_t, 64, uint128type>(
                 15009553638781119849ULL, 14422606686972528997ULL);
         internal *= multiplier;
     }
@@ -202,7 +208,7 @@ auto rxs_m_xs_back(itype internal) -> itype {
 }
 
 template <typename T> struct halfsize_trait {};
-template <> struct halfsize_trait<__uint128_t> {
+template <> struct halfsize_trait<uint128type> {
     using type = uint64_t;
 };
 template <> struct halfsize_trait<uint64_t> {
@@ -264,12 +270,6 @@ template <class UIntType = std::uint32_t, std::size_t w = 32U,
           bool mcg = false, bool kdd = true, bool invert_upgrade_call = false>
 class PCG_engine final {
 
-#if !defined(__GNUC__) && !defined(__clang__)
-    using uint128type = uint128;
-#else
-    using uint128type = __uint128_t;
-#endif
-
     static_assert(w <= std::numeric_limits<UIntType>::digits);
 
     static constexpr std::size_t w_upgraded =
@@ -292,25 +292,28 @@ class PCG_engine final {
                                               std::uint_fast64_t, uint128type>>;
 
     static constexpr upgraded_type multiplier =
-        (w_upgraded == 32) ? 747796405U
+        (w_upgraded == 32) ? upgraded_type(747796405U)
         : (w_upgraded == 64)
-            ? 6364136223846793005ULL
-            : detail::init_upgraded<std::uint64_t, 64, uint128type>(
-                  4865540595714422341ULL, 2549297995355413924ULL);
+            ? upgraded_type(6364136223846793005ULL)
+            : upgraded_type(
+                  detail::init_upgraded<std::uint64_t, 64, uint128type>(
+                      4865540595714422341ULL, 2549297995355413924ULL));
 
-    static constexpr upgraded_type multiplier_table =
-        (w_table_upgraded == 32) ? 747796405U
+    static constexpr upgraded_type_table multiplier_table =
+        (w_table_upgraded == 32) ? upgraded_type_table(747796405U)
         : (w_table_upgraded == 64)
-            ? 6364136223846793005ULL
-            : detail::init_upgraded<std::uint64_t, 64, uint128type>(
-                  4865540595714422341ULL, 2549297995355413924ULL);
+            ? upgraded_type_table(6364136223846793005ULL)
+            : upgraded_type_table(
+                  detail::init_upgraded<std::uint64_t, 64, uint128type>(
+                      4865540595714422341ULL, 2549297995355413924ULL));
 
-    static constexpr upgraded_type increment_table =
-        (w_table_upgraded == 32) ? 2891336453U
+    static constexpr upgraded_type_table increment_table =
+        (w_table_upgraded == 32) ? upgraded_type_table(2891336453U)
         : (w_table_upgraded == 64)
-            ? 1442695040888963407ULL
-            : detail::init_upgraded<std::uint64_t, 64, uint128type>(
-                  1442695040888963407ULL, 6364136223846793005ULL);
+            ? upgraded_type_table(1442695040888963407ULL)
+            : upgraded_type_table(
+                  detail::init_upgraded<std::uint64_t, 64, uint128type>(
+                      1442695040888963407ULL, 6364136223846793005ULL));
 
     static constexpr std::size_t table_size = 1UL << table_pow2;
     static constexpr upgraded_type table_mask =
@@ -326,7 +329,7 @@ class PCG_engine final {
             result_type lhs = this->sub_operator();
             result_type rhs = this->sub_operator();
             result_type xdiff = lhs - rhs;
-            for (size_t i = 0; i < table_size; ++i) {
+            for (std::size_t i = 0; i < table_size; ++i) {
                 data_[i] = this->sub_operator() ^ xdiff;
             }
         }
@@ -372,7 +375,7 @@ class PCG_engine final {
             state_temp >>= 2;
         }
 
-        size_t index =
+        std::size_t index =
             kdd ? state_temp & table_mask : state_temp >> table_shift;
 
         result_type result = 0;

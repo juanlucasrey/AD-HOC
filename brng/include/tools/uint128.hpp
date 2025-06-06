@@ -32,38 +32,46 @@ class uint128 {
     std::uint64_t low;
 
   public:
+    constexpr uint128() : high(0), low(0) {}
+
     template <class T>
     constexpr uint128(T const v)
         : high(0), low(static_cast<std::uint64_t>(v)) {}
 
     template <class T>
-    uint128(T h, T l)
+    constexpr uint128(T h, T l)
         : high(static_cast<std::uint64_t>(h)),
           low(static_cast<std::uint64_t>(l)) {}
 
-    explicit operator bool() const {
+    explicit constexpr operator bool() const noexcept {
         return static_cast<bool>(this->high | this->low);
     }
 
-    explicit operator std::uint8_t() const {
+    explicit constexpr operator std::uint8_t() const noexcept {
         return static_cast<std::uint8_t>(this->low);
     }
 
-    explicit operator std::uint16_t() const {
+    explicit constexpr operator std::uint16_t() const noexcept {
         return static_cast<std::uint16_t>(this->low);
     }
 
-    explicit operator std::uint32_t() const {
+    explicit constexpr operator std::uint32_t() const noexcept {
         return static_cast<std::uint32_t>(this->low);
     }
 
-    explicit operator std::uint64_t() const { return this->low; }
+    explicit constexpr operator std::uint64_t() const noexcept {
+        return this->low;
+    }
+
+    operator std::size_t() const noexcept {
+        return static_cast<std::uint32_t>(this->low);
+    }
 
     auto constexpr operator==(const uint128 &v) const noexcept -> bool {
         return (this->low == v.low) && (this->high == v.high);
     }
 
-    auto operator+=(const uint128 &v) noexcept -> uint128 {
+    auto constexpr operator+=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
         this->low += v.low;
         this->high += v.high;
@@ -71,13 +79,13 @@ class uint128 {
         return *this;
     }
 
-    auto operator+(const uint128 &v) const noexcept -> uint128 {
+    auto constexpr operator+(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t += v;
         return t;
     }
 
-    auto operator-=(const uint128 &v) noexcept -> uint128 {
+    auto constexpr operator-=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
         this->low -= v.low;
         this->high -= v.high;
@@ -85,13 +93,14 @@ class uint128 {
         return *this;
     }
 
-    auto operator-(const uint128 &v) const noexcept -> uint128 {
+    auto constexpr operator-(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t -= v;
         return t;
     }
 
-    auto operator<<(unsigned int amount) const noexcept -> uint128 {
+    template <typename T>
+    auto constexpr operator<<(T amount) const noexcept -> uint128 {
         // uint64_t shifts of >= 64 are undefined, so we will need some
         // special-casing.
         return amount >= 64  ? uint128(this->low << (amount - 64U),
@@ -102,14 +111,14 @@ class uint128 {
                                        this->low << amount);
     }
 
-    auto operator<<=(uint8_t amount) noexcept -> uint128 {
+    auto constexpr operator<<=(uint8_t amount) noexcept -> uint128 {
         this->high <<= amount;
         this->high |= this->low >> (64U - amount);
         this->low <<= amount;
         return *this;
     }
 
-    auto operator*(const uint128 &rhs) const noexcept -> uint128 {
+    auto constexpr operator*(const uint128 &rhs) const noexcept -> uint128 {
         uint64_t a32 = this->low >> 32U;
         uint64_t a00 = this->low & 0xffffffff;
         uint64_t b32 = rhs.low >> 32U;
@@ -121,34 +130,50 @@ class uint128 {
         return result;
     }
 
-    auto operator<=(const uint128 &o) const noexcept -> bool {
+    auto constexpr operator*=(const uint128 &rhs) noexcept -> uint128 {
+        uint64_t a32 = this->low >> 32U;
+        uint64_t a00 = this->low & 0xffffffff;
+        uint64_t b32 = rhs.low >> 32U;
+        uint64_t b00 = rhs.low & 0xffffffff;
+        this->high = this->high * rhs.low + this->low * rhs.high + a32 * b32;
+        this->low = a00 * b00;
+        this->operator+=(uint128(a32 * b00) << 32U);
+        this->operator+=(uint128(a00 * b32) << 32U);
+        return *this;
+    }
+
+    auto constexpr operator<=(const uint128 &o) const noexcept -> bool {
         return this->high < o.high ||
                (this->high == o.high && this->low <= o.low);
     }
 
-    auto operator>=(const uint128 &o) const noexcept -> bool {
+    auto constexpr operator>=(const uint128 &o) const noexcept -> bool {
         return this->high > o.high ||
                (this->high == o.high && this->low >= o.low);
     }
 
-    auto operator>>(std::size_t v) const noexcept -> uint128 {
-        uint128 t(*this);
-        t >>= v;
-        return t;
-    }
+    template <typename T>
+    auto constexpr operator>>=(T amount) noexcept -> uint128 {
+        static_assert(std::is_integral_v<T>);
 
-    auto operator>>=(std::size_t amount) noexcept -> uint128 {
         if (amount >= 64) {
-            this->low = this->high >> (amount - 64U);
+            this->low = this->high >> (amount - 64);
             this->high = 0;
-        } else {
-            this->low = (this->high << (64U - amount)) | (this->low >> amount);
+        } else if (amount != 0) {
+            this->low = (this->high << (64 - amount)) | (this->low >> amount);
             this->high >>= amount;
         }
         return *this;
     }
 
-    auto operator%=(const uint128 &b) -> uint128 {
+    template <typename T>
+    auto constexpr operator>>(T v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t >>= v;
+        return t;
+    }
+
+    auto constexpr operator%=(const uint128 &b) -> uint128 {
         // if (!b)
         //     throw std::domain_error("divide by zero");
 
@@ -166,13 +191,37 @@ class uint128 {
         return *this;
     }
 
-    auto operator%(const uint128 &v) const noexcept -> uint128 {
+    auto constexpr operator%(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t %= v;
         return t;
     }
 
-    auto operator/(const uint128 &b) const -> uint128 {
+    auto constexpr operator&=(const uint128 &b) -> uint128 {
+        this->low &= b.low;
+        this->high &= b.high;
+        return *this;
+    }
+
+    auto constexpr operator&(const uint128 &v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t &= v;
+        return t;
+    }
+
+    auto constexpr operator^=(const uint128 &b) -> uint128 {
+        this->low ^= b.low;
+        this->high ^= b.high;
+        return *this;
+    }
+
+    auto constexpr operator^(const uint128 &v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t ^= v;
+        return t;
+    }
+
+    auto operator/(const uint128 &b) const noexcept -> uint128 {
         // if (!b)
         //     throw std::domain_error("divide by zero");
 
@@ -203,7 +252,7 @@ struct div_t {
     uint128 quot;
 };
 
-inline auto lldiv(uint128 const &x, uint128 const &y) -> div_t {
+inline auto lldiv(uint128 const &x, uint128 const &y) noexcept -> div_t {
     // if (!y)
     //     throw std::domain_error("divide by zero");
 
@@ -229,5 +278,20 @@ inline auto lldiv(uint128 const &x, uint128 const &y) -> div_t {
 }
 
 } // namespace adhoc
+
+template <> struct std::numeric_limits<adhoc::uint128> {
+    static constexpr bool is_specialized = true;
+    static constexpr int digits = 128;
+    static constexpr adhoc::uint128 min() noexcept {
+        return adhoc::uint128{0, 0};
+    }
+    static constexpr adhoc::uint128 max() noexcept {
+        return adhoc::uint128{~0ULL, ~0ULL};
+    }
+    static constexpr bool is_signed = false;
+    static constexpr bool is_integer = true;
+    static constexpr bool is_exact = true;
+    static constexpr int radix = 2;
+};
 
 #endif // BRNG_TOOLS_UINT128
