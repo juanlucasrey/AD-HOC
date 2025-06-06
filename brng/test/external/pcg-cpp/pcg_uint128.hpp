@@ -289,7 +289,7 @@ inline UInt addwithcarry(UInt x, UInt y, bool carryin, bool* carryout)
 }
 
 template <typename UInt>
-inline UInt subwithcarry(UInt x, UInt y, bool carryin, bool* carryout)
+inline UInt constexpr subwithcarry(UInt x, UInt y, bool carryin, bool* carryout)
 {
     UInt half_result = y + carryin;
     UInt result = x - half_result;

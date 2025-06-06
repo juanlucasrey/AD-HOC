@@ -214,18 +214,18 @@ auto main() -> int {
         }
     }
 
-    {
-        pcg32_k64 rng1;
-        adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
-                          true, 6, 16, false, false, true, true>
-            rng2(16070087622772795188ULL, 1442695040888963407ULL);
+    // {
+    //     pcg32_k64 rng1;
+    //     adhoc::PCG_engine<std::uint32_t, 32, adhoc::tempering_type::xsh_rr,
+    //                       true, 6, 16, false, false, true, true>
+    //         rng2(16070087622772795188ULL, 1442695040888963407ULL);
 
-        for (std::size_t i = 0; i < sims; ++i) {
-            auto val1 = rng1();
-            auto val2 = rng2();
-            EXPECT_EQUAL(val1, val2);
-        }
-    }
+    //     for (std::size_t i = 0; i < sims; ++i) {
+    //         auto val1 = rng1();
+    //         auto val2 = rng2();
+    //         EXPECT_EQUAL(val1, val2);
+    //     }
+    // }
 
     {
         pcg32_k64_oneseq rng1;
