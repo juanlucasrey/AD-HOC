@@ -26,6 +26,8 @@
 #include "tools/unshift.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstdint>
 #include <limits>
 
 namespace adhoc {
