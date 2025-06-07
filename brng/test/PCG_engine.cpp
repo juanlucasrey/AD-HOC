@@ -181,6 +181,9 @@ auto main() -> int {
                 EXPECT_EQUAL(firstvals[i], val1);
             }
             auto val2 = rng2();
+            if (val1 != val2) {
+                std::cout << val1 << ", " << val2 << ", " << i << std::endl;
+            }
             EXPECT_EQUAL(val1, val2);
         }
     }
