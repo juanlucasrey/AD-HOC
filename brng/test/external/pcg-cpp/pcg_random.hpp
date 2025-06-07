@@ -1250,10 +1250,10 @@ private:
         (advance_pow2 < stypebits) && (advance_pow2 < tick_limit_pow2);
     static constexpr size_t tick_shift = stypebits - advance_pow2;
     static constexpr state_type tick_mask  =
-        may_tick ? state_type(
-                       (uint64_t(1) << (advance_pow2*may_tick)) - 1)
+        state_type( may_tick ? 
+                       ((uint64_t(1) << (advance_pow2*may_tick)) - 1)
                                         // ^-- stupidity to appease GCC warnings
-                 : ~state_type(0U);
+                 : ~uint64_t(0U));
 
     static constexpr bool may_tock = stypebits < tick_limit_pow2;
 
