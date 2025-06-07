@@ -25,6 +25,7 @@
 #include "tools/mask.hpp"
 
 #include <array>
+#include <cstdint>
 #include <tuple>
 
 namespace adhoc {
