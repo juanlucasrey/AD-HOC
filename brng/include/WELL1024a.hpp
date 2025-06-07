@@ -53,7 +53,8 @@ template <class UIntType> class WELL1024a final {
     };
 
     template <class SeedSeq> explicit WELL1024a(SeedSeq &seq) {
-        std::array<std::uint32_t, this->state.size()> generated_sequence;
+        std::array<std::uint32_t, decltype(this->state)::size()>
+            generated_sequence;
         seq.generate(generated_sequence.begin(), generated_sequence.end());
 
         std::transform(generated_sequence.begin(), generated_sequence.end(),
