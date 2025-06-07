@@ -390,6 +390,13 @@ public:
         return d.v01 || d.v23;
     }
 
+    // template <class T> 
+    // explicit constexpr operator T() const
+    explicit constexpr operator size_t() const 
+    {
+        return static_cast<size_t>(d.v01);
+    }
+
     template<typename U, typename V>
     friend uint_x4<U,V> operator*(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
@@ -424,7 +431,7 @@ public:
     friend uint_x4<U,V> operator&(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
     template<typename U, typename V>
-    friend uint_x4<U,V> operator|(const uint_x4<U,V>&, const uint_x4<U,V>&);
+    friend uint_x4<U,V> constexpr operator|(const uint_x4<U,V>&, const uint_x4<U,V>&);
 
     template<typename U, typename V>
     friend uint_x4<U,V> operator^(const uint_x4<U,V>&, const uint_x4<U,V>&);
@@ -834,7 +841,7 @@ uint_x4<UInt,UIntX2> operator&(const uint_x4<UInt,UIntX2>& a,
 }
 
 template <typename UInt, typename UIntX2>
-uint_x4<UInt,UIntX2> operator|(const uint_x4<UInt,UIntX2>& a,
+uint_x4<UInt,UIntX2> constexpr operator|(const uint_x4<UInt,UIntX2>& a,
                                const uint_x4<UInt,UIntX2>& b)
 {
     return uint_x4<UInt,UIntX2>(a.d.v23 | b.d.v23, a.d.v01 | b.d.v01);
