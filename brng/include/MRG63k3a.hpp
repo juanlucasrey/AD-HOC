@@ -22,9 +22,7 @@
 #define BRNG_MRG63k3a
 
 #include "tools/modular_arithmetic.hpp"
-#if !defined(__GNUC__) && !defined(__clang__)
 #include "tools/uint128.hpp"
-#endif
 
 #include <array>
 #include <cstdint>
@@ -92,34 +90,25 @@ class MRG63k3a final {
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
         if constexpr (Use128) {
-
-#if !defined(__GNUC__) && !defined(__clang__)
-            using uint128type = uint128;
-#else
-            using uint128type = __uint128_t;
-#endif
-
             if constexpr (FwdDirection) {
-                static constexpr uint128type a13 = mod1 - a13n;
+                static constexpr uint128 a13 = mod1 - a13n;
                 static_assert(a13 == 9223372033672665121);
-                static constexpr uint128type a12l = a12;
-                static constexpr uint128type m1l = mod1;
+                static constexpr uint128 a12l = a12;
+                static constexpr uint128 m1l = mod1;
 
-                auto const p1 =
-                    ((a12l * static_cast<uint128type>(this->State[1])) +
-                     (a13 * static_cast<uint128type>(this->State[0]))) %
-                    m1l;
+                auto const p1 = ((a12l * static_cast<uint128>(this->State[1])) +
+                                 (a13 * static_cast<uint128>(this->State[0]))) %
+                                m1l;
                 this->State[0] = this->State[1];
                 this->State[1] = this->State[2];
                 this->State[2] = static_cast<std::uint64_t>(p1);
 
-                static constexpr uint128type a23 = mod2 - a23n;
-                static constexpr uint128type a21l = a21;
-                static constexpr uint128type m2l = mod2;
-                auto const p2 =
-                    ((a21l * static_cast<uint128type>(this->State[5])) +
-                     (a23 * static_cast<uint128type>(this->State[3]))) %
-                    m2l;
+                static constexpr uint128 a23 = mod2 - a23n;
+                static constexpr uint128 a21l = a21;
+                static constexpr uint128 m2l = mod2;
+                auto const p2 = ((a21l * static_cast<uint128>(this->State[5])) +
+                                 (a23 * static_cast<uint128>(this->State[3]))) %
+                                m2l;
                 this->State[3] = this->State[4];
                 this->State[4] = this->State[5];
                 this->State[5] = static_cast<std::uint64_t>(p2);
@@ -150,15 +139,15 @@ class MRG63k3a final {
                 }
 
                 static constexpr auto a23 = mod2 - a23n;
-                static constexpr uint128type m2l = mod2;
-                static constexpr uint128type a21l_inv = mod2 - a21;
+                static constexpr uint128 m2l = mod2;
+                static constexpr uint128 a21l_inv = mod2 - a21;
 
-                constexpr uint128type a23_inv =
+                constexpr uint128 a23_inv =
                     modular_multiplicative_inverse(mod2, a23);
 
                 auto const p2 =
-                    (((static_cast<uint128type>(this->State[5]) +
-                       a21l_inv * static_cast<uint128type>(this->State[4])) %
+                    (((static_cast<uint128>(this->State[5]) +
+                       a21l_inv * static_cast<uint128>(this->State[4])) %
                       m2l) *
                      a23_inv) %
                     m2l;
@@ -167,15 +156,15 @@ class MRG63k3a final {
                 this->State[3] = static_cast<std::uint64_t>(p2);
 
                 static constexpr auto a13 = mod1 - a13n;
-                static constexpr uint128type m1l = mod1;
-                static constexpr uint128type a12l_inv = mod1 - a12;
+                static constexpr uint128 m1l = mod1;
+                static constexpr uint128 a12l_inv = mod1 - a12;
 
-                constexpr uint128type a13_inv =
+                constexpr uint128 a13_inv =
                     modular_multiplicative_inverse(mod1, a13);
 
                 auto const p1 =
-                    (((static_cast<uint128type>(this->State[2]) +
-                       (a12l_inv * static_cast<uint128type>(this->State[0]))) %
+                    (((static_cast<uint128>(this->State[2]) +
+                       (a12l_inv * static_cast<uint128>(this->State[0]))) %
                       m1l) *
                      a13_inv) %
                     m1l;
