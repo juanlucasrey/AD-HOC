@@ -113,7 +113,7 @@ auto main() -> int {
 
 // this does not happen with windows cl
 // and SOMETIMES with CLANG
-#if defined(__MSVC__)
+#ifdef _MSC_VER
         // this does not happen with clang and windows cl
         {
             adhoc::seed_seq<std::uint_fast32_t> seq;

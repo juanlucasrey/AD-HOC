@@ -27,6 +27,8 @@ int main() {
         static_assert(std::is_same_v<decltype(res), decltype(res_check)>);
     }
 
+#ifndef _MSC_VER
+    // goes out of heap space on MSVC
     {
         constexpr auto res = adhoc::MultinomialSequences<4, 5>();
         static_assert(std::tuple_size_v<decltype(res)> == 56);
@@ -62,5 +64,6 @@ int main() {
             std::index_sequence<0, 0, 1, 4>, std::index_sequence<0, 0, 0, 5>>{};
         static_assert(std::is_same_v<decltype(res), decltype(res_check)>);
     }
+#endif
     return 0;
 }

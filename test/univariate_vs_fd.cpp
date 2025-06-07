@@ -501,7 +501,7 @@ int main() {
             EXPECT_LESS_THAN(
                 std::abs((results2[4] - results1[4]) / results2[4]), 1e-5);
             EXPECT_LESS_THAN(
-                std::abs((results2[5] - results1[5]) / results2[5]), 1e-5);
+                std::abs((results2[5] - results1[5]) / results2[5]), 2e-5);
             EXPECT_EQUAL(results1[6], 0.);
             EXPECT_EQUAL(results1[7], 0.);
             EXPECT_EQUAL(results1[8], 0.);

@@ -51,7 +51,13 @@ template <class UIntType> class WELL1024a final {
     };
 
     template <class SeedSeq> explicit WELL1024a(SeedSeq &seq) {
-        seq.generate(this->state.data().begin(), this->state.data().end());
+        std::array<std::uint32_t, this->state.size()> generated_sequence;
+        seq.generate(generated_sequence.begin(), generated_sequence.end());
+
+        for (std::size_t i = 0; i < generated_sequence.size(); ++i) {
+            this->state.data()[i] =
+                static_cast<UIntType>(generated_sequence[i]);
+        }
 
         // values cannot all be 0
         if (std::all_of(this->state.data().begin(), this->state.data().end(),
