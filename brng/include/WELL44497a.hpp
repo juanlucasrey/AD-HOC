@@ -64,10 +64,10 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
         std::array<std::uint32_t, this->state.size()> generated_sequence;
         seq.generate(generated_sequence.begin(), generated_sequence.end());
 
-        for (std::size_t i = 0; i < generated_sequence.size(); ++i) {
-            this->state.data()[i] =
-                static_cast<UIntType>(generated_sequence[i]);
-        }
+        std::transform(generated_sequence.begin(), generated_sequence.end(),
+                       this->state.data().begin(), [](std::uint32_t v) {
+                           return static_cast<UIntType>(v);
+                       });
 
         // values cannot all be 0
         if (std::all_of(this->state.data().begin(), this->state.data().end(),
