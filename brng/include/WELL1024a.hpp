@@ -26,6 +26,8 @@
 #include "tools/unshift.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstdint>
 #include <limits>
 
 namespace adhoc {
@@ -51,7 +53,14 @@ template <class UIntType> class WELL1024a final {
     };
 
     template <class SeedSeq> explicit WELL1024a(SeedSeq &seq) {
-        seq.generate(this->state.data().begin(), this->state.data().end());
+        std::array<std::uint32_t, decltype(this->state)::size()>
+            generated_sequence;
+        seq.generate(generated_sequence.begin(), generated_sequence.end());
+
+        std::transform(generated_sequence.begin(), generated_sequence.end(),
+                       this->state.data().begin(), [](std::uint32_t v) {
+                           return static_cast<UIntType>(v);
+                       });
 
         // values cannot all be 0
         if (std::all_of(this->state.data().begin(), this->state.data().end(),
