@@ -282,13 +282,12 @@ class PCG_engine final {
     static_assert(w_table_upgraded <= 128U);
 
     using upgraded_type = std::conditional_t<
-        w_upgraded == 32, std::uint_fast32_t,
-        std::conditional_t<w_upgraded == 64, std::uint_fast64_t, uint128>>;
+        w_upgraded == 32, std::uint32_t,
+        std::conditional_t<w_upgraded == 64, std::uint64_t, uint128>>;
 
-    using upgraded_type_table =
-        std::conditional_t<w_table_upgraded == 32, std::uint_fast32_t,
-                           std::conditional_t<w_table_upgraded == 64,
-                                              std::uint_fast64_t, uint128>>;
+    using upgraded_type_table = std::conditional_t<
+        w_table_upgraded == 32, std::uint32_t,
+        std::conditional_t<w_table_upgraded == 64, std::uint64_t, uint128>>;
 
     static constexpr upgraded_type multiplier =
         (w_upgraded == 32) ? upgraded_type(747796405U)
