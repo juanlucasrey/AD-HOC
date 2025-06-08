@@ -27,8 +27,6 @@
 #include <array>
 #include <cstdint>
 
-#include <iostream>
-
 namespace adhoc {
 
 namespace detail {
@@ -136,9 +134,7 @@ auto rxs_m_xs(itype internal) -> xtype {
     constexpr bitcount_t mask = (1 << opbits) - 1;
     bitcount_t rshift =
         opbits ? bitcount_t(internal >> (bits - opbits)) & mask : 0;
-    std::cout << rshift << std::endl;
     internal ^= internal >> (opbits + rshift);
-    std::cout << internal << std::endl;
 
     if constexpr (w <= 32) {
         internal *= 277803737U;
@@ -149,12 +145,9 @@ auto rxs_m_xs(itype internal) -> xtype {
             12605985483714917081ULL, 17766728186571221404ULL);
         internal *= multiplier;
     }
-    std::cout << internal << std::endl;
 
     xtype result = internal >> shift;
-    std::cout << result << std::endl;
     result ^= result >> ((2U * xtypebits + 2U) / 3U);
-    std::cout << result << std::endl;
     return result;
 }
 
@@ -449,9 +442,7 @@ class PCG_engine final {
     inline auto sub_operator() -> result_type {
         upgraded_type result = 0;
         if constexpr (FwdDirection) {
-            std::cout << this->state << std::endl;
             this->state = this->state * multiplier + this->inc;
-            std::cout << this->state << std::endl;
             result = this->state;
         } else {
             static constexpr upgraded_type multiplier_inverse =
