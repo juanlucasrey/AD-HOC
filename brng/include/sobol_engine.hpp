@@ -29,13 +29,14 @@
 #include "sobol_tables/new_joe_kuo_5_21201.hpp"
 #include "sobol_tables/new_joe_kuo_6_21201.hpp"
 #include "sobol_tables/new_joe_kuo_7_21201.hpp"
-#include "tools/bit_find.hpp"
 #include "tools/mask.hpp"
 #include "tools/uint128.hpp"
 
 #include <array>
+#include <bit>
 #include <bitset>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -156,7 +157,7 @@ class sobol_engine final {
 
         if constexpr (skip_first) {
             auto const c = this->m_seq_num
-                               ? findLeastSignificantZero(
+                               ? std::countr_one(
                                      static_cast<ceiling_type>(this->m_seq_num))
                                : (w + 1);
 
@@ -164,8 +165,8 @@ class sobol_engine final {
                 this->Y[i] ^= this->v[i][c];
             }
         } else {
-            auto const c = findLeastSignificantZero(
-                static_cast<ceiling_type>(this->m_seq_num));
+            auto const c =
+                std::countr_one(static_cast<ceiling_type>(this->m_seq_num));
 
             for (std::size_t i = 0; i < this->N; ++i) {
                 this->Y[i] ^= this->v[i][c];
@@ -195,7 +196,9 @@ class sobol_engine final {
 
         for (std::size_t i = 1; i < this->N; ++i) {
             unsigned int const poly_e = (*poly_p++);
-            std::size_t const poly_d = highestBitIndex(poly_e);
+
+            // highest bit index
+            std::size_t const poly_d = std::bit_width(poly_e) - 1U;
             std::bitset<w> includ(poly_e);
 
             std::size_t ii = 0;

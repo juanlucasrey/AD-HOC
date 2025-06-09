@@ -2,7 +2,6 @@ include(../../test_simple/test_simple_cmake.cmake)
 
 set(BRNG
     tools/circular_buffer.cpp
-    tools/bit_find.cpp
     tools/unshift.cpp
     tools/modular_arithmetic.cpp
     distribution/centered_canonical_distribution.cpp
