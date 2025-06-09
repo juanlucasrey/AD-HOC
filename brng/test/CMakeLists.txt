@@ -13,6 +13,9 @@ set(BRNG
     sobol_engine.cpp
     lfsr_xor_engine.cpp
     arc4_engine.cpp
+    splitmix_engine.cpp
+    chacha_engine.cpp
+    gjrand_engine.cpp
 )
 
 run_check("${BRNG}")
