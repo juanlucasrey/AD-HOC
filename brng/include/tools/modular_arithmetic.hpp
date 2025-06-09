@@ -21,11 +21,21 @@
 #ifndef BRNG_TOOLS_MODULAR_ARITHMETIC
 #define BRNG_TOOLS_MODULAR_ARITHMETIC
 
-#include <cstdint>
-#include <limits>
+#include "mask.hpp"
+
 #include <type_traits>
 
 namespace adhoc {
+
+template <class UIntType>
+constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
+    while (b != 0) {
+        auto tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+    return a;
+};
 
 template <class UIntType>
 constexpr auto modular_multiplicative_inverse(UIntType n, UIntType b)
@@ -85,55 +95,34 @@ constexpr auto modular_multiplicative_inverse(UIntType n, UIntType b)
     }
 }
 
-template <class UIntType>
-constexpr auto modular_multiplicative_inverse_max_plus_one(UIntType b) {
+template <class UIntType, bool AltVersion = false>
+constexpr auto modular_multiplicative_inverse_pow2(std::size_t pow2,
+                                                   UIntType b) {
     static_assert(std::is_unsigned_v<UIntType>);
-    UIntType t1 = 0;
-    bool t1_b = true; // true means positive, false negative
-    UIntType t2 = 1;
-    bool t2_b = true; // true means positive, false negative
-    UIntType t3 = 0;
-    bool t3_b = true; // true means positive, false negative
+    UIntType power = mask<UIntType>(pow2);
 
-    // awkward first step to avoid overflow
-    UIntType n_minus_one = std::numeric_limits<UIntType>::max();
-    UIntType r = n_minus_one - (b - 1);
-    UIntType q = 1 + r / b;
-    r = r % b;
-
-    // t3 = t1 - q × t2
-    if (t1_b && !t2_b) {
-        t3_b = true;
-        t3 = t1 + q * t2;
-    } else if (!t1_b && t2_b) {
-        t3_b = false;
-        t3 = t1 + q * t2;
-    } else if (t1_b && t2_b) {
-        t3_b = t1 >= q * t2;
-        if (t3_b) {
-            t3 = t1 - q * t2;
-        } else {
-            t3 = q * t2 - t1;
+    if constexpr (AltVersion) {
+        UIntType result = UIntType(1);
+        UIntType multiplier = b;
+        while (power != UIntType(0)) {
+            UIntType thismult = power & UIntType(1) ? multiplier : UIntType(1);
+            result *= thismult;
+            power >>= 1U;
+            multiplier *= multiplier;
         }
+        return result;
     } else {
-        t3_b = q * t2 >= t1;
-        if (t3_b) {
-            t3 = q * t2 - t1;
-        } else {
-            t3 = t1 - q * t2;
-        }
-    }
+        UIntType t1 = 0;
+        bool t1_b = true; // true means positive, false negative
+        UIntType t2 = 1;
+        bool t2_b = true; // true means positive, false negative
+        UIntType t3 = 0;
+        bool t3_b = true; // true means positive, false negative
 
-    UIntType n = b;
-    b = r;
-    t1 = t2;
-    t1_b = t2_b;
-    t2 = t3;
-    t2_b = t3_b;
-
-    while (r != 0) {
-        UIntType q = n / b;
-        r = n % b;
+        // awkward first step to avoid overflow
+        UIntType r = power - (b - 1);
+        UIntType q = r / b + 1;
+        r = r % b;
 
         // t3 = t1 - q × t2
         if (t1_b && !t2_b) {
@@ -158,19 +147,54 @@ constexpr auto modular_multiplicative_inverse_max_plus_one(UIntType b) {
             }
         }
 
-        n = b;
+        UIntType n = b;
         b = r;
         t1 = t2;
         t1_b = t2_b;
         t2 = t3;
         t2_b = t3_b;
-    }
 
-    if (t1_b) {
-        return t1;
-    } else {
-        UIntType q = n_minus_one - (t1 - 1);
-        return q;
+        while (r != 0) {
+            UIntType q = n / b;
+            r = n % b;
+
+            // t3 = t1 - q × t2
+            if (t1_b && !t2_b) {
+                t3_b = true;
+                t3 = t1 + q * t2;
+            } else if (!t1_b && t2_b) {
+                t3_b = false;
+                t3 = t1 + q * t2;
+            } else if (t1_b && t2_b) {
+                t3_b = t1 >= q * t2;
+                if (t3_b) {
+                    t3 = t1 - q * t2;
+                } else {
+                    t3 = q * t2 - t1;
+                }
+            } else {
+                t3_b = q * t2 >= t1;
+                if (t3_b) {
+                    t3 = q * t2 - t1;
+                } else {
+                    t3 = t1 - q * t2;
+                }
+            }
+
+            n = b;
+            b = r;
+            t1 = t2;
+            t1_b = t2_b;
+            t2 = t3;
+            t2_b = t3_b;
+        }
+
+        if (t1_b) {
+            return t1;
+        } else {
+            UIntType q = power - (t1 - 1);
+            return q;
+        }
     }
 }
 

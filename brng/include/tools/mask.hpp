@@ -40,6 +40,19 @@ constexpr auto mask() -> UIntType {
            << Start;
 }
 
+template <class UIntType> constexpr auto mask(std::size_t Size) -> UIntType {
+    static_assert(std::is_unsigned_v<UIntType>,
+                  "UIntType must be an unsigned type");
+
+    UIntType ach = static_cast<UIntType>(1U)
+                   << static_cast<std::size_t>(Size - 1U);
+
+    return ach | (ach - static_cast<UIntType>(1U));
+
+    // equivalent to the following but shift does not overflow
+    // return (static_cast<result_type>(1U) << w) - 1U;
+}
+
 } // namespace adhoc
 
 #endif // BRNG_TOOLS_MASK

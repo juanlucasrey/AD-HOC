@@ -4,6 +4,7 @@ set(BRNG
     tools/circular_buffer.cpp
     tools/bit_find.cpp
     tools/unshift.cpp
+    tools/modular_arithmetic.cpp
     distribution/centered_canonical_distribution.cpp
     distribution/normal_distribution.cpp
     mersenne_twister_engine.cpp
@@ -19,7 +20,6 @@ run_check("${BRNG}")
 
 set(BRNGStatic
     tools/mask.cpp
-    tools/modular_arithmetic.cpp
 )
 compile_check("${BRNGStatic}" false)
 

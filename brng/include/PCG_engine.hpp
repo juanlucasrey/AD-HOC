@@ -414,8 +414,8 @@ class PCG_engine final {
 
                         static constexpr upgraded_type
                             multiplier_table_inverse =
-                                modular_multiplicative_inverse_max_plus_one(
-                                    multiplier_table);
+                                modular_multiplicative_inverse_pow2(
+                                    w_table_upgraded, multiplier_table);
                         state *= multiplier_table_inverse;
 
                         this->data_[i] =
@@ -446,7 +446,7 @@ class PCG_engine final {
             result = this->state;
         } else {
             static constexpr upgraded_type multiplier_inverse =
-                modular_multiplicative_inverse_max_plus_one(multiplier);
+                modular_multiplicative_inverse_pow2(w_upgraded, multiplier);
 
             result = this->state;
             this->state = (this->state - this->inc) * multiplier_inverse;
