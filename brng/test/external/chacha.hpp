@@ -168,138 +168,138 @@ inline void chacha_engine<R>::generate_block() {
     for (int i = 0; i < 16; ++i) block[i] += input[i];
 }
 
-#ifdef __SSE2__
+// #ifdef __SSE2__
 
-// Get an efficient _mm_roti_epi32 based on enabled features.
-#if !defined(__XOP__)
-    #if defined(__SSSE3__)
-        #define CHACHA_roti_epi32(r, c) (			    \
-            ((c) == 8) ?                                            \
-                _mm_shuffle_epi8((r), _mm_set_epi8(14, 13, 12, 15,  \
-                                                   10,  9,  8, 11,  \
-                                                    6,  5,  4,  7,  \
-                                                    2,  1,  0,  3)) \
-            : ((c) == 16) ?                                         \
-                _mm_shuffle_epi8((r), _mm_set_epi8(13, 12, 15, 14,  \
-                                                    9,  8, 11, 10,  \
-                                                    5,  4,  7,  6,  \
-                                                    1,  0,  3,  2)) \
-            : ((c) == 24) ?                                         \
-                _mm_shuffle_epi8((r), _mm_set_epi8(12, 15, 14, 13,  \
-                                                    8, 11, 10,  9,  \
-                                                    4,  7,  6,  5,  \
-                                                    0,  3,  2,  1)) \
-            :                                                       \
-                _mm_xor_si128(_mm_slli_epi32((r), (c)),             \
-                              _mm_srli_epi32((r), 32-(c)))          \
-        )
-    #else
-        #define CHACHA_roti_epi32(r, c) _mm_xor_si128(
-                                            _mm_slli_epi32((r), (c)),	\
-                                            _mm_srli_epi32((r), 32-(c)))
-    #endif
-#else
-    #define CHACHA_roti_epi32 _mm_roti_epi32
-#endif
+// // Get an efficient _mm_roti_epi32 based on enabled features.
+// #if !defined(__XOP__)
+//     #if defined(__SSSE3__)
+//         #define CHACHA_roti_epi32(r, c) (			    \
+//             ((c) == 8) ?                                            \
+//                 _mm_shuffle_epi8((r), _mm_set_epi8(14, 13, 12, 15,  \
+//                                                    10,  9,  8, 11,  \
+//                                                     6,  5,  4,  7,  \
+//                                                     2,  1,  0,  3)) \
+//             : ((c) == 16) ?                                         \
+//                 _mm_shuffle_epi8((r), _mm_set_epi8(13, 12, 15, 14,  \
+//                                                     9,  8, 11, 10,  \
+//                                                     5,  4,  7,  6,  \
+//                                                     1,  0,  3,  2)) \
+//             : ((c) == 24) ?                                         \
+//                 _mm_shuffle_epi8((r), _mm_set_epi8(12, 15, 14, 13,  \
+//                                                     8, 11, 10,  9,  \
+//                                                     4,  7,  6,  5,  \
+//                                                     0,  3,  2,  1)) \
+//             :                                                       \
+//                 _mm_xor_si128(_mm_slli_epi32((r), (c)),             \
+//                               _mm_srli_epi32((r), 32-(c)))          \
+//         )
+//     #else
+//         #define CHACHA_roti_epi32(r, c) _mm_xor_si128(
+//                                             _mm_slli_epi32((r), (c)),	\
+//                                             _mm_srli_epi32((r), 32-(c)))
+//     #endif
+// #else
+//     #define CHACHA_roti_epi32 _mm_roti_epi32
+// #endif
     
-template<unsigned int R>
-inline void chacha_engine<R>::chacha_core() {
-    // ROTVn rotates the elements in the given vector n places to the left.
-    #define CHACHA_ROTV1(x) _mm_shuffle_epi32((__m128i) x, 0x39)
-    #define CHACHA_ROTV2(x) _mm_shuffle_epi32((__m128i) x, 0x4e)
-    #define CHACHA_ROTV3(x) _mm_shuffle_epi32((__m128i) x, 0x93)
+// template<unsigned int R>
+// inline void chacha_engine<R>::chacha_core() {
+//     // ROTVn rotates the elements in the given vector n places to the left.
+//     #define CHACHA_ROTV1(x) _mm_shuffle_epi32((__m128i) x, 0x39)
+//     #define CHACHA_ROTV2(x) _mm_shuffle_epi32((__m128i) x, 0x4e)
+//     #define CHACHA_ROTV3(x) _mm_shuffle_epi32((__m128i) x, 0x93)
 
-    __m128i a = _mm_load_si128((__m128i*) (block));
-    __m128i b = _mm_load_si128((__m128i*) (block + 4));
-    __m128i c = _mm_load_si128((__m128i*) (block + 8));
-    __m128i d = _mm_load_si128((__m128i*) (block + 12));
+//     __m128i a = _mm_load_si128((__m128i*) (block));
+//     __m128i b = _mm_load_si128((__m128i*) (block + 4));
+//     __m128i c = _mm_load_si128((__m128i*) (block + 8));
+//     __m128i d = _mm_load_si128((__m128i*) (block + 12));
 
-    for (unsigned int i = 1; i < R; i += 2) {
-	// a += b; d ^= a; d <<<= 16;
-        a = _mm_add_epi32(a, b);
-        d = _mm_xor_si128(d, a);
-        d = CHACHA_roti_epi32(d, 16);
+//     for (unsigned int i = 1; i < R; i += 2) {
+// 	// a += b; d ^= a; d <<<= 16;
+//         a = _mm_add_epi32(a, b);
+//         d = _mm_xor_si128(d, a);
+//         d = CHACHA_roti_epi32(d, 16);
 
-	// c += d; b ^= c; b <<<= 12;
-        c = _mm_add_epi32(c, d);
-        b = _mm_xor_si128(b, c);
-        b = CHACHA_roti_epi32(b, 12);
+// 	// c += d; b ^= c; b <<<= 12;
+//         c = _mm_add_epi32(c, d);
+//         b = _mm_xor_si128(b, c);
+//         b = CHACHA_roti_epi32(b, 12);
 
-	// a += b; d ^= a; d <<<= 8;
-        a = _mm_add_epi32(a, b);
-        d = _mm_xor_si128(d, a);
-        d = CHACHA_roti_epi32(d, 8);
+// 	// a += b; d ^= a; d <<<= 8;
+//         a = _mm_add_epi32(a, b);
+//         d = _mm_xor_si128(d, a);
+//         d = CHACHA_roti_epi32(d, 8);
 
-	// c += d; b ^= c; b <<<= 7;
-        c = _mm_add_epi32(c, d);
-        b = _mm_xor_si128(b, c);
-        b = CHACHA_roti_epi32(b, 7);
+// 	// c += d; b ^= c; b <<<= 7;
+//         c = _mm_add_epi32(c, d);
+//         b = _mm_xor_si128(b, c);
+//         b = CHACHA_roti_epi32(b, 7);
 
-	// pseudo-transpose A:
-        b = CHACHA_ROTV1(b);
-        c = CHACHA_ROTV2(c);
-        d = CHACHA_ROTV3(d);
+// 	// pseudo-transpose A:
+//         b = CHACHA_ROTV1(b);
+//         c = CHACHA_ROTV2(c);
+//         d = CHACHA_ROTV3(d);
 
-	// a += b; d ^= a; d <<<= 16;
-        a = _mm_add_epi32(a, b);
-        d = _mm_xor_si128(d, a);
-        d = CHACHA_roti_epi32(d, 16);
+// 	// a += b; d ^= a; d <<<= 16;
+//         a = _mm_add_epi32(a, b);
+//         d = _mm_xor_si128(d, a);
+//         d = CHACHA_roti_epi32(d, 16);
 
-	// c += d; b ^= c; b <<<= 12;
-        c = _mm_add_epi32(c, d);
-        b = _mm_xor_si128(b, c);
-        b = CHACHA_roti_epi32(b, 12);
+// 	// c += d; b ^= c; b <<<= 12;
+//         c = _mm_add_epi32(c, d);
+//         b = _mm_xor_si128(b, c);
+//         b = CHACHA_roti_epi32(b, 12);
 
-	// a += b; d ^= a; d <<<= 8;
-        a = _mm_add_epi32(a, b);
-        d = _mm_xor_si128(d, a);
-        d = CHACHA_roti_epi32(d, 8);
+// 	// a += b; d ^= a; d <<<= 8;
+//         a = _mm_add_epi32(a, b);
+//         d = _mm_xor_si128(d, a);
+//         d = CHACHA_roti_epi32(d, 8);
 
-	// c += d; b ^= c; b <<<= 7;
-        c = _mm_add_epi32(c, d);
-        b = _mm_xor_si128(b, c);
-        b = CHACHA_roti_epi32(b, 7);
+// 	// c += d; b ^= c; b <<<= 7;
+//         c = _mm_add_epi32(c, d);
+//         b = _mm_xor_si128(b, c);
+//         b = CHACHA_roti_epi32(b, 7);
 
-	// pseudo-transpose B:
-        b = CHACHA_ROTV3(b);
-        c = CHACHA_ROTV2(c);
-        d = CHACHA_ROTV1(d);
-    }
-    if (R & 1) {
-	// a += b; d ^= a; d <<<= 16;
-	a = _mm_add_epi32(a, b);
-	d = _mm_xor_si128(d, a);
-	d = CHACHA_roti_epi32(d, 16);
+// 	// pseudo-transpose B:
+//         b = CHACHA_ROTV3(b);
+//         c = CHACHA_ROTV2(c);
+//         d = CHACHA_ROTV1(d);
+//     }
+//     if (R & 1) {
+// 	// a += b; d ^= a; d <<<= 16;
+// 	a = _mm_add_epi32(a, b);
+// 	d = _mm_xor_si128(d, a);
+// 	d = CHACHA_roti_epi32(d, 16);
 
-	// c += d; b ^= c; b <<<= 12;
-	c = _mm_add_epi32(c, d);
-	b = _mm_xor_si128(b, c);
-	b = CHACHA_roti_epi32(b, 12);
+// 	// c += d; b ^= c; b <<<= 12;
+// 	c = _mm_add_epi32(c, d);
+// 	b = _mm_xor_si128(b, c);
+// 	b = CHACHA_roti_epi32(b, 12);
 
-	// a += b; d ^= a; d <<<= 8;
-	a = _mm_add_epi32(a, b);
-	d = _mm_xor_si128(d, a);
-	d = CHACHA_roti_epi32(d, 8);
+// 	// a += b; d ^= a; d <<<= 8;
+// 	a = _mm_add_epi32(a, b);
+// 	d = _mm_xor_si128(d, a);
+// 	d = CHACHA_roti_epi32(d, 8);
 
-	// c += d; b ^= c; b <<<= 7;
-	c = _mm_add_epi32(c, d);
-	b = _mm_xor_si128(b, c);
-	b = CHACHA_roti_epi32(b, 7);
+// 	// c += d; b ^= c; b <<<= 7;
+// 	c = _mm_add_epi32(c, d);
+// 	b = _mm_xor_si128(b, c);
+// 	b = CHACHA_roti_epi32(b, 7);
 
-	// no transpose
-    }
+// 	// no transpose
+//     }
 
-    _mm_store_si128((__m128i*) (block), a);
-    _mm_store_si128((__m128i*) (block + 4), b);
-    _mm_store_si128((__m128i*) (block + 8), c);
-    _mm_store_si128((__m128i*) (block + 12), d);
+//     _mm_store_si128((__m128i*) (block), a);
+//     _mm_store_si128((__m128i*) (block + 4), b);
+//     _mm_store_si128((__m128i*) (block + 8), c);
+//     _mm_store_si128((__m128i*) (block + 12), d);
 
-    #undef CHACHA_ROTV3
-    #undef CHACHA_ROTV2
-    #undef CHACHA_ROTV1
-}
-#undef CHACHA_roti_epi32
-#else
+//     #undef CHACHA_ROTV3
+//     #undef CHACHA_ROTV2
+//     #undef CHACHA_ROTV1
+// }
+// #undef CHACHA_roti_epi32
+// #else
 template<unsigned int R>
 inline void chacha_engine<R>::chacha_core() {
     #define CHACHA_ROTL32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
@@ -330,7 +330,7 @@ inline void chacha_engine<R>::chacha_core() {
     #undef CHACHA_QUARTERROUND
     #undef CHACHA_ROTL32
 }
-#endif
+// #endif
 
 
 // Implement <random> interface.
