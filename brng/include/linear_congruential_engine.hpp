@@ -30,26 +30,12 @@
 
 namespace adhoc {
 
-namespace detail {
-
-template <class UIntType>
-constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
-    while (b != 0) {
-        auto tmp = b;
-        b = a % b;
-        a = tmp;
-    }
-    return a;
-};
-
-} // namespace detail
-
 template <class UIntType, std::size_t w, UIntType a, UIntType c, UIntType m>
 class linear_congruential_engine final {
     static_assert(m == 0 || a < m);
     static_assert(m == 0 || c < m);
-    static_assert(m == 0 ? detail::gcd(static_cast<UIntType>(2U), a) == 1U
-                         : detail::gcd(m, a) == 1U);
+    static_assert(m == 0 ? gcd(static_cast<UIntType>(2U), a) == 1U
+                         : gcd(m, a) == 1U);
     static_assert(w <= std::numeric_limits<UIntType>::digits);
 
   public:
@@ -57,7 +43,7 @@ class linear_congruential_engine final {
 
     static constexpr UIntType multiplier = a;
     static constexpr UIntType multiplier_inverse =
-        m == 0 ? modular_multiplicative_inverse_max_plus_one(a)
+        m == 0 ? modular_multiplicative_inverse_pow2(w, a)
                : modular_multiplicative_inverse(m, a);
     static constexpr UIntType increment = c;
     static constexpr UIntType modulus = m;

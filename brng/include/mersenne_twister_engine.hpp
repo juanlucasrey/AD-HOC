@@ -24,6 +24,7 @@
 #include "tools/circular_buffer.hpp"
 #include "tools/mask.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 

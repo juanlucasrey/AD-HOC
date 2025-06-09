@@ -80,6 +80,12 @@ class uint128 {
         return t;
     }
 
+    template <class T> auto constexpr operator+(T v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t += uint128(v);
+        return t;
+    }
+
     auto constexpr operator-=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
         this->low -= v.low;
@@ -91,6 +97,12 @@ class uint128 {
     auto constexpr operator-(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t -= v;
+        return t;
+    }
+
+    template <class T> auto constexpr operator-(T v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t -= uint128(v);
         return t;
     }
 
@@ -213,6 +225,25 @@ class uint128 {
     auto constexpr operator^(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t ^= v;
+        return t;
+    }
+
+    auto constexpr operator|=(const uint128 &b) -> uint128 {
+        this->low |= b.low;
+        this->high |= b.high;
+        return *this;
+    }
+
+    auto constexpr operator|(const uint128 &v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t |= v;
+        return t;
+    }
+
+    auto constexpr operator~() const noexcept -> uint128 {
+        uint128 t(*this);
+        t.low = ~t.low;
+        t.high = ~t.high;
         return t;
     }
 
