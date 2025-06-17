@@ -160,7 +160,7 @@ void PractRand::RNGs::Raw::isaac32x256::self_test() {
 #define rngstep64(mix,a,b,mm,m,m2,r,x) \
 { \
   x = *m;  \
-  a = (a^(mix)) + *(m2++); \
+  a = (mix) + *(m2++); \
   *(m++) = y = ind64(mm,x) + a + b; \
   *(r++) = b = ind64(mm,y>>SIZE_L2) + x; \
 }
