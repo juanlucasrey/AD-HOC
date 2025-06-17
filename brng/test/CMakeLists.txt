@@ -69,3 +69,5 @@ set(test_name "dynamic.PCG_engine")
 add_executable(${test_name} PCG_engine.cpp external/pcg_basic.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+add_subdirectory(external/PractRand-pre0.95)
