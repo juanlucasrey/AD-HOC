@@ -76,7 +76,7 @@ class philox_engine {
     static constexpr auto min() -> result_type {
         return static_cast<result_type>(0U);
     }
-    static constexpr auto max() -> result_type { return mask<UIntType, w>(); }
+    static constexpr auto max() -> result_type { return mask<UIntType>(w); }
 
     philox_engine() : philox_engine(default_seed) {}
 

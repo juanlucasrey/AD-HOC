@@ -24,19 +24,13 @@
 #include "mask.hpp"
 
 #include <array>
+#include <bit>
 
 namespace adhoc {
 
-constexpr auto is_power_of_two(std::size_t x) -> bool {
-    return x != 0 && (x & (x - 1)) == 0;
-}
-
-constexpr auto log2_exact(unsigned N) -> unsigned {
-    // Requires: N is a power of 2
-    return (N > 1) ? 1 + log2_exact(N >> 1U) : 0;
-}
-
 template <class T, std::size_t N> class circular_buffer final {
+    static_assert(N > 0);
+
   public:
     using reference = T &;
     using const_reference = const T &;
@@ -46,8 +40,8 @@ template <class T, std::size_t N> class circular_buffer final {
     auto static constexpr size() -> std::size_t { return N; }
 
     auto operator++() {
-        if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             this->index_++;
             this->index_ &= m;
         } else {
@@ -56,8 +50,8 @@ template <class T, std::size_t N> class circular_buffer final {
     }
 
     auto operator--() {
-        if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             this->index_ += m;
             this->index_ &= m;
         } else {
@@ -67,8 +61,8 @@ template <class T, std::size_t N> class circular_buffer final {
 
     auto operator+=(std::size_t incr) {
         this->index_ += incr;
-        if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             this->index_ &= m;
         } else {
             this->index_ %= N;
@@ -77,8 +71,8 @@ template <class T, std::size_t N> class circular_buffer final {
 
     auto operator-=(std::size_t incr) {
         this->index_ -= incr;
-        if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             this->index_ &= m;
         } else {
             this->index_ %= N;
@@ -89,8 +83,8 @@ template <class T, std::size_t N> class circular_buffer final {
         constexpr std::size_t ReducedOffset = Offset % N;
         if constexpr (ReducedOffset == 0) {
             return this->data_[this->index_];
-        } else if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        } else if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             return this->data_[(this->index_ + ReducedOffset) & m];
         } else {
             std::size_t shifted_index = this->index_ + ReducedOffset;
@@ -104,8 +98,8 @@ template <class T, std::size_t N> class circular_buffer final {
         constexpr std::size_t ReducedOffset = Offset % N;
         if constexpr (ReducedOffset == 0) {
             return this->data_[this->index_];
-        } else if constexpr (is_power_of_two(N)) {
-            constexpr auto m = mask<std::size_t, log2_exact(N)>();
+        } else if constexpr (std::has_single_bit(N)) {
+            constexpr auto m = mask<std::size_t>(std::bit_width(N) - 1);
             return this->data_[(this->index_ + ReducedOffset) & m];
         } else {
             std::size_t shifted_index = this->index_ + ReducedOffset;

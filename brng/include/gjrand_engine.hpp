@@ -21,6 +21,7 @@
 #ifndef BRNG_GJRAND_ENGINE
 #define BRNG_GJRAND_ENGINE
 
+#include "tools/bit.hpp"
 #include "tools/mask.hpp"
 
 #include <cstddef>
@@ -33,12 +34,15 @@ template <class UIntType, std::size_t w, UIntType d_inc, std::size_t p,
 class gjrand_engine final {
   public:
     using result_type = UIntType;
+    static constexpr std::size_t word_size = w;
 
     static constexpr auto min() -> result_type {
         return static_cast<result_type>(0U);
     };
 
-    static constexpr auto max() -> result_type { return mask<UIntType, w>(); };
+    static constexpr auto max() -> result_type {
+        return mask<UIntType>(word_size);
+    };
 
     static_assert(w <= std::numeric_limits<UIntType>::digits);
     static_assert(p < w);
@@ -67,20 +71,12 @@ class gjrand_engine final {
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        auto rotate = []<std::size_t k>(UIntType &x) {
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                x = ((x << k) & m) | (x >> (w - k));
-            } else {
-                x = (x << k) | (x >> (w - k));
-            }
-        };
-
         if constexpr (FwdDirection) {
             this->b_ += this->c_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->b_ &= m;
             }
-            rotate.template operator()<p>(this->a_);
+            this->a_ = rotl<w>(this->a_, p);
             this->c_ ^= this->b_;
             this->d_ += d_inc;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
@@ -90,13 +86,13 @@ class gjrand_engine final {
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->a_ &= m;
             }
-            rotate.template operator()<q>(this->c_);
+            this->c_ = rotl<w>(this->c_, q);
             this->b_ ^= this->a_;
             this->a_ += this->c_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->a_ &= m;
             }
-            rotate.template operator()<r>(this->b_);
+            this->b_ = rotl<w>(this->b_, r);
             this->c_ += this->a_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->c_ &= m;
@@ -118,13 +114,13 @@ class gjrand_engine final {
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->c_ &= m;
             }
-            rotate.template operator()<w - r>(this->b_);
+            this->b_ = rotr<w>(this->b_, r);
             this->a_ -= this->c_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->a_ &= m;
             }
             this->b_ ^= this->a_;
-            rotate.template operator()<w - q>(this->c_);
+            this->c_ = rotr<w>(this->c_, q);
             this->a_ -= this->b_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->a_ &= m;
@@ -134,7 +130,7 @@ class gjrand_engine final {
                 this->d_ &= m;
             }
             this->c_ ^= this->b_;
-            rotate.template operator()<w - p>(this->a_);
+            this->a_ = rotr<w>(this->a_, p);
             this->b_ -= this->c_;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->b_ &= m;

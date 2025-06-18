@@ -198,7 +198,7 @@ class subtract_with_carry_engine final {
     static constexpr auto min() -> UIntType {
         return static_cast<result_type>(0U);
     }
-    static constexpr auto max() -> UIntType { return mask<UIntType, w>(); }
+    static constexpr auto max() -> UIntType { return mask<UIntType>(w); }
 
     auto operator==(const subtract_with_carry_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->carry == rhs.carry);

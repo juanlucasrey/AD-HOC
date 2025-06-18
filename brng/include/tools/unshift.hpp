@@ -34,7 +34,7 @@ template <std::size_t End, std::size_t Shift, std::size_t Position = 0,
           class UIntType>
 inline auto unshift_left_xor_aux(UIntType &result, UIntType &value) {
     constexpr std::size_t Size = std::min(Shift, End - Position);
-    constexpr auto m = mask<UIntType, Size, Position>();
+    constexpr auto m = mask<UIntType>(Size, Position);
     UIntType const part = value & m;
     result |= part;
 
@@ -44,6 +44,7 @@ inline auto unshift_left_xor_aux(UIntType &result, UIntType &value) {
         unshift_left_xor_aux<End, Shift, NewShift>(result, value);
     }
 }
+
 } // namespace detail
 
 template <std::size_t End, std::size_t Shift, class UIntType>
@@ -59,12 +60,75 @@ inline auto unshift_left_xor(UIntType &result, UIntType value) {
     constexpr auto NewShift = Position + Shift;
     if constexpr (NewShift < End) {
         constexpr std::size_t Size = std::min(Shift, End - NewShift);
-        constexpr auto m = mask<UIntType, Size, Position>();
+        constexpr auto m = mask<UIntType>(Size, Position);
         UIntType part = result & m;
 
         value ^= (part << Shift);
         detail::unshift_left_xor_aux<End, Shift, NewShift>(result, value);
     }
+}
+
+namespace detail {
+
+template <std::size_t End, std::size_t Shift, std::size_t Position = 0,
+          class UIntType>
+inline auto unshift_right_xor_aux(UIntType &result, UIntType &value) {
+    constexpr std::size_t Size = std::min(Shift, End - Position);
+    constexpr auto m = mask<UIntType>(Size, End - Position - Size);
+    UIntType const part = value & m;
+    result |= part;
+
+    constexpr auto NewShift = Position + Size;
+    if constexpr (NewShift < End) {
+        value ^= (part >> Shift);
+        unshift_right_xor_aux<End, Shift, NewShift>(result, value);
+    }
+}
+
+} // namespace detail
+
+template <std::size_t End, std::size_t Shift, class UIntType>
+inline auto unshift_right_xor(UIntType value) -> UIntType {
+    UIntType result = 0;
+    detail::unshift_right_xor_aux<End, Shift>(result, value);
+    return result;
+}
+
+template <std::size_t End, int Shift, class UIntType>
+inline auto unshift_xor(UIntType value) -> UIntType {
+    if constexpr (Shift > 0) {
+        return unshift_left_xor<End, Shift>(value);
+    } else if constexpr (Shift < 0) {
+        return unshift_right_xor<End, -Shift>(value);
+    } else {
+        return value; // No shift
+    }
+}
+
+namespace detail {
+
+template <std::size_t End, std::size_t Shift, std::size_t Position = 0,
+          class UIntType>
+inline auto unshift_left_plus_aux(UIntType &result, UIntType &value) {
+    constexpr std::size_t Size = std::min(Shift, End - Position);
+    constexpr auto m = mask<UIntType>(Size, Position);
+    UIntType const part = value & m;
+    result |= part;
+
+    constexpr auto NewShift = Position + Size;
+    if constexpr (NewShift < End) {
+        value -= (part << Shift);
+        unshift_left_plus_aux<End, Shift, NewShift>(result, value);
+    }
+}
+
+} // namespace detail
+
+template <std::size_t End, std::size_t Shift, class UIntType>
+inline auto unshift_left_plus(UIntType value) -> UIntType {
+    UIntType result = 0;
+    detail::unshift_left_plus_aux<End, Shift>(result, value);
+    return result;
 }
 
 } // namespace adhoc
