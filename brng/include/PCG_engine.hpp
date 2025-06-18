@@ -490,6 +490,10 @@ class PCG_engine final {
         ;
     }
 
+    auto operator!=(const PCG_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     upgraded_type state;
     upgraded_type inc;

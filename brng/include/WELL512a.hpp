@@ -133,6 +133,10 @@ template <class UIntType> class WELL512a final {
         return this->state == rhs.state;
     }
 
+    auto operator!=(const WELL512a &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     circular_buffer<UIntType, 16> state;
 };

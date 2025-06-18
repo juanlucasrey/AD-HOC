@@ -133,6 +133,10 @@ template <class T, std::size_t N> class circular_buffer final {
         return true;
     }
 
+    auto operator!=(const circular_buffer &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     std::array<T, N> data_{};
     std::size_t index_{0};

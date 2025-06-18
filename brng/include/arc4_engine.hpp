@@ -143,6 +143,10 @@ template <class UIntType> class arc4_engine final {
                (this->state == rhs.state);
     }
 
+    auto operator!=(const arc4_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     UIntType index1 = 0;
     UIntType index2 = 0;
