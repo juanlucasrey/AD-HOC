@@ -376,6 +376,10 @@ class sobol_engine final {
                (this->Y == rhs.Y);
     }
 
+    auto operator!=(const sobol_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     std::size_t j{0};
     std::size_t N{1};

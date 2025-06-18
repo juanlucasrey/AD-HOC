@@ -139,6 +139,10 @@ class centered_canonical {
         return this->rng_ == rhs.rng_;
     }
 
+    auto operator!=(const centered_canonical &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     RNG rng_{RNG()};
 };

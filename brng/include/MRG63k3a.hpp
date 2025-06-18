@@ -348,6 +348,10 @@ class MRG63k3a final {
         return (this->State == rhs.State);
     }
 
+    auto operator!=(const MRG63k3a &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     static constexpr UIntType DefaultSeed = 123456789U;
     static constexpr std::uint64_t a12 = 1754669720U;

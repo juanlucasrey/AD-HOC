@@ -146,6 +146,10 @@ template <class UIntType, std::size_t w, std::size_t... vals> class xor_engine {
         return this->state == rhs.state;
     }
 
+    auto operator!=(const xor_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     using tuple_lfsr = detail::make_tuple_of_lfsr_t<UIntType, w, vals...>;
     tuple_lfsr state;

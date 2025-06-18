@@ -185,6 +185,10 @@ class uniform_real {
         return this->rng_ == rhs.rng_;
     }
 
+    auto operator!=(const uniform_real &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     RNG rng_{RNG()};
 };

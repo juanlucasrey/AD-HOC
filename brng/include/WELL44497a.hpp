@@ -178,6 +178,10 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
         return this->state == rhs.state && this->cache == rhs.cache;
     }
 
+    auto operator!=(const WELL44497a &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     circular_buffer<UIntType, 1391> state{};
     std::array<UIntType, 2> cache{};

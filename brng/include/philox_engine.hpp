@@ -151,6 +151,10 @@ class philox_engine {
                (this->j == rhs.j);
     }
 
+    auto operator!=(const philox_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     template <std::unsigned_integral U>
     inline auto mulhilo(U a, U b) -> std::pair<U, U> {

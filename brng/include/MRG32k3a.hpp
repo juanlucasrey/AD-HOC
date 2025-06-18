@@ -170,6 +170,10 @@ template <class UIntType, bool Original = false> class MRG32k3a final {
         return (this->State == rhs.State);
     }
 
+    auto operator!=(const MRG32k3a &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     static constexpr UIntType DefaultSeed = 12345U;
     static constexpr std::uint64_t a12 = 1403580U;

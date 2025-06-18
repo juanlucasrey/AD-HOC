@@ -141,6 +141,10 @@ class mersenne_twister_engine final {
         return (this->state == rhs.state) && (this->cache == rhs.cache);
     }
 
+    auto operator!=(const mersenne_twister_engine &rhs) -> bool {
+        return !(this->operator==(rhs));
+    }
+
   private:
     circular_buffer<UIntType, n> state{};
     UIntType cache{0};
