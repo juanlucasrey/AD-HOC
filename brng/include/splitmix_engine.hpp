@@ -97,7 +97,7 @@ class splitmix_engine final {
         return static_cast<result_type>(0U);
     };
 
-    static constexpr auto max() -> result_type { return mask<UIntType, w>(); };
+    static constexpr auto max() -> result_type { return mask<UIntType>(w); };
 
     auto operator==(const splitmix_engine &rhs) -> bool {
         return (this->seed_ == rhs.seed_) && (this->gamma_ == rhs.gamma_) &&

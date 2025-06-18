@@ -102,6 +102,7 @@ class chacha_engine final {
 
   public:
     using result_type = UIntType;
+    static constexpr std::size_t word_size = w;
     static constexpr std::uint64_t default_seed_1 = 0xb504f333f9de6484UL;
     static constexpr std::uint64_t default_seed_2 = 0UL;
 
@@ -164,7 +165,9 @@ class chacha_engine final {
         return static_cast<result_type>(0U);
     };
 
-    static constexpr auto max() -> result_type { return mask<UIntType, w>(); };
+    static constexpr auto max() -> result_type {
+        return mask<UIntType>(word_size);
+    };
 
     auto operator==(const chacha_engine &rhs) -> bool {
         return (this->keysetup == rhs.keysetup) && (this->ctr == rhs.ctr) &&

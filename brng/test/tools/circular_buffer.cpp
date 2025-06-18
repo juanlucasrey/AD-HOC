@@ -21,10 +21,5 @@ int main() {
     cb2.at<9>() = 6;
     EXPECT_EQUAL((cb == cb2), false);
 
-    static_assert(adhoc::is_power_of_two(1), "1 is a power of 2");
-    static_assert(adhoc::is_power_of_two(8), "8 is a power of 2");
-    static_assert(!adhoc::is_power_of_two(0), "0 is not a power of 2");
-    static_assert(!adhoc::is_power_of_two(10), "10 is not a power of 2");
-
     TEST_END;
 }

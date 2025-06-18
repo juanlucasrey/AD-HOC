@@ -93,7 +93,7 @@ class mersenne_twister_engine final {
     inline auto operator()() -> result_type {
         UIntType result;
 
-        constexpr auto lower_mask = mask<UIntType, r>();
+        constexpr auto lower_mask = mask<UIntType>(r);
         constexpr auto upper_mask = ~lower_mask;
 
         if constexpr (FwdDirection) {
@@ -135,7 +135,7 @@ class mersenne_twister_engine final {
     static constexpr auto min() -> UIntType {
         return static_cast<result_type>(0U);
     }
-    static constexpr auto max() -> UIntType { return mask<UIntType, w>(); }
+    static constexpr auto max() -> UIntType { return mask<UIntType>(w); }
 
     auto operator==(const mersenne_twister_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->cache == rhs.cache);

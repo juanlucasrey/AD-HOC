@@ -139,7 +139,7 @@ template <class UIntType, std::size_t w, std::size_t... vals> class xor_engine {
     }
 
     static constexpr auto max() -> UIntType {
-        return mask<UIntType, word_size>();
+        return mask<UIntType>(word_size);
     }
 
     auto operator==(const xor_engine &rhs) const -> bool {

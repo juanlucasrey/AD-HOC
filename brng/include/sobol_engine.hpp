@@ -120,18 +120,6 @@ inline auto init(qrng_table table) -> const std::uint32_t * {
     return joe_kuo_old_1111_init.data();
 }
 
-inline auto mask(std::size_t w) -> std::uint32_t {
-    if (w == 0) {
-        return 0;
-    }
-    std::uint32_t ach = 1U << (w - 1U);
-
-    return ach | (ach - 1U);
-
-    // equivalent to the following but shift does not overflow
-    // return (static_cast<result_type>(1U) << w) - 1U;
-}
-
 } // namespace detail
 
 template <class UIntType, std::size_t w, bool skip_first = true,
@@ -210,7 +198,7 @@ class sobol_engine final {
                     std::size_t rembits = 32U - idx;
                     while (bits) {
                         std::size_t bits_here = std::min(rembits, bits);
-                        std::uint32_t m = detail::mask(bits_here);
+                        auto m = mask<std::uint32_t>(bits_here);
                         init |= (val & m) << shift;
                         val >>= bits_here;
                         idx += bits_here;
@@ -380,7 +368,7 @@ class sobol_engine final {
         }
     }
 
-    static constexpr auto max() -> UIntType { return mask<UIntType, w>(); }
+    static constexpr auto max() -> UIntType { return mask<UIntType>(w); }
 
     auto operator==(const sobol_engine &rhs) const -> bool {
         return (this->j == rhs.j) && (this->N == rhs.N) &&

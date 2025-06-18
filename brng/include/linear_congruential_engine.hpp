@@ -136,7 +136,7 @@ class linear_congruential_engine final {
 
     static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
     static constexpr auto max() -> UIntType {
-        return m == 0 ? mask<UIntType, w>() : m - 1U;
+        return m == 0 ? mask<UIntType>(w) : m - 1U;
     }
 
     auto operator==(const linear_congruential_engine &rhs) const -> bool {

@@ -58,6 +58,7 @@ template <class UIntType> class arc4_engine final {
 
   public:
     using result_type = UIntType;
+    static constexpr std::size_t word_size = 32;
 
     arc4_engine() : arc4_engine(123) {}
 
@@ -133,7 +134,9 @@ template <class UIntType> class arc4_engine final {
         return static_cast<UIntType>(0U);
     }
 
-    static constexpr auto max() -> UIntType { return mask<UIntType, 32>(); }
+    static constexpr auto max() -> UIntType {
+        return mask<UIntType>(word_size);
+    }
 
     auto operator==(const arc4_engine &rhs) const -> bool {
         return (this->index1 == rhs.index1) && (this->index2 == rhs.index2) &&

@@ -70,7 +70,7 @@ class linear_feedback_shift_register final {
             if constexpr (w == std::numeric_limits<UIntType>::digits) {
                 // in this case we can save an & operation
                 UIntType const b = ((this->state << q) ^ this->state) >> shift;
-                constexpr auto m = mask<UIntType, shift, word_size - k>();
+                constexpr auto m = mask<UIntType>(shift, word_size - k);
                 this->state = ((this->state & m) << s) ^ b;
 
             } else {
@@ -78,7 +78,7 @@ class linear_feedback_shift_register final {
                     linear_feedback_shift_register::max();
                 UIntType const b =
                     (((this->state << q) & global_mask) ^ this->state) >> shift;
-                constexpr auto m = mask<UIntType, shift, word_size - k>();
+                constexpr auto m = mask<UIntType>(shift, word_size - k);
                 this->state = ((this->state & m) << s) ^ b;
             }
 
@@ -89,7 +89,7 @@ class linear_feedback_shift_register final {
             constexpr std::size_t start = word_size - s - q;
             constexpr std::size_t high_scr = word_size - s;
 
-            constexpr auto maskb = mask<UIntType, shift_inv>();
+            constexpr auto maskb = mask<UIntType>(shift_inv);
             UIntType const b = this->state & maskb;
             this->state = (this->state ^ b) >> s;
 
@@ -102,7 +102,7 @@ class linear_feedback_shift_register final {
             UIntType const bPP =
                 ((z_prev_middleP << q) ^ z_prev_middleP) >> shift;
 
-            constexpr auto mask_low = mask<UIntType, low_bits>();
+            constexpr auto mask_low = mask<UIntType>(low_bits);
             this->state |= (mask_low & bPP);
 
             return result;
@@ -114,7 +114,7 @@ class linear_feedback_shift_register final {
     }
 
     static constexpr auto max() -> UIntType {
-        return mask<UIntType, word_size>();
+        return mask<UIntType>(word_size);
     }
 
     auto operator==(const linear_feedback_shift_register &rhs) const -> bool {

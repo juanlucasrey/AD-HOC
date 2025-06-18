@@ -80,7 +80,7 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
     }
 
     template <bool FwdDirection = true> inline auto operator()() -> UIntType {
-        constexpr auto lower_mask = mask<UIntType, 15>();
+        constexpr auto lower_mask = mask<UIntType>(15);
         constexpr auto upper_mask = ~lower_mask;
         constexpr auto global_mask = WELL44497a::max();
 
@@ -168,7 +168,7 @@ template <class UIntType, bool Tempering = false> class WELL44497a final {
     }
 
     static constexpr auto max() -> UIntType {
-        return mask<UIntType, word_size>();
+        return mask<UIntType>(word_size);
     }
 
     auto operator==(const WELL44497a &rhs) const -> bool {

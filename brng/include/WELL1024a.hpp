@@ -126,7 +126,7 @@ template <class UIntType> class WELL1024a final {
     }
 
     static constexpr auto max() -> UIntType {
-        return mask<UIntType, word_size>();
+        return mask<UIntType>(word_size);
     }
 
     auto operator==(const WELL1024a &rhs) const -> bool {
