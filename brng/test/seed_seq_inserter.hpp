@@ -4,12 +4,15 @@
 #include <tools/mask.hpp>
 
 #include <bit>
+#include <cstdint>
 #include <vector>
 
 namespace adhoc {
 
 class seed_seq_inserter final {
   public:
+    using result_type = std::uint32_t;
+
     template <class UIntType>
     explicit seed_seq_inserter(std::vector<UIntType> const &to_insert) {
         constexpr std::size_t w = std::numeric_limits<UIntType>::digits;
