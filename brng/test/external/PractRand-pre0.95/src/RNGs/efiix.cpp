@@ -240,8 +240,12 @@ Uint8 PractRand::RNGs::Raw::efiix8x48::raw8() {
 void PractRand::RNGs::Raw::efiix8x48::seed(Uint64 s1, Uint64 s2, Uint64 s3, Uint64 s4) {
 	//EFIIX_SEED(8)
 	a = b = c = i = 0;
-	iteration_table[0] = 0;
-	indirection_table[0] = 0;
+	for (unsigned long y = 0; y < ITERATION_SIZE; y++) {
+		iteration_table[y] = 0;
+	}
+	for (unsigned long y = 0; y < INDIRECTION_SIZE; y++) {
+		indirection_table[y] = 0;
+	}
 	//for (int x = 0; x < INDIRECTION_SIZE; x++) indirection_table[x] = x;
 	for (int x = 0; x < 1 + (64 / (8 * sizeof(Word))); x++) {
 		a += Word(s1); b += Word(s2); c += Word(s3); iteration_table[0] += Word(s4);
@@ -268,7 +272,7 @@ void PractRand::RNGs::Raw::efiix8x48::seed(Uint64 s1, Uint64 s2, Uint64 s3, Uint
 				for (unsigned long y = 0; y <= mask; y++) {
 					Word iterated = iteration_table[i & mask & (ITERATION_SIZE - 1)];
 					Word indirect = indirection_table[c & mask & (INDIRECTION_SIZE - 1)];
-					indirection_table[c & mask] = iterated + a;
+					indirection_table[c & mask] = iterated + a;			
 					iteration_table[i & mask] = indirect;
 					Word old = a ^ b;
 					a = b + i++;
