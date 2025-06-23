@@ -156,9 +156,10 @@ auto main() -> int {
             std::mt19937 rng1(seq);
             auto val = rng1();
 
-            std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
-            seq.vals.back() = 2567483729U;
-            std::mt19937 rng2(seq);
+            std::iota(seed.begin(), seed.end() - 1, 3);
+            seed.back() = 2567483729U;
+            adhoc::seed_seq_inserter seq2(seed);
+            std::mt19937 rng2(seq2);
 
             // both rng are seen as equal
             EXPECT_EQUAL(rng1, rng2);
