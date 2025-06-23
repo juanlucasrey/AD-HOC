@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 #include "../include/mersenne_twister_engine.hpp"
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -10,11 +10,24 @@
 #include <random>
 #include <vector>
 
+#include "PractRand.h"
+#include "PractRand/RNGs/all.h"
+
 #if defined(__GNUC__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
 #define REAL_GCC __GNUC__ // probably
 #endif
 
 auto main() -> int {
+
+    {
+        std::seed_seq seq1{1, 2, 3, 4, 5};
+        adhoc::mt19937_64 rng1(seq1);
+        std::seed_seq seq2{1, 2, 3, 4, 5};
+        std::mt19937_64 rng2(seq2);
+        compare_rng(rng1, rng2, 10000);
+        compare_rng_limits(rng1, rng2);
+    }
+
     // std check
     {
         adhoc::mt19937 gen32;    // overload (1)
@@ -38,6 +51,17 @@ auto main() -> int {
         compare_rng_limits(rng1, rng2);
     }
 
+    {
+        PractRand::RNGs::LightWeight::mt19937 rng1(5489U);
+        adhoc::mt19937 rng2;
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1.raw32();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
     // check against std 64
     {
         std::mt19937_64 rng1;
@@ -49,13 +73,16 @@ auto main() -> int {
     // std flaw 1
     {
         {
-            adhoc::seed_seq<unsigned int> seq;
-            seq.vals.resize(624);
-            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::vector<std::uint32_t> seed;
+            seed.resize(624);
+            std::iota(seed.begin(), seed.end(), 2);
+            adhoc::seed_seq_inserter seq(seed);
+
             std::mt19937 rng1(seq);
 
-            seq.vals.front()++;
-            std::mt19937 rng2(seq);
+            seed.front()++;
+            adhoc::seed_seq_inserter seq2(seed);
+            std::mt19937 rng2(seq2);
             // both rng are NOT seen as equal initially
             EXPECT_NOT_EQUAL(rng1, rng2);
 
@@ -70,13 +97,17 @@ auto main() -> int {
 
         // this does not happen with adhoc
         {
-            adhoc::seed_seq<std::uint_fast32_t> seq;
-            seq.vals.resize(624);
-            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::vector<std::uint32_t> seed;
+            seed.resize(624);
+            std::iota(seed.begin(), seed.end(), 2);
+            adhoc::seed_seq_inserter seq(seed);
+
             adhoc::mt19937 rng1(seq);
 
-            seq.vals.front()++;
-            adhoc::mt19937 rng2(seq);
+            seed.front()++;
+            adhoc::seed_seq_inserter seq2(seed);
+
+            adhoc::mt19937 rng2(seq2);
             // both rng are equal
             EXPECT_EQUAL(rng1, rng2);
             // and of course they generate same values
@@ -88,9 +119,10 @@ auto main() -> int {
     {
 #if defined(REAL_GCC)
         {
-            adhoc::seed_seq<unsigned int> seq;
-            seq.vals.resize(624);
-            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::vector<std::uint32_t> seed;
+            seed.resize(624);
+            std::iota(seed.begin(), seed.end(), 2);
+            adhoc::seed_seq_inserter seq(seed);
             std::mt19937 rng1(seq);
             rng1.discard(1);
 
@@ -116,9 +148,10 @@ auto main() -> int {
 #ifdef _MSC_VER
         // this does not happen with clang and windows cl
         {
-            adhoc::seed_seq<std::uint_fast32_t> seq;
-            seq.vals.resize(624);
-            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::vector<std::uint32_t> seed;
+            seed.resize(624);
+            std::iota(seed.begin(), seed.end(), 2);
+            adhoc::seed_seq_inserter seq(seed);
             std::mt19937 rng1(seq);
             auto val = rng1();
 
@@ -136,15 +169,18 @@ auto main() -> int {
 
         // this does not happen with adhoc
         {
-            adhoc::seed_seq<std::uint_fast32_t> seq;
-            seq.vals.resize(624);
-            std::iota(seq.vals.begin(), seq.vals.end(), 2);
+            std::vector<std::uint32_t> seed;
+            seed.resize(624);
+            std::iota(seed.begin(), seed.end(), 2);
+            adhoc::seed_seq_inserter seq(seed);
+
             adhoc::mt19937 rng1(seq);
             rng1();
 
-            std::iota(seq.vals.begin(), seq.vals.end() - 1, 3);
-            seq.vals.back() = 2567483729U;
-            adhoc::mt19937 rng2(seq);
+            std::iota(seed.begin(), seed.end() - 1, 3);
+            seed.back() = 2567483729U;
+            adhoc::seed_seq_inserter seq2(seed);
+            adhoc::mt19937 rng2(seq2);
 
             // both rng are seen as equal
             EXPECT_EQUAL(rng1, rng2);

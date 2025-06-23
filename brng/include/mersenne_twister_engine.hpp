@@ -23,6 +23,7 @@
 
 #include "tools/circular_buffer.hpp"
 #include "tools/mask.hpp"
+#include "tools/seed_seq_filler.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -85,7 +86,11 @@ class mersenne_twister_engine final {
     }
 
     template <class SeedSeq> explicit mersenne_twister_engine(SeedSeq &seq) {
-        seq.generate(this->state.data().begin(), this->state.data().end());
+
+        seed_seq_filler<w, n> seq_filler(seq);
+        seq_filler.template generate<UIntType>(state.data().begin(),
+                                               state.data().end());
+
         this->init_consistent();
     }
 

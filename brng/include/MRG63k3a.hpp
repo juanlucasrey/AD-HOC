@@ -22,6 +22,7 @@
 #define BRNG_MRG63k3a
 
 #include "tools/modular_arithmetic.hpp"
+#include "tools/seed_seq_filler.hpp"
 #include "tools/uint128.hpp"
 
 #include <array>
@@ -36,11 +37,12 @@ namespace adhoc {
 // uniform_real_distribution by other means.
 template <class UIntType, bool Use128 = false, bool Original = false>
 class MRG63k3a final {
-    static_assert(std::numeric_limits<UIntType>::digits >= 64);
     static_assert(std::is_unsigned_v<UIntType>);
 
   public:
     using result_type = UIntType;
+    static constexpr std::size_t word_size = 64;
+    static_assert(std::numeric_limits<UIntType>::digits >= word_size);
 
     MRG63k3a() : MRG63k3a(DefaultSeed) {}
 
@@ -66,7 +68,10 @@ class MRG63k3a final {
     };
 
     template <class SeedSeq> explicit MRG63k3a(SeedSeq &seq) {
-        seq.generate(this->State.begin(), this->State.end());
+
+        seed_seq_filler<word_size, 6> seq_filler(seq);
+        seq_filler.template generate<UIntType>(this->State.begin(),
+                                               this->State.end());
         this->State[0] %= mod1;
         this->State[1] %= mod1;
         this->State[2] %= mod1;
