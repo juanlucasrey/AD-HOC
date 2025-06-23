@@ -124,8 +124,8 @@ Uint64 PractRand::RNGs::Raw::rarns64::raw64() {
 	xs1 ^= xs2;
 	xs2 ^= xs3;
 	xs1 ^= old;
-	xs3 = rotate32(xs3, S2);
-	xs1 = rotate32(xs1, S3);
+	xs3 = rotate64(xs3, S2);
+	xs1 = rotate64(xs1, S3);
 	rv += xs1;
 	return rv;
 }
