@@ -6,7 +6,6 @@ set(BRNG
     tools/modular_arithmetic.cpp
     distribution/centered_canonical_distribution.cpp
     distribution/normal_distribution.cpp
-    mersenne_twister_engine.cpp
     linear_congruential_engine.cpp
     subtract_with_carry_engine.cpp
     philox_engine.cpp
@@ -71,6 +70,13 @@ add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 add_subdirectory(external/PractRand-pre0.95)
+
+set(test_name "dynamic.mersenne_twister_engine")
+add_executable(${test_name} mersenne_twister_engine.cpp)
+target_link_libraries(${test_name} PRIVATE
+    PractRand)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
 set(test_name "dynamic.jsf_engine")
 add_executable(${test_name} jsf_engine.cpp)

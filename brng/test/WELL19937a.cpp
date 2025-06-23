@@ -6,7 +6,7 @@ extern "C" {
 }
 
 #include "distribution/uniform_distribution.hpp"
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 #include <WELL19937a.hpp>
 
 #include <chrono>
@@ -17,9 +17,10 @@ extern "C" {
 
 auto main() -> int {
     {
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals.resize(624);
-        std::iota(seq.vals.begin(), seq.vals.end(), 1000);
+        std::vector<std::uint32_t> seqval;
+        seqval.resize(624);
+        std::iota(seqval.begin(), seqval.end(), 1000);
+        adhoc::seed_seq_inserter seq(seqval);
 
         adhoc::canonical<adhoc::WELL19937a<std::uint_fast32_t>> rng(seq);
 
@@ -82,9 +83,10 @@ auto main() -> int {
 
     if (sims) {
         double res1 = 0;
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals.resize(624);
-        std::iota(seq.vals.begin(), seq.vals.end(), 1000);
+        std::vector<std::uint32_t> seqval;
+        seqval.resize(624);
+        std::iota(seqval.begin(), seqval.end(), 1000);
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::canonical<adhoc::WELL19937a<std::uint_fast32_t>> rng(seq);
         {
             auto time1 = std::chrono::high_resolution_clock::now();

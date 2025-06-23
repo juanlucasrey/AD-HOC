@@ -6,7 +6,7 @@ extern "C" {
 #include "external/MRG63k3a.h"
 }
 
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 #include <MRG63k3a.hpp>
 #include <distribution/uniform_distribution.hpp>
 
@@ -16,10 +16,11 @@ auto main() -> int {
     // this case is designed to have the max value and the uniform open
     // distribution does not touch 1.0
     {
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-                    7509699444841106451ULL, 5670463998974203631ULL,
-                    3539266752878466645ULL, 229387088646599462ULL};
+        std::vector<std::uint64_t> seqval{
+            8612413762542751856ULL, 7482105212578211481ULL,
+            7509699444841106451ULL, 5670463998974203631ULL,
+            3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
         for (std::size_t i = 0; i < 15; ++i) {
             auto val1 = rng();
@@ -30,11 +31,12 @@ auto main() -> int {
 
     {
         // p2 == 0 case, using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-                    7509699444841106451ULL, 2679205843562998531,
-                    7615793543397192295,    2157354250027567738};
-        adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
+        std::vector<std::uint64_t> seqval{
+            8612413762542751856ULL, 7482105212578211481ULL,
+            7509699444841106451ULL, 2679205843562998531,
+            7615793543397192295,    2157354250027567738};
+        adhoc::seed_seq_inserter seq2(seqval);
+        adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq2);
 
         std::vector<long long> init = {
             8612413762542751856ULL, 7482105212578211481ULL,
@@ -51,10 +53,11 @@ auto main() -> int {
 
     {
         // p1 == 0 case, using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {4206931007091270405,    6204676270937440418,
-                    1069855422653178874,    5670463998974203631ULL,
-                    3539266752878466645ULL, 229387088646599462ULL};
+        std::vector<std::uint64_t> seqval{
+            4206931007091270405,    6204676270937440418,
+            1069855422653178874,    5670463998974203631ULL,
+            3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
 
         std::vector<long long> init = {
@@ -80,10 +83,11 @@ auto main() -> int {
 
     {
         // p1 == p2 case, using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-                    7509699444841106451ULL, 5670463998974203631ULL,
-                    3539266752878466645ULL, 229387088646599462ULL};
+        std::vector<std::uint64_t> seqval{
+            8612413762542751856ULL, 7482105212578211481ULL,
+            7509699444841106451ULL, 5670463998974203631ULL,
+            3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, true, true>> rng(seq);
 
         std::vector<long long> init = {
@@ -109,10 +113,11 @@ auto main() -> int {
 
     {
         // p2 == 0 case, not using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-                    7509699444841106451ULL, 2679205843562998531,
-                    7615793543397192295,    2157354250027567738};
+        std::vector<std::uint64_t> seqval{
+            8612413762542751856ULL, 7482105212578211481ULL,
+            7509699444841106451ULL, 2679205843562998531,
+            7615793543397192295,    2157354250027567738};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, false, true>> rng(seq);
 
         std::vector<long long> init = {
@@ -130,10 +135,11 @@ auto main() -> int {
 
     {
         // p1 == 0 case, not using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {4206931007091270405,    6204676270937440418,
-                    1069855422653178874,    5670463998974203631ULL,
-                    3539266752878466645ULL, 229387088646599462ULL};
+        std::vector<std::uint64_t> seqval{
+            4206931007091270405,    6204676270937440418,
+            1069855422653178874,    5670463998974203631ULL,
+            3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, false, true>> rng(seq);
 
         std::vector<long long> init = {
@@ -158,10 +164,11 @@ auto main() -> int {
 
     {
         // p1 == p2 case, not using uint128
-        adhoc::seed_seq<std::uint_fast64_t> seq;
-        seq.vals = {8612413762542751856ULL, 7482105212578211481ULL,
-                    7509699444841106451ULL, 5670463998974203631ULL,
-                    3539266752878466645ULL, 229387088646599462ULL};
+        std::vector<std::uint64_t> seqval{
+            8612413762542751856ULL, 7482105212578211481ULL,
+            7509699444841106451ULL, 5670463998974203631ULL,
+            3539266752878466645ULL, 229387088646599462ULL};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG63k3a<std::uint64_t, false, true>> rng(seq);
 
         std::vector<long long> init = {

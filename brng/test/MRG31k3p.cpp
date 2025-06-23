@@ -5,7 +5,7 @@ extern "C" {
 #include "external/MRG31k3p.h"
 }
 
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 #include <MRG31k3p.hpp>
 #include <distribution/uniform_distribution.hpp>
 
@@ -14,9 +14,9 @@ extern "C" {
 auto main() -> int {
     {
         // x, x, 0, x, x, 0 precedent
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {1618958054, 267881243,  156255863,
-                    1730679216, 1079478356, 1334495809};
+        std::vector<std::uint32_t> seqval{1618958054, 267881243,  156255863,
+                                          1730679216, 1079478356, 1334495809};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG31k3p<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {1618958054, 267881243,  156255863,
@@ -32,9 +32,9 @@ auto main() -> int {
 
     {
         // x, x, 0, x, x, x precedent
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {856965515, 1525874275, 784371780,
-                    313650421, 1918098087, 748752505};
+        std::vector<std::uint32_t> seqval{856965515, 1525874275, 784371780,
+                                          313650421, 1918098087, 748752505};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG31k3p<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {856965515, 1525874275, 784371780,
@@ -50,9 +50,9 @@ auto main() -> int {
 
     {
         // x, x, x, x, x, 0 precedent
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {122304568,  1137184201, 506722251,
-                    1815112525, 291659175,  431495294};
+        std::vector<std::uint32_t> seqval{122304568,  1137184201, 506722251,
+                                          1815112525, 291659175,  431495294};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG31k3p<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {122304568,  1137184201, 506722251,

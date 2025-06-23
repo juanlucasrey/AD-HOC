@@ -5,7 +5,7 @@ extern "C" {
 #include "external/MRG32k5a.h"
 }
 
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 #include <MRG32k5a.hpp>
 #include <distribution/uniform_distribution.hpp>
 
@@ -15,9 +15,10 @@ auto main() -> int {
 
     {
         // p2 == 0 case
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {1958623832, 2866876007, 150144429,  478980109, 740639212,
-                    3955543965, 2550687073, 3509537915, 119502490, 4039470558};
+        std::vector<std::uint32_t> seqval{
+            1958623832, 2866876007, 150144429,  478980109, 740639212,
+            3955543965, 2550687073, 3509537915, 119502490, 4039470558};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG32k5a<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {
@@ -34,9 +35,10 @@ auto main() -> int {
 
     {
         // p1 == 0 case
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {1958623832, 2866876007, 150144429, 478980109,  740639212,
-                    2313483013, 1786764733, 713760824, 4050934279, 1671982563};
+        std::vector<std::uint32_t> seqval{
+            1958623832, 2866876007, 150144429, 478980109,  740639212,
+            2313483013, 1786764733, 713760824, 4050934279, 1671982563};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG32k5a<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {
@@ -53,9 +55,10 @@ auto main() -> int {
 
     {
         // p1 == p2 case
-        adhoc::seed_seq<std::uint_fast32_t> seq;
-        seq.vals = {2027557476, 2763277694, 1990012522, 2412316413, 2112525205,
-                    2313483013, 1786764733, 713760824,  4050934279, 1671982563};
+        std::vector<std::uint32_t> seqval{
+            2027557476, 2763277694, 1990012522, 2412316413, 2112525205,
+            2313483013, 1786764733, 713760824,  4050934279, 1671982563};
+        adhoc::seed_seq_inserter seq(seqval);
         adhoc::open<adhoc::MRG32k5a<std::uint32_t, true>> rng(seq);
 
         std::vector<unsigned long> init = {

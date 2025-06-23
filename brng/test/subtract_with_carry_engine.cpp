@@ -1,5 +1,5 @@
 #include "../../test_simple/test_simple_include.hpp"
-#include "seed_seq.hpp"
+#include "seed_seq_inserter.hpp"
 #include "test_tools_rng.hpp"
 
 #include "../include/subtract_with_carry_engine.hpp"
@@ -33,9 +33,8 @@ constexpr auto period(RNG const & /* rng */) -> unsigned long long {
 }
 
 auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
-    adhoc::seed_seq<std::uint_least32_t> seq;
-    seq.vals = init;
 
+    adhoc::seed_seq_inserter seq(init);
     adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(seq);
     adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2(seq);
     constexpr unsigned long long full_cycle = period(rng1); // 65280
@@ -120,10 +119,9 @@ int main() {
 
     // default
     {
-        adhoc::seed_seq<std::uint_least32_t> seed;
-        seed.vals = std::vector<std::uint_least32_t>{63026, 2533, 52484, 29490};
-        std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(
-            seed);
+        std::vector<std::uint32_t> seed{63026, 2533, 52484, 29490};
+        adhoc::seed_seq_inserter seq(seed);
+        std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(seq);
         std::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2;
         EXPECT_EQUAL(rng1, rng2);
     }
