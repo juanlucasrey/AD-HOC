@@ -1,5 +1,7 @@
 include(../../test_simple/test_simple_cmake.cmake)
 
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+
 set(BRNG
     tools/circular_buffer.cpp
     tools/unshift.cpp
@@ -15,6 +17,7 @@ set(BRNG
     splitmix_engine.cpp
     chacha_engine.cpp
     gjrand_engine.cpp
+    hc128_engine.cpp
 )
 
 run_check("${BRNG}")
@@ -84,3 +87,11 @@ target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
+
+set(test_name "dynamic.hc256_engine")
+add_executable(${test_name} hc256_engine.cpp)
+target_link_libraries(${test_name} PRIVATE
+    PractRand)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
+
