@@ -65,4 +65,13 @@ template <class RNG> void check_back_and_fwd(RNG &rng, std::size_t n) {
     }
 }
 
+template <class RNG> void check_discard(RNG &rng, std::size_t n) {
+    RNG rng2 = rng;
+    for (std::size_t i = 0; i < n; ++i) {
+        rng();
+    }
+    rng2.discard(n);
+    EXPECT_EQUAL(rng, rng2);
+}
+
 #endif // BRNG_TEST_TOOLS_RNG

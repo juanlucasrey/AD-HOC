@@ -36,7 +36,8 @@ auto init_test(std::vector<std::uint_least32_t> &&init) -> int {
 
     adhoc::seed_seq_inserter seq(init);
     adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng1(seq);
-    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2(seq);
+    adhoc::seed_seq_inserter seq2(init);
+    adhoc::subtract_with_carry_engine<std::uint_fast32_t, 16, 2, 4> rng2(seq2);
     constexpr unsigned long long full_cycle = period(rng1); // 65280
     rng2.discard(full_cycle);
     EXPECT_EQUAL(rng1, rng2);
