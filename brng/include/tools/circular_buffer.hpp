@@ -36,7 +36,8 @@ template <class T, std::size_t N> class circular_buffer final {
     using const_reference = const T &;
 
     auto data() -> std::array<T, N> & { return this->data_; }
-    auto index() -> std::size_t { return this->index_; }
+    auto data() const -> std::array<T, N> const & { return this->data_; }
+    auto index() const -> std::size_t { return this->index_; }
     auto static constexpr size() -> std::size_t { return N; }
 
     auto operator++() {

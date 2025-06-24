@@ -29,6 +29,28 @@ auto main() -> int {
     }
 
     {
+        PractRand::RNGs::LightWeight::jsf32 rng1(1);
+        adhoc::jsf32 rng2(4058668781U, 1U, 1U, 1U);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1.raw32();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        PractRand::RNGs::LightWeight::jsf64 rng1(1);
+        adhoc::jsf64na rng2(4058668781U, 1U, 1U, 1U);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1.raw64();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
         adhoc::arbee rng(1U, 1U, 2U, 3U, 12);
         check_fwd_and_back(rng, 1000000);
         adhoc::arbee rng2(1U, 1U, 2U, 3U, 12);

@@ -10,7 +10,7 @@ int main() {
     std::iota(cb.data().begin(), cb.data().end(), 5);
     ++cb;
     EXPECT_EQUAL(cb.at(), 6);
-    EXPECT_EQUAL(cb.at<9>(), 5);
+    EXPECT_EQUAL(cb.template at<9>(), 5);
 
     adhoc::circular_buffer<std::uint32_t, 10> cb2;
     std::iota(cb2.data().begin(), cb2.data().end(), 6);

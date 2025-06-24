@@ -50,6 +50,31 @@ constexpr auto rotr(UIntType x, int s) noexcept -> UIntType {
     }
 };
 
+template <std::size_t w, class UIntType>
+constexpr auto rot(UIntType x, int s) noexcept -> UIntType {
+    static_assert(w <= std::numeric_limits<UIntType>::digits);
+    if constexpr (w == std::numeric_limits<UIntType>::digits) {
+        return std::rotr(x, s);
+    } else {
+        constexpr UIntType m = mask<UIntType>(w);
+
+        // always better to avoid branching!
+        constexpr bool avoid_branching = true;
+
+        if constexpr (avoid_branching) {
+            const int left_shift = (w - s) % w;
+            const int right_shift = (w + s) % w;
+            return (x >> right_shift) | ((x << left_shift) & m);
+        } else {
+            if (s >= 0) {
+                return (x >> s) | ((x << (w - s)) & m);
+            }
+
+            return ((x << -s) & m) | (x >> (w + s));
+        }
+    }
+};
+
 template <class UIntType>
 constexpr auto shift(UIntType x, int s) noexcept -> UIntType {
     if (s >= 0) {

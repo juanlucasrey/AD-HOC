@@ -49,15 +49,17 @@ class seed_seq_inserter final {
     }
 
     template <class OutputIt> void generate(OutputIt first, OutputIt last) {
-        auto input = vals.begin();
+        auto input = vals.begin() + idx;
 
         for (; first != last; (void)++first, (void)++input) {
             *first = *input;
+            idx++;
         }
     }
 
   private:
     std::vector<std::uint32_t> vals;
+    std::size_t idx = 0;
 };
 
 } // namespace adhoc
