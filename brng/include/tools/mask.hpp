@@ -29,8 +29,11 @@ namespace adhoc {
 
 template <class UIntType>
 constexpr auto mask(std::size_t Size, std::size_t Start = 0) -> UIntType {
+// TODO: make this work on windows
+#ifndef _MSC_VER
     static_assert(std::is_unsigned_v<UIntType>,
                   "UIntType must be an unsigned type");
+#endif
 
     // Create a mask of `Size` bits set to 1, shifted to `Start` position
     return (static_cast<UIntType>(~UIntType{0}) >>

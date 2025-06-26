@@ -333,7 +333,7 @@ namespace std {
 template <> struct is_unsigned<adhoc::uint128> : std::true_type {};
 
 // cland does not properly define is_unsigned_v. boo.
-#ifdef __clang__
+#if (defined(__clang__) || defined(_MSC_VER))
 template <>
 constexpr bool is_unsigned_v<adhoc::uint128> =
     is_unsigned<adhoc::uint128>::value;
