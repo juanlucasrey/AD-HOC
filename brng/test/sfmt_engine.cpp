@@ -33,25 +33,40 @@ auto main() -> int {
     {
         adhoc::seed_seq_inserter seq(
             adhoc::readCSV<std::uint32_t>("./randomgen/SFMT_state.txt"));
-        range_rng<adhoc::sfmt19937, adhoc::seed_seq_inserter> range(seq);
+        // range_rng<adhoc::sfmt19937, adhoc::seed_seq_inserter> range(seq);
 
         std::vector<std::uint32_t> values_from_python =
             adhoc::split_uint64_to_uint32(
                 adhoc::readCSV<std::uint64_t>("./randomgen/SFMT_vals.txt"));
 
-        EXPECT_TRUE(std::ranges::equal(
-            values_from_python,
-            std::views::take(range, values_from_python.size())));
+        adhoc::sfmt19937 rng(seq);
+        std::size_t j = 0;
+        for (std::size_t i = 0; i < values_from_python.size(); ++i) {
+            auto val1 = rng();
+            auto val2 = values_from_python[j++];
+            EXPECT_EQUAL(val1, val2);
+        }
+
+        // EXPECT_TRUE(std::ranges::equal(
+        //     values_from_python,
+        //     std::views::take(range, values_from_python.size())));
     }
 
     {
         auto vals =
             adhoc::readCSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.607.out.txt");
-        range_rng<adhoc::sfmt607, std::uint32_t> range(1234);
-        EXPECT_TRUE(std::ranges::equal(std::views::take(vals, 1000),
-                                       std::views::take(range, 1000)));
+        // range_rng<adhoc::sfmt607, std::uint32_t> range(1234);
+        // EXPECT_TRUE(std::ranges::equal(std::views::take(vals, 1000),
+        //                                std::views::take(range, 1000)));
 
-        std::size_t j = 1000;
+        adhoc::sfmt607 rng(1234);
+        std::size_t j = 0;
+        for (std::size_t i = 0; i < 1000; ++i) {
+            auto val1 = rng();
+            auto val2 = vals[j++];
+            EXPECT_EQUAL(val1, val2);
+        }
+
         std::array<uint32_t, 4> key{0x1234, 0x5678, 0x9abc, 0xdef0};
         adhoc::sfmt607 rng2(key);
         for (std::size_t i = 0; i < 1000; ++i) {
