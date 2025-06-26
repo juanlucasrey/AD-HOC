@@ -231,11 +231,11 @@ auto main() -> int {
 
     {
         adhoc::romuquad rng1(123, 456, 789, 357);
-        std::vector<std::uint32_t> v(10);
+        std::vector<std::uint64_t> v(10);
         std::ranges::generate(v, rng1);
 
         adhoc::romuquad rng2(123, 456, 789, 357);
-        std::vector<std::uint32_t> v2(10);
+        std::vector<std::uint64_t> v2(10);
 
         for (auto &val : v2) {
             val = *rng2;
