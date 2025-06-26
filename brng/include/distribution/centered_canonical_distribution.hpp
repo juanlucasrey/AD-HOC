@@ -139,7 +139,7 @@ class centered_canonical {
         return this->rng_ == rhs.rng_;
     }
 
-    auto operator!=(const centered_canonical &rhs) -> bool {
+    auto operator!=(const centered_canonical &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

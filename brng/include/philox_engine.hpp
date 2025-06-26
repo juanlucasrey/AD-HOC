@@ -151,13 +151,12 @@ class philox_engine {
                (this->j == rhs.j);
     }
 
-    auto operator!=(const philox_engine &rhs) -> bool {
+    auto operator!=(const philox_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 
   private:
-    template <std::unsigned_integral U>
-    inline auto mulhilo(U a, U b) -> std::pair<U, U> {
+    template <class U> inline auto mulhilo(U a, U b) -> std::pair<U, U> {
 
         using upgraded_type = std::conditional_t<
             w <= 8, std::uint_fast16_t,

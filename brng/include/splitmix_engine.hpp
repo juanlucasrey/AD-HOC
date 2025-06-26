@@ -99,12 +99,12 @@ class splitmix_engine final {
 
     static constexpr auto max() -> result_type { return mask<UIntType>(w); };
 
-    auto operator==(const splitmix_engine &rhs) -> bool {
+    auto operator==(const splitmix_engine &rhs) const -> bool {
         return (this->seed_ == rhs.seed_) && (this->gamma_ == rhs.gamma_) &&
                (this->gamma_inverse_ == rhs.gamma_inverse_);
     }
 
-    auto operator!=(const splitmix_engine &rhs) -> bool {
+    auto operator!=(const splitmix_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

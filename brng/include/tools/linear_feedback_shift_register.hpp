@@ -121,7 +121,7 @@ class linear_feedback_shift_register final {
         return (this->state == rhs.state);
     }
 
-    auto operator!=(const linear_feedback_shift_register &rhs) -> bool {
+    auto operator!=(const linear_feedback_shift_register &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

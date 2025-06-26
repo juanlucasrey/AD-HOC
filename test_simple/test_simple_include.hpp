@@ -118,6 +118,9 @@ inline auto expect_near_rel(D val1, D val2, D tol) -> std::tuple<bool, double> {
         }                                                                      \
     } while (0)
 
+#define EXPECT_TRUE(VAL) EXPECT_EQUAL(VAL, true)
+#define EXPECT_FALSE(VAL) EXPECT_EQUAL(VAL, false)
+
 #define EXPECT_NOT_EQUAL(VAL1, VAL2)                                           \
     do {                                                                       \
         if ((VAL1 == VAL2)) {                                                  \

@@ -204,7 +204,7 @@ class subtract_with_carry_engine final {
         return (this->state == rhs.state) && (this->carry == rhs.carry);
     }
 
-    auto operator!=(const subtract_with_carry_engine &rhs) -> bool {
+    auto operator!=(const subtract_with_carry_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

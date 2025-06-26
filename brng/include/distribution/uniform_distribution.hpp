@@ -185,7 +185,7 @@ class uniform_real {
         return this->rng_ == rhs.rng_;
     }
 
-    auto operator!=(const uniform_real &rhs) -> bool {
+    auto operator!=(const uniform_real &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

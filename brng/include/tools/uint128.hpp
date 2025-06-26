@@ -32,12 +32,10 @@
 
 namespace adhoc {
 
-class uint128 {
-  private:
+struct uint128 {
     std::uint64_t high;
     std::uint64_t low;
 
-  public:
     constexpr uint128() : high(0), low(0) {}
 
     template <class T>
@@ -119,6 +117,17 @@ class uint128 {
     }
 
     auto constexpr operator<<=(uint8_t amount) noexcept -> uint128 {
+        if (amount == 0) {
+            return *this;
+        } else if (amount >= 128) {
+            this->high = 0;
+            this->low = 0;
+            return *this;
+        } else if (amount >= 64) {
+            this->high = this->low << (amount - 64U);
+            this->low = 0;
+            return *this;
+        }
         this->high <<= amount;
         this->high |= this->low >> (64U - amount);
         this->low <<= amount;
@@ -247,7 +256,7 @@ class uint128 {
         return t;
     }
 
-    auto operator/(const uint128 &b) const noexcept -> uint128 {
+    auto constexpr operator/(const uint128 &b) const noexcept -> uint128 {
         // if (!b)
         //     throw std::domain_error("divide by zero");
 
@@ -319,6 +328,18 @@ template <> struct std::numeric_limits<adhoc::uint128> {
     static constexpr bool is_exact = true;
     static constexpr int radix = 2;
 };
+
+namespace std {
+template <> struct is_unsigned<adhoc::uint128> : std::true_type {};
+
+// cland does not properly define is_unsigned_v. boo.
+#ifdef __clang__
+template <>
+constexpr bool is_unsigned_v<adhoc::uint128> =
+    is_unsigned<adhoc::uint128>::value;
+#endif
+
+} // namespace std
 
 #else
 

@@ -162,7 +162,7 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
         return this->state == rhs.state && this->cache == rhs.cache;
     }
 
-    auto operator!=(const WELL19937a &rhs) -> bool {
+    auto operator!=(const WELL19937a &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

@@ -490,7 +490,7 @@ class PCG_engine final {
         ;
     }
 
-    auto operator!=(const PCG_engine &rhs) -> bool {
+    auto operator!=(const PCG_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

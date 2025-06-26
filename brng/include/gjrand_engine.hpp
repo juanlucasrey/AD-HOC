@@ -145,12 +145,12 @@ class gjrand_engine final {
         }
     }
 
-    auto operator==(const gjrand_engine &rhs) -> bool {
+    auto operator==(const gjrand_engine &rhs) const -> bool {
         return (this->a_ == rhs.a_) && (this->b_ == rhs.b_) &&
                (this->c_ == rhs.c_) && (this->d_ == rhs.d_);
     }
 
-    auto operator!=(const gjrand_engine &rhs) -> bool {
+    auto operator!=(const gjrand_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

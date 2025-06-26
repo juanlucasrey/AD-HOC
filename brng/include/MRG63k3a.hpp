@@ -353,7 +353,7 @@ class MRG63k3a final {
         return (this->State == rhs.State);
     }
 
-    auto operator!=(const MRG63k3a &rhs) -> bool {
+    auto operator!=(const MRG63k3a &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 
