@@ -10,6 +10,8 @@
 #include <random>
 #include <vector>
 
+#include "read_csv.hpp"
+
 #include "PractRand.h"
 #include "PractRand/RNGs/all.h"
 
@@ -58,6 +60,32 @@ auto main() -> int {
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng1.raw32();
             auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        adhoc::seed_seq_inserter seq(
+            adhoc::readCSV<std::uint32_t>("./randomgen/mt19937_state.txt"));
+        adhoc::mt19937 rng(seq);
+
+        std::vector<std::uint32_t> values_from_python =
+            adhoc::readCSV<std::uint32_t>("./randomgen/mt19937_vals.txt");
+        for (auto val1 : values_from_python) {
+            auto val2 = rng();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        adhoc::seed_seq_inserter seq(
+            adhoc::readCSV<std::uint64_t>("./randomgen/mt64_state.txt"));
+        adhoc::mt19937_64 rng(seq);
+
+        std::vector<std::uint64_t> values_from_python =
+            adhoc::readCSV<std::uint64_t>("./randomgen/mt64_vals.txt");
+        for (auto val1 : values_from_python) {
+            auto val2 = rng();
             EXPECT_EQUAL(val1, val2);
         }
     }

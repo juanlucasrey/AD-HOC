@@ -7,12 +7,11 @@
 #include <hc128_engine.hpp>
 
 #include "external/wuhjresearch/hc128_ref.h"
+#include "read_csv.hpp"
 
 #include <algorithm>
 #include <chrono>
-#include <fstream>
 #include <ranges>
-#include <sstream>
 
 namespace {
 
@@ -88,79 +87,6 @@ template <class SeedSeq> auto init_finder(SeedSeq &seq) {
     return init_array;
 }
 
-auto readCSV32(const std::string &filename) -> std::vector<std::uint32_t> {
-    std::vector<std::uint32_t> data;
-    std::ifstream file(filename);
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to open file " << filename << std::endl;
-        return data;
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string value;
-
-        while (std::getline(ss, value, ',')) {
-            try {
-                std::uint32_t number = std::stoul(value);
-                data.push_back(number);
-            } catch (const std::exception &e) {
-                std::cerr << "Warning: Failed to parse '" << value
-                          << "' as uint32_t: " << e.what() << std::endl;
-            }
-        }
-    }
-
-    file.close();
-    return data;
-}
-
-auto readCSV64(const std::string &filename) -> std::vector<std::uint64_t> {
-    std::vector<std::uint64_t> data;
-    std::ifstream file(filename);
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to open file " << filename << std::endl;
-        return data;
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string value;
-
-        while (std::getline(ss, value, ',')) {
-            try {
-                std::uint64_t number = std::stoull(value);
-                data.push_back(number);
-            } catch (const std::exception &e) {
-                std::cerr << "Warning: Failed to parse '" << value
-                          << "' as uint64_t: " << e.what() << std::endl;
-            }
-        }
-    }
-
-    file.close();
-    return data;
-}
-
-auto split_uint64_to_uint32(const std::vector<std::uint64_t> &input)
-    -> std::vector<std::uint32_t> {
-    std::vector<std::uint32_t> output;
-    output.reserve(input.size() * 2); // Reserve space to avoid reallocations
-
-    for (std::uint64_t val : input) {
-        std::uint32_t low = static_cast<std::uint32_t>(val & 0xFFFFFFFF);
-        std::uint32_t high = static_cast<std::uint32_t>(val >> 32);
-        output.push_back(low);
-        output.push_back(high);
-    }
-
-    return output;
-}
-
 // a class to "wrap" the hc128_engine iterator
 template <class UIntType> class hc128 final {
   public:
@@ -222,15 +148,16 @@ auto main() -> int {
     // }
 
     {
-        adhoc::seed_seq_inserter seq(readCSV32("./randomgen/hc128state.txt"));
+        adhoc::seed_seq_inserter seq(
+            adhoc::readCSV<std::uint32_t>("./randomgen/hc128_state.txt"));
         adhoc::seed_seq_inserter seq2(init_finder(seq));
         adhoc::hc128_engine<std::uint32_t> rng(seq2);
 
         std::vector<std::uint32_t> values_from_python =
-            split_uint64_to_uint32(readCSV64("./randomgen/hc128vals.txt"));
+            adhoc::split_uint64_to_uint32(
+                adhoc::readCSV<std::uint64_t>("./randomgen/hc128_vals.txt"));
 
-        for (std::size_t i = 0; i < values_from_python.size(); ++i) {
-            auto val1 = values_from_python[i];
+        for (auto val1 : values_from_python) {
             auto val2 = rng();
             EXPECT_EQUAL(val1, val2);
         }

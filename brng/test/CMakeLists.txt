@@ -15,7 +15,6 @@ set(BRNG
     lfsr_xor_engine.cpp
     arc4_engine.cpp
     splitmix_engine.cpp
-    chacha_engine.cpp
     gjrand_engine.cpp
     hc128_engine.cpp
 )
@@ -95,3 +94,9 @@ target_link_libraries(${test_name} PRIVATE
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
+set(test_name "dynamic.chacha_engine")
+add_executable(${test_name} chacha_engine.cpp)
+target_link_libraries(${test_name} PRIVATE
+    PractRand)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)

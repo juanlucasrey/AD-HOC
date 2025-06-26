@@ -4,7 +4,21 @@
 #include "external/chacha.hpp"
 #include <chacha_engine.hpp>
 
+#include "PractRand.h"
+#include "PractRand/RNGs/all.h"
+
 int main() {
+
+    {
+        PractRand::RNGs::LightWeight::chacha rng1(1);
+        adhoc::chacha_engine<std::uint32_t, 32, 20, true> rng2(1, 0);
+
+        for (std::size_t i = 0; i < 1000000; ++i) {
+            auto val1 = rng1.raw32();
+            auto val2 = rng2();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
 
     {
         chacha4r rng1;
