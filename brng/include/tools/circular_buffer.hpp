@@ -134,7 +134,7 @@ template <class T, std::size_t N> class circular_buffer final {
         return true;
     }
 
-    auto operator!=(const circular_buffer &rhs) -> bool {
+    auto operator!=(const circular_buffer &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

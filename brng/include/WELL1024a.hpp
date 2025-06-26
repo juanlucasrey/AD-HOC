@@ -136,7 +136,7 @@ template <class UIntType> class WELL1024a final {
         return this->state == rhs.state;
     }
 
-    auto operator!=(const WELL1024a &rhs) -> bool {
+    auto operator!=(const WELL1024a &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

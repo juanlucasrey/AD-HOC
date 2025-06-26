@@ -146,7 +146,7 @@ template <class UIntType, std::size_t w, std::size_t... vals> class xor_engine {
         return this->state == rhs.state;
     }
 
-    auto operator!=(const xor_engine &rhs) -> bool {
+    auto operator!=(const xor_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

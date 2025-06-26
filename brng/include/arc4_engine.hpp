@@ -143,7 +143,7 @@ template <class UIntType> class arc4_engine final {
                (this->state == rhs.state);
     }
 
-    auto operator!=(const arc4_engine &rhs) -> bool {
+    auto operator!=(const arc4_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

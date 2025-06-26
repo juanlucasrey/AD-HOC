@@ -143,7 +143,7 @@ class linear_congruential_engine final {
         return (this->state == rhs.state);
     }
 
-    auto operator!=(const linear_congruential_engine &rhs) -> bool {
+    auto operator!=(const linear_congruential_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

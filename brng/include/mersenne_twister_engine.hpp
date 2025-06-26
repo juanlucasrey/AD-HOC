@@ -146,7 +146,7 @@ class mersenne_twister_engine final {
         return (this->state == rhs.state) && (this->cache == rhs.cache);
     }
 
-    auto operator!=(const mersenne_twister_engine &rhs) -> bool {
+    auto operator!=(const mersenne_twister_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

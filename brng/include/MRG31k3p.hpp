@@ -176,7 +176,7 @@ template <class UIntType, bool Original = false> class MRG31k3p final {
         return (this->State == rhs.State);
     }
 
-    auto operator!=(const MRG31k3p &rhs) -> bool {
+    auto operator!=(const MRG31k3p &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 

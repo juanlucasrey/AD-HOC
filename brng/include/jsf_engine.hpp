@@ -167,11 +167,11 @@ class jsf_engine final {
         }
     }
 
-    auto operator==(const jsf_engine &rhs) -> bool {
+    auto operator==(const jsf_engine &rhs) const -> bool {
         return (this->state == rhs.state);
     }
 
-    auto operator!=(const jsf_engine &rhs) -> bool {
+    auto operator!=(const jsf_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 
