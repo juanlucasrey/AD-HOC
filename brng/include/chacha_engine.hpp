@@ -30,7 +30,7 @@
 
 namespace adhoc {
 
-template <class UIntType, std::size_t w, std::size_t R>
+template <class UIntType, std::size_t w, std::size_t R, bool alt = false>
 class chacha_engine final {
     static_assert(w <= std::numeric_limits<UIntType>::digits);
     static_assert(w <= 64);
@@ -50,7 +50,9 @@ class chacha_engine final {
 
         input[12] = (this->ctr / 16U) & 0xffffffffU;
         input[13] = (this->ctr / 16U) >> 32U;
-        input[14] = input[15] = 0xdeadbeefU;
+        if constexpr (!alt) {
+            input[14] = input[15] = 0xdeadbeefU;
+        }
 
         for (std::size_t i = 0; i < 16; ++i) {
             this->block[i] = input[i];
@@ -108,14 +110,17 @@ class chacha_engine final {
 
     chacha_engine() : chacha_engine(default_seed_1, default_seed_2) {}
 
-    chacha_engine(std::uint64_t seedval, std::uint64_t stream) {
+    chacha_engine(std::uint64_t seedval,
+                  std::uint64_t stream = default_seed_2) {
 
         this->keysetup[0] = seedval & 0xffffffffU;
         this->keysetup[1] = seedval >> 32U;
-        this->keysetup[2] = keysetup[3] = 0xdeadbeefU;
-        this->keysetup[4] = stream & 0xffffffffU;
-        this->keysetup[5] = stream >> 32U;
-        this->keysetup[6] = keysetup[7] = 0xdeadbeefU;
+        if constexpr (!alt) {
+            this->keysetup[2] = keysetup[3] = 0xdeadbeefU;
+            this->keysetup[4] = stream & 0xffffffffU;
+            this->keysetup[5] = stream >> 32U;
+            this->keysetup[6] = keysetup[7] = 0xdeadbeefU;
+        }
         this->operator()<true>();
         this->operator()<false>();
     }
@@ -169,12 +174,12 @@ class chacha_engine final {
         return mask<UIntType>(word_size);
     };
 
-    auto operator==(const chacha_engine &rhs) -> bool {
+    auto operator==(const chacha_engine &rhs) const -> bool {
         return (this->keysetup == rhs.keysetup) && (this->ctr == rhs.ctr) &&
                (this->block == rhs.block);
     }
 
-    auto operator!=(const chacha_engine &rhs) -> bool {
+    auto operator!=(const chacha_engine &rhs) const -> bool {
         return !(this->operator==(rhs));
     }
 
