@@ -82,7 +82,7 @@ template <class UIntType, std::size_t w, std::size_t... vals> class xor_engine {
     void init_consistent(std::array<UIntType, number_of_lfsr> const &init) {
         std::get<Idx>(this->state) =
             std::tuple_element_t<Idx, tuple_lfsr>(std::get<Idx>(init));
-        if constexpr (Idx < (number_of_lfsr - 1)) {
+        if constexpr (static_cast<UIntType>(Idx) < (number_of_lfsr - 1)) {
             this->init_consistent<Idx + 1>(init);
         }
     }
