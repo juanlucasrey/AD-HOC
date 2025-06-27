@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "../include/philox_engine.hpp"
+#include <philox_engine.hpp>
 
 #include <chrono>
 #include <iostream>

@@ -2,7 +2,7 @@
 #include "seed_seq_inserter.hpp"
 #include "test_tools_rng.hpp"
 
-#include "../include/subtract_with_carry_engine.hpp"
+#include <subtract_with_carry_engine.hpp>
 
 #include <cassert>
 #include <chrono>

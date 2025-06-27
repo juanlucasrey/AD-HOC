@@ -1,7 +1,10 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "../include/mersenne_twister_engine.hpp"
+#include <mersenne_twister_engine.hpp>
+#include <tools/uint128.hpp>
+
+#include "read_csv.hpp"
 #include "seed_seq_inserter.hpp"
 
 #include <chrono>
@@ -9,8 +12,6 @@
 #include <numeric>
 #include <random>
 #include <vector>
-
-#include "read_csv.hpp"
 
 #include "PractRand.h"
 #include "PractRand/RNGs/all.h"
@@ -264,28 +265,23 @@ auto main() -> int {
         EXPECT_EQUAL(rng1, rng1b);
         EXPECT_EQUAL(rng2, rng2b);
 
-#ifndef _MSC_VER
         adhoc::mersenne_twister_engine<
-            __uint128_t, 32, 624, 397, 31, 0x9908b0df, 11, 0xffffffff, 7,
+            adhoc::uint128, 32, 624, 397, 31, 0x9908b0df, 11, 0xffffffff, 7,
             0x9d2c5680, 15, 0xefc60000, 18, 1812433253>
             rng3(1234), rng3b(1234);
         check_back_and_fwd(rng3, 1000000);
         EXPECT_EQUAL(rng3, rng3b);
-#endif
 
         for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng1();
             auto val2 = rng2();
             EXPECT_EQUAL(val1, val2);
 
-#ifndef _MSC_VER
             auto val3 = rng3b();
             EXPECT_EQUAL(val1, val3);
-#endif
         }
     }
 
-#ifndef _MSC_VER
     // 64 many types
     {
         adhoc::mersenne_twister_engine<
@@ -294,7 +290,7 @@ auto main() -> int {
             43, 6364136223846793005>
             rng1;
         adhoc::mersenne_twister_engine<
-            __uint128_t, 64, 312, 156, 31, 0xb5026f5aa96619e9, 29,
+            adhoc::uint128, 64, 312, 156, 31, 0xb5026f5aa96619e9, 29,
             0x5555555555555555, 17, 0x71d67fffeda60000, 37, 0xfff7eee000000000,
             43, 6364136223846793005>
             rng2;
@@ -308,7 +304,6 @@ auto main() -> int {
             EXPECT_EQUAL(val1, val2);
         }
     }
-#endif
 
     std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {

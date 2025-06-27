@@ -21,7 +21,6 @@ auto main() -> int {
     constexpr auto a23n_inv = adhoc::modular_multiplicative_inverse(m2, a23n);
     static_assert(a23n_inv == 69372715U);
 
-#ifndef _MSC_VER
     {
         adhoc::philox_engine<adhoc::uint128, 128, 4, 10, 0xCA5A826395121157,
                              0x9E3779B97F4A7C15, 0xD2E7470EE14C6C93,
@@ -41,7 +40,6 @@ auto main() -> int {
             EXPECT_EQUAL(valinv, valinv2);
         }
     }
-#endif
 
     adhoc::mt19937_64 rng;
 

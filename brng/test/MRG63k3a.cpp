@@ -9,6 +9,7 @@ extern "C" {
 #include "seed_seq_inserter.hpp"
 #include <MRG63k3a.hpp>
 #include <distribution/uniform_distribution.hpp>
+#include <tools/uint128.hpp>
 
 #include <cstdint>
 
@@ -233,14 +234,12 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
-#ifndef _MSC_VER
     {
         adhoc::MRG63k3a<std::uint64_t> rng1;
-        adhoc::MRG63k3a<__uint128_t> rng2;
+        adhoc::MRG63k3a<adhoc::uint128> rng2;
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
-#endif
 
     TEST_END;
 }

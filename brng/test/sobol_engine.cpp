@@ -1,8 +1,8 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "../include/distribution/uniform_distribution.hpp"
-#include "../include/sobol_engine.hpp"
+#include <distribution/uniform_distribution.hpp>
+#include <sobol_engine.hpp>
 
 #include <chrono>
 #include <vector>
