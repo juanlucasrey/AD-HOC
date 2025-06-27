@@ -280,6 +280,18 @@ struct uint128 {
         }
         return result;
     }
+
+    auto constexpr operator<(uint128 const &rhs) const -> bool {
+        if (this->high < rhs.high) {
+            return true;
+        }
+
+        if (this->high == rhs.high && this->low < rhs.low) {
+            return true;
+        }
+
+        return false;
+    }
 };
 
 struct div_t {
@@ -312,6 +324,13 @@ inline auto lldiv(uint128 const &x, uint128 const &y) noexcept -> div_t {
     return result;
 }
 
+auto constexpr max(uint128 const &lhs, uint128 const &rhs) -> uint128 {
+    if (lhs < rhs) {
+        return rhs;
+    }
+    return lhs;
+}
+
 } // namespace adhoc
 
 template <> struct std::numeric_limits<adhoc::uint128> {
@@ -333,10 +352,16 @@ namespace std {
 template <> struct is_unsigned<adhoc::uint128> : std::true_type {};
 
 // cland does not properly define is_unsigned_v. boo.
-#if (defined(__clang__) || defined(_MSC_VER))
+#if defined(__clang__)
 template <>
 constexpr bool is_unsigned_v<adhoc::uint128> =
     is_unsigned<adhoc::uint128>::value;
+#endif
+
+// MS compiler is even worse, it requires explicit true value for is_unsigned_v.
+// double boo.
+#if defined(_MSC_VER)
+template <> constexpr bool is_unsigned_v<adhoc::uint128> = true;
 #endif
 
 } // namespace std

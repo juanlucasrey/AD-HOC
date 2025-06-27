@@ -3,6 +3,7 @@
 
 #include "../include/distribution/uniform_distribution.hpp"
 #include "../include/lfsr_xor_engine.hpp"
+#include "../include/tools/uint128.hpp"
 
 #include "external/lfsr113.c"
 #include "external/lfsr258.c"
@@ -104,7 +105,7 @@ auto main() -> int {
 #ifndef _MSC_VER
     {
         adhoc::lfsr258<std::uint64_t> rng1;
-        adhoc::lfsr258<__uint128_t> rng2;
+        adhoc::lfsr258<adhoc::uint128> rng2;
         compare_rng(rng1, rng2, 1000000);
     }
 #endif
