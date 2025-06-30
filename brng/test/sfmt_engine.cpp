@@ -307,13 +307,14 @@ auto main() -> int {
         adhoc::sfmt607 rng(1234);
         std::vector<std::uint32_t> v(10);
         for (auto &val : v) {
-            val = *(++rng);
+            val = *rng;
+            ++rng;
         }
         std::vector<std::uint32_t> v2(10);
 
         for (auto &val : v2 | std::views::reverse) {
-            val = *(rng);
             --rng;
+            val = *(rng);
         }
 
         for (std::size_t i = 0; i < v.size(); ++i) {

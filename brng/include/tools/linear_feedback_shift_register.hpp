@@ -55,7 +55,8 @@ class linear_feedback_shift_register final {
         constexpr auto global_mask = linear_feedback_shift_register::max();
 
         constexpr UIntType lowval = static_cast<UIntType>(1) << low_bits;
-        this->state = std::max(this->state, lowval) & global_mask;
+        using std::max;
+        this->state = max(this->state, lowval) & global_mask;
 
         // this short step ensures consistency when the full_cycle is completed,
         // making simul.forward[full_cycle - 2] = simul.backward[1]
