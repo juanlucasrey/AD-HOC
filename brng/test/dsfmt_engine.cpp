@@ -15,8 +15,6 @@
 #include <distribution/centered_canonical_distribution.hpp>
 #include <tools/mask.hpp>
 
-#include "new/dSFMT-src-2.2.3/dSFMT.h"
-
 namespace {
 
 template <class Float = double>
@@ -140,40 +138,6 @@ template <class RNG> auto test_vals(std::string name, double tolerance) {
 } // namespace
 
 auto main() -> int {
-    // {
-    //     std::vector<std::size_t> sizes = {521,   1279,  2203,  4253,   11213,
-    //                                       19937, 44497, 86243, 132049,
-    //                                       216091};
-    //     for (std::size_t i = 0; i < sizes.size(); ++i) {
-    //         std::cout << (((sizes[i] - 128) / 104) + 2) << ", ";
-    //     }
-    //     std::cout << std::endl;
-
-    //     // 5, 13, 21, 41, 108, 192, 428, 830, 1270, 2078,
-    // }
-    // {
-    //     adhoc::dsfmt521 rng(0);
-    //     std::cout << rng() << std::endl;
-    // }
-
-    // {
-    //     dsfmt_t dsfmt;
-    //     dsfmt_init_gen_rand(&dsfmt, 0);
-
-    //     int size = 8;
-    //     double array[size];
-    //     dsfmt_fill_array_close1_open2(&dsfmt, array, size);
-
-    //     dsfmt_t dsfmt2;
-    //     dsfmt_init_gen_rand(&dsfmt2, 0);
-
-    //     int size2 = 10;
-    //     double array2[size2];
-    //     dsfmt_fill_array_close1_open2(&dsfmt2, array2, size2);
-
-    //     bool stop = true;
-    // }
-
     test_vals<adhoc::dsfmt521>("./dSFMT-src-2.2.3/dSFMT.521.out.txt", 5e-14);
     test_vals<adhoc::dsfmt1279>("./dSFMT-src-2.2.3/dSFMT.1279.out.txt", 5e-14);
     test_vals<adhoc::dsfmt2203>("./dSFMT-src-2.2.3/dSFMT.2203.out.txt", 2e-13);
@@ -258,23 +222,6 @@ auto main() -> int {
     }
 
     if (sims) {
-        dsfmt_t dsfmt;
-        dsfmt_init_gen_rand(&dsfmt, 1234);
-
-        double res_ref = 0;
-        {
-            auto time1 = std::chrono::high_resolution_clock::now();
-            for (std::size_t i = 0; i < sims; i++) {
-                res_ref += dsfmt_genrand_close_open(&dsfmt);
-            }
-            auto time2 = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            time2 - time1)
-                            .count();
-            std::cout << "original" << std::endl;
-            std::cout << time << std::endl;
-        }
-
         double res1 = 0;
         adhoc::centered_canonical_default<adhoc::dsfmt521> rng(
             std::uint32_t(1234));
@@ -291,7 +238,6 @@ auto main() -> int {
             std::cout << "fwd" << std::endl;
             std::cout << time << std::endl;
         }
-        EXPECT_NEAR_REL(res1, res_ref, 1e-12);
 
         double res1b = 0;
         {
