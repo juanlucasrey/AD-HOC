@@ -2,6 +2,7 @@ include(../../test_simple/test_simple_cmake.cmake)
 
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/SFMT-src-1.5.1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/dSFMT-src-2.2.3 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 
 set(BRNG
     tools/circular_buffer.cpp
@@ -19,6 +20,7 @@ set(BRNG
     gjrand_engine.cpp
     hc128_engine.cpp
     sfmt_engine.cpp
+    dsfmt_engine.cpp
 )
 
 run_check("${BRNG}")

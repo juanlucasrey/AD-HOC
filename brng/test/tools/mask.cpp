@@ -1,4 +1,4 @@
-#include "../../include/tools/mask.hpp"
+#include <tools/mask.hpp>
 
 #include <cstdint>
 

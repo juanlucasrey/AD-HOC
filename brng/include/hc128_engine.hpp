@@ -87,6 +87,7 @@ template <class UIntType> class hc128_engine final {
             auto &val = tmpidx < 512U ? P.template at<1>() : Q.template at<1>();
             val = *(++(*this));
         }
+        this->operator++();
     }
 
   public:
@@ -194,82 +195,12 @@ template <class UIntType> class hc128_engine final {
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        constexpr auto mask_idx = mask<std::size_t>(10);
-        constexpr auto mask_res = hc128_engine::max();
-
-        // it's faster NOT to use *, ++ and -- operators
-        constexpr bool use_star = false;
-
         if constexpr (FwdDirection) {
-            if constexpr (!use_star) {
-                ++this->idx;
-                this->idx &= mask_idx;
-                bool const use_first = this->idx < 512U;
-                auto &PQ = use_first ? P : Q;
-
-                auto const &QP_data =
-                    use_first ? this->Q.data() : this->P.data();
-                ++PQ;
-
-                int const rot1 = use_first ? 10 : -10;
-                int const rot2 = use_first ? 23 : -23;
-                int const rot3 = use_first ? 8 : -8;
-                PQ.at() = PQ.at() +
-                          (rot<word_size>(PQ.template at<512 - 3>(), rot1) ^
-                           rot<word_size>(PQ.template at<1>(), rot2)) +
-                          rot<word_size>(PQ.template at<512 - 10>(), rot3);
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    PQ.at() &= mask_res;
-                }
-
-                auto const u = PQ.template at<512 - 12>();
-                auto const a = static_cast<std::uint8_t>(u);
-                auto const c = static_cast<std::uint8_t>(u >> 16U);
-                result_type result = (QP_data[a] + QP_data[256 + c]) ^ PQ.at();
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    result &= mask_res;
-                }
-                return result;
-            } else {
-                return *(this->operator++());
-            }
+            auto const result = this->operator*();
+            this->operator++();
+            return result;
         } else {
-            if constexpr (!use_star) {
-                bool const use_first = this->idx < 512U;
-                auto &PQ = use_first ? P : Q;
-                auto const &QP_data =
-                    use_first ? this->Q.data() : this->P.data();
-                auto const u = PQ.template at<512 - 12>();
-                auto const a = static_cast<std::uint8_t>(u);
-                auto const c = static_cast<std::uint8_t>(u >> 16U);
-                result_type result = (QP_data[a] + QP_data[256 + c]) ^ PQ.at();
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    result &= mask_res;
-                }
-
-                int const rot1 = use_first ? 10 : -10;
-                int const rot2 = use_first ? 23 : -23;
-                int const rot3 = use_first ? 8 : -8;
-                PQ.at() = PQ.at() -
-                          (rot<word_size>((PQ.template at<512 - 3>()), rot1) ^
-                           rot<word_size>((PQ.template at<1>()), rot2)) -
-                          rot<word_size>((PQ.template at<512 - 10>()), rot3);
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    PQ.at() &= mask_res;
-                }
-                --PQ;
-                --this->idx;
-                this->idx &= mask_idx;
-                return result;
-            } else {
-                auto const result = this->operator*();
-                this->operator--();
-                return result;
-            }
+            return *(this->operator--());
         }
     }
 

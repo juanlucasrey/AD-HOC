@@ -76,6 +76,7 @@ template <class UIntType> class hc256_engine final {
         for (std::size_t i = 0; i < 4096; i++) {
             this->operator++();
         }
+        this->operator++();
     }
 
   public:
@@ -189,89 +190,12 @@ template <class UIntType> class hc256_engine final {
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {
-        constexpr auto mask_idx = mask<std::size_t>(11);
-        constexpr auto mask_half_idx = mask<std::size_t>(10);
-        constexpr auto mask_res = hc256_engine::max();
-
-        // it's faster NOT to use *, ++ and -- operators
-        constexpr bool use_star = false;
-
         if constexpr (FwdDirection) {
-            if constexpr (!use_star) {
-                ++this->idx;
-                this->idx &= mask_idx;
-                bool const use_first = this->idx < 1024U;
-                auto &PQ = use_first ? P : Q;
-
-                auto const &QP_data =
-                    use_first ? this->Q.data() : this->P.data();
-                ++PQ;
-
-                PQ.at() += PQ.template at<1024 - 10>() +
-                           (rot<word_size>(PQ.template at<1024 - 3>(), 10) ^
-                            rot<word_size>(PQ.template at<1>(), 23)) +
-                           QP_data[(PQ.template at<1024 - 3>() ^
-                                    (PQ.template at<1>())) &
-                                   mask_half_idx];
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    PQ.at() &= mask_res;
-                }
-
-                auto const u = PQ.template at<1024 - 12>();
-                auto const a = static_cast<std::uint8_t>((u));
-                auto const b = static_cast<std::uint8_t>((u) >> 8);
-                auto const c = static_cast<std::uint8_t>((u) >> 16);
-                auto const d = static_cast<std::uint8_t>((u) >> 24);
-                std::uint32_t result = (QP_data[a] + QP_data[256 + b] +
-                                        QP_data[512 + c] + QP_data[768 + d]) ^
-                                       PQ.at();
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    result &= mask_res;
-                }
-                return result;
-            } else {
-                return *(this->operator++());
-            }
+            auto const result = this->operator*();
+            this->operator++();
+            return result;
         } else {
-            if constexpr (!use_star) {
-                bool const use_first = this->idx < 1024U;
-                auto &PQ = use_first ? P : Q;
-                auto const &QP_data =
-                    use_first ? this->Q.data() : this->P.data();
-                auto const u = PQ.template at<1024 - 12>();
-                auto const a = static_cast<std::uint8_t>((u));
-                auto const b = static_cast<std::uint8_t>((u) >> 8);
-                auto const c = static_cast<std::uint8_t>((u) >> 16);
-                auto const d = static_cast<std::uint8_t>((u) >> 24);
-                std::uint32_t result = (QP_data[a] + QP_data[256 + b] +
-                                        QP_data[512 + c] + QP_data[768 + d]) ^
-                                       PQ.at();
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    result &= mask_res;
-                }
-
-                PQ.at() -= PQ.template at<1024 - 10>() +
-                           (rot<word_size>(PQ.template at<1024 - 3>(), 10) ^
-                            rot<word_size>(PQ.template at<1>(), 23)) +
-                           QP_data[(PQ.template at<1024 - 3>() ^
-                                    (PQ.template at<1>())) &
-                                   mask_half_idx];
-                if constexpr (word_size !=
-                              std::numeric_limits<UIntType>::digits) {
-                    PQ.at() &= mask_res;
-                }
-                --PQ;
-                --this->idx;
-                this->idx &= mask_idx;
-                return result;
-            } else {
-                auto const result = this->operator*();
-                this->operator--();
-                return result;
-            }
+            return *(this->operator--());
         }
     }
 

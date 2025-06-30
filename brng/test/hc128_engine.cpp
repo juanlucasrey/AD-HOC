@@ -234,7 +234,8 @@ auto main() -> int {
         std::vector<std::uint32_t> v2(10);
 
         for (auto &val : v2) {
-            val = *(++rng2);
+            val = *rng2;
+            ++rng2;
         }
 
         for (std::size_t i = 0; i < v.size(); ++i) {
@@ -246,13 +247,14 @@ auto main() -> int {
         adhoc::hc128_engine<std::uint32_t> rng(1);
         std::vector<std::uint32_t> v(10);
         for (auto &val : v) {
-            val = *(++rng);
+            val = *rng;
+            ++rng;
         }
         std::vector<std::uint32_t> v2(10);
 
         for (auto &val : v2 | std::views::reverse) {
-            val = *(rng);
             --rng;
+            val = *(rng);
         }
 
         for (std::size_t i = 0; i < v.size(); ++i) {

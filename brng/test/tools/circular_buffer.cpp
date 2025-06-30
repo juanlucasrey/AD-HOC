@@ -1,6 +1,6 @@
 #include "../../../test_simple/test_simple_include.hpp"
 
-#include "../../include/tools/circular_buffer.hpp"
+#include <tools/circular_buffer.hpp>
 
 #include <cstdint>
 #include <numeric>
