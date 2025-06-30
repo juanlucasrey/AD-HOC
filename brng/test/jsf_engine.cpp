@@ -3,12 +3,28 @@
 
 #include <jsf_engine.hpp>
 
-#include "external/jsf.hpp"
+#include "external/imneme/jsf.hpp"
 
 #include "PractRand.h"
 #include "PractRand/RNGs/all.h"
 
+#include "read_csv.hpp"
+
 auto main() -> int {
+
+    {
+        auto const values_model =
+            adhoc::readCSV<std::uint64_t>("./randomgen/jsf_state.txt");
+        adhoc::jsf64 rng(values_model[0], values_model[1], values_model[2],
+                         values_model[3], 0);
+
+        auto const values_from_python =
+            adhoc::readCSV<std::uint64_t>("./randomgen/jsf_vals.txt");
+        for (auto val1 : values_from_python) {
+            auto val2 = rng();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
 
     {
         jsf32na rng1;

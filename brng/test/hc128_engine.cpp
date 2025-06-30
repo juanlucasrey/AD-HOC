@@ -153,9 +153,8 @@ auto main() -> int {
         adhoc::seed_seq_inserter seq2(init_finder(seq));
         adhoc::hc128_engine<std::uint32_t> rng(seq2);
 
-        std::vector<std::uint32_t> values_from_python =
-            adhoc::split_uint64_to_uint32(
-                adhoc::readCSV<std::uint64_t>("./randomgen/hc128_vals.txt"));
+        auto const values_from_python = adhoc::split_uint64_to_uint32(
+            adhoc::readCSV<std::uint64_t>("./randomgen/hc128_vals.txt"));
 
         for (auto val1 : values_from_python) {
             auto val2 = rng();

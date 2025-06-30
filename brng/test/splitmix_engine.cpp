@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/splitmix.hpp"
+#include "external/imneme/splitmix.hpp"
 #include <splitmix_engine.hpp>
 
 int main() {

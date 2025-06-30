@@ -70,7 +70,7 @@ auto main() -> int {
             adhoc::readCSV<std::uint32_t>("./randomgen/mt19937_state.txt"));
         adhoc::mt19937 rng(seq);
 
-        std::vector<std::uint32_t> values_from_python =
+        auto const values_from_python =
             adhoc::readCSV<std::uint32_t>("./randomgen/mt19937_vals.txt");
         for (auto val1 : values_from_python) {
             auto val2 = rng();

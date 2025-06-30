@@ -16,7 +16,7 @@ auto main() -> int {
     {
         auto vals = adhoc::readCSV<std::uint64_t>("./randomgen/romu_state.txt");
         adhoc::romuquad rng(vals[0], vals[1], vals[2], vals[3]);
-        auto values_from_python =
+        auto const values_from_python =
             adhoc::readCSV<std::uint64_t>("./randomgen/romu_vals.txt");
 
         for (auto val1 : values_from_python) {
@@ -29,7 +29,7 @@ auto main() -> int {
         auto vals =
             adhoc::readCSV<std::uint64_t>("./randomgen/romu_trio_state.txt");
         adhoc::romutrio rng(vals[0], vals[1], vals[2]);
-        auto values_from_python =
+        auto const values_from_python =
             adhoc::readCSV<std::uint64_t>("./randomgen/romu_trio_vals.txt");
 
         for (auto val1 : values_from_python) {

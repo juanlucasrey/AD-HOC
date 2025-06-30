@@ -203,6 +203,31 @@ auto main() -> int {
         check_back_and_fwd(rng, 1000000);
         adhoc::dsfmt521 rng2(0);
         EXPECT_EQUAL(rng, rng2);
+        bool tmp = rng != rng2;
+        EXPECT_EQUAL(false, tmp);
+    }
+
+    {
+        adhoc::dsfmt521 rng(0);
+        check_discard(rng, 100);
+    }
+
+    {
+        adhoc::dsfmt521 rng(0);
+        auto rng2 = rng++;
+        adhoc::dsfmt521 rng3(0);
+        EXPECT_EQUAL(rng2, rng3);
+        ++rng3;
+        EXPECT_EQUAL(rng, rng3);
+    }
+
+    {
+        adhoc::dsfmt521 rng(0);
+        auto rng2 = rng--;
+        adhoc::dsfmt521 rng3(0);
+        EXPECT_EQUAL(rng2, rng3);
+        --rng3;
+        EXPECT_EQUAL(rng, rng3);
     }
 
     static_assert(std::bidirectional_iterator<adhoc::dsfmt521>);
@@ -216,7 +241,7 @@ auto main() -> int {
     static_assert(std::bidirectional_iterator<adhoc::dsfmt132049>);
     static_assert(std::bidirectional_iterator<adhoc::dsfmt216091>);
 
-    std::size_t sims = 100;
+    std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);
     }

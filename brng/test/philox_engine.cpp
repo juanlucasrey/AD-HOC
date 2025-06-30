@@ -3,6 +3,9 @@
 
 #include <philox_engine.hpp>
 
+#include "read_csv.hpp"
+#include "seed_seq_inserter.hpp"
+
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -29,6 +32,22 @@ int main() {
             rng2();
         }
         EXPECT_EQUAL(rng1, rng2);
+    }
+
+    {
+        adhoc::seed_seq_inserter seq(
+            adhoc::readCSV<std::uint64_t>("./randomgen/philox_state.txt"));
+        adhoc::philox4x64 rng(seq);
+
+        auto const values_from_python =
+            adhoc::readCSV<std::uint64_t>("./randomgen/philox_vals.txt");
+
+        // c++ starts 4 sims before c++ impl so we skip those
+        rng.discard(4);
+        for (auto val1 : values_from_python) {
+            auto val2 = rng();
+            EXPECT_EQUAL(val1, val2);
+        }
     }
 
     {

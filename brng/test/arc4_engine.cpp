@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/arc4.hpp"
+#include "external/imneme/arc4.hpp"
 #include <arc4_engine.hpp>
 
 #include <chrono>
