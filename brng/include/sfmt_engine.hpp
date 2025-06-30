@@ -37,16 +37,14 @@
 
 namespace adhoc {
 
-template <class UIntType, std::size_t w, std::size_t SFMT_MEXP,
-          std::size_t SFMT_POS1, std::size_t SFMT_SL1, std::size_t SFMT_SL2,
-          std::size_t SFMT_SR1, std::size_t SFMT_SR2, std::uint32_t SFMT_MSK1,
-          std::uint32_t SFMT_MSK2, std::uint32_t SFMT_MSK3,
-          std::uint32_t SFMT_MSK4, std::uint32_t SFMT_PARITY1,
-          std::uint32_t SFMT_PARITY2, std::uint32_t SFMT_PARITY3,
-          std::uint32_t SFMT_PARITY4, bool use128_t = true>
+template <class UIntType, std::size_t w, std::size_t mexp, std::size_t pos1,
+          std::size_t sl1, std::size_t sl2, std::size_t sr1, std::size_t sr2,
+          std::uint32_t msk1, std::uint32_t msk2, std::uint32_t msk3,
+          std::uint32_t msk4, std::uint32_t parity1, std::uint32_t parity2,
+          std::uint32_t parity3, std::uint32_t parity4, bool use128_t = true>
 class sfmt_engine final {
   private:
-    static constexpr std::size_t SFMT_N = ((SFMT_MEXP + 127) / 128);
+    static constexpr std::size_t SFMT_N = ((mexp + 127) / 128);
     static constexpr std::size_t SFMT_N32 = (SFMT_N * 4);
     static constexpr std::size_t SFMT_N64 = (SFMT_N * 2);
 
@@ -56,8 +54,8 @@ class sfmt_engine final {
 
     void period_certification() {
         w128_t &first = this->state.at();
-        constexpr std::array<std::uint32_t, 4> parity = {
-            SFMT_PARITY1, SFMT_PARITY2, SFMT_PARITY3, SFMT_PARITY4};
+        constexpr std::array<std::uint32_t, 4> parity = {parity1, parity2,
+                                                         parity3, parity4};
 
         std::uint32_t inner = 0;
         for (std::size_t i = 0; i < 4; i++) {
@@ -98,7 +96,7 @@ class sfmt_engine final {
                             (static_cast<uint128>(in[1]) << 32U) |
                             static_cast<uint128>(in[0]);
 
-            value >>= SFMT_SR2;
+            value >>= sr2;
 
             return w128_t{static_cast<std::uint32_t>(value),
                           static_cast<std::uint32_t>(value >> 32U),
@@ -112,9 +110,9 @@ class sfmt_engine final {
                 (static_cast<std::uint64_t>(in[1]) << 32U) |
                 static_cast<std::uint64_t>(in[0]);
 
-            std::uint64_t const out_high = in_high >> SFMT_SR2;
+            std::uint64_t const out_high = in_high >> sr2;
             std::uint64_t const out_low =
-                (in_high << (64U - SFMT_SR2)) | (in_low >> SFMT_SR2);
+                (in_high << (64U - sr2)) | (in_low >> sr2);
             return w128_t{static_cast<std::uint32_t>(out_low),
                           static_cast<std::uint32_t>(out_low >> 32U),
                           static_cast<std::uint32_t>(out_high),
@@ -129,7 +127,7 @@ class sfmt_engine final {
                             (static_cast<uint128>(in[1]) << 32U) |
                             static_cast<uint128>(in[0]);
 
-            value <<= SFMT_SL2;
+            value <<= sl2;
 
             return w128_t{static_cast<std::uint32_t>(value),
                           static_cast<std::uint32_t>(value >> 32U),
@@ -144,8 +142,8 @@ class sfmt_engine final {
                 static_cast<std::uint64_t>(in[0]);
 
             std::uint64_t const out_high =
-                (in_high << SFMT_SL2) | (in_low >> (64U - SFMT_SL2));
-            std::uint64_t const out_low = in_low << SFMT_SL2;
+                (in_high << sl2) | (in_low >> (64U - sl2));
+            std::uint64_t const out_low = in_low << sl2;
             return w128_t{static_cast<std::uint32_t>(out_low),
                           static_cast<std::uint32_t>(out_low >> 32U),
                           static_cast<std::uint32_t>(out_high),
@@ -179,10 +177,7 @@ class sfmt_engine final {
 
     template <std::size_t key_length>
     explicit sfmt_engine(std::array<std::uint32_t, key_length> init_key) {
-
-        std::uint32_t rr;
-        std::uint32_t *psfmt32 = &this->state.data()[0][0];
-
+        auto &state_data = this->state.data();
         constexpr std::size_t size = SFMT_N * 4;
         constexpr std::size_t lag = size >= 623  ? 11
                                     : size >= 68 ? 7
@@ -190,44 +185,50 @@ class sfmt_engine final {
                                                  : 3;
         constexpr std::size_t mid = (size - lag) / 2;
 
-        for (auto &val : this->state.data()) {
-            for (auto &val2 : val) {
-                val2 = 2341178251;
+        for (auto &arr : state_data) {
+            for (auto &val : arr) {
+                val = 2341178251U;
             }
         }
 
-        constexpr std::size_t count = std::max(SFMT_N32, key_length + 1U);
+        constexpr std::size_t count = std::max(size, key_length + 1U);
+
+        auto get_val32 = [&state_data](std::size_t i) -> std::uint32_t & {
+            std::size_t const idx_state = i / 4;
+            std::size_t const sub_idx = i % 4;
+            return state_data[idx_state][sub_idx];
+        };
 
         for (std::size_t j = 0; j < count; ++j) {
-            std::size_t const i = j % SFMT_N32;
-            std::uint32_t const x = psfmt32[i] ^ psfmt32[(i + mid) % SFMT_N32] ^
-                                    psfmt32[(i + SFMT_N32 - 1) % SFMT_N32];
+            std::size_t const i = j % size;
+            std::uint32_t r = get_val32(i) ^ get_val32((i + mid) % size) ^
+                              get_val32((i + size - 1) % size);
 
-            rr = (x ^ (x >> 27U)) * static_cast<std::uint32_t>(1664525UL);
-            psfmt32[(i + mid) % SFMT_N32] += rr;
+            r = (r ^ (r >> 27U)) * 1664525UL;
+            get_val32((i + mid) % size) += r;
 
             if (j == 0) {
-                rr += key_length;
+                r += key_length;
             } else {
-                rr += i;
+                r += i;
                 if ((j - 1) < key_length) {
-                    rr += init_key[j - 1];
+                    r += init_key[j - 1];
                 }
             }
 
-            psfmt32[(i + mid + lag) % SFMT_N32] += rr;
-            psfmt32[i] = rr;
+            get_val32((i + mid + lag) % size) += r;
+            get_val32(i) = r;
         }
 
-        for (std::size_t i = 0; i < SFMT_N32; i++) {
-            std::uint32_t const x = psfmt32[i] + psfmt32[(i + mid) % SFMT_N32] +
-                                    psfmt32[(i + SFMT_N32 - 1) % SFMT_N32];
-            rr = (x ^ (x >> 27U)) * static_cast<std::uint32_t>(1566083941UL);
+        for (std::size_t i = 0; i < size; i++) {
+            std::uint32_t r = get_val32(i) + get_val32((i + mid) % size) +
+                              get_val32((i + size - 1) % size);
+            r = (r ^ (r >> 27U)) * 1566083941UL;
 
-            psfmt32[(i + mid) % SFMT_N32] ^= rr;
-            rr -= i;
-            psfmt32[(i + mid + lag) % SFMT_N32] ^= rr;
-            psfmt32[i] = rr;
+            get_val32((i + mid) % size) ^= r;
+            r -= i;
+            get_val32((i + mid + lag) % size) ^= r;
+            get_val32(i) = r;
         }
         this->init_consistent();
     }
@@ -256,49 +257,49 @@ class sfmt_engine final {
             ++this->state;
             this->idx = 0;
 
-            w128_t &current = this->state.at();
-            w128_t const &right_shifted = this->state.template at<SFMT_POS1>();
-            w128_t const &left_shifted = this->state.template at<SFMT_N - 1>();
-            w128_t const &right_shifted_128 =
+            auto &current = this->state.at();
+            auto const &right_shifted = this->state.template at<pos1>();
+            auto const &left_shifted = this->state.template at<SFMT_N - 1>();
+            auto const &right_shifted_128 =
                 this->state.template at<SFMT_N - 2>();
             auto const x = lshift128(current);
             auto const y = rshift128(right_shifted_128);
-            current[0] ^= x[0] ^ ((right_shifted[0] >> SFMT_SR1) & SFMT_MSK1) ^
-                          y[0] ^ (left_shifted[0] << SFMT_SL1);
-            current[1] ^= x[1] ^ ((right_shifted[1] >> SFMT_SR1) & SFMT_MSK2) ^
-                          y[1] ^ (left_shifted[1] << SFMT_SL1);
-            current[2] ^= x[2] ^ ((right_shifted[2] >> SFMT_SR1) & SFMT_MSK3) ^
-                          y[2] ^ (left_shifted[2] << SFMT_SL1);
-            current[3] ^= x[3] ^ ((right_shifted[3] >> SFMT_SR1) & SFMT_MSK4) ^
-                          y[3] ^ (left_shifted[3] << SFMT_SL1);
+            current[0] ^= x[0] ^ ((right_shifted[0] >> sr1) & msk1) ^ y[0] ^
+                          (left_shifted[0] << sl1);
+            current[1] ^= x[1] ^ ((right_shifted[1] >> sr1) & msk2) ^ y[1] ^
+                          (left_shifted[1] << sl1);
+            current[2] ^= x[2] ^ ((right_shifted[2] >> sr1) & msk3) ^ y[2] ^
+                          (left_shifted[2] << sl1);
+            current[3] ^= x[3] ^ ((right_shifted[3] >> sr1) & msk4) ^ y[3] ^
+                          (left_shifted[3] << sl1);
         }
         return *this;
     }
 
     inline auto operator--() -> sfmt_engine & {
         if (this->idx == 0) {
-            w128_t &current = this->state.at();
-            w128_t const &right_shifted = this->state.template at<SFMT_POS1>();
-            w128_t const &left_shifted = this->state.template at<SFMT_N - 1>();
-            w128_t const &right_shifted_128 =
+            auto &current = this->state.at();
+            auto const &right_shifted = this->state.template at<pos1>();
+            auto const &left_shifted = this->state.template at<SFMT_N - 1>();
+            auto const &right_shifted_128 =
                 this->state.template at<SFMT_N - 2>();
             auto const y = rshift128(right_shifted_128);
 
-            current[0] ^= ((right_shifted[0] >> SFMT_SR1) & SFMT_MSK1) ^ y[0] ^
-                          (left_shifted[0] << SFMT_SL1);
-            current[1] ^= ((right_shifted[1] >> SFMT_SR1) & SFMT_MSK2) ^ y[1] ^
-                          (left_shifted[1] << SFMT_SL1);
-            current[2] ^= ((right_shifted[2] >> SFMT_SR1) & SFMT_MSK3) ^ y[2] ^
-                          (left_shifted[2] << SFMT_SL1);
-            current[3] ^= ((right_shifted[3] >> SFMT_SR1) & SFMT_MSK4) ^ y[3] ^
-                          (left_shifted[3] << SFMT_SL1);
+            current[0] ^= ((right_shifted[0] >> sr1) & msk1) ^ y[0] ^
+                          (left_shifted[0] << sl1);
+            current[1] ^= ((right_shifted[1] >> sr1) & msk2) ^ y[1] ^
+                          (left_shifted[1] << sl1);
+            current[2] ^= ((right_shifted[2] >> sr1) & msk3) ^ y[2] ^
+                          (left_shifted[2] << sl1);
+            current[3] ^= ((right_shifted[3] >> sr1) & msk4) ^ y[3] ^
+                          (left_shifted[3] << sl1);
 
             uint128 value = (static_cast<uint128>(current[3]) << 96U) |
                             (static_cast<uint128>(current[2]) << 64U) |
                             (static_cast<uint128>(current[1]) << 32U) |
                             static_cast<uint128>(current[0]);
 
-            value = unshift_left_xor<128, SFMT_SL2>(value);
+            value = unshift_left_xor<128, sl2>(value);
 
             current[0] = static_cast<std::uint32_t>(value);
             current[1] = static_cast<std::uint32_t>(value >> 32U);
@@ -346,7 +347,10 @@ class sfmt_engine final {
     static constexpr auto min() -> UIntType {
         return static_cast<result_type>(0U);
     }
-    static constexpr auto max() -> UIntType { return mask<UIntType>(w); }
+
+    static constexpr auto max() -> UIntType {
+        return mask<UIntType>(word_size);
+    }
 
     auto operator==(const sfmt_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->idx == rhs.idx);

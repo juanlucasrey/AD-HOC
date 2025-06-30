@@ -35,9 +35,8 @@ auto main() -> int {
             adhoc::readCSV<std::uint32_t>("./randomgen/SFMT_state.txt"));
         // range_rng<adhoc::sfmt19937, adhoc::seed_seq_inserter> range(seq);
 
-        std::vector<std::uint32_t> values_from_python =
-            adhoc::split_uint64_to_uint32(
-                adhoc::readCSV<std::uint64_t>("./randomgen/SFMT_vals.txt"));
+        auto const values_from_python = adhoc::split_uint64_to_uint32(
+            adhoc::readCSV<std::uint64_t>("./randomgen/SFMT_vals.txt"));
 
         adhoc::sfmt19937 rng(seq);
         std::size_t j = 0;

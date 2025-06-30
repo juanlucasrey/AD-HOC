@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/pcg_basic.h"
+#include "external/pcg-c-basic/pcg_basic.h"
 
 #include "external/pcg-cpp/pcg_random.hpp"
 

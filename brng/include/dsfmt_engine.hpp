@@ -23,6 +23,7 @@
 
 #include "tools/bit.hpp"
 #include "tools/circular_buffer.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 #include "tools/seed_seq_filler.hpp"
 
@@ -30,25 +31,24 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 
 namespace adhoc {
 
-template <class UIntType, std::size_t DSFMT_MEXP2, std::size_t DSFMT_POS1,
-          std::size_t DSFMT_SL1, std::uint64_t DSFMT_MSK1,
-          std::uint64_t DSFMT_MSK2, std::uint64_t DSFMT_FIX1,
-          std::uint64_t DSFMT_FIX2, std::uint64_t DSFMT_PCV1,
-          std::uint64_t DSFMT_PCV2>
-class dsfmt_engine final {
+template <class UIntType, std::size_t mexp, std::size_t pos1, std::size_t sl,
+          std::uint64_t msk1, std::uint64_t msk2, std::uint64_t fix1,
+          std::uint64_t fix2, std::uint64_t parity1, std::uint64_t parity2>
+class dsfmt_engine final
+    : public common_engine<UIntType, 52,
+                           dsfmt_engine<UIntType, mexp, pos1, sl, msk1, msk2,
+                                        fix1, fix2, parity1, parity2>> {
   public:
+    using value_type = UIntType;
     static constexpr std::size_t word_size = 52;
 
   private:
-    static constexpr std::size_t DSFMT_N = ((DSFMT_MEXP2 - 128) / 104) + 1;
+    static constexpr std::size_t DSFMT_N = ((mexp - 128) / 104) + 1;
 
     using w128_t = std::array<std::uint64_t, 2>;
-
-    static_assert(word_size <= std::numeric_limits<UIntType>::digits);
 
     void initial_mask() {
         constexpr std::uint64_t DSFMT_LOW_MASK = 0x000FFFFFFFFFFFFF;
@@ -62,10 +62,9 @@ class dsfmt_engine final {
     }
 
     void period_certification() {
-        constexpr std::array<std::uint64_t, 2> parity = {DSFMT_PCV1,
-                                                         DSFMT_PCV2};
-        std::uint64_t inner = ((this->lung[0] ^ DSFMT_FIX1) & parity[0]) ^
-                              ((this->lung[1] ^ DSFMT_FIX2) & parity[1]);
+        constexpr std::array<std::uint64_t, 2> parity = {parity1, parity2};
+        std::uint64_t inner = ((this->lung[0] ^ fix1) & parity[0]) ^
+                              ((this->lung[1] ^ fix2) & parity[1]);
 
         for (std::size_t i = 32; i > 0; i >>= 1U) {
             inner ^= inner >> i;
@@ -77,7 +76,7 @@ class dsfmt_engine final {
         }
 
         // check NG, and modification
-        if constexpr ((DSFMT_PCV2 & 1U) == 1) {
+        if constexpr ((parity2 & 1U) == 1) {
             this->lung[1] ^= 1;
         } else {
             for (std::size_t i = 2; i-- > 0;) {
@@ -101,11 +100,6 @@ class dsfmt_engine final {
     }
 
   public:
-    using difference_type = std::ptrdiff_t;
-    using value_type = UIntType;
-
-    using result_type = UIntType;
-
     static constexpr UIntType default_seed = 5489U;
 
     dsfmt_engine() : dsfmt_engine(default_seed) {}
@@ -256,19 +250,17 @@ class dsfmt_engine final {
             this->idx = 0;
 
             auto &current = this->state.at();
-            auto const &word_pos1 = this->state.template at<DSFMT_POS1>();
+            auto const &word_pos1 = this->state.template at<pos1>();
 
             auto const L0_prv = this->lung[0];
-            this->lung[0] = (current[0] << DSFMT_SL1) ^
-                            rotr<64>(this->lung[1], 32) ^ word_pos1[0];
+            this->lung[0] =
+                (current[0] << sl) ^ rotr<64>(this->lung[1], 32) ^ word_pos1[0];
             this->lung[1] =
-                (current[1] << DSFMT_SL1) ^ rotr<64>(L0_prv, 32) ^ word_pos1[1];
+                (current[1] << sl) ^ rotr<64>(L0_prv, 32) ^ word_pos1[1];
 
             static constexpr std::size_t DSFMT_SR = 64U - word_size;
-            current[0] ^=
-                (this->lung[0] >> DSFMT_SR) ^ (this->lung[0] & DSFMT_MSK1);
-            current[1] ^=
-                (this->lung[1] >> DSFMT_SR) ^ (this->lung[1] & DSFMT_MSK2);
+            current[0] ^= (this->lung[0] >> DSFMT_SR) ^ (this->lung[0] & msk1);
+            current[1] ^= (this->lung[1] >> DSFMT_SR) ^ (this->lung[1] & msk2);
         }
         return *this;
     }
@@ -278,19 +270,16 @@ class dsfmt_engine final {
             auto &current = this->state.at();
 
             static constexpr std::size_t DSFMT_SR = 64U - word_size;
-            current[0] ^=
-                (this->lung[0] >> DSFMT_SR) ^ (this->lung[0] & DSFMT_MSK1);
-            current[1] ^=
-                (this->lung[1] >> DSFMT_SR) ^ (this->lung[1] & DSFMT_MSK2);
+            current[0] ^= (this->lung[0] >> DSFMT_SR) ^ (this->lung[0] & msk1);
+            current[1] ^= (this->lung[1] >> DSFMT_SR) ^ (this->lung[1] & msk2);
 
-            auto const &word_pos1 = this->state.template at<DSFMT_POS1>();
+            auto const &word_pos1 = this->state.template at<pos1>();
             std::uint64_t const L0_prv = this->lung[0];
 
-            this->lung[0] =
-                (current[1] << DSFMT_SL1) ^ this->lung[1] ^ word_pos1[1];
+            this->lung[0] = (current[1] << sl) ^ this->lung[1] ^ word_pos1[1];
             this->lung[0] = rotr<64>(this->lung[0], 32);
 
-            this->lung[1] = (current[0] << DSFMT_SL1) ^ L0_prv ^ word_pos1[0];
+            this->lung[1] = (current[0] << sl) ^ L0_prv ^ word_pos1[0];
             this->lung[1] = rotr<64>(this->lung[1], 32);
 
             this->idx = 2;
@@ -300,56 +289,12 @@ class dsfmt_engine final {
         return *this;
     }
 
-    // creates a copy. should be avoided!
-    inline auto operator++(int) -> dsfmt_engine {
-        auto const tmp = *this;
-        ++*this;
-        return tmp;
-    }
-
-    // creates a copy. should be avoided!
-    inline auto operator--(int) -> dsfmt_engine {
-        auto const tmp = *this;
-        --*this;
-        return tmp;
-    }
-
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            auto const result = this->operator*();
-            this->operator++();
-            return result;
-        } else {
-            return *(this->operator--());
-        }
-    }
-
-    void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator++();
-        }
-    }
-
-    static constexpr auto min() -> UIntType {
-        return static_cast<result_type>(0U);
-    }
-    static constexpr auto max() -> UIntType {
-        return mask<UIntType>(word_size);
-    }
+    using common_engine<UIntType, 52, dsfmt_engine>::operator++;
+    using common_engine<UIntType, 52, dsfmt_engine>::operator--;
 
     auto operator==(const dsfmt_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->lung == rhs.lung) &&
                (this->idx == rhs.idx);
-    }
-
-    auto operator!=(const dsfmt_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
-    constexpr auto operator==(std::default_sentinel_t /*unused*/) const
-        -> bool {
-        return false;
     }
 
   private:

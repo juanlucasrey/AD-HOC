@@ -3,6 +3,7 @@ include(../../test_simple/test_simple_cmake.cmake)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/SFMT-src-1.5.1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/dSFMT-src-2.2.3 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/sherif-dear DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.csv)
 
 set(BRNG
     tools/circular_buffer.cpp
@@ -71,7 +72,7 @@ add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.PCG_engine")
-add_executable(${test_name} PCG_engine.cpp external/pcg_basic.c)
+add_executable(${test_name} PCG_engine.cpp external/pcg-c-basic/pcg_basic.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
