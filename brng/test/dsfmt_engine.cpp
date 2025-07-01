@@ -5,6 +5,7 @@
 
 #include "seed_seq_inserter.hpp"
 #include <dsfmt_engine.hpp>
+#include <tools/uint128.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -240,6 +241,53 @@ auto main() -> int {
     static_assert(std::bidirectional_iterator<adhoc::dsfmt86243>);
     static_assert(std::bidirectional_iterator<adhoc::dsfmt132049>);
     static_assert(std::bidirectional_iterator<adhoc::dsfmt216091>);
+
+    {
+        adhoc::dsfmt_engine<std::uint64_t, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng1(12);
+
+        adhoc::dsfmt_engine<adhoc::uint128, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng2(12);
+
+        compare_rng(rng1, rng2, 10000);
+        compare_rng_limits(rng1, rng2);
+    }
+
+    {
+        adhoc::dsfmt_engine<adhoc::uint128, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng(12);
+        check_fwd_and_back(rng, 1000000);
+        adhoc::dsfmt_engine<adhoc::uint128, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::dsfmt_engine<adhoc::uint128, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng(12);
+        check_back_and_fwd(rng, 1000000);
+        adhoc::dsfmt_engine<adhoc::uint128, 521, 3, 25, 0x000fbfefff77efffUL,
+                            0x000ffeebfbdfbfdfUL, 0xcfb393d661638469UL,
+                            0xc166867883ae2adbUL, 0xccaa588000000000UL,
+                            0x0000000000000001UL>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
 
     std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {

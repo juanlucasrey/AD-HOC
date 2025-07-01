@@ -33,7 +33,6 @@ auto main() -> int {
     {
         adhoc::seed_seq_inserter seq(
             adhoc::readCSV<std::uint32_t>("./randomgen/SFMT_state.txt"));
-        // range_rng<adhoc::sfmt19937, adhoc::seed_seq_inserter> range(seq);
 
         auto const values_from_python = adhoc::split_uint64_to_uint32(
             adhoc::readCSV<std::uint64_t>("./randomgen/SFMT_vals.txt"));
@@ -45,10 +44,22 @@ auto main() -> int {
             auto val2 = values_from_python[j++];
             EXPECT_EQUAL(val1, val2);
         }
+    }
 
-        // EXPECT_TRUE(std::ranges::equal(
-        //     values_from_python,
-        //     std::views::take(range, values_from_python.size())));
+    {
+        adhoc::seed_seq_inserter seq(
+            adhoc::readCSV<std::uint32_t>("./randomgen/SFMT_state.txt"));
+
+        auto const values_from_python =
+            adhoc::readCSV<std::uint64_t>("./randomgen/SFMT_vals.txt");
+
+        adhoc::sfmt19937_64 rng(seq);
+        std::size_t j = 0;
+        for (std::size_t i = 0; i < values_from_python.size(); ++i) {
+            auto val1 = rng();
+            auto val2 = values_from_python[j++];
+            EXPECT_EQUAL(val1, val2);
+        }
     }
 
     {
@@ -274,6 +285,129 @@ auto main() -> int {
         check_discard(rng, 100);
     }
 
+    {
+        adhoc::sfmt_engine<std::uint64_t, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng1(12);
+
+        adhoc::sfmt_engine<adhoc::uint128, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+
+        compare_rng(rng1, rng2, 10000);
+        compare_rng_limits(rng1, rng2);
+    }
+
+    {
+        adhoc::sfmt_engine<std::uint64_t, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng(12);
+        check_fwd_and_back(rng, 1000000);
+        adhoc::sfmt_engine<std::uint64_t, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::sfmt_engine<std::uint64_t, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng(12);
+        check_back_and_fwd(rng, 1000000);
+        adhoc::sfmt_engine<std::uint64_t, 64, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::sfmt_engine<std::uint32_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng1(12);
+
+        adhoc::sfmt_engine<std::uint64_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+
+        compare_rng(rng1, rng2, 10000);
+        compare_rng_limits(rng1, rng2);
+    }
+
+    {
+        adhoc::sfmt_engine<std::uint64_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng(12);
+        check_fwd_and_back(rng, 1000000);
+        adhoc::sfmt_engine<std::uint64_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::sfmt_engine<std::uint64_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng(12);
+        check_back_and_fwd(rng, 1000000);
+        adhoc::sfmt_engine<std::uint64_t, 32, 607, 2, 15, 24U, 13, 24U,
+                           0xfdff37ffU, 0xef7f3f7dU, 0xff777b7dU, 0x7ff7fb2fU,
+                           0x00000001U, 0x00000000U, 0x00000000U, 0x5986f054U>
+            rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        std::array<uint32_t, 4> key{0x1234, 0x5678, 0x9abc, 0xdef0};
+        adhoc::sfmt607_64 rng(key);
+        adhoc::sfmt607 rng2(key);
+
+        for (std::size_t i = 0; i < 100; ++i) {
+            std::uint64_t val1a = rng2();
+            std::uint64_t val1b = rng2();
+            std::uint64_t val1 = val1a | (val1b << 32U);
+            std::uint64_t val2 = rng();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        adhoc::sfmt607_64 rng(12);
+        adhoc::sfmt607 rng2(12);
+
+        for (std::size_t i = 0; i < 100; ++i) {
+            std::uint64_t val1a = rng2();
+            std::uint64_t val1b = rng2();
+            std::uint64_t val1 = val1a | (val1b << 32U);
+            std::uint64_t val2 = rng();
+            EXPECT_EQUAL(val1, val2);
+        }
+    }
+
+    {
+        adhoc::sfmt607_64 rng(12);
+        check_fwd_and_back(rng, 1000000);
+        adhoc::sfmt607_64 rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::sfmt607_64 rng(12);
+        check_back_and_fwd(rng, 1000000);
+        adhoc::sfmt607_64 rng2(12);
+        EXPECT_EQUAL(rng, rng2);
+    }
+
     static_assert(std::bidirectional_iterator<adhoc::sfmt607>);
     static_assert(std::bidirectional_iterator<adhoc::sfmt1279>);
     static_assert(std::bidirectional_iterator<adhoc::sfmt2281>);
@@ -327,35 +461,73 @@ auto main() -> int {
     }
 
     if (sims) {
-        std::uint64_t res1 = 0;
-        adhoc::sfmt607 rng(1234);
         {
-            auto time1 = std::chrono::high_resolution_clock::now();
-            for (std::size_t i = 0; i < sims; i++) {
-                res1 += rng();
+            std::uint64_t res1 = 0;
+            adhoc::sfmt607 rng(1234);
+            {
+                auto time1 = std::chrono::high_resolution_clock::now();
+                for (std::size_t i = 0; i < sims; i++) {
+                    res1 += rng();
+                }
+                auto time2 = std::chrono::high_resolution_clock::now();
+                auto time =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        time2 - time1)
+                        .count();
+                std::cout << "fwd 32" << std::endl;
+                std::cout << time << std::endl;
             }
-            auto time2 = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            time2 - time1)
-                            .count();
-            std::cout << "fwd" << std::endl;
-            std::cout << time << std::endl;
+
+            std::uint64_t res1b = 0;
+            {
+                auto time1 = std::chrono::high_resolution_clock::now();
+                for (std::size_t i = 0; i < sims; i++) {
+                    res1b += rng.operator()<false>();
+                }
+                auto time2 = std::chrono::high_resolution_clock::now();
+                auto time =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        time2 - time1)
+                        .count();
+                std::cout << "back 32" << std::endl;
+                std::cout << time << std::endl;
+            }
+            EXPECT_EQUAL(res1, res1b);
         }
 
-        std::uint64_t res1b = 0;
         {
-            auto time1 = std::chrono::high_resolution_clock::now();
-            for (std::size_t i = 0; i < sims; i++) {
-                res1b += rng.operator()<false>();
+            std::uint64_t res1 = 0;
+            adhoc::sfmt607_64 rng(1234);
+            {
+                auto time1 = std::chrono::high_resolution_clock::now();
+                for (std::size_t i = 0; i < sims; i++) {
+                    res1 += rng();
+                }
+                auto time2 = std::chrono::high_resolution_clock::now();
+                auto time =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        time2 - time1)
+                        .count();
+                std::cout << "fwd 64" << std::endl;
+                std::cout << time << std::endl;
             }
-            auto time2 = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            time2 - time1)
-                            .count();
-            std::cout << "back" << std::endl;
-            std::cout << time << std::endl;
+
+            std::uint64_t res1b = 0;
+            {
+                auto time1 = std::chrono::high_resolution_clock::now();
+                for (std::size_t i = 0; i < sims; i++) {
+                    res1b += rng.operator()<false>();
+                }
+                auto time2 = std::chrono::high_resolution_clock::now();
+                auto time =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        time2 - time1)
+                        .count();
+                std::cout << "back 64" << std::endl;
+                std::cout << time << std::endl;
+            }
+            EXPECT_EQUAL(res1, res1b);
         }
-        EXPECT_EQUAL(res1, res1b);
     }
 
     TEST_END;
