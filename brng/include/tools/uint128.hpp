@@ -84,6 +84,14 @@ struct uint128 {
         return t;
     }
 
+    auto constexpr operator++() noexcept -> uint128 & {
+        ++this->low;
+        if (this->low == 0) {
+            ++this->high;
+        }
+        return *this;
+    }
+
     auto constexpr operator-=(const uint128 &v) noexcept -> uint128 {
         auto o = this->low;
         this->low -= v.low;
@@ -102,6 +110,14 @@ struct uint128 {
         uint128 t(*this);
         t -= uint128(v);
         return t;
+    }
+
+    auto constexpr operator--() noexcept -> uint128 & {
+        if (this->low == 0) {
+            --this->high;
+        }
+        --this->low;
+        return *this;
     }
 
     template <class T>
