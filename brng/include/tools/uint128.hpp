@@ -243,6 +243,12 @@ struct uint128 {
         return t;
     }
 
+    template <class T> auto constexpr operator^(T v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t.low ^= static_cast<std::uint64_t>(v);
+        return t;
+    }
+
     auto constexpr operator|=(const uint128 &b) -> uint128 {
         this->low |= b.low;
         this->high |= b.high;
@@ -252,6 +258,12 @@ struct uint128 {
     auto constexpr operator|(const uint128 &v) const noexcept -> uint128 {
         uint128 t(*this);
         t |= v;
+        return t;
+    }
+
+    template <class T> auto constexpr operator|(T v) const noexcept -> uint128 {
+        uint128 t(*this);
+        t.low |= static_cast<std::uint64_t>(v);
         return t;
     }
 
