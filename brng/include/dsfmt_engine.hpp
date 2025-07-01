@@ -41,22 +41,18 @@ class dsfmt_engine final
     : public common_engine<UIntType, 52,
                            dsfmt_engine<UIntType, mexp, pos1, sl, msk1, msk2,
                                         fix1, fix2, parity1, parity2>> {
-  public:
-    using value_type = UIntType;
-    static constexpr std::size_t word_size = 52;
-
   private:
-    static constexpr std::size_t DSFMT_N = ((mexp - 128) / 104) + 1;
+    static constexpr std::size_t n = ((mexp - 128) / 104) + 1;
 
-    using w128_t = std::array<std::uint64_t, 2>;
+    using w128_t = std::array<UIntType, 2>;
 
     void initial_mask() {
-        constexpr std::uint64_t DSFMT_LOW_MASK = 0x000FFFFFFFFFFFFF;
-        constexpr std::uint64_t DSFMT_HIGH_CONST = 0x3FF0000000000000;
+        constexpr UIntType low_mask = mask<UIntType>(52);
+        constexpr UIntType high_mask = mask<UIntType>(10, 52);
 
         for (auto &word : this->state.data()) {
             for (auto &subword : word) {
-                subword = (subword & DSFMT_LOW_MASK) | DSFMT_HIGH_CONST;
+                subword = (subword & low_mask) | high_mask;
             }
         }
     }
@@ -100,6 +96,8 @@ class dsfmt_engine final
     }
 
   public:
+    using value_type = UIntType;
+    static constexpr std::size_t word_size = 52;
     static constexpr UIntType default_seed = 5489U;
 
     dsfmt_engine() : dsfmt_engine(default_seed) {}
@@ -109,19 +107,19 @@ class dsfmt_engine final
         std::size_t i = 0;
         for (auto &arr : this->state.data()) {
             for (auto &val : arr) {
-                val = static_cast<std::uint64_t>(seed);
+                val = static_cast<UIntType>(seed);
                 seed = 1812433253UL * (seed ^ (seed >> 30U)) + ++i;
 
-                val |= static_cast<std::uint64_t>(seed) << 32U;
+                val |= static_cast<UIntType>(seed) << 32U;
                 seed = 1812433253UL * (seed ^ (seed >> 30U)) + ++i;
             }
         }
 
         for (auto &val : lung) {
-            val = static_cast<std::uint64_t>(seed);
+            val = static_cast<UIntType>(seed);
             seed = 1812433253UL * (seed ^ (seed >> 30U)) + ++i;
 
-            val |= static_cast<std::uint64_t>(seed) << 32U;
+            val |= static_cast<UIntType>(seed) << 32U;
             seed = 1812433253UL * (seed ^ (seed >> 30U)) + ++i;
         }
 
@@ -131,7 +129,7 @@ class dsfmt_engine final
     template <std::size_t key_length>
     explicit dsfmt_engine(std::array<std::uint32_t, key_length> init_key) {
         auto &state_data = this->state.data();
-        constexpr std::size_t size = (DSFMT_N + 1) * 4;
+        constexpr std::size_t size = (n + 1) * 4;
         constexpr std::size_t lag = size >= 623  ? 11
                                     : size >= 68 ? 7
                                     : size >= 39 ? 5
@@ -223,7 +221,7 @@ class dsfmt_engine final
 
     template <class SeedSeq> explicit dsfmt_engine(SeedSeq &seq) {
 
-        seed_seq_filler<64, (DSFMT_N + 1) * 4> seq_filler(seq);
+        seed_seq_filler<64, (n + 1) * 4> seq_filler(seq);
 
         for (auto &word : this->state.data()) {
             for (auto &subword : word) {
@@ -253,10 +251,19 @@ class dsfmt_engine final
             auto const &word_pos1 = this->state.template at<pos1>();
 
             auto const L0_prv = this->lung[0];
-            this->lung[0] =
-                (current[0] << sl) ^ rotr<64>(this->lung[1], 32) ^ word_pos1[0];
-            this->lung[1] =
-                (current[1] << sl) ^ rotr<64>(L0_prv, 32) ^ word_pos1[1];
+
+            if constexpr (64 < std::numeric_limits<UIntType>::digits) {
+                auto constexpr mask64 = mask<UIntType>(64);
+                this->lung[0] = ((current[0] << sl) & mask64) ^
+                                rotr<64>(this->lung[1], 32) ^ word_pos1[0];
+                this->lung[1] = ((current[1] << sl) & mask64) ^
+                                rotr<64>(L0_prv, 32) ^ word_pos1[1];
+            } else {
+                this->lung[0] = (current[0] << sl) ^
+                                rotr<64>(this->lung[1], 32) ^ word_pos1[0];
+                this->lung[1] =
+                    (current[1] << sl) ^ rotr<64>(L0_prv, 32) ^ word_pos1[1];
+            }
 
             static constexpr std::size_t DSFMT_SR = 64U - word_size;
             current[0] ^= (this->lung[0] >> DSFMT_SR) ^ (this->lung[0] & msk1);
@@ -274,12 +281,24 @@ class dsfmt_engine final
             current[1] ^= (this->lung[1] >> DSFMT_SR) ^ (this->lung[1] & msk2);
 
             auto const &word_pos1 = this->state.template at<pos1>();
-            std::uint64_t const L0_prv = this->lung[0];
+            auto const L0_prv = this->lung[0];
 
-            this->lung[0] = (current[1] << sl) ^ this->lung[1] ^ word_pos1[1];
+            auto constexpr mask64 = mask<UIntType>(64);
+            if constexpr (64 < std::numeric_limits<UIntType>::digits) {
+                this->lung[0] = ((current[1] << sl) & mask64) ^ this->lung[1] ^
+                                word_pos1[1];
+            } else {
+                this->lung[0] =
+                    (current[1] << sl) ^ this->lung[1] ^ word_pos1[1];
+            }
             this->lung[0] = rotr<64>(this->lung[0], 32);
 
-            this->lung[1] = (current[0] << sl) ^ L0_prv ^ word_pos1[0];
+            if constexpr (64 < std::numeric_limits<UIntType>::digits) {
+                this->lung[1] =
+                    ((current[0] << sl) & mask64) ^ L0_prv ^ word_pos1[0];
+            } else {
+                this->lung[1] = (current[0] << sl) ^ L0_prv ^ word_pos1[0];
+            }
             this->lung[1] = rotr<64>(this->lung[1], 32);
 
             this->idx = 2;
@@ -298,7 +317,7 @@ class dsfmt_engine final
     }
 
   private:
-    circular_buffer<w128_t, DSFMT_N> state{};
+    circular_buffer<w128_t, n> state{};
     w128_t lung{};
 
     std::size_t idx{2 - 1};
