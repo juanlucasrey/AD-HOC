@@ -364,7 +364,8 @@ class isaac_engine final
         this->state[this->idx] = x;
 
         if (this->idx == 0) {
-            this->b -= this->c--;
+            this->b -= this->c;
+            --this->c;
             if constexpr (w < std::numeric_limits<UIntType>::digits) {
                 this->b &= mask_result;
                 this->c &= mask_result;
