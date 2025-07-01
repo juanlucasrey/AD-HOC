@@ -131,3 +131,10 @@ target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
+
+set(test_name "dynamic.isaac_engine")
+add_executable(${test_name} isaac_engine.cpp new/isaac.c)
+target_link_libraries(${test_name} PRIVATE
+    PractRand)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
