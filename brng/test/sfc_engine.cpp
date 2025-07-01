@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/imneme/sfc.hpp"
+#include "third_party/imneme/sfc.hpp"
 #include <sfc_engine.hpp>
 
 #include "read_csv.hpp"

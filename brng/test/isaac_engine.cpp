@@ -11,7 +11,7 @@
 #include <tools/uint128.hpp>
 
 extern "C" {
-#include "external/burtleburtle/isaac.h"
+#include "third_party/burtleburtle/isaac.h"
 }
 
 auto main() -> int {

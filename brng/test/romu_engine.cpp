@@ -4,8 +4,8 @@
 #include <linear_congruential_engine.hpp>
 #include <romu_engine.hpp>
 
-#include "external/romu/romu.hpp"
 #include "read_csv.hpp"
+#include "third_party/romu/romu.hpp"
 
 #include <algorithm>
 #include <chrono>

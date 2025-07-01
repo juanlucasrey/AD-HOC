@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <hc128_engine.hpp>
 
-#include "external/wuhjresearch/hc128_ref.h"
 #include "read_csv.hpp"
+#include "third_party/wuhjresearch/hc128_ref.h"
 
 #include <algorithm>
 #include <chrono>

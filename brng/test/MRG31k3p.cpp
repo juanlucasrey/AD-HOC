@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 extern "C" {
-#include "external/MRG31k3p.h"
+#include "third_party/MRG31k3p.h"
 }
 
 #include "seed_seq_inserter.hpp"

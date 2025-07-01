@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 extern "C" {
-#include "external/WELL512a.h"
+#include "third_party/WELL512a.h"
 }
 
 #include <WELL512a.hpp>

@@ -3,7 +3,7 @@
 
 #include <jsf_engine.hpp>
 
-#include "external/imneme/jsf.hpp"
+#include "third_party/imneme/jsf.hpp"
 
 #include "PractRand.h"
 #include "PractRand/RNGs/all.h"
