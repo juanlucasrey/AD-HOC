@@ -5,9 +5,9 @@
 #include <lfsr_xor_engine.hpp>
 #include <tools/uint128.hpp>
 
-#include "external/lfsr113.c"
-#include "external/lfsr258.c"
-#include "external/taus88.c"
+#include "third_party/lfsr113.c"
+#include "third_party/lfsr258.c"
+#include "third_party/taus88.c"
 
 #include <chrono>
 #include <cstdint>

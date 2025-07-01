@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/imneme/gjrand.hpp"
+#include "third_party/imneme/gjrand.hpp"
 #include <gjrand_engine.hpp>
 
 auto main() -> int {

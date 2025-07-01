@@ -8,7 +8,7 @@
 
 #include <hc256_engine.hpp>
 
-#include "external/wuhjresearch/hc256_ref.h"
+#include "third_party/wuhjresearch/hc256_ref.h"
 
 #include <algorithm>
 #include <chrono>

@@ -1,9 +1,9 @@
 include(../../test_simple/test_simple_cmake.cmake)
 
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/SFMT-src-1.5.1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/dSFMT-src-2.2.3 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/external/sherif-dear DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.csv)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/SFMT-src-1.5.1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/dSFMT-src-2.2.3 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
+file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/sherif-dear DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.csv)
 
 set(BRNG
     tools/circular_buffer.cpp
@@ -32,51 +32,51 @@ set(BRNGStatic
 compile_check("${BRNGStatic}" false)
 
 set(test_name "dynamic.WELL512a")
-add_executable(${test_name} WELL512a.cpp external/WELL512a.c)
+add_executable(${test_name} WELL512a.cpp third_party/WELL512a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL1024a")
-add_executable(${test_name} WELL1024a.cpp external/WELL1024a.c)
+add_executable(${test_name} WELL1024a.cpp third_party/WELL1024a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL19937a")
-add_executable(${test_name} WELL19937a.cpp external/WELL19937a.c)
+add_executable(${test_name} WELL19937a.cpp third_party/WELL19937a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL44497a")
-add_executable(${test_name} WELL44497a.cpp external/WELL44497a.c)
+add_executable(${test_name} WELL44497a.cpp third_party/WELL44497a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG31k3p")
-add_executable(${test_name} MRG31k3p.cpp external/MRG31k3p.c)
+add_executable(${test_name} MRG31k3p.cpp third_party/MRG31k3p.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG32k3a")
-add_executable(${test_name} MRG32k3a.cpp external/MRG32k3a.c)
+add_executable(${test_name} MRG32k3a.cpp third_party/MRG32k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG32k5a")
-add_executable(${test_name} MRG32k5a.cpp external/MRG32k5a.c)
+add_executable(${test_name} MRG32k5a.cpp third_party/MRG32k5a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG63k3a")
-add_executable(${test_name} MRG63k3a.cpp external/MRG63k3a.c)
+add_executable(${test_name} MRG63k3a.cpp third_party/MRG63k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.PCG_engine")
-add_executable(${test_name} PCG_engine.cpp external/pcg-c-basic/pcg_basic.c)
+add_executable(${test_name} PCG_engine.cpp third_party/pcg-c-basic/pcg_basic.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-add_subdirectory(external/PractRand-pre0.95)
+add_subdirectory(third_party/PractRand-pre0.95)
 
 set(test_name "dynamic.mersenne_twister_engine")
 add_executable(${test_name} mersenne_twister_engine.cpp)
@@ -107,7 +107,7 @@ add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
 set(test_name "dynamic.romu_engine")
-add_executable(${test_name} romu_engine.cpp external/romu/romu.cpp)
+add_executable(${test_name} romu_engine.cpp third_party/romu/romu.cpp)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
@@ -133,7 +133,7 @@ add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
 set(test_name "dynamic.isaac_engine")
-add_executable(${test_name} isaac_engine.cpp external/burtleburtle/isaac.c)
+add_executable(${test_name} isaac_engine.cpp third_party/burtleburtle/isaac.c)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})

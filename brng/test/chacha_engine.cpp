@@ -1,7 +1,7 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/imneme/chacha.hpp"
+#include "third_party/imneme/chacha.hpp"
 #include <chacha_engine.hpp>
 
 #include "PractRand.h"

@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 extern "C" {
-#include "external/WELL44497a.h"
+#include "third_party/WELL44497a.h"
 }
 
 #include "distribution/uniform_distribution.hpp"

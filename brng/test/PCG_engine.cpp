@@ -1,9 +1,9 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
-#include "external/pcg-c-basic/pcg_basic.h"
+#include "third_party/pcg-c-basic/pcg_basic.h"
 
-#include "external/pcg-cpp/pcg_random.hpp"
+#include "third_party/pcg-cpp/pcg_random.hpp"
 
 #include <PCG_engine.hpp>
 

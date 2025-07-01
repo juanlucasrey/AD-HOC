@@ -3,7 +3,7 @@
 #include <iostream>
 
 extern "C" {
-#include "external/MRG63k3a.h"
+#include "third_party/MRG63k3a.h"
 }
 
 #include "seed_seq_inserter.hpp"
