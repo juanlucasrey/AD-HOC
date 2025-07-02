@@ -510,6 +510,7 @@ class sfmt_engine final
 
     using common_engine<UIntType, w, sfmt_engine>::operator++;
     using common_engine<UIntType, w, sfmt_engine>::operator--;
+    using common_engine<UIntType, w, sfmt_engine>::operator==;
 
     auto operator==(const sfmt_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->idx == rhs.idx);

@@ -148,6 +148,7 @@ class xsm_engine final
 
     using common_engine<UIntType, w, xsm_engine>::operator++;
     using common_engine<UIntType, w, xsm_engine>::operator--;
+    using common_engine<UIntType, w, xsm_engine>::operator==;
 
     auto operator==(const xsm_engine &rhs) const -> bool {
         return (this->lcg_low_prev == rhs.lcg_low_prev) &&

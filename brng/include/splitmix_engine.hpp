@@ -21,7 +21,7 @@
 #ifndef BRNG_SPLITMIX_ENGINE
 #define BRNG_SPLITMIX_ENGINE
 
-#include "tools/mask.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/modular_arithmetic.hpp"
 
 #include <bit>
@@ -34,34 +34,27 @@ namespace adhoc {
 template <class UIntType, std::size_t w, std::uint64_t m1, std::uint64_t m2,
           std::size_t p, std::size_t q, std::size_t r, std::uint64_t m3,
           std::uint64_t m4, std::size_t s, std::size_t t, std::size_t u>
-class splitmix_engine final {
-    static_assert(w <= std::numeric_limits<UIntType>::digits);
+class splitmix_engine final
+    : public common_engine<
+          UIntType, w,
+          splitmix_engine<UIntType, w, m1, m2, p, q, r, m3, m4, s, t, u>> {
     static_assert(w <= 64);
 
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
 
     static constexpr std::uint64_t default_seed1 = 0xbad0ff1ced15ea5eUL;
     static constexpr std::uint64_t default_seed2 = 0x9e3779b97f4a7c15UL;
 
-    splitmix_engine(std::uint64_t seed = default_seed1,
-                    std::uint64_t gamma = default_seed2)
+    explicit splitmix_engine(std::uint64_t seed = default_seed1,
+                             std::uint64_t gamma = default_seed2)
         : seed_(seed), gamma_(gamma | 1U), // gamma NEEDS to be odd so that it
                                            // is coprime with 2^w, otherwise the
           // modular multiplicative inverse would not exist!
           gamma_inverse_(modular_multiplicative_inverse_pow2(64, gamma_)) {}
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        std::uint64_t result;
-        if constexpr (FwdDirection) {
-            result = this->seed_;
-            this->seed_ += this->gamma_;
-        } else {
-            this->seed_ -= this->gamma_;
-            result = this->seed_;
-        }
-
+    inline auto operator*() const -> value_type {
+        std::uint64_t result = this->seed_;
         result ^= result >> s;
         result *= m3;
         result ^= result >> t;
@@ -71,10 +64,20 @@ class splitmix_engine final {
         }
 
         if constexpr (w == 64) {
-            return static_cast<result_type>(result);
+            return static_cast<value_type>(result);
         } else {
-            return static_cast<result_type>(result >> (64 - w));
+            return static_cast<value_type>(result >> (64 - w));
         }
+    };
+
+    inline auto operator++() -> splitmix_engine & {
+        this->seed_ += this->gamma_;
+        return *this;
+    }
+
+    inline auto operator--() -> splitmix_engine & {
+        this->seed_ -= this->gamma_;
+        return *this;
     }
 
     template <bool FwdDirection = true> void discard(unsigned long long z) {
@@ -93,23 +96,18 @@ class splitmix_engine final {
         }
     }
 
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    };
-
-    static constexpr auto max() -> result_type { return mask<UIntType>(w); };
+    using common_engine<UIntType, w, splitmix_engine>::operator++;
+    using common_engine<UIntType, w, splitmix_engine>::operator--;
+    using common_engine<UIntType, w, splitmix_engine>::operator==;
 
     auto operator==(const splitmix_engine &rhs) const -> bool {
         return (this->seed_ == rhs.seed_) && (this->gamma_ == rhs.gamma_) &&
                (this->gamma_inverse_ == rhs.gamma_inverse_);
     }
 
-    auto operator!=(const splitmix_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
     auto split() -> splitmix_engine {
-        std::uint64_t new_seed = this->operator()();
+        std::uint64_t new_seed = this->operator*();
+        this->operator++();
         std::uint64_t x = this->seed_;
         x ^= x >> p;
         x *= m1;
@@ -124,9 +122,8 @@ class splitmix_engine final {
         unsigned int n = std::popcount(x ^ (x >> 1U));
         std::uint64_t new_gamma = (n < 24) ? x ^ 0xaaaaaaaaaaaaaaaaUL : x;
 
-        // just to advance state
-        this->operator()();
-        return {new_seed, new_gamma};
+        this->operator++();
+        return splitmix_engine{new_seed, new_gamma};
     }
 
   private:

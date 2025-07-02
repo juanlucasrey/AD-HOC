@@ -380,6 +380,7 @@ class isaac_engine final
 
     using common_engine<UIntType, w, isaac_engine>::operator++;
     using common_engine<UIntType, w, isaac_engine>::operator--;
+    using common_engine<UIntType, w, isaac_engine>::operator==;
 
     auto operator==(const isaac_engine &rhs) const -> bool {
         return (this->a == rhs.a) && (this->b == rhs.b) && (this->c == rhs.c) &&

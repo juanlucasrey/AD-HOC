@@ -313,6 +313,7 @@ class efiix_engine final
 
     using common_engine<UIntType, w, efiix_engine>::operator++;
     using common_engine<UIntType, w, efiix_engine>::operator--;
+    using common_engine<UIntType, w, efiix_engine>::operator==;
 
     auto operator==(const efiix_engine &rhs) const -> bool {
         return (this->iteration_table == rhs.iteration_table) &&

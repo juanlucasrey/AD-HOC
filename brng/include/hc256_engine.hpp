@@ -23,6 +23,7 @@
 
 #include "tools/bit.hpp"
 #include "tools/circular_buffer.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 
 #include <array>
@@ -33,14 +34,13 @@
 
 namespace adhoc {
 
-template <class UIntType> class hc256_engine final {
+template <class UIntType>
+class hc256_engine final
+    : public common_engine<UIntType, 32, hc256_engine<UIntType>> {
   public:
-    using difference_type = std::ptrdiff_t;
     using value_type = UIntType;
 
-    using result_type = UIntType;
     static constexpr std::size_t word_size = 32U;
-    static_assert(word_size <= std::numeric_limits<UIntType>::digits);
     static constexpr UIntType default_seed = 5489U;
 
   private:
@@ -174,60 +174,19 @@ template <class UIntType> class hc256_engine final {
         return *this;
     }
 
-    // creates a copy. should be avoided!
-    inline auto operator++(int) -> hc256_engine {
-        auto const tmp = *this;
-        ++*this;
-        return tmp;
-    }
-
-    // creates a copy. should be avoided!
-    inline auto operator--(int) -> hc256_engine {
-        auto const tmp = *this;
-        --*this;
-        return tmp;
-    }
-
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            auto const result = this->operator*();
-            this->operator++();
-            return result;
-        } else {
-            return *(this->operator--());
-        }
-    }
-
-    template <bool FwdDirection = true> void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator++();
-        }
-    }
-
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    };
-
-    static constexpr auto max() -> result_type {
-        return mask<UIntType>(word_size);
-    };
+    using common_engine<UIntType, 32, hc256_engine>::operator++;
+    using common_engine<UIntType, 32, hc256_engine>::operator--;
+    using common_engine<UIntType, 32, hc256_engine>::operator==;
 
     auto operator==(const hc256_engine &rhs) const -> bool {
         return (this->idx == rhs.idx) && (this->P == rhs.P) &&
                (this->Q == rhs.Q);
     }
 
-    auto operator!=(const hc256_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
-    auto operator==(std::default_sentinel_t) const -> bool { return false; }
-
   private:
-    std::size_t idx = 0;
-    circular_buffer<UIntType, 1024> P;
-    circular_buffer<UIntType, 1024> Q;
+    std::size_t idx{0};
+    circular_buffer<UIntType, 1024> P{};
+    circular_buffer<UIntType, 1024> Q{};
 };
 
 } // namespace adhoc

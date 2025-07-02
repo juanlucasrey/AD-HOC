@@ -21,6 +21,7 @@
 #ifndef BRNG_ROMU_ENGINE
 #define BRNG_ROMU_ENGINE
 
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 #include "tools/modular_arithmetic.hpp"
 
@@ -33,7 +34,10 @@ namespace adhoc {
 
 template <class UIntType, std::size_t w, class UIntType_int, std::size_t w_int,
           std::size_t s, UIntType_int mult, int rot1, int rot2 = 0>
-class romu_engine final {
+class romu_engine final
+    : public common_engine<
+          UIntType, w,
+          romu_engine<UIntType, w, UIntType_int, w_int, s, mult, rot1, rot2>> {
     static_assert(s <= 4);
     // only mono state is allowed to have different internal state
     static_assert(s == 1 || w == w_int);
@@ -41,20 +45,7 @@ class romu_engine final {
     static_assert(rot2 < w_int);
 
   public:
-    using difference_type = std::ptrdiff_t;
     using value_type = UIntType;
-
-    using result_type = UIntType;
-
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    };
-
-    static constexpr auto max() -> result_type { return mask<UIntType>(w); };
-
-    static_assert(w <= std::numeric_limits<UIntType>::digits);
-
-    static constexpr UIntType m = romu_engine::max();
 
     static constexpr UIntType_int default_seed = 0x9f57c403d06c42fcUL;
 
@@ -160,48 +151,12 @@ class romu_engine final {
         return *this;
     }
 
-    // creates a copy. should be avoided!
-    inline auto operator++(int) -> romu_engine {
-        auto const tmp = *this;
-        ++*this;
-        return tmp;
-    }
-
-    // creates a copy. should be avoided!
-    inline auto operator--(int) -> romu_engine {
-        auto const tmp = *this;
-        --*this;
-        return tmp;
-    }
-
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            auto const result = this->operator*();
-            this->operator++();
-            return result;
-        } else {
-            return *(this->operator--());
-        }
-    }
-
-    template <bool FwdDirection = true> void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator++();
-        }
-    }
+    using common_engine<UIntType, w, romu_engine>::operator++;
+    using common_engine<UIntType, w, romu_engine>::operator--;
+    using common_engine<UIntType, w, romu_engine>::operator==;
 
     auto operator==(const romu_engine &rhs) const -> bool {
         return (this->state == rhs.state);
-    }
-
-    auto operator!=(const romu_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
-    constexpr auto operator==(std::default_sentinel_t /*unused*/) const
-        -> bool {
-        return false;
     }
 
   private:
