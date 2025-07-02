@@ -7,12 +7,47 @@
 #include <sfmt_engine.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <iostream>
 #include <ranges>
 #include <vector>
 
 namespace {
+
+auto count_digits(const std::string &s) -> int {
+    return std::count_if(
+        s.begin(), s.end(),
+        [](unsigned char c) { return std::isdigit(c); } // correct
+    );
+}
+
+template <class UIntType>
+auto readSSV(const std::string &filename) -> std::vector<UIntType> {
+    std::vector<UIntType> data;
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Unable to open file " << filename << std::endl;
+        return data;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string value;
+
+        while (std::getline(ss, value, ' ')) {
+            if (count_digits(value) > 4 && value.size() < 20) {
+                UIntType number = std::stoul(value);
+                data.push_back(number);
+            }
+        }
+    }
+
+    file.close();
+    return data;
+}
 
 template <class RNG, class Arg> class range_rng final {
   public:
@@ -63,8 +98,7 @@ auto main() -> int {
     }
 
     {
-        auto vals =
-            adhoc::readCSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.607.out.txt");
+        auto vals = readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.607.out.txt");
         // range_rng<adhoc::sfmt607, std::uint32_t> range(1234);
         // EXPECT_TRUE(std::ranges::equal(std::views::take(vals, 1000),
         //                                std::views::take(range, 1000)));
@@ -89,7 +123,7 @@ auto main() -> int {
     {
         std::size_t j = 0;
         auto vals =
-            adhoc::readCSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.1279.out.txt");
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.1279.out.txt");
         adhoc::sfmt1279 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -109,7 +143,7 @@ auto main() -> int {
     {
         std::size_t j = 0;
         auto vals =
-            adhoc::readCSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.2281.out.txt");
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.2281.out.txt");
         adhoc::sfmt2281 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -129,7 +163,7 @@ auto main() -> int {
     {
         std::size_t j = 0;
         auto vals =
-            adhoc::readCSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.4253.out.txt");
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.4253.out.txt");
         adhoc::sfmt4253 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -148,8 +182,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.11213.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.11213.out.txt");
         adhoc::sfmt11213 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -168,8 +202,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.19937.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.19937.out.txt");
         adhoc::sfmt19937 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -188,8 +222,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.44497.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.44497.out.txt");
         adhoc::sfmt44497 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -208,8 +242,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.86243.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.86243.out.txt");
         adhoc::sfmt86243 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -228,8 +262,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.132049.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.132049.out.txt");
         adhoc::sfmt132049 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();
@@ -248,8 +282,8 @@ auto main() -> int {
 
     {
         std::size_t j = 0;
-        auto vals = adhoc::readCSV<std::uint32_t>(
-            "./SFMT-src-1.5.1/SFMT.216091.out.txt");
+        auto vals =
+            readSSV<std::uint32_t>("./SFMT-src-1.5.1/SFMT.216091.out.txt");
         adhoc::sfmt216091 rng(1234);
         for (std::size_t i = 0; i < 1000; ++i) {
             auto val1 = rng();

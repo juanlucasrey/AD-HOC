@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <vector>
 
 namespace adhoc {
 
@@ -78,11 +79,29 @@ class philox_engine {
     }
     static constexpr auto max() -> result_type { return mask<UIntType>(w); }
 
-    philox_engine() : philox_engine(default_seed) {}
+    template <class... result_type>
+    explicit philox_engine(result_type... values) {
+        constexpr auto mask_result = philox_engine::max();
 
-    explicit philox_engine(result_type value) {
-        constexpr auto mask = philox_engine::max();
-        this->K[0] = value & mask;
+        static_assert(sizeof...(values) <= (n / 2));
+        if constexpr (sizeof...(values)) {
+            auto make_vector =
+                []<typename... Args>(Args... args) -> std::vector<int> {
+                return {args...};
+            };
+
+            auto inputs = make_vector(values...);
+
+            std::copy(inputs.begin(), inputs.end(), this->K.begin());
+
+            for (auto &val : this->K) {
+                val &= mask_result;
+            }
+
+        } else {
+            this->K.front() = default_seed & mask_result;
+        }
+
         this->init_consistent();
     }
 
@@ -171,37 +190,37 @@ class philox_engine {
     }
 
     inline void generate() {
-        constexpr auto mask = philox_engine::max();
+        constexpr auto mask_result = philox_engine::max();
         constexpr std::array<UIntType, n> consts_arr{consts...};
-        if constexpr (n == 2) {
-            result_type S0 = this->X[0];
-            result_type S1 = this->X[1];
-            result_type K0 = this->K[0];
-            for (size_t i = 0; i < round_count; ++i) {
+        if constexpr (word_count == 2) {
+            UIntType S0 = this->X[0];
+            UIntType S1 = this->X[1];
+            UIntType K0 = this->K[0];
+            for (std::size_t i = 0; i < round_count; ++i) {
                 auto [hi, lo] = this->mulhilo(S0, consts_arr[0]);
                 S0 = hi ^ K0 ^ S1;
                 S1 = lo;
-                K0 = (K0 + consts_arr[1]) & mask;
+                K0 = (K0 + consts_arr[1]) & mask_result;
             }
             this->Y[0] = S0;
             this->Y[1] = S1;
 
-        } else if constexpr (n == 4) {
-            result_type S0 = this->X[0];
-            result_type S1 = this->X[1];
-            result_type S2 = this->X[2];
-            result_type S3 = this->X[3];
-            result_type K0 = this->K[0];
-            result_type K1 = this->K[1];
-            for (size_t i = 0; i < r; ++i) {
+        } else if constexpr (word_count == 4) {
+            UIntType S0 = this->X[0];
+            UIntType S1 = this->X[1];
+            UIntType S2 = this->X[2];
+            UIntType S3 = this->X[3];
+            UIntType K0 = this->K[0];
+            UIntType K1 = this->K[1];
+            for (std::size_t i = 0; i < round_count; ++i) {
                 auto [hi0, lo0] = this->mulhilo(S2, consts_arr[0]);
                 auto [hi2, lo2] = this->mulhilo(S0, consts_arr[2]);
                 S0 = hi0 ^ K0 ^ S1;
                 S1 = lo0;
                 S2 = hi2 ^ K1 ^ S3;
                 S3 = lo2;
-                K0 = (K0 + consts_arr[1]) & mask;
-                K1 = (K1 + consts_arr[3]) & mask;
+                K0 = (K0 + consts_arr[1]) & mask_result;
+                K1 = (K1 + consts_arr[3]) & mask_result;
             }
             this->Y[0] = S0;
             this->Y[1] = S1;
@@ -216,8 +235,14 @@ class philox_engine {
     std::size_t j{n - 1};
 };
 
+using philox2x32 =
+    philox_engine<std::uint_fast32_t, 32, 2, 10, 0xD256D193, 0x9E3779B9>;
+
 using philox4x32 = philox_engine<std::uint_fast32_t, 32, 4, 10, 0xCD9E8D57,
                                  0x9E3779B9, 0xD2511F53, 0xBB67AE85>;
+
+using philox2x64 = philox_engine<std::uint_fast64_t, 64, 2, 10,
+                                 0xD2B74407B1CE6E93, 0x9E3779B97F4A7C15>;
 
 using philox4x64 =
     philox_engine<std::uint_fast64_t, 64, 4, 10, 0xCA5A826395121157,

@@ -99,6 +99,7 @@ class sfc_engine final
 
     using common_engine<UIntType, w, sfc_engine>::operator++;
     using common_engine<UIntType, w, sfc_engine>::operator--;
+    using common_engine<UIntType, w, sfc_engine>::operator==;
 
     auto operator==(const sfc_engine &rhs) const -> bool {
         return (this->a_ == rhs.a_) && (this->b_ == rhs.b_) &&

@@ -81,5 +81,8 @@ int main() {
         EXPECT_EQUAL(diff, 1000000);
     }
 
+    static_assert(std::bidirectional_iterator<adhoc::splitmix64>);
+    static_assert(std::bidirectional_iterator<adhoc::splitmix32>);
+
     TEST_END;
 }

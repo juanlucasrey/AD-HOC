@@ -310,6 +310,7 @@ class dsfmt_engine final
 
     using common_engine<UIntType, 52, dsfmt_engine>::operator++;
     using common_engine<UIntType, 52, dsfmt_engine>::operator--;
+    using common_engine<UIntType, 52, dsfmt_engine>::operator==;
 
     auto operator==(const dsfmt_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->lung == rhs.lung) &&
