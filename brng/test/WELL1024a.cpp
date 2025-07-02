@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 extern "C" {
-#include "third_party/WELL1024a.h"
+#include "third_party/umontreal/WELL1024a.h"
 }
 
 #include <WELL1024a.hpp>

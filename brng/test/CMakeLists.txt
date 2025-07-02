@@ -32,42 +32,42 @@ set(BRNGStatic
 compile_check("${BRNGStatic}" false)
 
 set(test_name "dynamic.WELL512a")
-add_executable(${test_name} WELL512a.cpp third_party/WELL512a.c)
+add_executable(${test_name} WELL512a.cpp third_party/umontreal/WELL512a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL1024a")
-add_executable(${test_name} WELL1024a.cpp third_party/WELL1024a.c)
+add_executable(${test_name} WELL1024a.cpp third_party/umontreal/WELL1024a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL19937a")
-add_executable(${test_name} WELL19937a.cpp third_party/WELL19937a.c)
+add_executable(${test_name} WELL19937a.cpp third_party/umontreal/WELL19937a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.WELL44497a")
-add_executable(${test_name} WELL44497a.cpp third_party/WELL44497a.c)
+add_executable(${test_name} WELL44497a.cpp third_party/umontreal/WELL44497a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG31k3p")
-add_executable(${test_name} MRG31k3p.cpp third_party/MRG31k3p.c)
+add_executable(${test_name} MRG31k3p.cpp third_party/umontreal/MRG31k3p.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG32k3a")
-add_executable(${test_name} MRG32k3a.cpp third_party/MRG32k3a.c)
+add_executable(${test_name} MRG32k3a.cpp third_party/umontreal/MRG32k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG32k5a")
-add_executable(${test_name} MRG32k5a.cpp third_party/MRG32k5a.c)
+add_executable(${test_name} MRG32k5a.cpp third_party/umontreal/MRG32k5a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 set(test_name "dynamic.MRG63k3a")
-add_executable(${test_name} MRG63k3a.cpp third_party/MRG63k3a.c)
+add_executable(${test_name} MRG63k3a.cpp third_party/umontreal/MRG63k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 

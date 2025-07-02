@@ -2,7 +2,7 @@
 #include "test_tools_rng.hpp"
 
 extern "C" {
-#include "third_party/MRG32k3a.h"
+#include "third_party/umontreal/MRG32k3a.h"
 }
 
 #include "seed_seq_inserter.hpp"
