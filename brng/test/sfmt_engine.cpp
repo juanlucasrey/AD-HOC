@@ -38,8 +38,8 @@ auto readSSV(const std::string &filename) -> std::vector<UIntType> {
         std::string value;
 
         while (std::getline(ss, value, ' ')) {
-            if (count_digits(value) > 4) {
-                UIntType number = std::stoull(value);
+            if (count_digits(value) > 4 && value.size() < 20) {
+                UIntType number = std::stoul(value);
                 data.push_back(number);
             }
         }
