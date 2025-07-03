@@ -22,6 +22,7 @@ set(BRNG
     hc128_engine.cpp
     sfmt_engine.cpp
     dsfmt_engine.cpp
+    threefry_engine.cpp
 )
 
 run_check("${BRNG}")
