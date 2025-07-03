@@ -21,7 +21,7 @@
 #ifndef BRNG_PHILOX_ENGINE
 #define BRNG_PHILOX_ENGINE
 
-#include "tools/mask.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/uint128.hpp"
 
 #include <array>
@@ -33,148 +33,34 @@ namespace adhoc {
 
 template <class UIntType, std::size_t w, std::size_t n, std::size_t r,
           UIntType... consts>
-class philox_engine {
+class philox_engine
+    : public common_engine<UIntType, w,
+                           philox_engine<UIntType, w, n, r, consts...>> {
   private:
     static_assert(sizeof...(consts) == n);
     static_assert(n == 2 || n == 4);
     static_assert(0 < r);
     static_assert(0 < w && w <= std::numeric_limits<UIntType>::digits);
+    static constexpr UIntType mask_result = philox_engine::max();
 
     inline void increase_counter() {
-        constexpr auto mask = philox_engine::max();
         std::size_t i = 0;
         do {
-            this->X[i] = (this->X[i] + 1) & mask;
+            this->X[i] = (this->X[i] + 1) & mask_result;
             ++i;
         } while (i < n && !this->X[i - 1]);
     }
 
     inline void decrease_counter() {
-        constexpr auto mask = philox_engine::max();
         std::size_t i = 0;
         do {
-            this->X[i] = (this->X[i] - 1) & mask;
+            this->X[i] = (this->X[i] - 1) & mask_result;
             ++i;
-        } while (i < n && (this->X[i - 1] == mask));
+        } while (i < n && (this->X[i - 1] == mask_result));
     }
 
-    // this short step ensures consistency when the full_cycle is completed,
-    // making simul.forward[full_cycle - 2] = simul.backward[1]
-    void init_consistent() {
-        this->decrease_counter();
-        this->generate();
-        this->increase_counter();
-    }
+    void init() { this->operator++(); }
 
-  public:
-    using result_type = UIntType;
-
-    static constexpr std::size_t word_size = w;
-    static constexpr std::size_t word_count = n;
-    static constexpr std::size_t round_count = r;
-    static constexpr result_type default_seed = 20111115U;
-
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    }
-    static constexpr auto max() -> result_type { return mask<UIntType>(w); }
-
-    template <class... result_type>
-    explicit philox_engine(result_type... values) {
-        constexpr auto mask_result = philox_engine::max();
-
-        static_assert(sizeof...(values) <= (n / 2));
-        if constexpr (sizeof...(values)) {
-            auto make_vector =
-                []<typename... Args>(Args... args) -> std::vector<int> {
-                return {args...};
-            };
-
-            auto inputs = make_vector(values...);
-
-            std::copy(inputs.begin(), inputs.end(), this->K.begin());
-
-            for (auto &val : this->K) {
-                val &= mask_result;
-            }
-
-        } else {
-            this->K.front() = default_seed & mask_result;
-        }
-
-        this->init_consistent();
-    }
-
-    template <class SeedSeq> explicit philox_engine(SeedSeq &seq) {
-        constexpr std::size_t p = ((w - 1) / 32) + 1;
-        constexpr std::size_t n_half = n / 2;
-
-        std::array<std::uint_least32_t, n_half * p> a;
-        seq.generate(a.begin(), a.end());
-
-        constexpr auto mask = philox_engine::max();
-        auto iter = a.begin();
-        for (std::size_t n_idx = 0; n_idx < n_half; n_idx++) {
-            UIntType val = 0;
-            for (std::size_t p_idx = 0; p_idx < p; ++p_idx) {
-                val += static_cast<UIntType>(*iter++) << 32 * p_idx;
-            }
-            this->K[n_idx] = val & mask;
-        }
-        this->init_consistent();
-    }
-
-    void set_counter(const std::array<result_type, n> &c) {
-        constexpr auto mask = philox_engine::max();
-        for (std::size_t i = 0; i < n; ++i) {
-            this->X[i] = c[i] & mask;
-        }
-        this->j = n - 1;
-        this->decrease_counter();
-        this->generate();
-        this->increase_counter();
-    }
-
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            ++this->j;
-            if (this->j == n) {
-                this->generate();
-                this->increase_counter();
-                this->j = 0;
-            }
-            return Y[this->j];
-        } else {
-            const result_type result = Y[this->j];
-            if (this->j == 0) {
-                this->j = n;
-                this->decrease_counter();
-                this->decrease_counter();
-                this->generate();
-                this->increase_counter();
-            }
-            --this->j;
-            return result;
-        }
-    }
-
-    inline void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()<true>();
-        }
-    }
-
-    auto operator==(const philox_engine &rhs) const -> bool {
-        return (this->X == rhs.X) && (this->K == rhs.K) && (this->Y == rhs.Y) &&
-               (this->j == rhs.j);
-    }
-
-    auto operator!=(const philox_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
-  private:
     template <class U> inline auto mulhilo(U a, U b) -> std::pair<U, U> {
 
         using upgraded_type = std::conditional_t<
@@ -229,6 +115,97 @@ class philox_engine {
         }
     }
 
+  public:
+    using value_type = UIntType;
+    static constexpr std::size_t word_size = w;
+    static constexpr std::size_t word_count = n;
+    static constexpr std::size_t round_count = r;
+    static constexpr UIntType default_seed = 20111115U;
+
+    template <class... value_type>
+    explicit philox_engine(value_type... values) {
+        static_assert(sizeof...(values) <= (n / 2));
+        if constexpr (sizeof...(values)) {
+            auto make_vector =
+                []<class... Args>(Args... args) -> std::vector<int> {
+                return {args...};
+            };
+
+            auto inputs = make_vector(values...);
+
+            std::copy(inputs.begin(), inputs.end(), this->K.begin());
+
+            for (auto &val : this->K) {
+                val &= mask_result;
+            }
+
+        } else {
+            this->K.front() = default_seed & mask_result;
+        }
+
+        this->init();
+    }
+
+    template <class SeedSeq> explicit philox_engine(SeedSeq &seq) {
+        constexpr std::size_t p = ((w - 1) / 32) + 1;
+        constexpr std::size_t n_half = n / 2;
+
+        std::array<std::uint_least32_t, n_half * p> a;
+        seq.generate(a.begin(), a.end());
+
+        auto iter = a.begin();
+        for (std::size_t n_idx = 0; n_idx < n_half; n_idx++) {
+            UIntType val = 0;
+            for (std::size_t p_idx = 0; p_idx < p; ++p_idx) {
+                val += static_cast<UIntType>(*iter++) << 32 * p_idx;
+            }
+            this->K[n_idx] = val & mask_result;
+        }
+        this->init();
+    }
+
+    void set_counter(const std::array<UIntType, n> &c) {
+        for (std::size_t i = 0; i < n; ++i) {
+            this->X[i] = c[i] & mask_result;
+        }
+        this->j = n - 1;
+        this->operator++();
+    }
+
+    inline auto operator*() const -> value_type { return this->Y[this->j]; };
+
+    inline auto operator++() -> philox_engine & {
+        ++this->j;
+        if (this->j == n) {
+            this->generate();
+            this->increase_counter();
+            this->j = 0;
+        }
+        return *this;
+    }
+
+    inline auto operator--() -> philox_engine & {
+        if (this->j == 0) {
+            this->j = n;
+            this->decrease_counter();
+            this->decrease_counter();
+            this->generate();
+            this->increase_counter();
+        }
+        --this->j;
+        return *this;
+    }
+
+    using common_engine<UIntType, w, philox_engine>::operator++;
+    using common_engine<UIntType, w, philox_engine>::operator--;
+    using common_engine<UIntType, w, philox_engine>::operator==;
+
+    auto operator==(const philox_engine &rhs) const -> bool {
+        return (this->X == rhs.X) && (this->K == rhs.K) && (this->Y == rhs.Y) &&
+               (this->j == rhs.j);
+    }
+
+  private:
     std::array<UIntType, n> X{0};
     std::array<UIntType, n / 2> K{0};
     std::array<UIntType, n> Y{0};
