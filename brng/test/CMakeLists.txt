@@ -24,6 +24,7 @@ set(BRNG
     dsfmt_engine.cpp
     threefry_engine.cpp
     tyche_engine.cpp
+    xoshiro_engine.cpp
 )
 
 run_check("${BRNG}")
