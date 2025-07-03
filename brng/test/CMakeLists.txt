@@ -23,6 +23,7 @@ set(BRNG
     sfmt_engine.cpp
     dsfmt_engine.cpp
     threefry_engine.cpp
+    tyche_engine.cpp
 )
 
 run_check("${BRNG}")
