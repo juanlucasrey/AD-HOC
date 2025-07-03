@@ -40,16 +40,21 @@ auto readCSV(const std::string &filename) -> std::vector<UIntType> {
 }
 
 template <class UIntType = std::uint64_t>
-auto split_uint64_to_uint32(const std::vector<UIntType> &input)
-    -> std::vector<std::uint32_t> {
+auto split_uint64_to_uint32(const std::vector<UIntType> &input,
+                            bool invert = false) -> std::vector<std::uint32_t> {
     std::vector<std::uint32_t> output;
     output.reserve(input.size() * 2); // Reserve space to avoid reallocations
 
     for (std::uint64_t val : input) {
         std::uint32_t low = static_cast<std::uint32_t>(val & 0xFFFFFFFF);
         std::uint32_t high = static_cast<std::uint32_t>(val >> 32);
-        output.push_back(low);
-        output.push_back(high);
+        if (invert) {
+            output.push_back(high);
+            output.push_back(low);
+        } else {
+            output.push_back(low);
+            output.push_back(high);
+        }
     }
 
     return output;
