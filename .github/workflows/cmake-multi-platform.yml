@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    ermissions:
+    permissions:
       contents: write
     runs-on: ${{ matrix.os }}
 
