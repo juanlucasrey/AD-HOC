@@ -60,6 +60,7 @@ auto main() -> int {
         compare_rng_limits(rng1, rng2);
     }
 
+#ifndef _MSC_VER
     {
         xoroshiro256plus128 rng1;
         adhoc::xoroshiro_engine<adhoc::uint128, 128, 256, 105, 36, 70> rng2;
@@ -67,6 +68,7 @@ auto main() -> int {
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
+#endif
 
     {
         xoroshiro64plus32vMEO1 rng1;
