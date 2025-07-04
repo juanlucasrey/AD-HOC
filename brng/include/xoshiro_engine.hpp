@@ -33,12 +33,12 @@
 namespace adhoc {
 
 template <class UIntType, std::size_t w, std::size_t n, std::size_t a,
-          std::size_t b, UIntType mult1 = 0, std::size_t orot = 0,
-          UIntType mult2 = 0>
+          std::size_t b, std::size_t orot = 0, UIntType mult1 = 0,
+          UIntType mult2 = 0, std::size_t idx1 = 2, std::size_t idx2 = 2>
 class xoshiro_engine final
-    : public common_engine<
-          UIntType, w,
-          xoshiro_engine<UIntType, w, n, a, b, mult1, orot, mult2>> {
+    : public common_engine<UIntType, w,
+                           xoshiro_engine<UIntType, w, n, a, b, orot, mult1,
+                                          mult2, idx1, idx2>> {
   private:
     void init4(UIntType s0, UIntType s1, UIntType s2, UIntType s3) {
         this->state[0] = s0 & mask_result;
@@ -106,7 +106,6 @@ class xoshiro_engine final
         UIntType result = 0;
 
         if constexpr (mult1 && orot) {
-
             result = this->state[1] * mult1;
             if constexpr (w != std::numeric_limits<UIntType>::digits) {
                 result &= mask_result;
@@ -114,7 +113,15 @@ class xoshiro_engine final
 
             result = rotl<w>(result, orot) * mult2;
         } else {
-            result = this->state[0] + this->state[3];
+            result = this->state[0] + this->state[idx1];
+
+            if constexpr (orot) {
+                if constexpr (w != std::numeric_limits<UIntType>::digits) {
+                    result &= mask_result;
+                }
+                result = rotl<w>(result, orot);
+                result += this->state[idx2];
+            }
         }
 
         if constexpr (w != std::numeric_limits<UIntType>::digits) {
@@ -201,50 +208,25 @@ class xoshiro_engine final
     std::array<UIntType, n> state;
 };
 
-using xoshiro512plus64v1_0 = xoshiro_engine<std::uint64_t, 64, 8, 11, 21>;
-using xoshiro512plus64 = xoshiro512plus64v1_0;
+using xoshiro512plus = xoshiro_engine<std::uint_fast64_t, 64, 8, 11, 21>;
+using xoshiro512plusplus =
+    xoshiro_engine<std::uint_fast64_t, 64, 8, 11, 21, 17>;
+using xoshiro512starstar =
+    xoshiro_engine<std::uint_fast64_t, 64, 8, 11, 21, 7, 5, 9>;
 
-using xoshiro512starstar64v1_0 =
-    xoshiro_engine<std::uint64_t, 64, 8, 11, 21, 5, 7, 9>;
-using xoshiro512starstar64 = xoshiro512starstar64v1_0;
+using xoshiro256plus =
+    xoshiro_engine<std::uint_fast64_t, 64, 4, 17, 45, 0, 0, 0, 3, 2>;
+using xoshiro256plusplus =
+    xoshiro_engine<std::uint_fast64_t, 64, 4, 17, 45, 23, 0, 0, 3, 0>;
+using xoshiro256starstar =
+    xoshiro_engine<std::uint_fast64_t, 64, 4, 17, 45, 7, 5, 9>;
 
-using xoshiro256plus64v1_0 = xoshiro_engine<std::uint64_t, 64, 4, 17, 45>;
-using xoshiro256plus64 = xoshiro256plus64v1_0;
-
-using xoshiro256starstar64v1_0 =
-    xoshiro_engine<std::uint64_t, 64, 4, 17, 45, 5, 7, 9>;
-
-using xoshiro256starstar64 = xoshiro256starstar64v1_0;
-
-using xoshiro128plus32v1_0 = xoshiro_engine<std::uint32_t, 32, 4, 9, 11>;
-
-using xoshiro128plus32 = xoshiro128plus32v1_0;
-
-using xoshiro128starstar32v1_0 =
-    xoshiro_engine<std::uint32_t, 32, 4, 9, 11, 5, 7, 9>;
-
-using xoshiro128starstar32 = xoshiro128starstar32v1_0;
-
-using xoshiro64plus16xxx = xoshiro_engine<std::uint16_t, 16, 4, 5, 11>;
-
-using xoshiro64plus16 = xoshiro64plus16xxx;
-
-using xoshiro64starstar16xxx =
-    xoshiro_engine<std::uint16_t, 16, 4, 5, 11, 5, 7, 9>;
-
-using xoshiro64starstar16 = xoshiro64starstar16xxx;
-
-using xoshiro32plus8xxx = xoshiro_engine<std::uint8_t, 8, 4, 3, 7>;
-
-using xoshiro32plus8yyy = xoshiro_engine<std::uint8_t, 8, 4, 3, 1>;
-
-using xoshiro32plus8 = xoshiro32plus8xxx;
-
-using xoshiro32starstar8xxx = xoshiro_engine<std::uint8_t, 8, 4, 3, 7, 5, 7, 9>;
-
-using xoshiro32starstar8yyy = xoshiro_engine<std::uint8_t, 8, 4, 3, 1, 5, 7, 9>;
-
-using xoshiro32starstar8 = xoshiro32starstar8xxx;
+using xoshiro128plus =
+    xoshiro_engine<std::uint_fast32_t, 32, 4, 9, 11, 0, 0, 0, 3, 2>;
+using xoshiro128plusplus =
+    xoshiro_engine<std::uint_fast32_t, 32, 4, 9, 11, 7, 0, 0, 3, 0>;
+using xoshiro128starstar =
+    xoshiro_engine<std::uint_fast32_t, 32, 4, 9, 11, 7, 5, 9>;
 
 } // namespace adhoc
 
