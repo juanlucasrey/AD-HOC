@@ -1,9 +1,37 @@
 include(../../test_simple/test_simple_cmake.cmake)
 
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/randomgen DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/SFMT-src-1.5.1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
 file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/dSFMT-src-2.2.3 DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.txt)
-file(COPY ${PROJECT_SOURCE_DIR}/brng/test/third_party/sherif-dear DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILES_MATCHING PATTERN *.csv)
+
+find_package(Python3 REQUIRED)
+make_directory(${CMAKE_CURRENT_BINARY_DIR}/randomgen)
+
+file(GLOB PYTHON_SCRIPTS
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/randomgen/*.py
+)
+
+set(GENERATED_FILES "")
+
+foreach(script IN LISTS PYTHON_SCRIPTS)
+    get_filename_component(script_name ${script} NAME_WE)
+    set(output_file ${CMAKE_CURRENT_BINARY_DIR}/randomgen/${script_name}_state.txt)
+
+    add_custom_command(
+        OUTPUT ${output_file}
+        COMMAND ${Python3_EXECUTABLE} ${script}
+        DEPENDS ${script}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/randomgen
+        COMMENT "Generating ${output_file} from ${script_name}.py"
+        VERBATIM
+    )
+
+    list(APPEND GENERATED_FILES ${output_file})
+endforeach()
+
+add_custom_target(generate_python_outputs ALL
+    DEPENDS ${GENERATED_FILES}
+)
+
 
 set(BRNG
     tools/circular_buffer.cpp
