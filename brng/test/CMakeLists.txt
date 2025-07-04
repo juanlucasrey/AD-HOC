@@ -53,6 +53,24 @@ set(BRNG
     threefry_engine.cpp
     tyche_engine.cpp
     xoshiro_engine.cpp
+    xoroshiro_engine.cpp
+    xoshiro128plus_check.cpp
+    xoshiro128plusplus_check.cpp
+    xoshiro128starstar_check.cpp
+    xoshiro256plus_check.cpp
+    xoshiro256plusplus_check.cpp
+    xoshiro256starstar_check.cpp
+    xoshiro512plus_check.cpp
+    xoshiro512plusplus_check.cpp
+    xoshiro512starstar_check.cpp
+    xoroshiro128plus_check.cpp
+    xoroshiro128plusplus_check.cpp
+    xoroshiro128starstar_check.cpp
+    xoroshiro64star_check.cpp
+    xoroshiro64starstar_check.cpp
+    xoroshiro1024star_check.cpp
+    xoroshiro1024plusplus_check.cpp
+    xoroshiro1024starstar_check.cpp
 )
 
 run_check("${BRNG}")
