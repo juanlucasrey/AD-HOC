@@ -18,7 +18,7 @@ foreach(script IN LISTS PYTHON_SCRIPTS)
 
     add_custom_command(
         OUTPUT ${output_file}
-        COMMAND ${Python3_EXECUTABLE} ${script} > ${output_file}
+        COMMAND ${Python3_EXECUTABLE} ${script}
         DEPENDS ${script}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/randomgen
         COMMENT "Generating ${output_file} from ${script_name}.py"
