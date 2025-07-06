@@ -265,7 +265,7 @@ class isaac_engine final
         this->operator++();
     }
 
-    inline auto operator*() const -> value_type { return this->b; };
+    inline auto operator*() const -> value_type { return this->b; }
 
     inline auto operator++() -> isaac_engine & {
         constexpr std::array<int, 4> shift_vals = {shift1, shift2, shift3,
