@@ -9,10 +9,6 @@ with open("chacha_state.txt", "w") as f:
     p = state["ctr"]
     for x in range(len(p)):
         f.write(str(p[x]) + "\n")
-    p = state["block"]
-    for x in range(len(p)):
-        f.write(str(p[x]) + "\n")
-
 
 iterations = 100
 with open("chacha_vals.txt", "w") as f:
