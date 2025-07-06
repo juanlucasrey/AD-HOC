@@ -161,7 +161,8 @@ inline void chacha_engine<R>::generate_block() {
     for (int i = 0; i < 8; ++i) input[4 + i] = keysetup[i];
     input[12] = (ctr / 16) & 0xffffffffu;
     input[13] = (ctr / 16) >> 32;
-    input[14] = input[15] = 0xdeadbeef; // Could use 128-bit counter.
+    // input[14] = input[15] = 0xdeadbeef; // Could use 128-bit counter.
+    input[14] = input[15] = 0;
 
     for (int i = 0; i < 16; ++i) block[i] = input[i];
     chacha_core();

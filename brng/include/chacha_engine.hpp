@@ -21,6 +21,8 @@
 #ifndef BRNG_CHACHA_ENGINE
 #define BRNG_CHACHA_ENGINE
 
+#include "tools/bit.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 
 #include <array>
@@ -30,16 +32,45 @@
 
 namespace adhoc {
 
-template <class UIntType, std::size_t w, std::size_t R, bool alt = false>
-class chacha_engine final {
-    static_assert(w <= std::numeric_limits<UIntType>::digits);
-    static_assert(w <= 64);
+template <class UIntType, std::size_t R>
+class chacha_engine final
+    : public common_engine<UIntType, 32, chacha_engine<UIntType, R>> {
+    static constexpr std::size_t w = 32;
+    static_assert(32 <= std::numeric_limits<UIntType>::digits);
+
+    inline void increase_counter() {
+        ++this->ctr[0];
+        if (this->ctr[0] == 0) {
+            ++this->ctr[1];
+        }
+    }
+
+    inline void increase_counter(int amount) {
+        this->ctr[0] += amount;
+        if (this->ctr[0] < amount) {
+            ++this->ctr[1];
+        }
+    }
+
+    inline void decrease_counter() {
+        if (this->ctr[0] == 0) {
+            --this->ctr[1];
+        }
+        --this->ctr[0];
+    }
+
+    inline void decrease_counter(int amount) {
+        if (this->ctr[0] < amount) {
+            --this->ctr[1];
+        }
+        this->ctr[0] -= amount;
+    }
 
     inline void generate_block() {
-        constexpr std::array<std::uint32_t, 4> constants = {
-            0x61707865, 0x3320646e, 0x79622d32, 0x6b206574};
+        constexpr std::array<UIntType, 4> constants = {0x61707865, 0x3320646e,
+                                                       0x79622d32, 0x6b206574};
 
-        std::array<std::uint32_t, 16> input{};
+        std::array<UIntType, 16> input{};
         for (std::size_t i = 0; i < 4U; ++i) {
             input[i] = constants[i];
         }
@@ -48,11 +79,12 @@ class chacha_engine final {
             input[4 + i] = this->keysetup[i];
         }
 
-        input[12] = (this->ctr / 16U) & 0xffffffffU;
-        input[13] = (this->ctr / 16U) >> 32U;
-        if constexpr (!alt) {
-            input[14] = input[15] = 0xdeadbeefU;
-        }
+        input[12] = static_cast<UIntType>((this->ctr[0] / 16U) & mask_result);
+
+        input[13] = ((static_cast<UIntType>(this->ctr[1]) % 16) << 28U) |
+                    ((this->ctr[0] / 16) >> 32);
+        input[14] = static_cast<UIntType>((this->ctr[1] / 16) & mask_result);
+        input[15] = static_cast<UIntType>((this->ctr[1] / 16) >> 32U);
 
         for (std::size_t i = 0; i < 16; ++i) {
             this->block[i] = input[i];
@@ -60,23 +92,31 @@ class chacha_engine final {
 
         auto quarterroud =
             []<std::size_t a, std::size_t b, std::size_t c, std::size_t d>(
-                std::array<std::uint32_t, 16> &x) {
-                auto rotation = []<std::size_t ww, std::size_t n>(UIntType &x) {
-                    x = (x << n) | (x >> (ww - n));
-                };
-
+                std::array<UIntType, 16> &x) {
                 x[a] = x[a] + x[b];
+                if constexpr (w < std::numeric_limits<UIntType>::digits) {
+                    x[a] &= mask_result;
+                }
                 x[d] ^= x[a];
-                rotation.template operator()<32, 16>(x[d]);
+                x[d] = rotl<w>(x[d], 16);
                 x[c] = x[c] + x[d];
+                if constexpr (w < std::numeric_limits<UIntType>::digits) {
+                    x[c] &= mask_result;
+                }
                 x[b] ^= x[c];
-                rotation.template operator()<32, 12>(x[b]);
+                x[b] = rotl<w>(x[b], 12);
                 x[a] = x[a] + x[b];
+                if constexpr (w < std::numeric_limits<UIntType>::digits) {
+                    x[a] &= mask_result;
+                }
                 x[d] ^= x[a];
-                rotation.template operator()<32, 8>(x[d]);
+                x[d] = rotl<w>(x[d], 8);
                 x[c] = x[c] + x[d];
+                if constexpr (w < std::numeric_limits<UIntType>::digits) {
+                    x[c] &= mask_result;
+                }
                 x[b] ^= x[c];
-                rotation.template operator()<32, 7>(x[b]);
+                x[b] = rotl<w>(x[b], 7);
             };
 
         for (std::size_t i = 1; i < R; i += 2) {
@@ -99,101 +139,82 @@ class chacha_engine final {
 
         for (std::size_t i = 0; i < 16; ++i) {
             this->block[i] += input[i];
+            if constexpr (w < std::numeric_limits<UIntType>::digits) {
+                this->block[i] &= mask_result;
+            }
         }
     }
 
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
+
     static constexpr std::size_t word_size = w;
     static constexpr std::uint64_t default_seed_1 = 0xb504f333f9de6484UL;
-    static constexpr std::uint64_t default_seed_2 = 0UL;
+    static constexpr UIntType mask_result = chacha_engine::max();
 
-    chacha_engine() : chacha_engine(default_seed_1, default_seed_2) {}
+    chacha_engine() : chacha_engine(default_seed_1) {}
 
-    chacha_engine(std::uint64_t seedval,
-                  std::uint64_t stream = default_seed_2) {
+    chacha_engine(std::uint64_t seedval1, std::uint64_t seedval2 = 0,
+                  std::uint64_t stream1 = 0, std::uint64_t stream2 = 0) {
 
-        this->keysetup[0] = seedval & 0xffffffffU;
-        this->keysetup[1] = seedval >> 32U;
-        if constexpr (!alt) {
-            this->keysetup[2] = keysetup[3] = 0xdeadbeefU;
-            this->keysetup[4] = stream & 0xffffffffU;
-            this->keysetup[5] = stream >> 32U;
-            this->keysetup[6] = keysetup[7] = 0xdeadbeefU;
-        }
-        this->operator()<true>();
-        this->operator()<false>();
+        this->keysetup[0] = seedval1 & mask_result;
+        this->keysetup[1] = seedval1 >> 32U;
+        this->keysetup[2] = seedval2 & mask_result;
+        this->keysetup[3] = seedval2 >> 32U;
+        this->keysetup[4] = stream1 & mask_result;
+        this->keysetup[5] = stream1 >> 32U;
+        this->keysetup[6] = stream2 & mask_result;
+        this->keysetup[7] = stream2 >> 32U;
+        this->generate_block();
     }
 
     template <class SeedSeq> explicit chacha_engine(SeedSeq &seq) {
         seq.generate(this->keysetup.begin(), this->keysetup.end());
+        this->generate_block();
     }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            std::uint64_t idx = this->ctr % 16U;
-            if (idx == 0) {
-                this->generate_block();
-            }
-            ++this->ctr;
-            return this->block[idx];
-        } else {
-            --this->ctr;
-            std::uint64_t idx = this->ctr % 16U;
-            result_type result = this->block[idx];
-            if (idx == 0) {
-                this->ctr -= 16;
-                this->generate_block();
-                this->ctr += 16;
-            }
-            return result;
-        }
-    }
+    inline auto operator*() const -> value_type {
+        constexpr auto mask4 = mask<std::size_t>(4);
+        return this->block[this->ctr[0] & mask4];
+    };
 
-    template <bool FwdDirection = true> void discard(unsigned long long z) {
-        std::uint64_t cycle = this->ctr / 16U;
-        if constexpr (FwdDirection) {
-            this->ctr += z;
-        } else {
-            this->ctr -= z;
-        }
-        std::uint64_t cycle_new = this->ctr / 16U;
-        if (cycle != cycle_new) {
-            --this->ctr;
+    inline auto operator++() -> chacha_engine & {
+        constexpr auto mask4 = mask<std::size_t>(4);
+
+        bool const gen = (this->ctr[0] & mask4) == 15;
+        this->increase_counter();
+        if (gen) {
             this->generate_block();
-            ++this->ctr;
         }
+        return *this;
     }
 
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    };
+    inline auto operator--() -> chacha_engine & {
+        constexpr auto mask4 = mask<std::size_t>(4);
 
-    static constexpr auto max() -> result_type {
-        return mask<UIntType>(word_size);
-    };
+        this->decrease_counter();
+        if ((this->ctr[0] & mask4) == 15) {
+            this->generate_block();
+        }
+        return *this;
+    }
+
+    using common_engine<UIntType, w, chacha_engine>::operator++;
+    using common_engine<UIntType, w, chacha_engine>::operator--;
+    using common_engine<UIntType, w, chacha_engine>::operator==;
 
     auto operator==(const chacha_engine &rhs) const -> bool {
         return (this->keysetup == rhs.keysetup) && (this->ctr == rhs.ctr) &&
                (this->block == rhs.block);
     }
 
-    auto operator!=(const chacha_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
-    }
-
   private:
-    std::array<std::uint32_t, 16> block{};
-    std::array<std::uint32_t, 8> keysetup{};
-    std::uint64_t ctr = 0;
+    std::array<UIntType, 16> block{};
+    std::array<UIntType, 8> keysetup{};
+    std::array<std::size_t, 2> ctr{};
 };
 
-using chacha4r = chacha_engine<std::uint32_t, 32, 4>;
-using chacha5r = chacha_engine<std::uint32_t, 32, 5>;
-using chacha6r = chacha_engine<std::uint32_t, 32, 6>;
-using chacha8r = chacha_engine<std::uint32_t, 32, 8>;
-using chacha20r = chacha_engine<std::uint32_t, 32, 20>;
+using chacha20 = chacha_engine<std::uint_fast32_t, 20>;
 
 } // namespace adhoc
 
