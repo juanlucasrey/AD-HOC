@@ -14,10 +14,10 @@ int main() {
 
     {
         auto const values_from_python = adhoc::split_uint64_to_uint32(
-            adhoc::readCSV<std::uint64_t>("./randomgen/ChaCha_vals.txt"));
+            adhoc::readCSV<std::uint64_t>("./randomgen/chacha_vals.txt"));
 
         adhoc::seed_seq_inserter seq(
-            adhoc::readCSV<std::uint32_t>("./randomgen/ChaCha_state.txt"));
+            adhoc::readCSV<std::uint32_t>("./randomgen/chacha_state.txt"));
 
         adhoc::chacha20 rng(seq);
         std::size_t j = 0;
