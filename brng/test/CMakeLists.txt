@@ -72,6 +72,8 @@ set(BRNG
     xoroshiro1024plusplus_check.cpp
     xoroshiro1024starstar_check.cpp
     squares_engine.cpp
+    speck_engine.cpp
+    lxm_engine.cpp
 )
 
 run_check("BRNG" "${BRNG}")
