@@ -21,6 +21,7 @@
 #ifndef BRNG_LINEAR_CONGRUENTIAL_ENGINE
 #define BRNG_LINEAR_CONGRUENTIAL_ENGINE
 
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 #include "tools/modular_arithmetic.hpp"
 #include "tools/uint128.hpp"
@@ -31,7 +32,9 @@
 namespace adhoc {
 
 template <class UIntType, std::size_t w, UIntType a, UIntType c, UIntType m>
-class linear_congruential_engine final {
+class linear_congruential_engine final
+    : public common_engine<UIntType, w,
+                           linear_congruential_engine<UIntType, w, a, c, m>> {
     static_assert(m == 0 || a < m);
     static_assert(m == 0 || c < m);
     static_assert(m == 0 ? gcd(static_cast<UIntType>(2U), a) == 1U
@@ -39,7 +42,15 @@ class linear_congruential_engine final {
     static_assert(w <= std::numeric_limits<UIntType>::digits);
 
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
+
+    static constexpr auto max() -> UIntType {
+        return m == 0 ? mask<UIntType>(w) : m - 1U;
+    }
+
+    static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
+
+    static constexpr UIntType mask_result = linear_congruential_engine::max();
 
     static constexpr UIntType multiplier = a;
     static constexpr UIntType multiplier_inverse =
@@ -49,30 +60,23 @@ class linear_congruential_engine final {
     static constexpr UIntType modulus = m;
     static constexpr UIntType default_seed = 1U;
 
-    explicit linear_congruential_engine(result_type value = default_seed)
-        : state(value) {}
+    explicit linear_congruential_engine(UIntType value = default_seed)
+        : state(value) {
+        this->operator++();
+    }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
+    inline auto operator*() const -> value_type { return this->state; }
 
+    inline auto operator++() -> linear_congruential_engine & {
         if constexpr (m == 0) {
-            constexpr auto mask = linear_congruential_engine::max();
-            if constexpr (FwdDirection) {
-                if constexpr (w == std::numeric_limits<UIntType>::digits) {
-                    this->state = a * this->state + c;
-                } else {
-                    this->state = (a * this->state + c) & mask;
-                }
-                return this->state;
+            if constexpr (c == 0) {
+                this->state = a * this->state;
             } else {
-                const auto result = this->state;
-                if constexpr (w == std::numeric_limits<UIntType>::digits) {
-                    this->state = multiplier_inverse * (this->state - c);
-                } else {
-                    this->state =
-                        (multiplier_inverse * (this->state - c)) & mask;
-                }
-                return result;
+                this->state = a * this->state + c;
+            }
+
+            if constexpr (w != std::numeric_limits<UIntType>::digits) {
+                this->state &= mask_result;
             }
         } else {
             using upgraded_type = std::conditional_t<
@@ -80,71 +84,72 @@ class linear_congruential_engine final {
                 std::conditional_t<
                     w <= 16, std::uint_fast32_t,
                     std::conditional_t<w <= 32, std::uint_fast64_t, uint128>>>;
-
             constexpr auto m_64 = static_cast<upgraded_type>(m);
             if constexpr (c == 0) {
-                if constexpr (FwdDirection) {
-                    constexpr auto a_64 = static_cast<upgraded_type>(a);
-
-                    this->state = static_cast<UIntType>(
-                        (a_64 * static_cast<upgraded_type>(this->state)) %
-                        m_64);
-                    return this->state;
-                } else {
-                    constexpr auto a_inv_64 =
-                        static_cast<upgraded_type>(multiplier_inverse);
-
-                    const auto result = this->state;
-                    this->state = static_cast<UIntType>(
-                        (a_inv_64 * static_cast<upgraded_type>(this->state)) %
-                        m_64);
-                    return result;
-                }
+                constexpr auto a_64 = static_cast<upgraded_type>(a);
+                this->state = static_cast<UIntType>(
+                    (a_64 * static_cast<upgraded_type>(this->state)) % m_64);
             } else {
                 constexpr auto c_64 = static_cast<upgraded_type>(c);
 
-                if constexpr (FwdDirection) {
-                    constexpr auto a_64 = static_cast<upgraded_type>(a);
+                constexpr auto a_64 = static_cast<upgraded_type>(a);
 
-                    this->state = static_cast<UIntType>(
-                        (a_64 * static_cast<upgraded_type>(this->state) +
-                         c_64) %
-                        m_64);
-                    return this->state;
-                } else {
-                    constexpr auto a_inv_64 =
-                        static_cast<upgraded_type>(multiplier_inverse);
-
-                    constexpr auto c_inv_64 = static_cast<upgraded_type>(m - c);
-
-                    const auto result = this->state;
-                    this->state = static_cast<UIntType>(
-                        (a_inv_64 *
-                         (static_cast<upgraded_type>(this->state) + c_inv_64)) %
-                        m_64);
-                    return result;
-                }
+                this->state = static_cast<UIntType>(
+                    (a_64 * static_cast<upgraded_type>(this->state) + c_64) %
+                    m_64);
             }
         }
+        return *this;
     }
 
-    void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()();
+    inline auto operator--() -> linear_congruential_engine & {
+        if constexpr (m == 0) {
+            if constexpr (c == 0) {
+                this->state = multiplier_inverse * this->state;
+            } else {
+                this->state = multiplier_inverse * (this->state - c);
+            }
+
+            if constexpr (w != std::numeric_limits<UIntType>::digits) {
+                this->state &= mask_result;
+            }
+        } else {
+            using upgraded_type = std::conditional_t<
+                w <= 8, std::uint_fast16_t,
+                std::conditional_t<
+                    w <= 16, std::uint_fast32_t,
+                    std::conditional_t<w <= 32, std::uint_fast64_t, uint128>>>;
+            constexpr auto m_64 = static_cast<upgraded_type>(m);
+            if constexpr (c == 0) {
+                constexpr auto a_inv_64 =
+                    static_cast<upgraded_type>(multiplier_inverse);
+
+                const auto result = this->state;
+                this->state = static_cast<UIntType>(
+                    (a_inv_64 * static_cast<upgraded_type>(this->state)) %
+                    m_64);
+            } else {
+                constexpr auto a_inv_64 =
+                    static_cast<upgraded_type>(multiplier_inverse);
+
+                constexpr auto c_inv_64 = static_cast<upgraded_type>(m - c);
+
+                const auto result = this->state;
+                this->state = static_cast<UIntType>(
+                    (a_inv_64 *
+                     (static_cast<upgraded_type>(this->state) + c_inv_64)) %
+                    m_64);
+            }
         }
+        return *this;
     }
 
-    static constexpr auto min() -> UIntType { return c == 0U ? 1U : 0U; }
-    static constexpr auto max() -> UIntType {
-        return m == 0 ? mask<UIntType>(w) : m - 1U;
-    }
+    using common_engine<UIntType, w, linear_congruential_engine>::operator++;
+    using common_engine<UIntType, w, linear_congruential_engine>::operator--;
+    using common_engine<UIntType, w, linear_congruential_engine>::operator==;
 
     auto operator==(const linear_congruential_engine &rhs) const -> bool {
         return (this->state == rhs.state);
-    }
-
-    auto operator!=(const linear_congruential_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:

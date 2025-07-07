@@ -71,117 +71,118 @@ set(BRNG
     xoroshiro1024star_check.cpp
     xoroshiro1024plusplus_check.cpp
     xoroshiro1024starstar_check.cpp
+    squares_engine.cpp
 )
 
-run_check("${BRNG}")
+run_check("BRNG" "${BRNG}")
 
 set(BRNGStatic
     tools/mask.cpp
 )
-compile_check("${BRNGStatic}" false)
+compile_check("BRNGStatic" "${BRNGStatic}" false)
 
-set(test_name "dynamic.WELL512a")
+set(test_name "BRNG.dynamic.WELL512a")
 add_executable(${test_name} WELL512a.cpp third_party/umontreal/WELL512a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.WELL1024a")
+set(test_name "BRNG.dynamic.WELL1024a")
 add_executable(${test_name} WELL1024a.cpp third_party/umontreal/WELL1024a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.WELL19937a")
+set(test_name "BRNG.dynamic.WELL19937a")
 add_executable(${test_name} WELL19937a.cpp third_party/umontreal/WELL19937a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.WELL44497a")
+set(test_name "BRNG.dynamic.WELL44497a")
 add_executable(${test_name} WELL44497a.cpp third_party/umontreal/WELL44497a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.MRG31k3p")
+set(test_name "BRNG.dynamic.MRG31k3p")
 add_executable(${test_name} MRG31k3p.cpp third_party/umontreal/MRG31k3p.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.MRG32k3a")
+set(test_name "BRNG.dynamic.MRG32k3a")
 add_executable(${test_name} MRG32k3a.cpp third_party/umontreal/MRG32k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.MRG32k5a")
+set(test_name "BRNG.dynamic.MRG32k5a")
 add_executable(${test_name} MRG32k5a.cpp third_party/umontreal/MRG32k5a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.MRG63k3a")
+set(test_name "BRNG.dynamic.MRG63k3a")
 add_executable(${test_name} MRG63k3a.cpp third_party/umontreal/MRG63k3a.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.PCG_engine")
+set(test_name "BRNG.dynamic.PCG_engine")
 add_executable(${test_name} PCG_engine.cpp third_party/pcg-c-basic/pcg_basic.c)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 add_subdirectory(third_party/PractRand-pre0.95)
 
-set(test_name "dynamic.mersenne_twister_engine")
+set(test_name "BRNG.dynamic.mersenne_twister_engine")
 add_executable(${test_name} mersenne_twister_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.jsf_engine")
+set(test_name "BRNG.dynamic.jsf_engine")
 add_executable(${test_name} jsf_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.hc256_engine")
+set(test_name "BRNG.dynamic.hc256_engine")
 add_executable(${test_name} hc256_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.chacha_engine")
+set(test_name "BRNG.dynamic.chacha_engine")
 add_executable(${test_name} chacha_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.romu_engine")
+set(test_name "BRNG.dynamic.romu_engine")
 add_executable(${test_name} romu_engine.cpp third_party/romu/romu.cpp)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
-set(test_name "dynamic.sfc_engine")
+set(test_name "BRNG.dynamic.sfc_engine")
 add_executable(${test_name} sfc_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.efiix_engine")
+set(test_name "BRNG.dynamic.efiix_engine")
 add_executable(${test_name} efiix_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.xsm_engine")
+set(test_name "BRNG.dynamic.xsm_engine")
 add_executable(${test_name} xsm_engine.cpp)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include new/PractRand-pre0.95/include new/PractRand-pre0.95/tools)
 
-set(test_name "dynamic.isaac_engine")
+set(test_name "BRNG.dynamic.isaac_engine")
 add_executable(${test_name} isaac_engine.cpp third_party/burtleburtle/isaac.c)
 target_link_libraries(${test_name} PRIVATE
     PractRand)
