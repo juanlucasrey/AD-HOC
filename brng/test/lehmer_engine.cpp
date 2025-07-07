@@ -1,7 +1,9 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
+#ifndef _MSC_VER
 #include "third_party/imneme/lehmer.hpp"
+#endif
 #include <lehmer_engine.hpp>
 #include <linear_congruential_engine.hpp>
 
