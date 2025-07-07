@@ -37,7 +37,7 @@ constexpr auto rotl(UIntType x, int s) noexcept -> UIntType {
         constexpr UIntType m = mask<UIntType>(w);
         return ((x << s) & m) | (x >> (w - s));
     }
-};
+}
 
 template <std::size_t w, class UIntType>
 constexpr auto rotr(UIntType x, int s) noexcept -> UIntType {
@@ -48,7 +48,7 @@ constexpr auto rotr(UIntType x, int s) noexcept -> UIntType {
         constexpr UIntType m = mask<UIntType>(w);
         return (x >> s) | ((x << (w - s)) & m);
     }
-};
+}
 
 template <std::size_t w, class UIntType>
 constexpr auto rot(UIntType x, int s) noexcept -> UIntType {
@@ -73,7 +73,7 @@ constexpr auto rot(UIntType x, int s) noexcept -> UIntType {
             return ((x << -s) & m) | (x >> (w + s));
         }
     }
-};
+}
 
 template <class UIntType>
 constexpr auto shift(UIntType x, int s) noexcept -> UIntType {
@@ -82,7 +82,7 @@ constexpr auto shift(UIntType x, int s) noexcept -> UIntType {
     } else {
         return x >> -s;
     }
-};
+}
 
 } // namespace adhoc
 

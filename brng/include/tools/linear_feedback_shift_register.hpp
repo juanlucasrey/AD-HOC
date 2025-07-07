@@ -62,7 +62,7 @@ class linear_feedback_shift_register final {
         // making simul.forward[full_cycle - 2] = simul.backward[1]
         this->operator()<true>();
         this->operator()<false>();
-    };
+    }
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {

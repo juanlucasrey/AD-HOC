@@ -161,7 +161,7 @@ class chacha_engine final
 
     inline auto operator*() const -> value_type {
         return this->output_cache[this->idx];
-    };
+    }
 
     inline auto operator++() -> chacha_engine & {
         constexpr auto mask4 = mask<std::size_t>(4);

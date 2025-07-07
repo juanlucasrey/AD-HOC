@@ -58,7 +58,7 @@ class sfc_engine final
         }
     }
 
-    inline auto operator*() const -> value_type { return this->result_cache; };
+    inline auto operator*() const -> value_type { return this->result_cache; }
 
     inline auto operator++() -> sfc_engine & {
         ++this->d_;

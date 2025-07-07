@@ -59,7 +59,7 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
 
         this->state.data().fill(value);
         this->init_consistent();
-    };
+    }
 
     template <class SeedSeq> explicit WELL19937a(SeedSeq &seq) {
         std::array<std::uint32_t, decltype(this->state)::size()>

@@ -283,7 +283,7 @@ class sobol_engine final {
             --this->j;
             return this->Y[this->j];
         }
-    };
+    }
 
     inline void discard(unsigned long long z) {
 

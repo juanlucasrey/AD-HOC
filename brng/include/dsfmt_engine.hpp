@@ -239,7 +239,7 @@ class dsfmt_engine final
     inline auto operator*() const -> value_type {
         constexpr auto mask_result = dsfmt_engine::max();
         return this->state.at()[this->idx] & mask_result;
-    };
+    }
 
     inline auto operator++() -> dsfmt_engine & {
         ++this->idx;

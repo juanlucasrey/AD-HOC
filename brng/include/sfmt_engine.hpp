@@ -68,7 +68,7 @@ class sfmt_engine final
             }
             return static_cast<std::uint32_t>(val);
         }
-    };
+    }
 
     void set_val32(std::size_t i, std::uint32_t r) {
         auto &state_data = this->state.data();
@@ -90,7 +90,7 @@ class sfmt_engine final
                 val = r64 | (val & mask_upper_half);
             }
         }
-    };
+    }
 
     void period_certification() {
         w128_t &first = this->state.at();
@@ -367,7 +367,7 @@ class sfmt_engine final
 
     inline auto operator*() const -> value_type {
         return this->state.at()[this->idx];
-    };
+    }
 
     inline auto operator++() -> sfmt_engine & {
         ++this->idx;

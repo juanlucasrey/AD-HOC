@@ -74,6 +74,7 @@ set(BRNG
     squares_engine.cpp
     speck_engine.cpp
     lxm_engine.cpp
+    lehmer_engine.cpp
 )
 
 run_check("BRNG" "${BRNG}")

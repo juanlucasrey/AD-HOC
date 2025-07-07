@@ -102,7 +102,7 @@ class speck_engine final
 
     inline auto operator*() const -> value_type {
         return this->output_cache[this->idx];
-    };
+    }
 
     inline auto operator++() -> speck_engine & {
         constexpr auto mask1 = mask<std::size_t>(1);

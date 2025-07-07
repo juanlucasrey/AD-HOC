@@ -130,7 +130,7 @@ class hc128_engine final
             result &= mask_res;
         }
         return result;
-    };
+    }
 
     inline auto operator++() -> hc128_engine & {
         constexpr auto mask_idx = mask<std::size_t>(10);

@@ -124,7 +124,7 @@ class hc256_engine final
             result &= mask_res;
         }
         return result;
-    };
+    }
 
     inline auto operator++() -> hc256_engine & {
         constexpr auto mask_idx = mask<std::size_t>(11);

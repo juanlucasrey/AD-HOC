@@ -249,7 +249,7 @@ class efiix_engine final
         } else {
             return (this->c + indirect) ^ iterated;
         }
-    };
+    }
 
     inline auto operator++() -> efiix_engine & {
         UIntType const iterated =
