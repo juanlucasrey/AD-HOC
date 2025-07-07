@@ -81,28 +81,28 @@ set(DynamicGCC
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU OR CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    compile_check("${StaticWorking}" false)
-    compile_check("${StaticFailing}" true)
+    compile_check("ADHOC" "${StaticWorking}" false)
+    compile_check("ADHOC" "${StaticFailing}" true)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-    compile_check("${StaticWorkingWindows}" false)
+    compile_check("ADHOC" "${StaticWorkingWindows}" false)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    compile_check("${StaticWorkingGCC}" false)
+    compile_check("ADHOC" "${StaticWorkingGCC}" false)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU OR CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    run_check("${Dynamic}")
+    run_check("ADHOC" "${Dynamic}")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    run_check("${DynamicGCC}")
+    run_check("ADHOC" "${DynamicGCC}")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-    run_check("${DynamicWindows}")
+    run_check("ADHOC" "${DynamicWindows}")
 endif()
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

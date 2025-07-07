@@ -99,7 +99,7 @@ int main() {
 
     {
         adhoc::chacha20 rng;
-        check_back_and_fwd(rng, 16);
+        check_back_and_fwd(rng, 1000000);
         adhoc::chacha20 rng2;
         EXPECT_EQUAL(rng, rng2);
     }

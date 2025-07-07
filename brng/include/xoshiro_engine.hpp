@@ -96,6 +96,12 @@ class xoshiro_engine final
         this->discard(16);
     }
 
+    explicit xoshiro_engine(UIntType seed1, UIntType seed2, UIntType seed3,
+                            UIntType seed4) {
+        static_assert(n == 4);
+        this->init4(seed1, seed2, seed3, seed4);
+    }
+
     template <class SeedSeq> explicit xoshiro_engine(SeedSeq &seq) {
         seed_seq_filler<w, n> seq_filler(seq);
         seq_filler.template generate<UIntType>(this->state.begin(),
@@ -129,6 +135,9 @@ class xoshiro_engine final
         }
         return result;
     }
+
+    // for lxm_engine
+    inline auto get0() const -> value_type { return this->state[0]; }
 
     inline auto operator++() -> xoshiro_engine & {
         if constexpr (n == 8) {
