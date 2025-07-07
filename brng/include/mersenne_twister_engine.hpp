@@ -22,6 +22,7 @@
 #define BRNG_MERSENNE_TWISTER_ENGINE
 
 #include "tools/circular_buffer.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 #include "tools/seed_seq_filler.hpp"
 
@@ -34,7 +35,10 @@ namespace adhoc {
 template <class UIntType, std::size_t w, std::size_t n, std::size_t m,
           std::size_t r, UIntType a, std::size_t u, UIntType d, std::size_t s,
           UIntType b, std::size_t t, UIntType c, std::size_t l, UIntType f>
-class mersenne_twister_engine final {
+class mersenne_twister_engine final
+    : public common_engine<UIntType, w,
+                           mersenne_twister_engine<UIntType, w, n, m, r, a, u,
+                                                   d, s, b, t, c, l, f>> {
     static_assert(1 <= m && m <= n);
     static_assert(w >= 3);
     static_assert(w >= r);
@@ -47,12 +51,12 @@ class mersenne_twister_engine final {
     // this short step ensures consistency when the full_cycle is completed,
     // making simul.forward[full_cycle - 2] = simul.backward[1]
     void init_consistent() {
-        this->operator()<true>();
-        this->operator()<false>();
+        --this->state;
+        this->operator++();
     }
 
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
 
     static constexpr std::size_t word_size = w;
     static constexpr std::size_t state_size = n;
@@ -71,7 +75,7 @@ class mersenne_twister_engine final {
 
     mersenne_twister_engine() : mersenne_twister_engine(default_seed) {}
 
-    explicit mersenne_twister_engine(result_type value) {
+    explicit mersenne_twister_engine(UIntType value) {
         constexpr auto mask = mersenne_twister_engine::max();
         this->state.at() = value;
         ++this->state;
@@ -94,36 +98,8 @@ class mersenne_twister_engine final {
         this->init_consistent();
     }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        UIntType result;
-
-        constexpr auto lower_mask = mask<UIntType>(r);
-        constexpr auto upper_mask = ~lower_mask;
-
-        if constexpr (FwdDirection) {
-            auto const next_val = this->state.template at<1>();
-            this->cache =
-                (this->state.at() & upper_mask) | (next_val & lower_mask);
-            this->state.at() = this->state.template at<m>() ^
-                               (this->cache >> 1) ^ ((next_val & 1U) * a);
-
-            result = this->state.at();
-            ++this->state;
-        } else {
-            --this->state;
-            result = this->state.at();
-
-            auto const prev_cache = this->cache;
-
-            this->cache = this->state.template at<n - 1>() ^
-                          this->state.template at<m - 1>();
-            UIntType const tmp = this->cache >> (w - 1);
-            this->cache = ((this->cache ^ (tmp * a)) << 1) | tmp;
-            this->state.at() =
-                (prev_cache & upper_mask) | (this->cache & lower_mask);
-        }
-
+    inline auto operator*() const -> value_type {
+        UIntType result = this->state.at();
         result ^= ((result >> u) & d);
         result ^= ((result << s) & b);
         result ^= ((result << t) & c);
@@ -131,23 +107,38 @@ class mersenne_twister_engine final {
         return result;
     }
 
-    void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()();
-        }
+    inline auto operator++() -> mersenne_twister_engine & {
+        constexpr auto lower_mask = mask<UIntType>(r);
+        constexpr auto upper_mask = ~lower_mask;
+        ++this->state;
+        auto const next_val = this->state.template at<1>();
+        this->cache = (this->state.at() & upper_mask) | (next_val & lower_mask);
+        this->state.at() = this->state.template at<m>() ^ (this->cache >> 1) ^
+                           ((next_val & 1U) * a);
+        return *this;
     }
 
-    static constexpr auto min() -> UIntType {
-        return static_cast<result_type>(0U);
+    inline auto operator--() -> mersenne_twister_engine & {
+        constexpr auto lower_mask = mask<UIntType>(r);
+        constexpr auto upper_mask = ~lower_mask;
+        auto const prev_cache = this->cache;
+
+        this->cache =
+            this->state.template at<n - 1>() ^ this->state.template at<m - 1>();
+        UIntType const tmp = this->cache >> (w - 1);
+        this->cache = ((this->cache ^ (tmp * a)) << 1) | tmp;
+        this->state.at() =
+            (prev_cache & upper_mask) | (this->cache & lower_mask);
+        --this->state;
+        return *this;
     }
-    static constexpr auto max() -> UIntType { return mask<UIntType>(w); }
+
+    using common_engine<UIntType, w, mersenne_twister_engine>::operator++;
+    using common_engine<UIntType, w, mersenne_twister_engine>::operator--;
+    using common_engine<UIntType, w, mersenne_twister_engine>::operator==;
 
     auto operator==(const mersenne_twister_engine &rhs) const -> bool {
         return (this->state == rhs.state) && (this->cache == rhs.cache);
-    }
-
-    auto operator!=(const mersenne_twister_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:

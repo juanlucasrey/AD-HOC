@@ -22,6 +22,7 @@
 #define BRNG_WELL19937a
 
 #include "tools/circular_buffer.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/mask.hpp"
 #include "tools/unshift.hpp"
 
@@ -32,17 +33,16 @@
 
 namespace adhoc {
 
-template <class UIntType, bool Tempering = false> class WELL19937a final {
+template <class UIntType, bool Tempering = false>
+class WELL19937a final
+    : public common_engine<UIntType, 32, WELL19937a<UIntType, Tempering>> {
 
     // this short step ensures consistency when the full_cycle is completed,
     // making simul.forward[full_cycle - 2] = simul.backward[1]
-    void init_consistent() {
-        this->operator()<true>();
-        this->operator()<false>();
-    }
+    void init_consistent() { this->operator++(); }
 
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
 
     static constexpr std::size_t word_size = 32U;
     static constexpr UIntType default_seed = 12345U;
@@ -50,7 +50,7 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
 
     WELL19937a() : WELL19937a(default_seed) {}
 
-    explicit WELL19937a(result_type value) {
+    explicit WELL19937a(UIntType value) {
 
         // values cannot all be 0
         if (value == 0) {
@@ -79,65 +79,8 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
         this->init_consistent();
     }
 
-    template <bool FwdDirection = true> inline auto operator()() -> UIntType {
-        constexpr auto lower_mask = mask<UIntType>(31);
-        constexpr auto upper_mask = ~lower_mask;
-        constexpr auto global_mask = WELL19937a::max();
-
-        UIntType result;
-        if constexpr (FwdDirection) {
-            auto const VRm1 = this->state.template at<623>();
-            auto const VRm2 = this->state.template at<622>();
-            auto const VM0 = this->state.at();
-            auto const VM1 = this->state.template at<70>();
-            auto const VM2 = this->state.template at<179>();
-            auto const VM3 = this->state.template at<449>();
-            auto &newV1 = this->state.at();
-            auto &newV0 = this->state.template at<623>();
-
-            this->cache[0] = (VRm1 & upper_mask) | (VRm2 & lower_mask);
-            this->cache[1] = (VM0 ^ (VM0 << 25)) ^ (VM1 ^ (VM1 >> 27));
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                this->cache[1] &= global_mask;
-            }
-            UIntType const z2 = (VM2 >> 9) ^ (VM3 ^ (VM3 >> 1));
-            newV1 = this->cache[1] ^ z2;
-            newV0 = this->cache[0] ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
-                    (z2 ^ (z2 << 21)) ^ (newV1 ^ (newV1 >> 21));
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                newV0 &= global_mask;
-            }
-
-            --this->state;
-            result = this->state.at();
-        } else {
-            result = this->state.at();
-            ++this->state;
-
-            auto &VM0 = this->state.at();
-            auto const VM1 = this->state.template at<70>();
-
-            UIntType const VM0Scrambled = this->cache[1] ^ (VM1 ^ (VM1 >> 27));
-            VM0 = unshift_left_xor<word_size, 25U>(VM0Scrambled);
-            UIntType const cache0_prev = this->cache[0];
-
-            auto const newV1P = this->state.template at<1>();
-            auto const VM2P = this->state.template at<180>();
-            auto const VM3P = this->state.template at<450>();
-            UIntType const z2P = (VM2P >> 9) ^ (VM3P ^ (VM3P >> 1));
-
-            this->cache[1] = newV1P ^ z2P;
-            this->cache[0] = VM0 ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
-                             (z2P ^ (z2P << 21)) ^ (newV1P ^ (newV1P >> 21));
-
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                this->cache[0] &= global_mask;
-            }
-
-            auto &VRm1 = this->state.template at<623>();
-            VRm1 = (cache0_prev & upper_mask) | (this->cache[0] & lower_mask);
-        }
-
+    inline auto operator*() const -> value_type {
+        UIntType result = this->state.at();
         if constexpr (Tempering) {
             constexpr UIntType TEMPERB = 0xE46E1700U;
             constexpr UIntType TEMPERC = 0x9B868000U;
@@ -147,23 +90,73 @@ template <class UIntType, bool Tempering = false> class WELL19937a final {
         return result;
     }
 
-    static constexpr auto min() -> UIntType {
-        return static_cast<UIntType>(0U);
+    inline auto operator++() -> WELL19937a & {
+        constexpr auto lower_mask = mask<UIntType>(31);
+        constexpr auto upper_mask = ~lower_mask;
+        constexpr auto global_mask = WELL19937a::max();
+        auto const VRm1 = this->state.template at<623>();
+        auto const VRm2 = this->state.template at<622>();
+        auto const VM0 = this->state.at();
+        auto const VM1 = this->state.template at<70>();
+        auto const VM2 = this->state.template at<179>();
+        auto const VM3 = this->state.template at<449>();
+        auto &newV1 = this->state.at();
+        auto &newV0 = this->state.template at<623>();
+
+        this->cache[0] = (VRm1 & upper_mask) | (VRm2 & lower_mask);
+        this->cache[1] = (VM0 ^ (VM0 << 25)) ^ (VM1 ^ (VM1 >> 27));
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            this->cache[1] &= global_mask;
+        }
+        UIntType const z2 = (VM2 >> 9) ^ (VM3 ^ (VM3 >> 1));
+        newV1 = this->cache[1] ^ z2;
+        newV0 = this->cache[0] ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
+                (z2 ^ (z2 << 21)) ^ (newV1 ^ (newV1 >> 21));
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            newV0 &= global_mask;
+        }
+
+        --this->state;
+        return *this;
     }
 
-    static constexpr auto max() -> UIntType {
-        return mask<UIntType>(word_size);
+    inline auto operator--() -> WELL19937a & {
+        constexpr auto lower_mask = mask<UIntType>(31);
+        constexpr auto upper_mask = ~lower_mask;
+        constexpr auto global_mask = WELL19937a::max();
+        ++this->state;
+
+        auto &VM0 = this->state.at();
+        auto const VM1 = this->state.template at<70>();
+
+        UIntType const VM0Scrambled = this->cache[1] ^ (VM1 ^ (VM1 >> 27));
+        VM0 = unshift_left_xor<word_size, 25U>(VM0Scrambled);
+        UIntType const cache0_prev = this->cache[0];
+
+        auto const newV1P = this->state.template at<1>();
+        auto const VM2P = this->state.template at<180>();
+        auto const VM3P = this->state.template at<450>();
+        UIntType const z2P = (VM2P >> 9) ^ (VM3P ^ (VM3P >> 1));
+
+        this->cache[1] = newV1P ^ z2P;
+        this->cache[0] = VM0 ^ (this->cache[1] ^ (this->cache[1] << 9)) ^
+                         (z2P ^ (z2P << 21)) ^ (newV1P ^ (newV1P >> 21));
+
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            this->cache[0] &= global_mask;
+        }
+
+        auto &VRm1 = this->state.template at<623>();
+        VRm1 = (cache0_prev & upper_mask) | (this->cache[0] & lower_mask);
+        return *this;
     }
+
+    using common_engine<UIntType, 32, WELL19937a>::operator++;
+    using common_engine<UIntType, 32, WELL19937a>::operator--;
+    using common_engine<UIntType, 32, WELL19937a>::operator==;
 
     auto operator==(const WELL19937a &rhs) const -> bool {
-        if (this == &rhs) {
-            return true;
-        }
         return this->state == rhs.state && this->cache == rhs.cache;
-    }
-
-    auto operator!=(const WELL19937a &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:
