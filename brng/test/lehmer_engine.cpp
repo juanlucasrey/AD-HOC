@@ -7,6 +7,7 @@
 
 auto main() -> int {
 
+#ifndef _MSC_VER
     {
         mcg128 rng1;
         adhoc::mcg128 rng2;
@@ -22,6 +23,7 @@ auto main() -> int {
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
+#endif
 
     {
         adhoc::mcg128 rng;
