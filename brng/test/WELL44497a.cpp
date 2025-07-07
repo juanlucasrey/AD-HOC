@@ -76,6 +76,9 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
+    static_assert(
+        std::bidirectional_iterator<adhoc::WELL44497a<std::uint32_t>>);
+
     std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);

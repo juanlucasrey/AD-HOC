@@ -305,6 +305,9 @@ auto main() -> int {
         }
     }
 
+    static_assert(std::bidirectional_iterator<adhoc::mt19937>);
+    static_assert(std::bidirectional_iterator<adhoc::mt19937_64>);
+
     std::size_t sims = 0;
     if (auto env_p = std::getenv("TIMING_SIMS")) {
         sims = std::atoi(env_p);
