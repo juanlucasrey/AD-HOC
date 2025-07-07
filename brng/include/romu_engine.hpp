@@ -78,7 +78,7 @@ class romu_engine final
         } else if constexpr (s == 4) {
             return this->state[1];
         }
-    };
+    }
 
     inline auto operator++() -> romu_engine & {
         if constexpr (s == 1) {

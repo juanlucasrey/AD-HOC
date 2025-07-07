@@ -35,7 +35,7 @@ constexpr auto gcd(UIntType a, UIntType b) -> UIntType {
         a = tmp;
     }
     return a;
-};
+}
 
 template <class UIntType>
 constexpr auto modular_multiplicative_inverse(UIntType n, UIntType b)

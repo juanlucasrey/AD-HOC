@@ -108,7 +108,7 @@ class xsm_engine final
         }
         result ^= result >> r3;
         return result;
-    };
+    }
 
     inline auto operator++() -> xsm_engine & {
         this->lcg_low_prev = this->lcg_low;

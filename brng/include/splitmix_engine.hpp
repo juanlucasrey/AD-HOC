@@ -68,7 +68,7 @@ class splitmix_engine final
         } else {
             return static_cast<value_type>(result >> (64 - w));
         }
-    };
+    }
 
     inline auto operator++() -> splitmix_engine & {
         this->seed_ += this->gamma_;

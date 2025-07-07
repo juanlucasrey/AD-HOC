@@ -74,7 +74,7 @@ class tyche_engine final
         } else {
             return this->b;
         }
-    };
+    }
 
     inline auto operator++() -> tyche_engine & {
         if constexpr (open_rand) {

@@ -177,7 +177,7 @@ class uniform_real {
             RealType rightlimit_m_eps = std::nextafter(b, 0.0);
             return std::min(result, rightlimit_m_eps);
         }
-    };
+    }
 
     void discard(unsigned long long z) { rng_.discard(z); }
 

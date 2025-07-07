@@ -40,7 +40,7 @@ template <class UIntType, std::size_t w, class RNG> class common_engine {
 
     inline auto operator*() const -> value_type {
         return (static_cast<RNG const *>(this))->operator*();
-    };
+    }
 
     inline auto operator++() -> RNG & {
         return (static_cast<RNG *>(this))->operator++();

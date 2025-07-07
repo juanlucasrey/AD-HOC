@@ -38,11 +38,11 @@ class gjrand_engine final {
 
     static constexpr auto min() -> result_type {
         return static_cast<result_type>(0U);
-    };
+    }
 
     static constexpr auto max() -> result_type {
         return mask<UIntType>(word_size);
-    };
+    }
 
     static_assert(w <= std::numeric_limits<UIntType>::digits);
     static_assert(p < w);

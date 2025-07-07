@@ -65,7 +65,7 @@ template <class UIntType, bool Original = false> class MRG32k5a final {
         this->State[7] %= mod2;
         this->State[8] %= mod2;
         this->State[9] %= mod2;
-    };
+    }
 
     template <class SeedSeq> explicit MRG32k5a(SeedSeq &seq) {
         seq.generate(this->State.begin(), this->State.end());

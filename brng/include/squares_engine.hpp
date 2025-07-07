@@ -62,7 +62,7 @@ class squares_engine final
         } else {
             return (x * x + z) >> 32U;
         }
-    };
+    }
 
     inline auto operator++() -> squares_engine & {
         ++this->ctr;

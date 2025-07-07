@@ -105,7 +105,7 @@ template <class UIntType, std::size_t w, std::size_t... vals> class xor_engine {
         std::array<UIntType, number_of_lfsr> init{};
         init.fill(value);
         this->init_consistent(init);
-    };
+    }
 
     template <class SeedSeq> explicit xor_engine(SeedSeq &seq) {
         std::array<std::uint32_t, number_of_lfsr> generated_sequence;

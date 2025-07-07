@@ -50,7 +50,7 @@ template <class UIntType> class WELL512a final {
         }
 
         this->state.data().fill(value);
-    };
+    }
 
     template <class SeedSeq> explicit WELL512a(SeedSeq &seq) {
         std::array<std::uint32_t, decltype(this->state)::size()>
