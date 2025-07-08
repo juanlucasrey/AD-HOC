@@ -21,6 +21,7 @@
 #ifndef BRNG_MRG32k5a
 #define BRNG_MRG32k5a
 
+#include "tools/common_engine.hpp"
 #include "tools/modular_arithmetic.hpp"
 
 #include <array>
@@ -33,16 +34,15 @@ namespace adhoc {
 // with the purely modular operator logic. I prefer using Original = false, and
 // a wrapper that ensures 0 is never output in the left boundary of a
 // uniform_real_distribution by other means.
-template <class UIntType, bool Original = false> class MRG32k5a final {
-    static_assert(std::numeric_limits<UIntType>::digits >= 32);
-    static_assert(std::is_unsigned_v<UIntType>);
-
+template <class UIntType, bool Original = false>
+class MRG32k5a final
+    : public common_engine<UIntType, 32, MRG32k5a<UIntType, Original>> {
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
 
     MRG32k5a() : MRG32k5a(DefaultSeed) {}
 
-    explicit MRG32k5a(result_type value) {
+    explicit MRG32k5a(UIntType value) {
 
         if (value == 0) {
             value = DefaultSeed;
@@ -53,130 +53,120 @@ template <class UIntType, bool Original = false> class MRG32k5a final {
         // The seeds for Cg[3], Cg[4], Cg[5] must be integers in [0, m2 - 1] and
         // not all 0.
 
-        this->State.fill(value);
+        this->state.fill(value);
 
-        this->State[0] %= mod1;
-        this->State[1] %= mod1;
-        this->State[2] %= mod1;
-        this->State[3] %= mod1;
-        this->State[4] %= mod1;
-        this->State[5] %= mod2;
-        this->State[6] %= mod2;
-        this->State[7] %= mod2;
-        this->State[8] %= mod2;
-        this->State[9] %= mod2;
+        this->state[0] %= mod1;
+        this->state[1] %= mod1;
+        this->state[2] %= mod1;
+        this->state[3] %= mod1;
+        this->state[4] %= mod1;
+        this->state[5] %= mod2;
+        this->state[6] %= mod2;
+        this->state[7] %= mod2;
+        this->state[8] %= mod2;
+        this->state[9] %= mod2;
+        this->operator++();
     }
 
     template <class SeedSeq> explicit MRG32k5a(SeedSeq &seq) {
-        seq.generate(this->State.begin(), this->State.end());
-        this->State[0] %= mod1;
-        this->State[1] %= mod1;
-        this->State[2] %= mod1;
-        this->State[3] %= mod1;
-        this->State[4] %= mod1;
-        this->State[5] %= mod2;
-        this->State[6] %= mod2;
-        this->State[7] %= mod2;
-        this->State[8] %= mod2;
-        this->State[9] %= mod2;
+        seq.generate(this->state.begin(), this->state.end());
+        this->state[0] %= mod1;
+        this->state[1] %= mod1;
+        this->state[2] %= mod1;
+        this->state[3] %= mod1;
+        this->state[4] %= mod1;
+        this->state[5] %= mod2;
+        this->state[6] %= mod2;
+        this->state[7] %= mod2;
+        this->state[8] %= mod2;
+        this->state[9] %= mod2;
 
-        if (this->State[0] == 0 && this->State[1] == 0 && this->State[2] == 0 &&
-            this->State[3] == 0 && this->State[4] == 0) {
-            this->State[0] = DefaultSeed;
-            this->State[1] = DefaultSeed;
-            this->State[2] = DefaultSeed;
-            this->State[3] = DefaultSeed;
-            this->State[4] = DefaultSeed;
+        if (this->state[0] == 0 && this->state[1] == 0 && this->state[2] == 0 &&
+            this->state[3] == 0 && this->state[4] == 0) {
+            this->state[0] = DefaultSeed;
+            this->state[1] = DefaultSeed;
+            this->state[2] = DefaultSeed;
+            this->state[3] = DefaultSeed;
+            this->state[4] = DefaultSeed;
         }
 
-        if (this->State[5] == 0 && this->State[6] == 0 && this->State[7] == 0 &&
-            this->State[8] == 0 && this->State[9] == 0) {
-            this->State[5] = DefaultSeed;
-            this->State[6] = DefaultSeed;
-            this->State[7] = DefaultSeed;
-            this->State[8] = DefaultSeed;
-            this->State[9] = DefaultSeed;
+        if (this->state[5] == 0 && this->state[6] == 0 && this->state[7] == 0 &&
+            this->state[8] == 0 && this->state[9] == 0) {
+            this->state[5] = DefaultSeed;
+            this->state[6] = DefaultSeed;
+            this->state[7] = DefaultSeed;
+            this->state[8] = DefaultSeed;
+            this->state[9] = DefaultSeed;
+        }
+        this->operator++();
+    }
+
+    inline auto operator*() const -> value_type {
+        if constexpr (Original) {
+            return this->state[4] == this->state[9]
+                       ? static_cast<UIntType>(mod1)
+                       : static_cast<UIntType>(
+                             (this->state[4] + (mod1 - this->state[9])) % mod1);
+
+        } else {
+            return static_cast<UIntType>(
+                (this->state[4] + (mod1 - this->state[9])) % mod1);
         }
     }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            auto const p1 =
-                (((a12 * this->State[3] + a14 * this->State[1]) % mod1) +
-                 a15 * this->State[0]) %
-                mod1;
-            this->State[0] = this->State[1];
-            this->State[1] = this->State[2];
-            this->State[2] = this->State[3];
-            this->State[3] = this->State[4];
-            this->State[4] = p1;
+    inline auto operator++() -> MRG32k5a & {
+        auto const p1 =
+            (((a12 * this->state[3] + a14 * this->state[1]) % mod1) +
+             a15 * this->state[0]) %
+            mod1;
+        this->state[0] = this->state[1];
+        this->state[1] = this->state[2];
+        this->state[2] = this->state[3];
+        this->state[3] = this->state[4];
+        this->state[4] = p1;
 
-            auto const p2 =
-                (((a21 * this->State[9] + a23 * this->State[7]) % mod2) +
-                 a25 * this->State[5]) %
-                mod2;
-            this->State[5] = this->State[6];
-            this->State[6] = this->State[7];
-            this->State[7] = this->State[8];
-            this->State[8] = this->State[9];
-            this->State[9] = p2;
+        auto const p2 =
+            (((a21 * this->state[9] + a23 * this->state[7]) % mod2) +
+             a25 * this->state[5]) %
+            mod2;
+        this->state[5] = this->state[6];
+        this->state[6] = this->state[7];
+        this->state[7] = this->state[8];
+        this->state[8] = this->state[9];
+        this->state[9] = p2;
+        return *this;
+    }
 
-            if constexpr (Original) {
-                return this->State[4] == this->State[9]
-                           ? static_cast<UIntType>(mod1)
-                           : static_cast<UIntType>(
-                                 (this->State[4] + (mod1 - this->State[9])) %
-                                 mod1);
+    inline auto operator--() -> MRG32k5a & {
+        constexpr auto a25_inv = modular_multiplicative_inverse(mod2, a25);
+        constexpr auto a21_inv = mod2 - a21;
+        constexpr auto a23_inv = mod2 - a23;
 
-            } else {
-                return static_cast<UIntType>(
-                    (this->State[4] + (mod1 - this->State[9])) % mod1);
-            }
-        } else {
-            UIntType result = 0;
-            if constexpr (Original) {
-                result = this->State[4] == this->State[9]
-                             ? static_cast<UIntType>(mod1)
-                             : static_cast<UIntType>(
-                                   (this->State[4] + (mod1 - this->State[9])) %
-                                   mod1);
-            } else {
-                result = static_cast<UIntType>(
-                    (this->State[4] + (mod1 - this->State[9])) % mod1);
-            }
+        auto const p2 = (((((a21_inv * this->state[8]) % mod2) +
+                           (a23_inv * this->state[6]) + this->state[9]) %
+                          mod2) *
+                         a25_inv) %
+                        mod2;
+        this->state[9] = this->state[8];
+        this->state[8] = this->state[7];
+        this->state[7] = this->state[6];
+        this->state[6] = this->state[5];
+        this->state[5] = p2;
 
-            constexpr auto a25_inv = modular_multiplicative_inverse(mod2, a25);
-            constexpr auto a21_inv = mod2 - a21;
-            constexpr auto a23_inv = mod2 - a23;
-
-            auto const p2 = (((((a21_inv * this->State[8]) % mod2) +
-                               (a23_inv * this->State[6]) + this->State[9]) %
-                              mod2) *
-                             a25_inv) %
-                            mod2;
-            this->State[9] = this->State[8];
-            this->State[8] = this->State[7];
-            this->State[7] = this->State[6];
-            this->State[6] = this->State[5];
-            this->State[5] = p2;
-
-            constexpr auto a15_inv = modular_multiplicative_inverse(mod1, a15);
-            constexpr auto a12_inv = mod1 - a12;
-            constexpr auto a14_inv = mod1 - a14;
-            auto const p1 = (((((a12_inv * this->State[2]) % mod1) +
-                               (a14_inv * this->State[0]) + this->State[4]) %
-                              mod1) *
-                             a15_inv) %
-                            mod1;
-            this->State[4] = this->State[3];
-            this->State[3] = this->State[2];
-            this->State[2] = this->State[1];
-            this->State[1] = this->State[0];
-            this->State[0] = p1;
-
-            return result;
-        }
+        constexpr auto a15_inv = modular_multiplicative_inverse(mod1, a15);
+        constexpr auto a12_inv = mod1 - a12;
+        constexpr auto a14_inv = mod1 - a14;
+        auto const p1 = (((((a12_inv * this->state[2]) % mod1) +
+                           (a14_inv * this->state[0]) + this->state[4]) %
+                          mod1) *
+                         a15_inv) %
+                        mod1;
+        this->state[4] = this->state[3];
+        this->state[3] = this->state[2];
+        this->state[2] = this->state[1];
+        this->state[1] = this->state[0];
+        this->state[0] = p1;
+        return *this;
     }
 
     static constexpr auto min() -> UIntType {
@@ -195,12 +185,12 @@ template <class UIntType, bool Original = false> class MRG32k5a final {
         }
     }
 
-    auto operator==(const MRG32k5a &rhs) const -> bool {
-        return (this->State == rhs.State);
-    }
+    using common_engine<UIntType, 32, MRG32k5a>::operator++;
+    using common_engine<UIntType, 32, MRG32k5a>::operator--;
+    using common_engine<UIntType, 32, MRG32k5a>::operator==;
 
-    auto operator!=(const MRG32k5a &rhs) const -> bool {
-        return !(this->operator==(rhs));
+    auto operator==(const MRG32k5a &rhs) const -> bool {
+        return (this->state == rhs.state);
     }
 
   private:
@@ -214,7 +204,7 @@ template <class UIntType, bool Original = false> class MRG32k5a final {
     static constexpr std::uint64_t mod1 = 4294949027U;
     static constexpr std::uint64_t mod2 = 4294934327U;
 
-    std::array<std::uint64_t, 10> State{};
+    std::array<std::uint64_t, 10> state{};
 };
 
 } // namespace adhoc

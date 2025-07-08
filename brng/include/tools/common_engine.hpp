@@ -33,6 +33,7 @@ template <class UIntType, std::size_t w, class RNG> class common_engine {
   public:
     static constexpr std::size_t word_size = w;
     static_assert(word_size <= std::numeric_limits<UIntType>::digits);
+    static_assert(std::is_unsigned_v<UIntType>);
 
     using difference_type = std::ptrdiff_t;
     using value_type = UIntType;

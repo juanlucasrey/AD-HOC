@@ -22,7 +22,7 @@
 #define BRNG_WELL1024a
 
 #include "tools/circular_buffer.hpp"
-#include "tools/mask.hpp"
+#include "tools/common_engine.hpp"
 #include "tools/unshift.hpp"
 
 #include <algorithm>
@@ -32,17 +32,18 @@
 
 namespace adhoc {
 
-template <class UIntType> class WELL1024a final {
+template <class UIntType>
+class WELL1024a final
+    : public common_engine<UIntType, 32, WELL1024a<UIntType>> {
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
 
     static constexpr std::size_t word_size = 32U;
     static constexpr UIntType default_seed = 12345U;
-    static_assert(word_size <= std::numeric_limits<UIntType>::digits);
 
     WELL1024a() : WELL1024a(default_seed) {}
 
-    explicit WELL1024a(result_type value) {
+    explicit WELL1024a(UIntType value) {
 
         // values cannot all be 0
         if (value == 0) {
@@ -50,6 +51,7 @@ template <class UIntType> class WELL1024a final {
         }
 
         this->state.data().fill(value);
+        this->operator++();
     }
 
     template <class SeedSeq> explicit WELL1024a(SeedSeq &seq) {
@@ -67,77 +69,66 @@ template <class UIntType> class WELL1024a final {
                         [](UIntType i) { return i == 0; })) {
             this->state.data().fill(default_seed);
         }
+        this->operator++();
     }
 
-    template <bool FwdDirection = true> inline auto operator()() -> UIntType {
+    inline auto operator*() const -> value_type { return this->state.at(); }
+
+    inline auto operator++() -> WELL1024a & {
         constexpr auto global_mask = WELL1024a::max();
+        auto const &VM0 = this->state.at();
+        auto const &VM1 = this->state.template at<3>();
+        auto const &VM2 = this->state.template at<24>();
+        auto const &VM3 = this->state.template at<10>();
+        auto const &VRm1 = this->state.template at<31>();
+        auto &newV0 = this->state.template at<31>();
+        auto &newV1 = this->state.at();
 
-        if constexpr (FwdDirection) {
-            auto const &VM0 = this->state.at();
-            auto const &VM1 = this->state.template at<3>();
-            auto const &VM2 = this->state.template at<24>();
-            auto const &VM3 = this->state.template at<10>();
-            auto const &VRm1 = this->state.template at<31>();
-            auto &newV0 = this->state.template at<31>();
-            auto &newV1 = this->state.at();
-
-            UIntType const z1 = VM0 ^ (VM1 ^ (VM1 >> 8U));
-            UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                z2 &= global_mask;
-            }
-            newV1 = z1 ^ z2;
-            newV0 =
-                (VRm1 ^ (VRm1 << 11U)) ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                newV0 &= global_mask;
-            }
-
-            --this->state;
-            return this->state.at();
-        } else {
-            auto const result = this->state.at();
-            ++this->state;
-
-            auto &VM0 = this->state.at();
-            auto const &VM1 = this->state.template at<3>();
-            auto const &VM2 = this->state.template at<24>();
-            auto const &VM3 = this->state.template at<10>();
-            auto &VRm1 = this->state.template at<31>();
-            auto const &newV0 = this->state.template at<31>();
-            auto const &newV1 = this->state.at();
-
-            UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
-            if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
-                z2 &= global_mask;
-            }
-            UIntType const z1 = newV1 ^ z2;
-            UIntType const VRm1Scrambled =
-                newV0 ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));
-            VRm1 = unshift_left_xor<word_size, 11U>(VRm1Scrambled);
-            VM0 = z1 ^ (VM1 ^ (VM1 >> 8U));
-
-            return result;
+        UIntType const z1 = VM0 ^ (VM1 ^ (VM1 >> 8U));
+        UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            z2 &= global_mask;
         }
+        newV1 = z1 ^ z2;
+        newV0 = (VRm1 ^ (VRm1 << 11U)) ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            newV0 &= global_mask;
+        }
+
+        --this->state;
+        return *this;
     }
 
-    static constexpr auto min() -> UIntType {
-        return static_cast<UIntType>(0U);
+    inline auto operator--() -> WELL1024a & {
+        constexpr auto global_mask = WELL1024a::max();
+        ++this->state;
+
+        auto &VM0 = this->state.at();
+        auto const &VM1 = this->state.template at<3>();
+        auto const &VM2 = this->state.template at<24>();
+        auto const &VM3 = this->state.template at<10>();
+        auto &VRm1 = this->state.template at<31>();
+        auto const &newV0 = this->state.template at<31>();
+        auto const &newV1 = this->state.at();
+
+        UIntType z2 = (VM2 ^ (VM2 << 19U)) ^ (VM3 ^ (VM3 << 14U));
+        if constexpr (word_size != std::numeric_limits<UIntType>::digits) {
+            z2 &= global_mask;
+        }
+        UIntType const z1 = newV1 ^ z2;
+        UIntType const VRm1Scrambled =
+            newV0 ^ (z1 ^ (z1 << 7U)) ^ (z2 ^ (z2 << 13U));
+        VRm1 = unshift_left_xor<word_size, 11U>(VRm1Scrambled);
+        VM0 = z1 ^ (VM1 ^ (VM1 >> 8U));
+        return *this;
     }
 
-    static constexpr auto max() -> UIntType {
-        return mask<UIntType>(word_size);
-    }
+    using common_engine<UIntType, 32, WELL1024a>::operator++;
+    using common_engine<UIntType, 32, WELL1024a>::operator--;
+    using common_engine<UIntType, 32, WELL1024a>::operator==;
 
     auto operator==(const WELL1024a &rhs) const -> bool {
-        if (this == &rhs) {
-            return true;
-        }
         return this->state == rhs.state;
-    }
-
-    auto operator!=(const WELL1024a &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:

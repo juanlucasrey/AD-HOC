@@ -85,6 +85,8 @@ auto main() -> int {
         sims = std::atoi(env_p);
     }
 
+    static_assert(std::bidirectional_iterator<adhoc::WELL1024a<std::uint32_t>>);
+
     if (sims) {
         double res1 = 0;
         std::seed_seq seq{1, 2, 3, 4, 5};

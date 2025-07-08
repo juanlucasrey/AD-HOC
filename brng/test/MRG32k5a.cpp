@@ -121,5 +121,7 @@ auto main() -> int {
         compare_rng_limits(rng1, rng2);
     }
 
+    static_assert(std::bidirectional_iterator<adhoc::MRG32k5a<std::uint32_t>>);
+
     TEST_END;
 }

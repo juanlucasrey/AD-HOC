@@ -235,11 +235,34 @@ auto main() -> int {
     }
 
     {
+        adhoc::MRG63k3a<std::uint64_t, true> rng;
+        check_fwd_and_back(rng, 1000000);
+        adhoc::MRG63k3a<std::uint64_t, true> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::MRG63k3a<std::uint64_t, true> rng;
+        check_back_and_fwd(rng, 1000000);
+        adhoc::MRG63k3a<std::uint64_t, true> rng2;
+        EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        adhoc::MRG63k3a<std::uint64_t> rng1;
+        adhoc::MRG63k3a<std::uint64_t, true> rng2;
+        compare_rng(rng1, rng2, 1000000);
+        compare_rng_limits(rng1, rng2);
+    }
+
+    {
         adhoc::MRG63k3a<std::uint64_t> rng1;
         adhoc::MRG63k3a<adhoc::uint128> rng2;
         compare_rng(rng1, rng2, 1000000);
         compare_rng_limits(rng1, rng2);
     }
+
+    static_assert(std::bidirectional_iterator<adhoc::MRG63k3a<std::uint64_t>>);
 
     TEST_END;
 }
