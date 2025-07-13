@@ -6,6 +6,8 @@
 #include "PractRand.h"
 #include "PractRand/RNGs/all.h"
 
+#include <cstdint>
+
 auto main() -> int {
 
     {
