@@ -37,9 +37,6 @@ namespace adhoc {
 template <class UIntType, bool Original = false>
 class MRG31k3p final
     : public common_engine<UIntType, 32, MRG31k3p<UIntType, Original>> {
-    static_assert(std::numeric_limits<UIntType>::digits >= 32);
-    static_assert(std::is_unsigned_v<UIntType>);
-
   public:
     using value_type = UIntType;
 

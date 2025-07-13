@@ -39,8 +39,6 @@ namespace adhoc {
 template <class UIntType, bool Use128 = false, bool Original = false>
 class MRG63k3a final
     : public common_engine<UIntType, 64, MRG63k3a<UIntType, Use128, Original>> {
-    // static_assert(std::is_unsigned_v<UIntType>);
-
   public:
     using value_type = UIntType;
     static constexpr std::size_t word_size = 64;

@@ -22,13 +22,11 @@
 #define BRNG_ROMU_ENGINE
 
 #include "tools/common_engine.hpp"
-#include "tools/mask.hpp"
 #include "tools/modular_arithmetic.hpp"
 
 #include <array>
 #include <bit>
 #include <cstddef>
-#include <limits>
 
 namespace adhoc {
 

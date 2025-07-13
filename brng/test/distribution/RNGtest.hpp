@@ -3,9 +3,14 @@
 
 template <class UIntType, UIntType Min, UIntType Max> struct RNGtest final {
 
+    using value_type = UIntType;
     using result_type = UIntType;
 
     explicit RNGtest(result_type value_in) : value(value_in) {}
+
+    inline auto operator*() const -> value_type { return value; }
+    inline auto operator++() -> RNGtest & { return *this; }
+    inline auto operator--() -> RNGtest & { return *this; }
 
     template <bool FwdDirection = true>
     inline auto operator()() -> result_type {

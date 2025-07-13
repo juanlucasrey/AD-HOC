@@ -40,8 +40,6 @@ class lehmer_engine final
   public:
     using value_type = UIntType;
 
-    using result_type = UIntType;
-
     static_assert(w_int <= std::numeric_limits<UIntType_int>::digits);
     static_assert(w <= w_int);
 
@@ -51,8 +49,7 @@ class lehmer_engine final
 
     lehmer_engine() : lehmer_engine(default_seed) {}
 
-    explicit lehmer_engine(result_type seed)
-        : state_((seed & mask_result) | 1) {
+    explicit lehmer_engine(UIntType seed) : state_((seed & mask_result) | 1) {
         this->operator++();
     }
 

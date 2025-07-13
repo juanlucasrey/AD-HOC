@@ -13,49 +13,61 @@ auto main() -> int {
         arc4_rand rng;
 
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand rng2(init);
+        adhoc::arc4 rng2(init);
 
-        for (std::size_t i = 0; i < 20; ++i) {
+        for (std::size_t i = 0; i < 1000000; ++i) {
             auto val1 = rng();
-            auto val2 = rng2();
+            std::uint32_t val2 = 0;
+            for (std::size_t shift = 0; shift < 32; shift += 8) {
+                val2 |= rng2() << shift;
+            }
             EXPECT_EQUAL(val1, val2);
         }
     }
 
     {
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand rng(init);
-        check_fwd_and_back(rng, 1000000);
+        adhoc::arc4 rng(init);
+        check_fwd_and_back(rng, 2);
         std::seed_seq init2{0xd0beef41U};
-        adhoc::arc4_rand rng2(init2);
+        adhoc::arc4 rng2(init2);
         EXPECT_EQUAL(rng, rng2);
     }
 
     {
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand rng(init);
+        adhoc::arc4 rng(init);
         check_back_and_fwd(rng, 1000000);
         std::seed_seq init2{0xd0beef41U};
-        adhoc::arc4_rand rng2(init2);
+        adhoc::arc4 rng2(init2);
         EXPECT_EQUAL(rng, rng2);
     }
 
     {
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand64 rng(init);
+        adhoc::arc4 rng(init);
         check_fwd_and_back(rng, 1000000);
         std::seed_seq init2{0xd0beef41U};
-        adhoc::arc4_rand64 rng2(init2);
+        adhoc::arc4 rng2(init2);
         EXPECT_EQUAL(rng, rng2);
     }
 
     {
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand64 rng(init);
+        adhoc::arc4 rng(init);
         check_back_and_fwd(rng, 1000000);
         std::seed_seq init2{0xd0beef41U};
-        adhoc::arc4_rand64 rng2(init2);
+        adhoc::arc4 rng2(init2);
         EXPECT_EQUAL(rng, rng2);
+    }
+
+    {
+        std::seed_seq init1{0xd0beef41U};
+        adhoc::arc4_engine<std::uint8_t> rng1(init1);
+        std::seed_seq init2{0xd0beef41U};
+        adhoc::arc4_engine<std::uint32_t> rng2(init2);
+        compare_rng(rng1, rng2, 1000000);
+        compare_rng_limits(rng1, rng2);
     }
 
     std::size_t sims = 0;
@@ -66,7 +78,7 @@ auto main() -> int {
     if (sims) {
         std::uint64_t res1 = 0;
         std::seed_seq init{0xd0beef41U};
-        adhoc::arc4_rand rng(init);
+        adhoc::arc4 rng(init);
         {
             auto time1 = std::chrono::high_resolution_clock::now();
             for (std::size_t i = 0; i < sims; i++) {
@@ -116,7 +128,7 @@ auto main() -> int {
 
         std::uint64_t res3 = 0;
         std::seed_seq init3{0xd0beef41U};
-        adhoc::arc4_rand rng3(init3);
+        adhoc::arc4 rng3(init3);
         {
             auto time1 = std::chrono::high_resolution_clock::now();
             for (std::size_t i = 0; i < sims; i++) {
