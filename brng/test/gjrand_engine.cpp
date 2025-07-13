@@ -69,5 +69,7 @@ auto main() -> int {
         EXPECT_EQUAL(rng, rng2);
     }
 
+    static_assert(std::bidirectional_iterator<adhoc::gjrand64>);
+
     TEST_END;
 }

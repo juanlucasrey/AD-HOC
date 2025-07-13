@@ -22,7 +22,7 @@
 #define BRNG_GJRAND_ENGINE
 
 #include "tools/bit.hpp"
-#include "tools/mask.hpp"
+#include "tools/common_engine.hpp"
 
 #include <cstddef>
 #include <limits>
@@ -31,25 +31,18 @@ namespace adhoc {
 
 template <class UIntType, std::size_t w, UIntType d_inc, std::size_t p,
           std::size_t q, std::size_t r>
-class gjrand_engine final {
+class gjrand_engine final
+    : public common_engine<UIntType, w,
+                           gjrand_engine<UIntType, w, d_inc, p, q, r>> {
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
     static constexpr std::size_t word_size = w;
 
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    }
-
-    static constexpr auto max() -> result_type {
-        return mask<UIntType>(word_size);
-    }
-
-    static_assert(w <= std::numeric_limits<UIntType>::digits);
     static_assert(p < w);
     static_assert(q < w);
     static_assert(r < w);
 
-    static constexpr UIntType m = gjrand_engine::max();
+    static constexpr UIntType mask_result = gjrand_engine::max();
     static constexpr UIntType default_seed_1 = 0xcafef00dbeef5eedULL;
     static constexpr UIntType default_seed_2 = 0ULL;
     static constexpr UIntType default_seed_3 = w <= 8    ? 201U
@@ -60,98 +53,89 @@ class gjrand_engine final {
     gjrand_engine()
         : gjrand_engine(default_seed_1, default_seed_2, default_seed_3) {}
 
-    explicit gjrand_engine(result_type seed1, result_type seed2,
-                           result_type seed3)
-        : a_(seed1 & m), b_(seed2 & m), c_(seed3 & m), d_(0) {
+    explicit gjrand_engine(UIntType seed1, UIntType seed2, UIntType seed3)
+        : a_(seed1 & mask_result), b_(seed2 & mask_result),
+          c_(seed3 & mask_result), d_(0) {
 
-        for (std::size_t j = 0; j < 14; ++j) {
-            this->operator()<true>();
-        }
+        this->discard(15);
     }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            this->b_ += this->c_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->b_ &= m;
-            }
-            this->a_ = rotl<w>(this->a_, p);
-            this->c_ ^= this->b_;
-            this->d_ += d_inc;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->d_ &= m;
-            }
-            this->a_ += this->b_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->a_ &= m;
-            }
-            this->c_ = rotl<w>(this->c_, q);
-            this->b_ ^= this->a_;
-            this->a_ += this->c_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->a_ &= m;
-            }
-            this->b_ = rotl<w>(this->b_, r);
-            this->c_ += this->a_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->c_ &= m;
-            }
-            this->b_ += this->d_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->b_ &= m;
-            }
+    inline auto operator*() const -> value_type { return this->a_; }
 
-            return this->a_;
-        } else {
-            auto const result = this->a_;
-            this->b_ -= this->d_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->b_ &= m;
-            }
-
-            this->c_ -= this->a_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->c_ &= m;
-            }
-            this->b_ = rotr<w>(this->b_, r);
-            this->a_ -= this->c_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->a_ &= m;
-            }
-            this->b_ ^= this->a_;
-            this->c_ = rotr<w>(this->c_, q);
-            this->a_ -= this->b_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->a_ &= m;
-            }
-            this->d_ -= d_inc;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->d_ &= m;
-            }
-            this->c_ ^= this->b_;
-            this->a_ = rotr<w>(this->a_, p);
-            this->b_ -= this->c_;
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->b_ &= m;
-            }
-            return result;
+    inline auto operator++() -> gjrand_engine & {
+        this->b_ += this->c_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->b_ &= mask_result;
         }
+        this->a_ = rotl<w>(this->a_, p);
+        this->c_ ^= this->b_;
+        this->d_ += d_inc;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->d_ &= mask_result;
+        }
+        this->a_ += this->b_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->a_ &= mask_result;
+        }
+        this->c_ = rotl<w>(this->c_, q);
+        this->b_ ^= this->a_;
+        this->a_ += this->c_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->a_ &= mask_result;
+        }
+        this->b_ = rotl<w>(this->b_, r);
+        this->c_ += this->a_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->c_ &= mask_result;
+        }
+        this->b_ += this->d_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->b_ &= mask_result;
+        }
+        return *this;
     }
 
-    template <bool FwdDirection = true> void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()();
+    inline auto operator--() -> gjrand_engine & {
+        this->b_ -= this->d_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->b_ &= mask_result;
         }
+
+        this->c_ -= this->a_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->c_ &= mask_result;
+        }
+        this->b_ = rotr<w>(this->b_, r);
+        this->a_ -= this->c_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->a_ &= mask_result;
+        }
+        this->b_ ^= this->a_;
+        this->c_ = rotr<w>(this->c_, q);
+        this->a_ -= this->b_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->a_ &= mask_result;
+        }
+        this->d_ -= d_inc;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->d_ &= mask_result;
+        }
+        this->c_ ^= this->b_;
+        this->a_ = rotr<w>(this->a_, p);
+        this->b_ -= this->c_;
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->b_ &= mask_result;
+        }
+        return *this;
     }
+
+    using common_engine<UIntType, w, gjrand_engine>::operator++;
+    using common_engine<UIntType, w, gjrand_engine>::operator--;
+    using common_engine<UIntType, w, gjrand_engine>::operator==;
 
     auto operator==(const gjrand_engine &rhs) const -> bool {
         return (this->a_ == rhs.a_) && (this->b_ == rhs.b_) &&
                (this->c_ == rhs.c_) && (this->d_ == rhs.d_);
-    }
-
-    auto operator!=(const gjrand_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:

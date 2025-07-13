@@ -22,7 +22,7 @@
 #define BRNG_JSF_ENGINE
 
 #include "tools/bit.hpp"
-#include "tools/mask.hpp"
+#include "tools/common_engine.hpp"
 
 #include <array>
 #include <cstddef>
@@ -33,25 +33,19 @@ namespace adhoc {
 
 template <class UIntType, std::size_t w, std::size_t p, std::size_t q,
           std::size_t r, bool arbee = false>
-class jsf_engine final {
+class jsf_engine final
+    : public common_engine<UIntType, w,
+                           jsf_engine<UIntType, w, p, q, r, arbee>> {
   public:
-    using result_type = UIntType;
+    using value_type = UIntType;
+
     static constexpr std::size_t word_size = w;
 
-    static constexpr auto min() -> result_type {
-        return static_cast<result_type>(0U);
-    }
-
-    static constexpr auto max() -> result_type {
-        return mask<UIntType>(word_size);
-    }
-
-    static_assert(w <= std::numeric_limits<UIntType>::digits);
     static_assert(p < w);
     static_assert(q < w);
     static_assert(r < w);
 
-    static constexpr UIntType m = jsf_engine::max();
+    static constexpr UIntType mask_result = jsf_engine::max();
     static constexpr UIntType default_seed_1 = 0xf1ea5eed;
     static constexpr UIntType default_seed_2 = 0xcafe5eed00000001ULL;
     static constexpr std::size_t default_seed_3 = 20U;
@@ -60,119 +54,109 @@ class jsf_engine final {
         : jsf_engine(default_seed_1, default_seed_2, default_seed_2,
                      default_seed_2, default_seed_3) {}
 
-    explicit jsf_engine(result_type seed1, result_type seed2 = default_seed_2,
-                        result_type seed3 = default_seed_2,
-                        result_type seed4 = default_seed_2,
+    explicit jsf_engine(UIntType seed1, UIntType seed2 = default_seed_2,
+                        UIntType seed3 = default_seed_2,
+                        UIntType seed4 = default_seed_2,
                         std::size_t iters = default_seed_3) {
-        this->state[0] = seed1 & m;
-        this->state[1] = seed2 & m;
-        this->state[2] = seed3 & m;
-        this->state[3] = seed4 & m;
+        this->state[0] = seed1 & mask_result;
+        this->state[1] = seed2 & mask_result;
+        this->state[2] = seed3 & mask_result;
+        this->state[3] = seed4 & mask_result;
         if constexpr (arbee) {
             this->state[4] = 1;
         }
-        for (std::size_t j = 0; j < iters; ++j) {
-            this->operator()<true>();
-        }
+        this->discard(iters + 1);
     }
 
-    template <bool FwdDirection = true>
-    inline auto operator()() -> result_type {
-        if constexpr (FwdDirection) {
-            UIntType e = this->state[0];
-            if constexpr (arbee) {
-                e += rotl<w>(this->state[1], p);
-            } else {
-                e -= rotl<w>(this->state[1], p);
-            }
+    inline auto operator*() const -> value_type { return this->state[3]; }
 
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                e &= m;
-            }
-
-            this->state[0] = this->state[1] ^ rotl<w>(this->state[2], q);
-            if constexpr (r) {
-                this->state[1] = this->state[2] + rotl<w>(this->state[3], r);
-            } else {
-                this->state[1] = this->state[2] + this->state[3];
-            }
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[1] &= m;
-            }
-
-            if constexpr (arbee) {
-                this->state[2] = this->state[3] + e + this->state[4]++;
-            } else {
-                this->state[2] = this->state[3] + e;
-            }
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[2] &= m;
-            }
-            this->state[3] = e + this->state[0];
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[3] &= m;
-            }
-
-            return this->state[3];
+    inline auto operator++() -> jsf_engine & {
+        UIntType e = this->state[0];
+        if constexpr (arbee) {
+            e += rotl<w>(this->state[1], p);
         } else {
-            auto const result = this->state[3];
-            UIntType e = this->state[3] - this->state[0];
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                e &= m;
-            }
-
-            if constexpr (arbee) {
-                this->state[3] = this->state[2] - e - --this->state[4];
-            } else {
-                this->state[3] = this->state[2] - e;
-            }
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[3] &= m;
-            }
-
-            if constexpr (r) {
-                this->state[2] = this->state[1] - rotl<w>(this->state[3], r);
-            } else {
-                this->state[2] = this->state[1] - this->state[3];
-            }
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[2] &= m;
-            }
-
-            this->state[1] = this->state[0] ^ rotl<w>(this->state[2], q);
-
-            if constexpr (arbee) {
-                this->state[0] = e - rotl<w>(this->state[1], p);
-            } else {
-                this->state[0] = e + rotl<w>(this->state[1], p);
-            }
-
-            if constexpr (w < std::numeric_limits<UIntType>::digits) {
-                this->state[0] &= m;
-            }
-
-            return result;
+            e -= rotl<w>(this->state[1], p);
         }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            e &= mask_result;
+        }
+
+        this->state[0] = this->state[1] ^ rotl<w>(this->state[2], q);
+        if constexpr (r) {
+            this->state[1] = this->state[2] + rotl<w>(this->state[3], r);
+        } else {
+            this->state[1] = this->state[2] + this->state[3];
+        }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[1] &= mask_result;
+        }
+
+        if constexpr (arbee) {
+            this->state[2] = this->state[3] + e + this->state[4]++;
+        } else {
+            this->state[2] = this->state[3] + e;
+        }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[2] &= mask_result;
+        }
+        this->state[3] = e + this->state[0];
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[3] &= mask_result;
+        }
+        return *this;
     }
 
-    template <bool FwdDirection = true> void discard(unsigned long long z) {
-        for (unsigned long long i = 0; i < z; ++i) {
-            this->operator()();
+    inline auto operator--() -> jsf_engine & {
+        UIntType e = this->state[3] - this->state[0];
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            e &= mask_result;
         }
+
+        if constexpr (arbee) {
+            this->state[3] = this->state[2] - e - --this->state[4];
+        } else {
+            this->state[3] = this->state[2] - e;
+        }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[3] &= mask_result;
+        }
+
+        if constexpr (r) {
+            this->state[2] = this->state[1] - rotl<w>(this->state[3], r);
+        } else {
+            this->state[2] = this->state[1] - this->state[3];
+        }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[2] &= mask_result;
+        }
+
+        this->state[1] = this->state[0] ^ rotl<w>(this->state[2], q);
+
+        if constexpr (arbee) {
+            this->state[0] = e - rotl<w>(this->state[1], p);
+        } else {
+            this->state[0] = e + rotl<w>(this->state[1], p);
+        }
+
+        if constexpr (w < std::numeric_limits<UIntType>::digits) {
+            this->state[0] &= mask_result;
+        }
+        return *this;
     }
+
+    using common_engine<UIntType, w, jsf_engine>::operator++;
+    using common_engine<UIntType, w, jsf_engine>::operator--;
+    using common_engine<UIntType, w, jsf_engine>::operator==;
 
     auto operator==(const jsf_engine &rhs) const -> bool {
         return (this->state == rhs.state);
-    }
-
-    auto operator!=(const jsf_engine &rhs) const -> bool {
-        return !(this->operator==(rhs));
     }
 
   private:
