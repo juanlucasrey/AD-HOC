@@ -61,8 +61,8 @@ class mcw_engine final
     inline auto operator++() -> mcw_engine & {
         --this->state;
         const upgraded_type temp =
-            (m *
-             static_cast<upgraded_type>(this->state.template at<size - 1>())) +
+            (static_cast<upgraded_type>(this->state.template at<size - 1>()) *
+             m) +
             this->state.at();
 
         if constexpr (w < std::numeric_limits<UIntType>::digits) {
@@ -84,8 +84,8 @@ class mcw_engine final
         // (a*(2^64) - 1), we have this MCW code:
         constexpr upgraded_type m_inv = static_cast<upgraded_type>(1) << w;
         const upgraded_type temp =
-            (m_inv *
-             static_cast<upgraded_type>(this->state.template at<size - 1>())) +
+            (static_cast<upgraded_type>(this->state.template at<size - 1>()) *
+             m_inv) +
             this->state.at();
 
         this->state.template at<size - 1>() = temp / m;
