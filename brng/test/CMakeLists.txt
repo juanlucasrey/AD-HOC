@@ -75,6 +75,9 @@ set(BRNG
     speck_engine.cpp
     lxm_engine.cpp
     lehmer_engine.cpp
+    MWC128_engine.cpp
+    MWC192_engine.cpp
+    MWC256_engine.cpp
 )
 
 run_check("BRNG" "${BRNG}")

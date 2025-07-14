@@ -821,4 +821,5 @@ auto main() -> int {
             EXPECT_EQUAL(val1, val2);
         }
     }
+    TEST_END;
 }
