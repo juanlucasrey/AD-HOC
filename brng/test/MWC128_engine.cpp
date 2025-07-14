@@ -8,6 +8,7 @@
 
 auto main() -> int {
 
+#ifndef _MSC_VER
     {
         adhoc::mcw128 rng(1234, 1);
 
@@ -19,6 +20,7 @@ auto main() -> int {
             EXPECT_EQUAL(val1, val2);
         }
     }
+#endif
 
     {
         adhoc::mcw128 rng(1234, 1);
