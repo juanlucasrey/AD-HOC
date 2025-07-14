@@ -1,7 +1,10 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
 
+#ifndef _MSC_VER
 #include "third_party/unimi/MWC192.c"
+#endif
+
 #include <mwc_engine.hpp>
 #include <tools/mask.hpp>
 #include <tools/modular_arithmetic.hpp>
