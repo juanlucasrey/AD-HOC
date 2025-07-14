@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
 #include <stdint.h>
-#include <strings.h>
+// #include <strings.h>
 
 /* This is a Marsaglia multiply-with-carry generator with period
    approximately 2^255. It is faster than a scrambled linear
