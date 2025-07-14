@@ -49,7 +49,7 @@ class mcw_engine final
 
         auto make_array =
             []<class... Args>(Args... args) -> std::array<UIntType, size> {
-            return {args...};
+            return {static_cast<UIntType>(args)...};
         };
         auto &data = state.data();
         data = make_array(values...);
@@ -107,9 +107,9 @@ class mcw_engine final
     circular_buffer<UIntType, size> state{};
 };
 
-using mcw128 = mcw_engine<std::uint64_t, 64, 128, 0xffebb71d94fcdaf9>;
-using mcw192 = mcw_engine<std::uint64_t, 64, 192, 0xffa04e67b3c95d86>;
-using mcw256 = mcw_engine<std::uint64_t, 64, 256, 0xfff62cf2ccc0cdaf>;
+using mcw128 = mcw_engine<std::uint_fast64_t, 64, 128, 0xffebb71d94fcdaf9>;
+using mcw192 = mcw_engine<std::uint_fast64_t, 64, 192, 0xffa04e67b3c95d86>;
+using mcw256 = mcw_engine<std::uint_fast64_t, 64, 256, 0xfff62cf2ccc0cdaf>;
 
 } // namespace adhoc
 
