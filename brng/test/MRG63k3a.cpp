@@ -1,6 +1,5 @@
 #include "../../test_simple/test_simple_include.hpp"
 #include "test_tools_rng.hpp"
-#include <iostream>
 
 extern "C" {
 #include "third_party/umontreal/MRG63k3a.h"
