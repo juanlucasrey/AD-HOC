@@ -3,7 +3,7 @@
  *
  * This file is part of the AD-HOC distribution
  * (https://github.com/juanlucasrey/AD-HOC).
- * Copyright (c) 2024 Juan Lucas Rey
+ * Copyright (c) 2026 Juan Lucas Rey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
