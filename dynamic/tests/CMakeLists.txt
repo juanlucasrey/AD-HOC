@@ -1,0 +1,17 @@
+set(test_name "dynamic.functions")
+add_executable(${test_name} functions.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.checkpoint")
+add_executable(${test_name} checkpoint.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
+
+set(test_name "dynamic.credit_curve")
+add_executable(${test_name} credit_curve.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include)
