@@ -52,7 +52,7 @@ auto
 compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
 {
     std::mt19937 generator(42); // same seed for reproducibility
-    std::normal_distribution<double> normal_dist(0.0, 1.0);
+    std::uniform_real_distribution<double> normal_dist(0.0, 1.0);
 
     // Initial calculations (before the loop)
     T y_init = x1 * x2;
@@ -161,10 +161,10 @@ test_checkpoint_fd_vs_ad()
     EXPECT_NEAR_ABS(dx2_adhoc, dx2_fd, 1e-8);
     EXPECT_NEAR_ABS(dx3_adhoc, dx3_fd, 1e-8);
 
-    EXPECT_NEAR_ABS(1.1982834141589001, res_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(0.1149330294060488, dx1_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(0.10765516308088527, dx2_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(-0.013198225190918138, dx3_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(3.421138662549827, res_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(1.5027371453017027, dx1_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(0.80747795083939378, dx2_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(0.11992672558600066, dx3_adhoc, 1e-12);
 }
 
 void
@@ -974,12 +974,8 @@ main() -> int
 {
     test_checkpoint_fd_vs_ad();
     test_checkpoint_branch_lossy();
-
-    // SIMD8 tests
     test_simd8_backpropagation();
     test_simd8_monte_carlo();
-
-    // SIMD8 second-order tests
     test_simd8_second_order_backpropagation();
     test_simd8_second_order_with_transcendentals();
     test_simd8_second_order_monte_carlo();
