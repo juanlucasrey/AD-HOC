@@ -3,7 +3,6 @@
 #include <adhoc.hpp>
 
 #include <cmath>
-#include <iostream>
 #include <random>
 #include <type_traits>
 
@@ -45,46 +44,6 @@ compute_result(T x1, T x2, T x3, std::size_t num_paths) -> double
     }
 
     return result * one_over_paths;
-}
-
-void
-test_checkpoint()
-{
-    constexpr std::size_t num_paths = 1000;
-    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
-
-    double res_bwd = 0.;
-    double dx1_bwd = 0.;
-    double dx2_bwd = 0.;
-    double dx3_bwd = 0.;
-
-    double res_fd = 0.;
-    double dx1_fd = 0.;
-    double dx2_fd = 0.;
-    double dx3_fd = 0.;
-
-    {
-        constexpr double bump = 1e-6;
-        double x1 = x1_val;
-        double x2 = x2_val;
-        double x3 = x3_val;
-
-        res_fd = compute_result(x1, x2, x3, num_paths);
-
-        // Central finite differences using the same templated function
-        dx1_fd =
-          (compute_result(x1 + bump, x2, x3, num_paths) - compute_result(x1 - bump, x2, x3, num_paths)) / (2.0 * bump);
-        dx2_fd =
-          (compute_result(x1, x2 + bump, x3, num_paths) - compute_result(x1, x2 - bump, x3, num_paths)) / (2.0 * bump);
-        dx3_fd =
-          (compute_result(x1, x2, x3 + bump, num_paths) - compute_result(x1, x2, x3 - bump, num_paths)) / (2.0 * bump);
-    }
-
-    // check that the values are close in between methods
-    EXPECT_NEAR_ABS(res_bwd, res_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx1_bwd, dx1_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx2_bwd, dx2_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx3_bwd, dx3_fd, 1e-8);
 }
 
 // Templated compute_result with if constexpr for tape handling
@@ -136,15 +95,10 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
 }
 
 void
-test_checkpoint_branch()
+test_checkpoint_fd_vs_ad()
 {
     constexpr std::size_t num_paths = 1000;
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
-
-    double res_bwd = 0.;
-    double dx1_bwd = 0.;
-    double dx2_bwd = 0.;
-    double dx3_bwd = 0.;
 
     double res_fd = 0.;
     double dx1_fd = 0.;
@@ -171,12 +125,6 @@ test_checkpoint_branch()
           (2.0 * bump);
     }
 
-    // check that the values are close in between methods
-    EXPECT_NEAR_ABS(res_bwd, res_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx1_bwd, dx1_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx2_bwd, dx2_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx3_bwd, dx3_fd, 1e-8);
-
     double res_adhoc = 0.;
     double dx1_adhoc = 0.;
     double dx2_adhoc = 0.;
@@ -200,27 +148,23 @@ test_checkpoint_branch()
 
         res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
 
-        // tape->set_derivative(res_bwd, 1.0);
         tape->backpropagate();
-        // adhoc::BackPropagator2 bp(tape);
-        // bp.set_derivative(res_bwd, 1.0);
-        // bp.backpropagate();
 
-        // Retrieve accumulated derivatives
         dx1_adhoc = tape->get_derivative(x1);
         dx2_adhoc = tape->get_derivative(x2);
         dx3_adhoc = tape->get_derivative(x3);
-
-        // Basic sanity check - derivatives should be non-zero
-        EXPECT_NOT_EQUAL(dx1_adhoc, 0.0);
-        EXPECT_NOT_EQUAL(dx2_adhoc, 0.0);
-        EXPECT_NOT_EQUAL(dx3_adhoc, 0.0);
     }
 
-    EXPECT_NEAR_ABS(res_bwd, res_adhoc, 1e-8);
-    EXPECT_NEAR_ABS(dx1_bwd, dx1_adhoc, 1e-8);
-    EXPECT_NEAR_ABS(dx2_bwd, dx2_adhoc, 1e-8);
-    EXPECT_NEAR_ABS(dx3_bwd, dx3_adhoc, 1e-8);
+    // check that the values are close in between methods
+    EXPECT_NEAR_ABS(res_adhoc, res_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx1_adhoc, dx1_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx2_adhoc, dx2_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx3_adhoc, dx3_fd, 1e-8);
+
+    EXPECT_NEAR_ABS(1.1982834141589001, res_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(0.1149330294060488, dx1_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(0.10765516308088527, dx2_adhoc, 1e-12);
+    EXPECT_NEAR_ABS(-0.013198225190918138, dx3_adhoc, 1e-12);
 }
 
 void
@@ -339,20 +283,10 @@ test_simd8_backpropagation()
 
     // Compare SIMD8 results with reference
     for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-        // std::cout << "Lane " << lane << ":" << std::endl;
-        // std::cout << "  dx1: SIMD8=" << dx1_simd[lane]
-        //           << " ref=" << dx1_ref[lane] << std::endl;
-        // std::cout << "  dx2: SIMD8=" << dx2_simd[lane]
-        //           << " ref=" << dx2_ref[lane] << std::endl;
-        // std::cout << "  dx3: SIMD8=" << dx3_simd[lane]
-        //           << " ref=" << dx3_ref[lane] << std::endl;
-
         EXPECT_NEAR_ABS(dx1_simd[lane], dx1_ref[lane], 1e-10);
         EXPECT_NEAR_ABS(dx2_simd[lane], dx2_ref[lane], 1e-10);
         EXPECT_NEAR_ABS(dx3_simd[lane], dx3_ref[lane], 1e-10);
     }
-
-    std::cout << "SIMD8 backpropagation test passed!" << std::endl;
 }
 
 void
@@ -480,18 +414,10 @@ test_simd8_monte_carlo()
         result_ref *= one_over_paths;
     }
 
-    std::cout << "Monte Carlo SIMD8 results:" << std::endl;
-    std::cout << "  Result: SIMD8=" << result_simd << " ref=" << result_ref << std::endl;
-    std::cout << "  dx1: SIMD8=" << dx1_simd_total << " ref=" << dx1_ref_total << std::endl;
-    std::cout << "  dx2: SIMD8=" << dx2_simd_total << " ref=" << dx2_ref_total << std::endl;
-    std::cout << "  dx3: SIMD8=" << dx3_simd_total << " ref=" << dx3_ref_total << std::endl;
-
     EXPECT_NEAR_ABS(result_simd, result_ref, 1e-8);
     EXPECT_NEAR_ABS(dx1_simd_total, dx1_ref_total, 1e-8);
     EXPECT_NEAR_ABS(dx2_simd_total, dx2_ref_total, 1e-8);
     EXPECT_NEAR_ABS(dx3_simd_total, dx3_ref_total, 1e-8);
-
-    std::cout << "SIMD8 Monte Carlo test passed!" << std::endl;
 }
 
 void
@@ -624,8 +550,6 @@ test_simd8_second_order_backpropagation()
         EXPECT_NEAR_ABS(d2x2x3_simd[lane], d2x2x3_ref[lane], 1e-10);
         EXPECT_NEAR_ABS(d2x3x3_simd[lane], d2x3x3_ref[lane], 1e-10);
     }
-
-    std::cout << "SIMD8 second-order backpropagation test passed!" << std::endl;
 }
 
 void
@@ -728,8 +652,6 @@ test_simd8_second_order_with_transcendentals()
     EXPECT_NEAR_ABS(d2x1x1_ref, d2x1x1_fd, 1e-4);
     EXPECT_NEAR_ABS(d2x1x2_ref, d2x1x2_fd, 1e-4);
     EXPECT_NEAR_ABS(d2x2x2_ref, d2x2x2_fd, 1e-4);
-
-    std::cout << "SIMD8 second-order with transcendentals test passed!" << std::endl;
 }
 
 void
@@ -843,23 +765,12 @@ test_simd8_second_order_monte_carlo()
 
         result_ref *= one_over_paths;
     }
-
-    std::cout << "Monte Carlo SIMD8 second-order results:" << std::endl;
-    std::cout << "  Result: SIMD8=" << result_simd << " ref=" << result_ref << std::endl;
-    std::cout << "  dx1: SIMD8=" << dx1_simd_total << " ref=" << dx1_ref_total << std::endl;
-    std::cout << "  dx2: SIMD8=" << dx2_simd_total << " ref=" << dx2_ref_total << std::endl;
-    std::cout << "  d2x1x1: SIMD8=" << d2x1x1_simd_total << " ref=" << d2x1x1_ref_total << std::endl;
-    std::cout << "  d2x1x2: SIMD8=" << d2x1x2_simd_total << " ref=" << d2x1x2_ref_total << std::endl;
-    std::cout << "  d2x2x2: SIMD8=" << d2x2x2_simd_total << " ref=" << d2x2x2_ref_total << std::endl;
-
     EXPECT_NEAR_ABS(result_simd, result_ref, 1e-8);
     EXPECT_NEAR_ABS(dx1_simd_total, dx1_ref_total, 1e-8);
     EXPECT_NEAR_ABS(dx2_simd_total, dx2_ref_total, 1e-8);
     EXPECT_NEAR_ABS(d2x1x1_simd_total, d2x1x1_ref_total, 1e-8);
     EXPECT_NEAR_ABS(d2x1x2_simd_total, d2x1x2_ref_total, 1e-8);
     EXPECT_NEAR_ABS(d2x2x2_simd_total, d2x2x2_ref_total, 1e-8);
-
-    std::cout << "SIMD8 second-order Monte Carlo test passed!" << std::endl;
 }
 
 void
@@ -932,8 +843,6 @@ test_simd8_second_order_different_seeds_per_lane()
         EXPECT_NEAR_ABS(dx_simd[lane], dx_ref[lane], 1e-10);
         EXPECT_NEAR_ABS(d2xx_simd[lane], d2xx_ref[lane], 1e-10);
     }
-
-    std::cout << "SIMD8 second-order different seeds per lane test passed!" << std::endl;
 }
 
 void
@@ -1063,6 +972,7 @@ test_checkpoint_branch_lossy()
 auto
 main() -> int
 {
+    test_checkpoint_fd_vs_ad();
     test_checkpoint_branch_lossy();
 
     // SIMD8 tests
@@ -1074,12 +984,6 @@ main() -> int
     test_simd8_second_order_with_transcendentals();
     test_simd8_second_order_monte_carlo();
     test_simd8_second_order_different_seeds_per_lane();
-
-    // test_reset_to();
-
-    // test_checkpoint_prod();
-    test_checkpoint();
-    test_checkpoint_branch();
 
     TEST_END;
 }

@@ -4,13 +4,12 @@
 #include "credit/fi_instruments.hpp"
 #include "credit/mdspan.hpp"
 #include "credit/yield_curve.hpp"
+#include <adhoc.hpp>
 
 #include <chrono>
 #include <cstddef>
 #include <map>
 #include <vector>
-
-#include <adhoc.hpp>
 
 using namespace std::chrono;
 
@@ -621,17 +620,17 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     -0.0018873791418627661,
     -0.0021094237467877974,
     -0.0024424906541753444,
-    -0.0026645352591003757,
-    -0.0042188474935755949,
-    -0.0038857805861880479,
+    -0.0027755575615628914,
+    -0.0036637359812630166,
+    -0.0035527136788005009,
     0,
     0.37986280787549731,
     -0.0074107386893729199,
     -0.0089095397726168812,
     -0.010352829704629585,
     -0.011685097334179773,
-    -0.013572476476042539,
-    -0.013405943022348765,
+    -0.013600232051658168,
+    -0.013433698597964394,
     0,
     0,
     0.37445047063044967,
@@ -639,39 +638,39 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     -0.0098809849191638932,
     -0.011407541578023483,
     -0.01354472090042691,
-    -0.013516965324811281,
+    -0.013489209749195652,
     0,
     0,
     0,
     0.36742830999969556,
     -0.012656542480726785,
     -0.01226796442210798,
-    -0.014349632593280148,
-    -0.014238610290817633,
+    -0.014321877017664519,
+    -0.014266365866433262,
     0,
     0,
     0,
     0,
-    0.36093350530563839,
-    -0.014016565685892601,
-    -0.014960255256823984,
+    0.36098901645686965,
+    -0.013961054534661343,
+    -0.014988010832439613,
     -0.014988010832439613,
     0,
     0,
     0,
     0,
     0,
-    0.3512468094157839,
-    -0.023314683517128287,
-    -0.022648549702353193,
+    0.35127456499139953,
+    -0.023231416790281401,
+    -0.022842838731662596,
     0,
     0,
     0,
     0,
     0,
     0,
-    0.3219646771412954,
-    -0.040384362520740069,
+    0.32199243271691103,
+    -0.040467629247586956,
     0,
     0,
     0,
@@ -679,47 +678,47 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    0.28416158315280882,
+    0.2842448498796557,
     0,
     0.37986280787549731,
     -0.0074107386893729199,
     -0.0089095397726168812,
     -0.010352829704629585,
     -0.011685097334179773,
-    -0.013572476476042539,
-    -0.013405943022348765,
+    -0.013600232051658168,
+    -0.013433698597964394,
     0,
     1.1789458298494537,
     -0.0074384942649885488,
     -0.0087707618945387367,
     -0.01021405182655144,
     -0.011879386363489175,
-    -0.014543921622589551,
-    -0.01532107773982716,
+    -0.014099832412739488,
+    -0.014876988529977098,
     0,
     0,
     1.7207624214421458,
     -0.053790305543088834,
-    -0.064948046940571658,
-    -0.075023320889044953,
-    -0.089817042692175164,
-    -0.089539486936018875,
+    -0.065003558091802915,
+    -0.075051076464660582,
+    -0.089761531540943906,
+    -0.089706020389712648,
     0,
     0,
     0,
-    1.7046919431606966,
-    -0.058730798002670781,
+    1.7046364320094654,
+    -0.058703042427055152,
     -0.056399329650957952,
     -0.066696648204356279,
-    -0.066058269965196814,
+    -0.066086025540812443,
     0,
     0,
     0,
     0,
     1.6809054148581026,
     -0.064948046940571658,
-    -0.070138339580694264,
-    -0.069055872131684737,
+    -0.070055072853847378,
+    -0.069139138858531624,
     0,
     0,
     0,
@@ -735,7 +734,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     1.5143442055887135,
-    -0.19048651545006123,
+    -0.19054202660129249,
     0,
     0,
     0,
@@ -743,7 +742,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    1.3521683772665938,
+    1.3521406216909782,
     0,
     0,
     0.37445047063044967,
@@ -751,23 +750,23 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     -0.0098809849191638932,
     -0.011407541578023483,
     -0.01354472090042691,
-    -0.013516965324811281,
+    -0.013489209749195652,
     0,
     0,
     1.7207624214421458,
     -0.053790305543088834,
-    -0.064948046940571658,
-    -0.075023320889044953,
-    -0.089817042692175164,
-    -0.089539486936018875,
+    -0.065003558091802915,
+    -0.075051076464660582,
+    -0.089761531540943906,
+    -0.089706020389712648,
     0,
     0,
     5.2088333646338469,
     -0.042965631052993558,
     -0.051514348342607263,
     -0.059952043329758453,
-    -0.072497563508022722,
-    -0.072275518903097691,
+    -0.071942451995710144,
+    -0.071720407390785113,
     0,
     0,
     0,
@@ -775,30 +774,30 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     -0.24355517602714372,
     -0.24694135625225044,
     -0.29215518893010994,
-    -0.28996249845647526,
+    -0.28999025403209089,
     0,
     0,
     0,
     0,
     5.030365013425353,
-    -0.19440005161186491,
-    -0.2099431739566171,
-    -0.20716761639505421,
+    -0.19434454046063365,
+    -0.20997092953223273,
+    -0.20713986081943858,
     0,
     0,
     0,
     0,
     0,
     4.9229231802172535,
-    -0.32351898937577062,
-    -0.31810665213072298,
+    -0.32357450052700187,
+    -0.31796787425264483,
     0,
     0,
     0,
     0,
     0,
     0,
-    4.5711767704403883,
+    4.5712045260160039,
     -0.57517879348267797,
     0,
     0,
@@ -807,23 +806,23 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    4.1197878442034153,
+    4.1197045774765684,
     0,
     0,
     0,
     0.36742830999969556,
     -0.012656542480726785,
     -0.01226796442210798,
-    -0.014349632593280148,
-    -0.014238610290817633,
+    -0.014321877017664519,
+    -0.014266365866433262,
     0,
     0,
     0,
-    1.7046919431606966,
-    -0.058730798002670781,
+    1.7046364320094654,
+    -0.058703042427055152,
     -0.056399329650957952,
     -0.066696648204356279,
-    -0.066058269965196814,
+    -0.066086025540812443,
     0,
     0,
     0,
@@ -831,30 +830,30 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     -0.24355517602714372,
     -0.24694135625225044,
     -0.29215518893010994,
-    -0.28996249845647526,
+    -0.28999025403209089,
     0,
     0,
     0,
     8.0674356084387,
     0.083266726846886741,
     -0.0067723604502134549,
+    -0.0076605388699135801,
     -0.0079936057773011271,
-    -0.0084376949871511897,
     0,
     0,
     0,
     0,
     7.5013606437579483,
     -0.48780424144467815,
-    -0.54320437037347347,
-    -0.5365152766501069,
+    -0.5432321259490891,
+    -0.53643200992326001,
     0,
     0,
     0,
     0,
     0,
     7.6364470302792142,
-    -0.49990567241309236,
+    -0.49993342798870799,
     -0.49157899972840369,
     0,
     0,
@@ -871,14 +870,14 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    6.3141991635262684,
+    6.3141436523750372,
     0,
     0,
     0,
     0,
-    0.36093350530563839,
-    -0.014016565685892601,
-    -0.014960255256823984,
+    0.36098901645686965,
+    -0.013961054534661343,
+    -0.014988010832439613,
     -0.014988010832439613,
     0,
     0,
@@ -886,32 +885,32 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     1.6809054148581026,
     -0.064948046940571658,
-    -0.070138339580694264,
-    -0.069055872131684737,
+    -0.070055072853847378,
+    -0.069139138858531624,
     0,
     0,
     0,
     0,
     5.030365013425353,
-    -0.19440005161186491,
-    -0.2099431739566171,
-    -0.20716761639505421,
+    -0.19434454046063365,
+    -0.20997092953223273,
+    -0.20713986081943858,
     0,
     0,
     0,
     0,
     7.5013606437579483,
     -0.48780424144467815,
-    -0.54320437037347347,
-    -0.5365152766501069,
+    -0.5432321259490891,
+    -0.53643200992326001,
     0,
     0,
     0,
     0,
     11.284639889197479,
     0.23092638912203256,
-    0.15365486660812167,
-    0.15099033134902129,
+    0.15398793351550921,
+    0.1517674874662589,
     0,
     0,
     0,
@@ -919,7 +918,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     10.024675534126004,
     -1.0863532295957157,
-    -1.0690892615627945,
+    -1.0691725282896414,
     0,
     0,
     0,
@@ -927,7 +926,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     9.6588848030876306,
-    -1.2114476088953552,
+    -1.2114198533197396,
     0,
     0,
     0,
@@ -935,15 +934,15 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    8.5741413968776214,
+    8.5741691524532371,
     0,
     0,
     0,
     0,
     0,
-    0.3512468094157839,
-    -0.023314683517128287,
-    -0.022648549702353193,
+    0.35127456499139953,
+    -0.023231416790281401,
+    -0.022842838731662596,
     0,
     0,
     0,
@@ -958,15 +957,15 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     4.9229231802172535,
-    -0.32351898937577062,
-    -0.31810665213072298,
+    -0.32357450052700187,
+    -0.31796787425264483,
     0,
     0,
     0,
     0,
     0,
     7.6364470302792142,
-    -0.49990567241309236,
+    -0.49993342798870799,
     -0.49157899972840369,
     0,
     0,
@@ -975,15 +974,15 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     10.024675534126004,
     -1.0863532295957157,
-    -1.0690892615627945,
+    -1.0691725282896414,
     0,
     0,
     0,
     0,
     0,
     14.02311600173789,
-    0.77116091290463373,
-    0.75750516970174431,
+    0.7716050021144838,
+    0.75783823660913185,
     0,
     0,
     0,
@@ -991,7 +990,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     16.718348927469151,
-    -3.8839209626218008,
+    -3.8839487181974164,
     0,
     0,
     0,
@@ -999,15 +998,15 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    16.170564887119099,
+    16.17062039827033,
     0,
     0,
     0,
     0,
     0,
     0,
-    0.3219646771412954,
-    -0.040384362520740069,
+    0.32199243271691103,
+    -0.040467629247586956,
     0,
     0,
     0,
@@ -1015,14 +1014,14 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     1.5143442055887135,
-    -0.19048651545006123,
+    -0.19054202660129249,
     0,
     0,
     0,
     0,
     0,
     0,
-    4.5711767704403883,
+    4.5712045260160039,
     -0.57517879348267797,
     0,
     0,
@@ -1039,7 +1038,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     9.6588848030876306,
-    -1.2114476088953552,
+    -1.2114198533197396,
     0,
     0,
     0,
@@ -1047,15 +1046,15 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     16.718348927469151,
-    -3.8839209626218008,
+    -3.8839487181974164,
     0,
     0,
     0,
     0,
     0,
     0,
-    38.343661579176569,
-    2.372213536716572,
+    38.344105668386419,
+    2.372657625926422,
     0,
     0,
     0,
@@ -1063,7 +1062,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    33.327646198344496,
+    33.32761844276888,
     0,
     0,
     0,
@@ -1071,7 +1070,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    0.28416158315280882,
+    0.2842448498796557,
     0,
     0,
     0,
@@ -1079,7 +1078,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    1.3521683772665938,
+    1.3521406216909782,
     0,
     0,
     0,
@@ -1087,7 +1086,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    4.1197878442034153,
+    4.1197045774765684,
     0,
     0,
     0,
@@ -1095,7 +1094,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    6.3141991635262684,
+    6.3141436523750372,
     0,
     0,
     0,
@@ -1103,7 +1102,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    8.5741413968776214,
+    8.5741691524532371,
     0,
     0,
     0,
@@ -1111,7 +1110,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    16.170564887119099,
+    16.17062039827033,
     0,
     0,
     0,
@@ -1119,7 +1118,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    33.327646198344496,
+    33.32761844276888,
     0,
     0,
     0,
@@ -1127,7 +1126,7 @@ const std::vector<double> expectedSecondDerivativesFDVals{
     0,
     0,
     0,
-    80.930484536168024,
+    80.930928625377874,
 };
 
 const adhoc::mdspan<const double, 3> expectedSecondDerivativesFD(expectedSecondDerivativesFDVals.data(), 8, 8, 8);
@@ -2343,44 +2342,8 @@ class credit_curve final {
         }
     }
 
-    // explicit credit_curve(
-    //     std::chrono::year_month_day const &asofdate_in,
-    //     std::vector<Float> const &params_in,
-    //     std::vector<std::chrono::year_month_day> const &segments_in)
-    //     : asofdate(asofdate_in) {
-
-    //     dates.reserve(segments_in.size() + 1);
-    //     dates.push_back(asofdate_in);
-    //     dates.insert(end(dates), begin(segments_in), end(segments_in));
-
-    //     params.reserve(params_in.size() + 1);
-    //     params.push_back(1.);
-    //     params.insert(end(params), begin(params_in), end(params_in));
-    // }
-
     auto getDiscountFactor(std::chrono::year_month_day const& date) const -> Float
     {
-        // auto const it = std::min(
-        //     std::upper_bound(this->dates.begin(), this->dates.end(), date),
-        //     this->dates.end() - 1);
-
-        // auto const d = std::distance(this->dates.begin(), it);
-        // auto const &df1 = this->params[static_cast<std::size_t>(d - 1)];
-        // auto const &df2 = this->params[static_cast<std::size_t>(d)];
-        // auto const df = df2 / df1;
-
-        // auto const proportion =
-        //     static_cast<double>(date -
-        //                         this->dates[static_cast<std::size_t>(d - 1)])
-        //                         /
-        //     static_cast<double>(this->dates[static_cast<std::size_t>(d)] -
-        //                         this->dates[static_cast<std::size_t>(d -
-        //                         1)]);
-
-        // using std::exp;
-        // using std::log;
-        // return df1 * exp(log(df) * proportion);
-
         auto lower_bound_it = std::lower_bound(this->dates.begin(), this->dates.end(), date);
         auto distance = std::distance(this->dates.begin(), lower_bound_it);
 
@@ -2592,10 +2555,6 @@ set_rate_and_price(credit_curve<D>& sc,
     f = upfront - quoteUpfrontValue;
 }
 
-enum class DerivativeMethod { Fwd, Bwd, Adhoc };
-enum class DerivativeMethod2 { BwdOvFwd, Adhoc };
-
-template<DerivativeMethod dm = DerivativeMethod::Bwd>
 auto
 calibrateQuote(credit_curve<double>& sc,
                adhoc::yield_curve<double> const& yc,
@@ -2644,32 +2603,26 @@ calibrateQuote(credit_curve<double>& sc,
     }
 
     auto func_d = [&](double x, double& f, double& df) {
-        if constexpr (dm == DerivativeMethod::Bwd) {
-        }
-        else if constexpr (dm == DerivativeMethod::Fwd) {
-        }
-        else if constexpr (dm == DerivativeMethod::Adhoc) {
-            using adhoc_mode = adhoc::opcode<double>;
-            using D = adhoc_mode::type;
-            D inputD = x;
+        using adhoc_mode = adhoc::opcode<double>;
+        using D = adhoc_mode::type;
+        D inputD = x;
 
-            adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-            auto& tape = *tapeptr;
-            tape.register_variable(inputD);
-            D outputD = 0.0;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+        D outputD = 0.0;
 
-            D cds_quote2 = cds_quote;
-            credit_curve<D> sc2(sc);
+        D cds_quote2 = cds_quote;
+        credit_curve<D> sc2(sc);
 
-            set_rate_and_price(sc2, yc, cds, cds_quote2, pricingDate, inputD, outputD);
+        set_rate_and_price(sc2, yc, cds, cds_quote2, pricingDate, inputD, outputD);
 
-            tape.register_output_variable(outputD);
+        tape.register_output_variable(outputD);
 
-            tape.set_derivative(outputD, 1.0);
-            tape.backpropagate();
-            df = tape.get_derivative(inputD);
-            f = adhoc::passive_value(outputD);
-        }
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+        df = tape.get_derivative(inputD);
+        f = adhoc::passive_value(outputD);
     };
 
     func_d(currentGuess, f, df);
@@ -2736,7 +2689,7 @@ calibrateQuote(credit_curve<double>& sc,
     return currentGuess;
 }
 
-template<DerivativeMethod dm = DerivativeMethod::Bwd>
+// template<DerivativeMethod dm = DerivativeMethod::Bwd>
 auto
 createCDSCurve(std::vector<CDS> const& cds,
                adhoc::yield_curve<double> const& yc,
@@ -2746,14 +2699,14 @@ createCDSCurve(std::vector<CDS> const& cds,
 
     auto sc = credit_curve(pricing_date);
     for (std::size_t i = 0; i < cds.size(); ++i) {
-        double calibratedRates = calibrateQuote<dm>(sc, yc, cds[i], cds_quote[i], pricing_date);
+        double calibratedRates = calibrateQuote(sc, yc, cds[i], cds_quote[i], pricing_date);
         sc.setLastHazardRate(calibratedRates, adhoc::DayCountConvention::e_ACTUAL_365_FIXED);
     }
 
     return sc;
 }
 
-template<typename D, DerivativeMethod dm, DerivativeMethod2 dm2, bool adhocOrder1 = true, bool Experimental = false>
+template<typename D, bool adhocOrder1 = true, bool Experimental = false>
 auto
 pureNewtonSolve(credit_curve<D>& sc,
                 adhoc::yield_curve<double> const& yc,
@@ -2779,23 +2732,17 @@ pureNewtonSolve(credit_curve<D>& sc,
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
 
-        if constexpr (dm == DerivativeMethod::Bwd) {
-        }
-        else if constexpr (dm == DerivativeMethod::Fwd) {
-        }
-        else if constexpr (dm == DerivativeMethod::Adhoc) {
-            adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-            auto& tape = *tapeptr;
-            tape.register_variable(inputD);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
 
-            set_rate_and_price(sc2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
+        set_rate_and_price(sc2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
 
-            tape.register_output_variable(outputD);
+        tape.register_output_variable(outputD);
 
-            tape.set_derivative(outputD, 1.0);
-            tape.backpropagate();
-            df = tape.get_derivative(inputD);
-        }
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+        df = tape.get_derivative(inputD);
         // f = adhoc::passive_value(outputD);
     };
 
@@ -2815,25 +2762,22 @@ pureNewtonSolve(credit_curve<D>& sc,
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
 
-        if constexpr (dm2 == DerivativeMethod2::BwdOvFwd) {
-        }
-        else {
-            adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-            auto& tape = *tapeptr;
-            tape.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
 
-            tape.register_variable(inputD);
+        tape.register_variable(inputD);
 
-            set_rate_and_price(sc_d2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
+        set_rate_and_price(sc_d2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
 
-            tape.register_output_variable(outputD);
+        tape.register_output_variable(outputD);
 
-            tape.set_derivative(outputD, 1.0);
-            tape.backpropagate();
-            tape.get_derivative(inputD);
-            df = tape.get_derivative(inputD);
-            df2 = tape.get_derivative(inputD, inputD);
-        }
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+        tape.get_derivative(inputD);
+        df = tape.get_derivative(inputD);
+        df2 = tape.get_derivative(inputD, inputD);
+
         // f = adhoc::passive_value(outputD);
     };
 
@@ -2907,32 +2851,6 @@ normal_calib()
     for (std::size_t i = 0; i < rates.size(); ++i) {
         EXPECT_NEAR_ABS(survivalProbVals[i], params[i], 1e-15);
     }
-}
-
-void
-compare_calib()
-{
-    std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
-    std::vector<double> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
-
-    auto sc_fwd = createCDSCurve<DerivativeMethod::Fwd>(cdsInstruments, yc, cdsSpreads, pricingDate);
-    auto sc_bwd = createCDSCurve<DerivativeMethod::Bwd>(cdsInstruments, yc, cdsSpreads, pricingDate);
-
-    bool allequal = true;
-    auto const& rates_fwd = sc_fwd.getHazard();
-    auto const& rates_bwd = sc_bwd.getHazard();
-    for (std::size_t i = 0; i < rates_fwd.size(); ++i) {
-        allequal &= (rates_bwd[i] == rates_fwd[i]);
-    }
-
-    auto const& params_fwd = sc_fwd.getParams();
-    auto const& params_bwd = sc_bwd.getParams();
-    for (std::size_t i = 0; i < params_fwd.size(); ++i) {
-        allequal &= (params_bwd[i] == params_fwd[i]);
-    }
-    // not all values are equal!!!
-    EXPECT_EQUAL(allequal, false);
 }
 
 void
@@ -3044,7 +2962,7 @@ create_curve_adhoc()
     const auto yc = get_yc();
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
-    auto sc_double = createCDSCurve<DerivativeMethod::Adhoc>(cdsInstruments, yc, cdsSpreads_double, pricingDate);
+    auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
 
     auto const& rates = sc_double.getHazard();
     for (std::size_t i = 0; i < rates.size(); ++i) {
@@ -3057,7 +2975,6 @@ create_curve_adhoc()
     }
 }
 
-template<DerivativeMethod dm, DerivativeMethod dm2>
 void
 bwd_adhoc()
 {
@@ -3070,7 +2987,7 @@ bwd_adhoc()
     const auto yc = get_yc();
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
-    auto sc_double = createCDSCurve<dm>(cdsInstruments, yc, cdsSpreads_double, pricingDate);
+    auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
     auto const& calibratedRates = sc_double.getHazard();
 
     std::vector<D> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
@@ -3088,8 +3005,7 @@ bwd_adhoc()
         }
         sc.addLastPoint(newpoint, 1.0);
 
-        pureNewtonSolve<D, dm2, DerivativeMethod2::Adhoc>(
-          sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+        pureNewtonSolve<D>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
     }
 
     auto& y = sc.getParams();
@@ -3112,7 +3028,6 @@ bwd_adhoc()
     }
 }
 
-template<DerivativeMethod dm, DerivativeMethod dm2, DerivativeMethod2 dm3>
 void
 bwd_adhoc2()
 {
@@ -3126,11 +3041,10 @@ bwd_adhoc2()
     const auto yc = get_yc();
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
-    auto sc_double = createCDSCurve<dm>(cdsInstruments, yc, cdsSpreads_double, pricingDate);
+    auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
     auto const& calibratedRates = sc_double.getHazard();
 
     std::vector<D> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
-    // const auto initialTapePosition = tape.get_position();
     tape.register_variable(cdsSpreads);
 
     auto sc = credit_curve<D>(pricingDate);
@@ -3144,7 +3058,7 @@ bwd_adhoc2()
         }
         sc.addLastPoint(newpoint, 1.0);
 
-        pureNewtonSolve<D, dm2, dm3, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+        pureNewtonSolve<D, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
     }
 
     auto& y = sc.getParams();
@@ -3175,7 +3089,6 @@ bwd_adhoc2()
     }
 }
 
-template<DerivativeMethod dm, DerivativeMethod dm2, DerivativeMethod2 dm3>
 void
 bwd_adhoc2_payoff()
 {
@@ -3184,7 +3097,7 @@ bwd_adhoc2_payoff()
     std::vector<CDS> cdsInstruments = get_cds();
     const auto yc = get_yc();
 
-    auto sc_double = createCDSCurve<dm>(cdsInstruments, yc, cdsSpreadVals, pricingDate);
+    auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreadVals, pricingDate);
     auto const& calibratedRates = sc_double.getHazard();
 
     // adhoc results
@@ -3214,7 +3127,7 @@ bwd_adhoc2_payoff()
             }
             sc.addLastPoint(newpoint, 1.0);
 
-            pureNewtonSolve<D, dm2, dm3, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+            pureNewtonSolve<D, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
         }
 
         // write a random payoff using sc's getDiscountFactor
@@ -3252,60 +3165,6 @@ bwd_adhoc2_payoff()
         for (std::size_t j = 0; j < cdsSpreadVals.size(); ++j) {
             EXPECT_NEAR_ABS(second_derivs_adhoc(i, j), second_derivs_res(i, j), 2e-7);
         }
-    }
-}
-
-template<DerivativeMethod dm, DerivativeMethod dm2>
-void
-bwd_adhoc_IFT()
-{
-    using adhoc_mode = adhoc::opcode<double>;
-    using D = adhoc_mode::type;
-    adhoc_mode::tape_t tape;
-
-    std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
-    std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
-
-    auto sc_double = createCDSCurve<dm>(cdsInstruments, yc, cdsSpreads_double, pricingDate);
-    auto const& calibratedRates = sc_double.getHazard();
-
-    std::vector<D> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
-    tape.register_variable(cdsSpreads);
-
-    auto sc = credit_curve<D>(pricingDate);
-
-    for (std::size_t j = 0; j < cdsInstruments.size(); ++j) {
-        D calibratedRate = calibratedRates[j];
-        std::chrono::year_month_day newpoint = cdsInstruments[j].schedule.back();
-        auto it = cdsInstruments[j].paymentDateMapper.find(newpoint);
-        if (it != cdsInstruments[j].paymentDateMapper.end()) {
-            newpoint = it->second;
-        }
-        sc.addLastPoint(newpoint, 1.0);
-
-        pureNewtonSolve<D, dm2, DerivativeMethod2::Adhoc, false, true>(
-          sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
-    }
-
-    auto& y = sc.getParams();
-    tape.register_output_variable(y);
-    tape.print();
-
-    for (std::size_t j = 1; j < y.size(); ++j) {
-        EXPECT_NEAR_ABS(survivalProbVals[j], y[j].get_value(), 2e-15);
-
-        tape.set_derivative(y[j], 1.0);
-        tape.backpropagate();
-
-        for (std::size_t i = 0; i < cdsSpreads.size(); ++i) {
-            auto const der = tape.get_derivative(cdsSpreads[i]);
-            auto const expexted_der = expectedFirstDerivatives(j - 1, i);
-            EXPECT_NEAR_ABS(expexted_der, der, 1e-10);
-        }
-
-        tape.set_derivative(y[j], 0.0);
-        tape.zero_adjoints();
     }
 }
 
@@ -3480,109 +3339,14 @@ auto
 main() -> int
 {
     lossy_test();
-
-    // bwd_adhoc<DerivativeMethod::Adhoc, DerivativeMethod::Fwd>();
-
-    bwd_adhoc<DerivativeMethod::Fwd, DerivativeMethod::Fwd>();
-
     compressed_test();
-    // bwd<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-
-    bwd_adhoc2_payoff<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-
     normal_calib();
-    compare_calib();
     fd1();
-    // fd2();
-
-    // fwd<DerivativeMethod::Fwd, DerivativeMethod::Fwd>();
-    // fwd<DerivativeMethod::Bwd, DerivativeMethod::Fwd>();
-    // fwd<DerivativeMethod::Adhoc, DerivativeMethod::Fwd>();
-
-    // fwd<DerivativeMethod::Fwd, DerivativeMethod::Bwd>();
-    // fwd<DerivativeMethod::Bwd, DerivativeMethod::Bwd>();
-    // fwd<DerivativeMethod::Adhoc, DerivativeMethod::Bwd>();
-
-    // fwd<DerivativeMethod::Fwd, DerivativeMethod::Adhoc>();
-    // fwd<DerivativeMethod::Bwd, DerivativeMethod::Adhoc>();
-    // fwd<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc>();
-
-    // bwd<DerivativeMethod::Fwd, DerivativeMethod::Fwd>();
-    // bwd<DerivativeMethod::Bwd, DerivativeMethod::Fwd>();
-    // bwd<DerivativeMethod::Adhoc, DerivativeMethod::Fwd>();
-
-    // bwd<DerivativeMethod::Fwd, DerivativeMethod::Bwd>();
-    // bwd<DerivativeMethod::Bwd, DerivativeMethod::Bwd>();
-    // bwd<DerivativeMethod::Adhoc, DerivativeMethod::Bwd>();
-
-    // bwd<DerivativeMethod::Fwd, DerivativeMethod::Adhoc>();
-    // bwd<DerivativeMethod::Bwd, DerivativeMethod::Adhoc>();
-    // bwd<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-
-    // bwd_over_fwd<DerivativeMethod::Fwd, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Bwd, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-    // bwd_over_fwd<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-
+    fd2();
     create_curve_adhoc();
-    bwd_adhoc<DerivativeMethod::Fwd, DerivativeMethod::Fwd>();
-    bwd_adhoc<DerivativeMethod::Bwd, DerivativeMethod::Fwd>();
-    bwd_adhoc<DerivativeMethod::Adhoc, DerivativeMethod::Fwd>();
-
-    bwd_adhoc<DerivativeMethod::Fwd, DerivativeMethod::Bwd>();
-    bwd_adhoc<DerivativeMethod::Bwd, DerivativeMethod::Bwd>();
-    bwd_adhoc<DerivativeMethod::Adhoc, DerivativeMethod::Bwd>();
-
-    bwd_adhoc<DerivativeMethod::Fwd, DerivativeMethod::Adhoc>();
-    bwd_adhoc<DerivativeMethod::Bwd, DerivativeMethod::Adhoc>();
-    bwd_adhoc<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Fwd, DerivativeMethod2::Adhoc>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Bwd, DerivativeMethod2::Adhoc>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::Adhoc>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Fwd, DerivativeMethod2::BwdOvFwd>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Bwd, DerivativeMethod2::BwdOvFwd>();
-
-    bwd_adhoc2<DerivativeMethod::Fwd, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Bwd, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-    bwd_adhoc2<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc, DerivativeMethod2::BwdOvFwd>();
-
-    // bwd_adhoc<DerivativeMethod::Adhoc, DerivativeMethod::Adhoc>();
-    // bwd_adhoc_IFT<DerivativeMethod::Fwd, DerivativeMethod::Fwd>();
+    bwd_adhoc();
+    bwd_adhoc2();
+    // bwd_adhoc2_payoff();
 
     TEST_END;
 }
