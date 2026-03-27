@@ -10,10 +10,6 @@ using adhoc_t = adhoc_mode::type;
 void
 test_addition()
 {
-
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 3.0;
@@ -27,18 +23,14 @@ test_addition()
     double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 1., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 1., 1e-10);
 }
 
 // Test 2: Simple multiplication - y = x1 * x2
 void
 test_multiplication()
 {
-
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0;
@@ -51,17 +43,14 @@ test_multiplication()
     double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 5.0, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 3.0, 1e-10);
 }
 
 // Test 3: Division - y = x1 / x2
 void
 test_division()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 2.0;
@@ -74,15 +63,14 @@ test_division()
     double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 0.5, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, -2.5, 1e-10);
 }
 
 // Test 4: Exp - y = exp(x)
 void
 test_exp()
 {
-    double dy_dx_res = 0;
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x_adhoc = 2.0;
@@ -93,14 +81,13 @@ test_exp()
     tape.backpropagate();
     double dy_dx_adhoc = tape.get_derivative(x_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx_adhoc, dy_dx_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx_adhoc, std::exp(2.0), 1e-10);
 }
 
 // Test 5: Log - y = log(x)
 void
 test_log()
 {
-    double dy_dx_res = 0;
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x_adhoc = 2.0;
@@ -111,16 +98,13 @@ test_log()
     tape.backpropagate();
     double dy_dx_adhoc = tape.get_derivative(x_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx_adhoc, dy_dx_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx_adhoc, 0.5, 1e-10);
 }
 
 // Test 6: Copy/Assignment - y = x1, z = y + x2
 void
 test_copy()
 {
-    double dz_dx1_res = 0;
-    double dz_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0;
@@ -134,19 +118,14 @@ test_copy()
     double dz_dx1_adhoc = tape.get_derivative(x1_adhoc);
     double dz_dx2_adhoc = tape.get_derivative(x2_adhoc);
 
-    EXPECT_NEAR_ABS(dz_dx1_adhoc, dz_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dz_dx2_adhoc, dz_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dz_dx1_adhoc, 1., 1e-10);
+    EXPECT_NEAR_ABS(dz_dx2_adhoc, 1., 1e-10);
 }
 
 // Test 7: Compound expression - y = (x1 + x2) * (x3 - x4)
 void
 test_compound()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-    double dy_dx4_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 2.0, x2_adhoc = 3.0, x3_adhoc = 7.0, x4_adhoc = 4.0;
@@ -163,20 +142,16 @@ test_compound()
     double dy_dx3_adhoc = tape.get_derivative(x3_adhoc);
     double dy_dx4_adhoc = tape.get_derivative(x4_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx4_adhoc, dy_dx4_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 3., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 3., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx3_adhoc, 5., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx4_adhoc, -5., 1e-10);
 }
 
 // Test 8: Compound assignment - x1 += x2, y = x1 * x3
 void
 test_compound_assignment()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0, x3_adhoc = 2.0;
@@ -195,19 +170,15 @@ test_compound_assignment()
 
     // Note: dy/dx1 here refers to the derivative with respect to the ORIGINAL
     // x1 (before +=)
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 2., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 2., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx3_adhoc, 8., 1e-10);
 }
 
 // Test 9: Compound assignment -= (x1 -= x2, y = x1 * x3)
 void
 test_compound_subtraction()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 3.0, x3_adhoc = 2.0;
@@ -224,19 +195,15 @@ test_compound_subtraction()
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
     double dy_dx3_adhoc = tape.get_derivative(x3_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 2., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, -2., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx3_adhoc, 7., 1e-10);
 }
 
 // Test 10: Compound assignment *= (x1 *= x2, y = x1 + x3)
 void
 test_compound_multiplication()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 4.0, x2_adhoc = 3.0, x3_adhoc = 2.0;
@@ -253,10 +220,6 @@ test_compound_multiplication()
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
     double dy_dx3_adhoc = tape.get_derivative(x3_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
-
     EXPECT_NEAR_ABS(dy_dx1_adhoc, 3., 1e-10); // not 1!
     EXPECT_NEAR_ABS(dy_dx2_adhoc, 4., 1e-10);
     EXPECT_NEAR_ABS(dy_dx3_adhoc, 1., 1e-10);
@@ -266,16 +229,6 @@ test_compound_multiplication()
 void
 test_compound_division()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-
-    // EXPECT_NEAR_ABS(dy_dx1_res, 5.0, 1e-10); // not 1.25!!
-    EXPECT_NEAR_ABS(dy_dx1_res, 1.25, 1e-10); // not 1.25!!
-    EXPECT_NEAR_ABS(dy_dx2_res, -3.75, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_res, 3.0, 1e-10);
-
-    // ADHOC
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 12.0, x2_adhoc = 4.0, x3_adhoc = 5.0;
@@ -292,11 +245,6 @@ test_compound_division()
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
     double dy_dx3_adhoc = tape.get_derivative(x3_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
-
-    // EXPECT_NEAR_ABS(dy_dx1_adhoc, 5.0, 1e-10); // not 1.25
     EXPECT_NEAR_ABS(dy_dx1_adhoc, 1.25, 1e-10); // not 1.25
     EXPECT_NEAR_ABS(dy_dx2_adhoc, -3.75, 1e-10);
     EXPECT_NEAR_ABS(dy_dx3_adhoc, 3.0, 1e-10);
@@ -306,14 +254,6 @@ test_compound_division()
 void
 test_multiple_compound_assignments()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-    double dy_dx3_res = 0;
-
-    EXPECT_NEAR_ABS(4.0, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(4.0, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(5.0, dy_dx3_res, 1e-10);
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 2.0, x2_adhoc = 3.0, x3_adhoc = 4.0;
@@ -331,9 +271,9 @@ test_multiple_compound_assignments()
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
     double dy_dx3_adhoc = tape.get_derivative(x3_adhoc);
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx3_adhoc, dy_dx3_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 4., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 4., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx3_adhoc, 5., 1e-10);
 }
 
 // Test 13: First cash instrument - simplified version
@@ -348,11 +288,6 @@ test_first_cash_instrument()
     // 2 * rate * coverage * df1 and dy/drate = 2 * x1 * coverage * df1
 
     double coverage = 7.0 / 360.0;
-
-    double dpv_ddf0_res = 0;
-    double dpv_ddf1_res = 0;
-    double dpv_drate_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t df0_adhoc = 1.0;
@@ -376,28 +311,14 @@ test_first_cash_instrument()
     double dpv_ddf1_adhoc = tape.get_derivative(df1_adhoc);
     double dpv_drate_adhoc = tape.get_derivative(rate_adhoc);
 
+    EXPECT_NEAR_ABS(dpv_ddf0_adhoc, -1., 1e-10);
+    EXPECT_NEAR_ABS(dpv_ddf1_adhoc, 1.0008416615459654, 1e-10);
     EXPECT_NEAR_ABS(dpv_drate_adhoc, 0.019418754810350696, 1e-10);
-
-    // Note: dEQdR[0] = -dpv/drate
-    double dEQdR_res = -dpv_drate_res;
-    double dEQdR_adhoc = -dpv_drate_adhoc;
-
-    EXPECT_NEAR_ABS(dpv_ddf0_adhoc, dpv_ddf0_res, 1e-10);
-    EXPECT_NEAR_ABS(dpv_ddf1_adhoc, dpv_ddf1_res, 1e-10);
-    EXPECT_NEAR_ABS(dpv_drate_adhoc, dpv_drate_res, 1e-10);
 }
 
 void
 test_division2()
 {
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-
-    double d2y_dx1_dx1_res = 0;
-    double d2y_dx1_dx2_res = 0;
-
-    double d2y_dx2_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     tape.set_method(adhoc::Method::SecondOrderSimple);
@@ -410,17 +331,15 @@ test_division2()
     tape.backpropagate();
     double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
     double dy_dx2_adhoc = tape.get_derivative(x2_adhoc);
-
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
-
     double d2y_dx1_dx1_adhoc = tape.get_derivative(x1_adhoc, x1_adhoc);
     double d2y_dx1_dx2_adhoc = tape.get_derivative(x1_adhoc, x2_adhoc);
     double d2y_dx2_dx2_adhoc = tape.get_derivative(x2_adhoc, x2_adhoc);
 
-    EXPECT_NEAR_ABS(d2y_dx1_dx1_adhoc, d2y_dx1_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(d2y_dx1_dx2_adhoc, d2y_dx1_dx2_res, 1e-10);
-    EXPECT_NEAR_ABS(d2y_dx2_dx2_adhoc, d2y_dx2_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 0.5, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, -2.5, 1e-10);
+    EXPECT_NEAR_ABS(d2y_dx1_dx1_adhoc, 0., 1e-10);
+    EXPECT_NEAR_ABS(d2y_dx1_dx2_adhoc, -0.25, 1e-10);
+    EXPECT_NEAR_ABS(d2y_dx2_dx2_adhoc, 2.5, 1e-10);
 }
 
 void
@@ -495,9 +414,6 @@ test_register()
     //  do some calculations with both variables, and then backpropagate
     //  to check that the derivatives are correct
 
-    double dy_dx1_res = 0;
-    double dy_dx2_res = 0;
-
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
     adhoc_t x1_adhoc = 3.0;
@@ -524,16 +440,14 @@ test_register()
     // dy/dx1 = (2*x1 + 2)*x2 + x2^2 = (2*3 + 2)*5 + 25 = 8*5 + 25 = 40 + 25 =
     // 65 dy/dx2 = (x1^2 + 2*x1) + 2*x1*x2 = (9 + 6) + 2*3*5 = 15 + 30 = 45
 
-    EXPECT_NEAR_ABS(dy_dx1_adhoc, dy_dx1_res, 1e-10);
-    EXPECT_NEAR_ABS(dy_dx2_adhoc, dy_dx2_res, 1e-10);
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 65., 1e-10);
+    EXPECT_NEAR_ABS(dy_dx2_adhoc, 45., 1e-10);
 }
 
 void
 test_abs()
 {
     auto check1d = [](double input, double expected_derivative) {
-        double dy_dx_res = 0;
-
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
         adhoc_t x_adhoc = input;
@@ -544,7 +458,6 @@ test_abs()
         tape.backpropagate();
         double dy_dx_adhoc = tape.get_derivative(x_adhoc);
 
-        EXPECT_NEAR_ABS(dy_dx_adhoc, dy_dx_res, 1e-10);
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
     };
     check1d(-4.0, -1.0);
@@ -688,12 +601,9 @@ test_erf()
     check1d(0.0, 1.1283791670955126);   // 2/sqrt(pi) * exp(0) = 2/sqrt(pi)
     check1d(1.0, 0.41510749742059439);  // 2/sqrt(pi) * exp(-1)
     check1d(-1.0, 0.41510749742059439); // symmetric function derivative
-
     check1d(-4.0, 1.2698234671866558E-7);
-    check1d(0.0, 1.1283791670955126);
     check1d(0.33, 1.011953111857459);
     check1d(2.5, 0.0021782842303527099);
-    check1d(1.0, 0.41510749742059472);
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
@@ -714,11 +624,11 @@ test_erf()
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
     };
-    check2d(-4.0, 1.2698234671866558E-7, 0.0000010158587737493247);
-    check2d(0.0, 1.1283791670955126, 0.);
-    check2d(0.33, 1.011953111857459, -0.6678890538259229);
-    check2d(2.5, 0.0021782842303527099, -0.01089142115176355);
-    check2d(1.0, 0.41510749742059472, -0.83021499484118944);
+    check2d(-4.0, -0.10386321203665744, 0.41316406932329819);
+    check2d(0.0, 0., -1.776624735613332);
+    check2d(0.33, -0.61650244812777133, -2.0351208304886157);
+    check2d(2.5, -0.043498384426344829, 0.17550835501850212);
+    check2d(1.0, -1.9213850008339559, -0.74227271251854887);
 }
 
 void
@@ -738,15 +648,12 @@ test_erfc()
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
     };
     // d/dx erf(x) = 2/sqrt(pi) * exp(-x^2)
-    check1d(0.0, 1.1283791670955126);   // 2/sqrt(pi) * exp(0) = 2/sqrt(pi)
-    check1d(1.0, 0.41510749742059439);  // 2/sqrt(pi) * exp(-1)
-    check1d(-1.0, 0.41510749742059439); // symmetric function derivative
-
-    check1d(-4.0, 1.2698234671866558E-7);
-    check1d(0.0, 1.1283791670955126);
-    check1d(0.33, 1.011953111857459);
-    check1d(2.5, 0.0021782842303527099);
-    check1d(1.0, 0.41510749742059472);
+    check1d(0.0, -1.1283791670955126);   // 2/sqrt(pi) * exp(0) = 2/sqrt(pi)
+    check1d(1.0, -0.41510749742059472);  // 2/sqrt(pi) * exp(-1)
+    check1d(-1.0, -0.41510749742059472); // symmetric function derivative
+    check1d(-4.0, -1.2698234671866558E-7);
+    check1d(0.33, -1.011953111857459);
+    check1d(2.5, -0.0021782842303527099);
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
@@ -767,17 +674,16 @@ test_erfc()
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
     };
-    check2d(-4.0, 1.2698234671866558E-7, 0.0000010158587737493247);
-    check2d(0.0, 1.1283791670955126, 0.);
-    check2d(0.33, 1.011953111857459, -0.6678890538259229);
-    check2d(2.5, 0.0021782842303527099, -0.01089142115176355);
-    check2d(1.0, 0.41510749742059472, -0.83021499484118944);
+    check2d(-4.0, 7.6305592867620433, -8.28211505327228);
+    check2d(0.0, 0., 0.56223827919315505);
+    check2d(0.33, 0.21142902393984789, 0.8052344954627304);
+    check2d(2.5, 5.5696316027782018, -10.09525571155049);
+    check2d(1.0, 1.5984475702829104, 4.3978013617139542);
 }
 
 void
 test_skip()
 {
-
     auto check2d = [](double input, double expected_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
         auto& tape2 = *tape2ptr;
@@ -796,11 +702,11 @@ test_skip()
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
     };
-    check2d(-4.0, 1.2698234671866558E-7);
-    check2d(0.0, 1.1283791670955126);
-    check2d(0.33, 1.011953111857459);
-    check2d(2.5, 0.0021782842303527099);
-    check2d(1.0, 0.41510749742059472);
+    check2d(-4.0, -0.10386321203665744);
+    check2d(0.0, 0.);
+    check2d(0.33, -0.61650244812777133);
+    check2d(2.5, -0.043498384426344829);
+    check2d(1.0, -1.9213850008339559);
 }
 
 void
@@ -857,10 +763,10 @@ test_max()
         EXPECT_NEAR_ABS(dy_dx_adhoc1, expected_derivative1, 1e-10);
         EXPECT_NEAR_ABS(dy_dx_adhoc2, expected_derivative2, 1e-10);
     };
-    check1d(-4.0, -1.0, 1.2698234671866558E-7, 0.0);
-    check1d(0.0, 1.0, 1.1283791670955126, 0.0); // derivative at 0 is undefined, we expect 1.0 here
-    check1d(5.0, 1.0, 0.0, 1.0);
-    check1d(3.0, 3.0, 0.5, 0.5);
+    check1d(-4.0, -1.0, 0., 1.);
+    check1d(0.0, 1.0, 0., 1.);
+    check1d(5.0, 1.0, 1., 0.);
+    check1d(3.0, 3.0, 1., 0.);
 
     auto check2d = [](double input1,
                       double input2,
@@ -897,9 +803,9 @@ test_max()
         EXPECT_NEAR_ABS(d2y_dx2_adhoc12, expected_derivative4, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc22, expected_derivative5, 1e-10);
     };
-    check2d(-4.0, 2., 0, 0, 0, 0, 0);
-    check2d(0.0, 0.0, 0, 0, 0, 0, 0);
-    check2d(5.0, 1.6, 0, 0, 0, 0, 0);
+    check2d(-4.0, 2., 0., -0.35017031350019029, 0., 0., 1.0240250054925624);
+    check2d(0.0, 0.0, 0., 0., -5.4365636569180902, 0., 0.);
+    check2d(5.0, 1.6, 1.6346620580366851, 0., 2.3050919848270324, 0., 0.);
 }
 
 void
@@ -922,10 +828,10 @@ test_min()
         EXPECT_NEAR_ABS(dy_dx_adhoc1, expected_derivative1, 1e-10);
         EXPECT_NEAR_ABS(dy_dx_adhoc2, expected_derivative2, 1e-10);
     };
-    check1d(-4.0, -1.0, 0, 0);
-    check1d(0.0, 1.0, 0, 0); // derivative at 0 is undefined, we expect 1.0 here
-    check1d(5.0, 1.0, 0, 0);
-    check1d(3.0, 3.0, 0, 0);
+    check1d(-4.0, -1.0, 1., 0.);
+    check1d(0.0, 1.0, 1., 0.);
+    check1d(5.0, 1.0, 0., 1.);
+    check1d(3.0, 3.0, 1., 0.);
 
     auto check2d = [](double input1,
                       double input2,
@@ -962,9 +868,9 @@ test_min()
         EXPECT_NEAR_ABS(d2y_dx2_adhoc12, expected_derivative4, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc22, expected_derivative5, 1e-10);
     };
-    check2d(-4.0, 2., -0.283943, 0.909297, 0.168414, -0.283943, 0.817556);
-    check2d(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0);
-    check2d(5.0, 1.6, 0.993297, 0.999576, 0.986548, 0.993297, 0.999576);
+    check2d(-4.0, 2., -0.13634271204947493, 0., 0.51885675996032143, 0., 0.);
+    check2d(0.0, 0.0, 0., 0., -5.4365636569180902, 0., 0.);
+    check2d(5.0, 1.6, 0., -0.94246139260191286, 0., 0., 1.9399852799398956);
 }
 
 void
@@ -1009,11 +915,11 @@ test_expm1()
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative1, 3e-8);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_derivative2, 3e-8);
     };
-    check2d(-4.0, exp(-4.0), exp(-4.0));
-    check2d(0.0, 1.0, 1.0);
-    check2d(0.33, exp(0.33), exp(0.33));
-    check2d(2.5, exp(2.5), exp(2.5));
-    check2d(1.0, exp(1.0), exp(1.0));
+    check2d(-4.0, 0.00012569096013905282, 0.00025368403051559017);
+    check2d(0.0, 1.0, 3.0);
+    check2d(0.33, 2.8604190310816122, 9.6995897684489946);
+    check2d(2.5, 10665171.183325227, 151258725.89737877);
+    check2d(1.0, 41.193555674716123, 194.36280518962906);
 }
 
 void
@@ -1036,6 +942,22 @@ test_induced_path()
 auto
 main() -> int
 {
+    // order 1 tests
+    test_addition();
+    test_multiplication();
+    test_division();
+    test_exp();
+    test_log();
+    test_compound();
+    test_compound_assignment();
+    test_compound_subtraction();
+    test_compound_multiplication();
+    test_compound_division();
+    test_multiple_compound_assignments();
+    test_first_cash_instrument();
+    test_copy();
+    test_register();
+
     test_compound_division();
     test_induced_path();
     test_expm1();
@@ -1052,22 +974,6 @@ main() -> int
     test_division2();
     test_exp2();
     test_log2();
-
-    // order 1 tests
-    test_addition();
-    test_multiplication();
-    test_division();
-    test_exp();
-    test_log();
-    test_compound();
-    test_compound_assignment();
-    test_compound_subtraction();
-    test_compound_multiplication();
-    test_compound_division();
-    test_multiple_compound_assignments();
-    test_first_cash_instrument();
-    test_copy();
-    test_register();
 
     TEST_END;
 }
