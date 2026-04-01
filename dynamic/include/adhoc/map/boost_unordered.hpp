@@ -4279,13 +4279,20 @@ namespace detail
 # define BOOST_CORE_SP_STDCALL __stdcall
 #endif
 
-// #ifdef __LP64__ // Cygwin 64
-//   extern "C" __declspec(dllimport) void BOOST_CORE_SP_STDCALL Sleep( unsigned int ms );
-// #else
-//   extern "C" __declspec(dllimport) void BOOST_CORE_SP_STDCALL Sleep( unsigned long ms );
-// #endif
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
 
-// extern "C" __declspec(dllimport) int BOOST_CORE_SP_STDCALL SwitchToThread();
+#ifdef __LP64__ // Cygwin 64
+extern "C" __declspec(dllimport) void BOOST_CORE_SP_STDCALL
+Sleep(unsigned int ms);
+#else
+extern "C" __declspec(dllimport) void BOOST_CORE_SP_STDCALL
+Sleep(unsigned long ms);
+#endif
+
+extern "C" __declspec(dllimport) int BOOST_CORE_SP_STDCALL
+SwitchToThread();
+
+#endif
 
 #undef BOOST_CORE_SP_STDCALL
 
