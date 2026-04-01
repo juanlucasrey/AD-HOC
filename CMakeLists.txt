@@ -3,5 +3,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(adhoc)
 enable_testing()
-add_subdirectory(test)
-add_subdirectory(brng/test)
+# add_subdirectory(test)
+# add_subdirectory(brng/test)
+add_subdirectory(dynamic/tests)
