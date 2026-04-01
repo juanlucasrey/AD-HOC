@@ -22,7 +22,7 @@
 #define BMC_TOOLS_DATES
 
 #include <chrono>
-#include <flat_set>
+#include <set>
 #include <vector>
 
 using namespace std::chrono;
@@ -82,19 +82,19 @@ convert_to_dt_360(year_month_day const& start_date, year_month_day const& end_da
 
 class Schedule final {
   public:
-    Schedule(std::flat_set<year_month_day> const& d)
+    Schedule(std::set<year_month_day> const& d)
       : dates(d)
     {
     }
 
-    Schedule(std::vector<year_month_day> const& d)
-      : dates(d)
-    {
-    }
+    // Schedule(std::vector<year_month_day> const& d)
+    //   : dates(d)
+    // {
+    // }
 
     inline void merge(Schedule const& other) { this->dates.insert(other.dates.cbegin(), other.dates.cend()); }
 
-    inline auto get_dates() const -> std::flat_set<year_month_day> const& { return this->dates; }
+    inline auto get_dates() const -> std::set<year_month_day> const& { return this->dates; }
 
     inline auto get_dates_vec() const -> std::vector<year_month_day>
     {
@@ -111,9 +111,9 @@ class Schedule final {
     inline auto back() const -> year_month_day const& { return *this->dates.rbegin(); }
 
     template<class Float = double>
-    auto convert_to_double() const -> std::flat_set<Float>
+    auto convert_to_double() const -> std::set<Float>
     {
-        std::flat_set<Float> result;
+        std::set<Float> result;
 
         constexpr Float DAYS_A_YEAR_ACT36525_FRAC = 1.0 / 365.25;
 
@@ -127,12 +127,12 @@ class Schedule final {
     }
 
   private:
-    std::flat_set<year_month_day> dates;
+    std::set<year_month_day> dates;
 };
 
 template<class T>
 auto
-get(std::flat_set<T> in, std::size_t i) -> T const&
+get(std::set<T> in, std::size_t i) -> T const&
 {
     return *std::next(in.begin(), i);
 }
