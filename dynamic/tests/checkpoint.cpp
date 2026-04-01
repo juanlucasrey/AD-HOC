@@ -969,9 +969,149 @@ test_checkpoint_branch_lossy()
     EXPECT_NEAR_ABS(dx3_bwd, dx3_lossy, 1e-8);
 }
 
+void
+test_checkpoint_branch_lossy_compressed()
+{
+    constexpr std::size_t num_paths = 1000;
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double res_bwd = 0.;
+    double dx1_bwd = 0.;
+    double dx2_bwd = 0.;
+    double dx3_bwd = 0.;
+
+    {
+        using adhoc_t = adhoc_t;
+        // Create tape
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+        tape->register_variable(x3);
+
+        res_bwd = compute_result_branch(x1, x2, x3, num_paths);
+
+        // tape->set_derivative(res_bwd, 1.0);
+        tape->backpropagate();
+        // adhoc::BackPropagator2 bp(tape);
+        // bp.set_derivative(res_bwd, 1.0);
+        // bp.backpropagate();
+
+        // Retrieve accumulated derivatives
+        dx1_bwd = tape->get_derivative(x1);
+        dx2_bwd = tape->get_derivative(x2);
+        dx3_bwd = tape->get_derivative(x3);
+
+        // Basic sanity check - derivatives should be non-zero
+        EXPECT_NOT_EQUAL(dx1_bwd, 0.0);
+        EXPECT_NOT_EQUAL(dx2_bwd, 0.0);
+        EXPECT_NOT_EQUAL(dx3_bwd, 0.0);
+    }
+
+    double res_fd = 0.;
+    double dx1_fd = 0.;
+    double dx2_fd = 0.;
+    double dx3_fd = 0.;
+
+    {
+        constexpr double bump = 1e-6;
+        double x1 = x1_val;
+        double x2 = x2_val;
+        double x3 = x3_val;
+
+        res_fd = compute_result_branch(x1, x2, x3, num_paths);
+
+        // Central finite differences using the same templated function
+        dx1_fd =
+          (compute_result_branch(x1 + bump, x2, x3, num_paths) - compute_result_branch(x1 - bump, x2, x3, num_paths)) /
+          (2.0 * bump);
+        dx2_fd =
+          (compute_result_branch(x1, x2 + bump, x3, num_paths) - compute_result_branch(x1, x2 - bump, x3, num_paths)) /
+          (2.0 * bump);
+        dx3_fd =
+          (compute_result_branch(x1, x2, x3 + bump, num_paths) - compute_result_branch(x1, x2, x3 - bump, num_paths)) /
+          (2.0 * bump);
+    }
+
+    // check that the values are close in between methods
+    EXPECT_NEAR_ABS(res_bwd, res_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx1_bwd, dx1_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx2_bwd, dx2_fd, 1e-8);
+    EXPECT_NEAR_ABS(dx3_bwd, dx3_fd, 1e-8);
+
+    double res_lossy = 0.;
+    double dx1_lossy = 0.;
+    double dx2_lossy = 0.;
+    double dx3_lossy = 0.;
+
+    {
+        using adhoc_t = adhoc_t;
+        // Create tape
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(adhoc::Method::FirstOrderLossyCompressed);
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+        tape->register_variable(x3);
+
+        res_lossy = compute_result_branch(x1, x2, x3, num_paths);
+
+        // tape->set_derivative(res_bwd, 1.0);
+        tape->backpropagate();
+        // adhoc::BackPropagator2 bp(tape);
+        // bp.set_derivative(res_bwd, 1.0);
+        // bp.backpropagate();
+
+        // Retrieve accumulated derivatives
+        dx1_lossy = tape->get_derivative(x1);
+        dx2_lossy = tape->get_derivative(x2);
+        dx3_lossy = tape->get_derivative(x3);
+
+        // Basic sanity check - derivatives should be non-zero
+        EXPECT_NOT_EQUAL(dx1_lossy, 0.0);
+        EXPECT_NOT_EQUAL(dx2_lossy, 0.0);
+        EXPECT_NOT_EQUAL(dx3_lossy, 0.0);
+    }
+
+    EXPECT_NEAR_ABS(res_bwd, res_lossy, 1e-8);
+    EXPECT_NEAR_ABS(dx1_bwd, dx1_lossy, 1e-8);
+    EXPECT_NEAR_ABS(dx2_bwd, dx2_lossy, 1e-8);
+    EXPECT_NEAR_ABS(dx3_bwd, dx3_lossy, 1e-8);
+}
+
+void
+test_lossy_compressed_simple()
+{
+    using adhoc_t = adhoc_t;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+    tape->set_method(adhoc::Method::FirstOrderLossyCompressed);
+    adhoc_t x = 2.3;
+    tape->register_variable(x);
+    auto y = log(erfc(exp(x)));
+    tape->register_output_variable(y);
+    tape->set_derivative(y, 1.);
+    tape->backpropagate();
+}
+
 auto
 main() -> int
 {
+    // test_lossy_compressed_simple();
+    // test_checkpoint_branch_lossy_compressed();
     test_checkpoint_fd_vs_ad();
     test_checkpoint_branch_lossy();
     test_simd8_backpropagation();
