@@ -277,8 +277,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
         auto const& checkpoints_c = this->checkpoints;
         auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
             auto it = std::upper_bound(checkpoints_c.begin(), checkpoints_c.end(), id);
-            auto buffed_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
-            return { it == checkpoints_c.end(), buffed_id };
+            auto buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
+            return { it == checkpoints_c.end(), buffer_id };
         };
 
         auto update_loc = [&pos = this->pos, &on_which_buffer = this->on_which_buffer, &buffers = this->buffers](
