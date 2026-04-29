@@ -1,3 +1,7 @@
+# uncomment these 2 lines for ASAN build
+# add_compile_options(-fsanitize=address)
+# add_link_options(-fsanitize=address)
+
 # Header-only tests
 set(test_name "dynamic.functions.header_only")
 add_executable(${test_name} functions.cpp)

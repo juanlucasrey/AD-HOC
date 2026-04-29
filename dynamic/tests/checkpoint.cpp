@@ -970,6 +970,438 @@ test_checkpoint_branch_lossy()
     EXPECT_NEAR_ABS(dx3_bwd, dx3_lossy, 1e-8);
 }
 
+void
+test_lossy_compressed_1in1out()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+    double deriv_val = -199.95882307798402;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+        adhoc_t x = 2.3;
+        tape->register_variable(x);
+        auto y = log(erfc(exp(x)));
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.);
+        tape->backpropagate();
+        EXPECT_NEAR_ABS(deriv_val, tape->get_derivative(x), 1e-8);
+    }
+}
+
+void
+test_lossy_compressed_2in1out()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+    double deriv_val1 = 518.81914462776513;
+    double deriv_val2 = -269.97895210733441;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+        adhoc_t x1 = 2.3;
+        adhoc_t x2 = 1.1;
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+
+        auto y1 = log(erfc(exp(x1)));
+        auto y2 = exp(erfc(log(x2)));
+        auto y = erf(cos(y1 * y2));
+
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.);
+        tape->backpropagate();
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-8);
+    }
+}
+
+void
+test_lossy_compressed_1in1out2paths()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+    double deriv_val1 = -2.381398009286281;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+        adhoc_t x1 = 2.3;
+        tape->register_variable(x1);
+
+        auto y = cos(x1) * x1;
+
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.);
+        tape->backpropagate();
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+    }
+}
+
+void
+test_lossy_compressed_1in1out2paths2()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+    double deriv_val1 = -2.381398009286281;
+    double deriv_val2 = -5.4772154213584461;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+        adhoc_t x1 = 2.3;
+        adhoc_t x2 = 1;
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+
+        auto prod = x1 * x2;
+        auto y = cos(prod) * prod;
+
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.);
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+    }
+}
+
+void
+test_lossy_compressed_2in1out2()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+    double deriv_val1 = 42.516292658681806;
+    double deriv_val2 = -22.124287930267304;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+        adhoc_t x1 = 2.3;
+        adhoc_t x2 = 1.1;
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+
+        auto y1 = log(erfc(exp(x1)));
+        auto y2 = exp(erfc(log(x2)));
+        auto prod = y1 * y2;
+        auto y = erf(cos(prod)) * exp(prod * 0.01);
+
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.);
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-8);
+    }
+}
+
+void
+test_lossy_compressed_1in2out()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+
+    double deriv_val1 = 752.01628170139816;
+    double deriv_val2 = -0.0027146390620349445;
+    double deriv_val3 = 376.00678353116808;
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        auto& tape_ref = *tape;
+        tape->set_method(m);
+        adhoc_t x1 = 2.3;
+        tape->register_variable(x1);
+
+        auto int1 = log(erfc(exp(x1)));
+        auto y1 = log(cos(int1));
+        auto y2 = erfc(exp(int1 * -0.01));
+
+        tape->register_output_variable(y1);
+        tape->register_output_variable(y2);
+        tape->set_derivative(y1, 1.);
+        tape->set_derivative(y2, 0.);
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
+
+        tape->zero_adjoints();
+        tape->set_derivative(y1, 0.);
+        tape->set_derivative(y2, 1.);
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x1), 1e-8);
+
+        tape->zero_adjoints();
+        tape->set_derivative(y1, 0.5);
+        tape->set_derivative(y2, 0.5);
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x1), 1e-8);
+
+        // if (m == adhoc::Method::FirstOrderSimple) {
+        //     deriv_val = tape->get_derivative(x1);
+        // }
+        // else {
+        //     EXPECT_NEAR_ABS(deriv_val, tape->get_derivative(x1), 1e-13);
+        // }
+    }
+}
+
+void
+test_lossy_compressed_complex1_pre()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double result_val = 0.;
+    double deriv_val1 = 0.;
+    double deriv_val2 = 0.;
+    double deriv_val3 = 0.;
+
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+        tape->register_variable(x3);
+
+        double z1 = 0.8;
+        double z2 = 0.2;
+
+        auto y_init = x1 * x2;
+        auto y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
+        auto y = y_path + x3 * z1 * z2;
+        tape->register_output_variable(y);
+        tape->set_derivative(y, 1.0);
+        tape->backpropagate();
+
+        if (m == adhoc::Method::FirstOrderSimple) {
+            result_val = y.get_value();
+            deriv_val1 = tape->get_derivative(x1);
+            deriv_val2 = tape->get_derivative(x2);
+            deriv_val3 = tape->get_derivative(x3);
+        }
+        else {
+            EXPECT_NEAR_ABS(result_val, y.get_value(), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_compressed_complex1_pre2()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double result_val = 0.;
+    double deriv_val1 = 0.;
+    double deriv_val2 = 0.;
+    double deriv_val3 = 0.;
+
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        // Create tape
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+        tape->register_variable(x3);
+
+        auto y_init = x1 * x2;
+
+        double one_over_paths = 1.0;
+
+        auto pos2 = tape->get_position();
+        tape->set_checkpoint();
+
+        double result = 0.0;
+        double z1 = 0.8;
+        double z2 = 0.2;
+
+        auto y_path = y_init * 0.8;
+
+        tape->register_output_variable(y_path);
+        tape->set_derivative(y_path, one_over_paths);
+        tape->backpropagate_and_reset_to(pos2);
+        result += y_path.get_value();
+
+        double res_lossy = result * one_over_paths;
+
+        tape->backpropagate();
+
+        if (m == adhoc::Method::FirstOrderSimple) {
+            result_val = res_lossy;
+            deriv_val1 = tape->get_derivative(x1);
+            deriv_val2 = tape->get_derivative(x2);
+            deriv_val3 = tape->get_derivative(x3);
+        }
+        else {
+            EXPECT_NEAR_ABS(result_val, res_lossy, 1e-13);
+            EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+        }
+
+        // EXPECT_NEAR_ABS(result_val, res_lossy, 1e-13);
+        // EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+        // EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+        // EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+    }
+}
+
+void
+test_lossy_compressed_complex1()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple,
+                                           adhoc::Method::FirstOrderLossy,
+                                           adhoc::Method::FirstOrderLossyCompressed };
+
+    constexpr std::size_t num_paths = 1000;
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double result_val = 3.421138662549827;
+    double deriv_val1 = 1.5027371453017027;
+    double deriv_val2 = 0.80747795083939388;
+    double deriv_val3 = 0.11992672558600065;
+
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        // Create tape
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        tape->set_method(m);
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape->register_variable(x1);
+        tape->register_variable(x2);
+        tape->register_variable(x3);
+
+        double res_lossy = compute_result_branch(x1, x2, x3, num_paths);
+
+        tape->backpropagate();
+
+        EXPECT_NEAR_ABS(result_val, res_lossy, 1e-13);
+        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+    }
+}
+
+void
+test_lossy_compressed_complex2()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto const scEnd = inputD * 1.2;
+        auto outputD = scEnd * (scEnd * 1.1);
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_compressed_complex3()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto const scEnd = inputD * 1.2;
+        auto intermediary = scEnd * (scEnd * 1.1);
+        auto outputD = exp(cos(scEnd)) * log(intermediary);
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
 auto
 main() -> int
 {
@@ -981,6 +1413,18 @@ main() -> int
     test_simd8_second_order_with_transcendentals();
     test_simd8_second_order_monte_carlo();
     test_simd8_second_order_different_seeds_per_lane();
+
+    test_lossy_compressed_complex2();
+    test_lossy_compressed_complex3();
+    test_lossy_compressed_1in1out();
+    test_lossy_compressed_2in1out();
+    test_lossy_compressed_1in1out2paths();
+    test_lossy_compressed_1in1out2paths2();
+    test_lossy_compressed_2in1out2();
+    test_lossy_compressed_1in2out();
+    test_lossy_compressed_complex1_pre();
+    test_lossy_compressed_complex1_pre2();
+    test_lossy_compressed_complex1();
 
     TEST_END;
 }

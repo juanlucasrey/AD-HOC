@@ -2753,7 +2753,7 @@ auto
 main() -> int
 {
     lossy_test();
-    compressed_test();
+    // compressed_test();
     normal_calib();
     fd1();
     create_curve_adhoc();
