@@ -23,7 +23,6 @@
 #include "adhoc/backpropagator1.hpp"
 #include "adhoc/backpropagator1lossy.hpp"
 #include "adhoc/backpropagator1lossycompressed.hpp"
-#include "adhoc/backpropagator1vlossycompressed.hpp"
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2v.hpp"
 
@@ -56,7 +55,7 @@ struct Tape<Float>::Impl {
                  BackPropagatorLossy<Float>,
                  BackPropagatorLossy<Float, true>,
                  BackPropagatorLossyCompressed<Float>,
-                 BackPropagatorVLossyCompressed<Float> >
+                 BackPropagatorLossyCompressed<Float, true> >
       bp = BackPropagator<Float>();
 };
 
@@ -184,7 +183,7 @@ Tape<Float>::set_method(Method m)
         this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
     }
     else if (m == Method::FirstOrderVLossyCompressed) {
-        this->impl->bp.template emplace<BackPropagatorVLossyCompressed<double> >();
+        this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
     }
 }
 
@@ -232,7 +231,7 @@ Tape<Float>::get_method() const -> Method
         return Method::FirstOrderLossyCompressed;
     }
 
-    if (std::holds_alternative<BackPropagatorVLossyCompressed<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<Float, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressed;
     }
 
@@ -283,7 +282,7 @@ Tape<Float>::get_order() const -> std::size_t
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorVLossyCompressed<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<Float, true> >(this->impl->bp)) {
         return 1;
     }
 
