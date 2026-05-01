@@ -365,7 +365,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     std::size_t const id_idx_start = id_idx;
     std::size_t const val_idx_start = val_idx;
 
-    // loop in foward order to detect multiplication chains and bivariate operators with same agument
     buffer_t buffer_multipliers;
 
     std::vector<std::size_t> pos_multiplier;
@@ -964,7 +963,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         return { it == checkpoints_c.end(), buffer_id };
     };
 
-    // LOOP 3: backward, to create lossy opcode
+    // LOOP 4: backward, to create lossy opcode
     for (std::size_t op_idx = from; op_idx-- > to;) {
         auto copy_mul = [this](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, double multiplier) {
             bool arg_is_new = (arg_pos == passive_id<std::size_t>);
@@ -1121,7 +1120,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     std::size_t id_idx_l = 0;
     std::size_t on_which_buffer_idx = 0;
 
-    // LOOP 4: backward, to execute lossy opcode
+    // LOOP 5: backward, to execute lossy opcode
     for (std::size_t lossy_op_idx = 0; lossy_op_idx < this->lossy_op.size(); ++lossy_op_idx) {
         auto const& op = this->lossy_op[lossy_op_idx];
 
