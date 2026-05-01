@@ -575,7 +575,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         }
     }
 
-    buffer_multipliers.values.resize(buffer_multipliers.size * this->m_num_lanes, 1.);
+    buffer_multipliers.values.resize(buffer_multipliers.size, 1.);
 
     // LOOP 3: forward, to calculate multipliers VALS->buffer_multipliers.values
     id_idx = id_idx_start;
