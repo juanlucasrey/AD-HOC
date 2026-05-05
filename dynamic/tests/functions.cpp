@@ -327,6 +327,69 @@ test_pow_c()
     check2d(1.0, 0.5, -3.3705524251026877, -1.4896779009391881);
 }
 
+void
+test_pow_c_0()
+{
+    auto check1d = [](double input, double exponent, double expected_derivative) {
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        adhoc_t x_adhoc = input;
+        tape.register_variable(x_adhoc);
+        adhoc_t y_adhoc = pow(x_adhoc, exponent);
+        tape.register_output_variable(y_adhoc);
+        tape.set_derivative(y_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+
+        if (expected_derivative == std::numeric_limits<double>::infinity()) {
+            EXPECT_TRUE(dy_dx_adhoc == std::numeric_limits<double>::infinity());
+        }
+        else {
+            EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
+        }
+    };
+
+    check1d(0.0, 3.0, 0.0);
+    check1d(0.0, 1.0001, 0.0);
+    check1d(0.0, 1., 1.0);
+    check1d(0.0, 0.99, std::numeric_limits<double>::infinity());
+
+    auto check2d = [](double input, double exponent, double expected_derivative, double expected_second_derivative) {
+        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
+        auto& tape2 = *tape2ptr;
+        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc_t x_adhoc = input;
+        tape2.register_variable(x_adhoc);
+
+        auto res_adhoc = pow(x_adhoc, exponent);
+
+        tape2.register_output_variable(res_adhoc);
+        tape2.set_derivative(res_adhoc, 1.0);
+        tape2.backpropagate();
+        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+
+        if (expected_derivative == std::numeric_limits<double>::infinity()) {
+            EXPECT_TRUE(dy_dx_adhoc == std::numeric_limits<double>::infinity());
+        }
+        else {
+            EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
+        }
+
+        if (expected_second_derivative == std::numeric_limits<double>::infinity()) {
+            EXPECT_TRUE(d2y_dx2_adhoc == std::numeric_limits<double>::infinity());
+        }
+        else {
+            EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
+        }
+    };
+    check2d(0.0, 1.0, 1., 0.);
+    check2d(0.0, 1.001, 0., std::numeric_limits<double>::infinity());
+    check2d(0.0, 1.999, 0., std::numeric_limits<double>::infinity());
+    check2d(0.0, 2.0, 0., 2.);
+    check2d(0.0, 2.00001, 0., 0.);
+}
+
 // --- Square Root ---
 // y = sqrt(x)
 void
@@ -1049,6 +1112,7 @@ main() -> int
     test_log_first_order();
     test_log_second_order();
     test_pow_c();
+    test_pow_c_0();
     test_sqrt();
 
     // ---- Error Functions ----

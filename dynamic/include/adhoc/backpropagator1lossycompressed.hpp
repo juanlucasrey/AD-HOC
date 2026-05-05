@@ -306,12 +306,9 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::MUL:
             case OpCode::COS:
-            case OpCode::SQRT: {
-                val_idx -= 2;
-                break;
-            }
+            case OpCode::SQRT:
             case OpCode::POW_C: {
-                val_idx -= 3;
+                val_idx -= 2;
                 break;
             }
         }
@@ -1006,8 +1003,9 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::POW_C: {
                 if (use_this_op) {
-                    double const one_over_in = 1. / vals[val_idx];
-                    double const multiplier = vals[val_idx + 2] * vals[val_idx + 1] * one_over_in;
+                    double const lhs_arg = vals[val_idx];
+                    double const rhs_arg = vals[val_idx + 1];
+                    double const multiplier = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
                     bool const op_m = op_multiply[mult_op_idx++];
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
@@ -1019,7 +1017,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         values_type[pos] = mul_type::ANY;
                     }
                 }
-                val_idx += 3;
+                val_idx += 2;
                 id_idx += 2;
                 break;
             }

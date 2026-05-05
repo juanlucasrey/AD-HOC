@@ -356,11 +356,14 @@ BackPropagator<Float, Vectorised>::backpropagate_to(std::size_t to, TapeData& da
                 break;
             }
             case OpCode::POW_C: {
-                val_idx -= 3;
+                val_idx -= 2;
                 id_idx -= 2;
                 if (use_this_op) {
-                    double const one_over_in = 1. / vals[val_idx];
-                    double const der_local_1 = vals[val_idx + 2] * vals[val_idx + 1] * one_over_in;
+                    double const lhs_arg = vals[val_idx];
+                    double const rhs_arg = vals[val_idx + 1];
+
+                    double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
+
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
                     mul_add_derivative(arg_id, res_id, der_local_1);

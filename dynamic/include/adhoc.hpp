@@ -762,7 +762,6 @@ pow(const adhoc_type<Float>& lhs, T rhs) -> adhoc_type<Float>
         result.id = opcode<Float>::global_tape->generate_id();
         opcode<Float>::global_tape->record_unary(OpCode::POW_C, lhs.id, result.id);
         opcode<Float>::global_tape->record_value(lhs.value);
-        opcode<Float>::global_tape->record_value(result.value);
         opcode<Float>::global_tape->record_value(static_cast<Float>(rhs));
     }
     return result;

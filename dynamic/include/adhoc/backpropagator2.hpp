@@ -234,11 +234,8 @@ BackPropagator2<Float>::backpropagate_to(std::size_t to, TapeData& data)
                     break;
                 case OpCode::SQRT:
                 case OpCode::COS:
-                    val_idx -= 2;
-                    id_idx -= 2;
-                    break;
                 case OpCode::POW_C:
-                    val_idx -= 3;
+                    val_idx -= 2;
                     id_idx -= 2;
                     break;
             }
@@ -595,14 +592,15 @@ BackPropagator2<Float>::backpropagate_to(std::size_t to, TapeData& data)
                 break;
             }
             case OpCode::POW_C: {
-                val_idx -= 3;
+                val_idx -= 2;
                 id_idx -= 2;
 
-                double const one_over_in = 1. / vals[val_idx];
-                double const rhs_arg = vals[val_idx + 2];
+                double const lhs_arg = vals[val_idx];
+                double const rhs_arg = vals[val_idx + 1];
 
-                double const der_local_1 = rhs_arg * vals[val_idx + 1] * one_over_in;
-                double const der_local_2 = der_local_1 * (rhs_arg - 1.0) * one_over_in;
+                double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
+                double const der_local_2 =
+                  rhs_arg != 0.0 && rhs_arg != 1.0 ? rhs_arg * (rhs_arg - 1.0) * std::pow(lhs_arg, rhs_arg - 2.) : 0.0;
 
                 std::size_t const arg_id = ids[id_idx];
                 std::size_t const res_id = ids[id_idx + 1];
