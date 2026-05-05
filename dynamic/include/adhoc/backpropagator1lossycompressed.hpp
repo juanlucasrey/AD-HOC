@@ -377,6 +377,8 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     std::vector<std::size_t> multiplier_origin(from - to, passive_id<std::size_t>);
     std::vector<std::size_t> multiplier_origin_bi((from - to) * 2, passive_id<std::size_t>);
 
+    std::vector<std::size_t> number_dependents2(number_dependents.begin(), number_dependents.end());
+
     // LOOP 2: forward, to detect multiplication chains and bivariate operators with same argument
     id_idx = id_idx_start;
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
@@ -609,7 +611,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op =
-          this->node_location_on_buffer[op_idx] != passive_id<std::size_t> || (number_dependents[op_idx - to] > 0);
+          this->node_location_on_buffer[op_idx] != passive_id<std::size_t> || (number_dependents2[op_idx - to] > 0);
 
         switch (op) {
             case OpCode::REG_INPUT: {
