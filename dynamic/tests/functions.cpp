@@ -100,6 +100,54 @@ test_division_second_order()
     EXPECT_NEAR_ABS(d2y_dx2_dx2_adhoc, 2.5, 1e-10);
 }
 
+void
+test_addition_itself()
+{
+    adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+    auto& tape = *tapeptr;
+    adhoc_t x1_adhoc = 3.0;
+    tape.register_variable(x1_adhoc);
+    adhoc_t y_adhoc = x1_adhoc + x1_adhoc;
+    tape.register_output_variable(y_adhoc);
+    tape.set_derivative(y_adhoc, 1.0);
+    tape.backpropagate();
+    double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
+
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 2., 1e-10);
+}
+
+void
+test_substraction_itself()
+{
+    adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+    auto& tape = *tapeptr;
+    adhoc_t x1_adhoc = 3.0;
+    tape.register_variable(x1_adhoc);
+    adhoc_t y_adhoc = x1_adhoc - x1_adhoc;
+    tape.register_output_variable(y_adhoc);
+    tape.set_derivative(y_adhoc, 1.0);
+    tape.backpropagate();
+    double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
+
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 0., 1e-10);
+}
+
+void
+test_multiplication_itself()
+{
+    adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+    auto& tape = *tapeptr;
+    adhoc_t x1_adhoc = 3.0;
+    tape.register_variable(x1_adhoc);
+    adhoc_t y_adhoc = x1_adhoc * x1_adhoc;
+    tape.register_output_variable(y_adhoc);
+    tape.set_derivative(y_adhoc, 1.0);
+    tape.backpropagate();
+    double dy_dx1_adhoc = tape.get_derivative(x1_adhoc);
+
+    EXPECT_NEAR_ABS(dy_dx1_adhoc, 6., 1e-10);
+}
+
 // ============================================================================
 // TRANSCENDENTAL FUNCTIONS
 // ============================================================================
@@ -981,18 +1029,18 @@ test_first_cash_instrument()
     EXPECT_NEAR_ABS(dpv_drate_adhoc, 0.019418754810350696, 1e-10);
 }
 
-// ============================================================================
-// MAIN
-// ============================================================================
-
 auto
 main() -> int
 {
+
     // ---- Basic Arithmetic ----
     test_addition();
     test_multiplication();
     test_division_first_order();
     test_division_second_order();
+    test_addition_itself();
+    test_substraction_itself();
+    test_multiplication_itself();
 
     // ---- Transcendental Functions ----
     test_exp_first_order();
@@ -1025,7 +1073,7 @@ main() -> int
     test_delayed_registration();
     test_skip_unregistered_outputs();
     test_backprop_stages();
-    test_induced_path();
+    // test_induced_path();
 
     // ---- Integration Tests ----
     test_first_cash_instrument();

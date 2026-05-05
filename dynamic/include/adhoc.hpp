@@ -395,7 +395,13 @@ adhoc_type<Float>::operator+(const adhoc_type& other) const -> adhoc_type
 
     adhoc_type result(this->value + other.value);
     result.id = opcode<Float>::global_tape->generate_id();
-    opcode<Float>::global_tape->record_binary(OpCode::ADD, this->id, other.id, result.id);
+    if (this->id == other.id) {
+        opcode<Float>::global_tape->record_unary(OpCode::MUL_C, this->id, result.id);
+        opcode<Float>::global_tape->record_value(2.0);
+    }
+    else {
+        opcode<Float>::global_tape->record_binary(OpCode::ADD, this->id, other.id, result.id);
+    }
     return result;
 }
 
@@ -425,7 +431,13 @@ adhoc_type<Float>::operator-(const adhoc_type& other) const -> adhoc_type
 
     adhoc_type result(this->value - other.value);
     result.id = opcode<Float>::global_tape->generate_id();
-    opcode<Float>::global_tape->record_binary(OpCode::SUB, this->id, other.id, result.id);
+    if (this->id == other.id) {
+        opcode<Float>::global_tape->record_unary(OpCode::MUL_C, this->id, result.id);
+        opcode<Float>::global_tape->record_value(0.0);
+    }
+    else {
+        opcode<Float>::global_tape->record_binary(OpCode::SUB, this->id, other.id, result.id);
+    }
     return result;
 }
 
