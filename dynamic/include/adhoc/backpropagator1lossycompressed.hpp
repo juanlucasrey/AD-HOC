@@ -419,6 +419,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         multiplier_keep_alive[mul_origin] = true;
                         multiplier_origin[res_id - to] = mul_origin;
                         mul_origin = passive_id<std::size_t>;
+                        --number_dependents[arg_id - to];
                     }
                     else {
                         auto& mult_loc_res = multiplier_origin[res_id - to];
@@ -455,6 +456,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         multiplier_loc_to[mul_origin] = res_id;
                         multiplier_loc_lhs = mul_origin;
                         mul_origin = passive_id<std::size_t>;
+                        --number_dependents[lhs_id - to];
                     }
                     else {
                         std::size_t& mult_loc_res = multiplier_loc_lhs;
@@ -474,6 +476,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         multiplier_loc_to[mul_origin] = res_id;
                         multiplier_loc_rhs = mul_origin;
                         mul_origin = passive_id<std::size_t>;
+                        --number_dependents[rhs_id - to];
                     }
                     else {
                         std::size_t& mult_loc_res = multiplier_loc_rhs;
@@ -521,6 +524,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
                             multiplier_origin[res_id - to] = coming_from;
                             coming_from = passive_id<std::size_t>;
+                            --number_dependents[origin_id - to];
                         }
                     }
                     else {
@@ -558,6 +562,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         multiplier_loc_to[mul_origin] = res_id;
                         multiplier_origin[res_id - to] = mul_origin;
                         mul_origin = passive_id<std::size_t>;
+                        --number_dependents[arg_id - to];
                     }
                     else {
                         auto& mult_loc_res = multiplier_origin[res_id - to];
@@ -576,6 +581,12 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     }
 
     buffer_multipliers.values.resize(buffer_multipliers.size, 1.);
+    enum class mul_type : std::uint8_t {
+        ANY,
+        ONE,
+        MINUS_ONE,
+    };
+    std::vector<mul_type> values_type(buffer_multipliers.size);
 
     // LOOP 3: forward, to calculate multipliers VALS->buffer_multipliers.values
     id_idx = id_idx_start;
@@ -584,6 +595,17 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     std::size_t mult_pos_idx = 0;
     std::size_t mult_bc_idx = 0;
     std::size_t mult_uc_idx = 0;
+
+    auto combine_mul_type = [](mul_type a, mul_type b) -> mul_type {
+        if (a == mul_type::ANY || b == mul_type::ANY) {
+            return mul_type::ANY;
+        }
+        if (a == b) {
+            return mul_type::ONE;
+        }
+        return mul_type::MINUS_ONE;
+    };
+
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op =
@@ -601,9 +623,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ONE;
                     }
                 }
                 id_idx += 2;
@@ -621,9 +645,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::ONE;
                         }
                     }
 
@@ -634,9 +660,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::ONE;
                         }
                     }
 
@@ -644,9 +672,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
                         std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
                         buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
+                        values_type[pos_lhs] = mul_type::ANY;
                         if (univariate_consolidate[mult_uc_idx++]) {
                             std::size_t const pos = pos_multiplier[mult_pos_idx++];
                             buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
+                            values_type[pos] = mul_type::ANY;
                         }
                     }
                 }
@@ -665,9 +695,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::ONE;
                         }
                     }
 
@@ -678,9 +710,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::MINUS_ONE;
                         }
                     }
 
@@ -688,9 +722,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
                         std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
                         buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
+                        values_type[pos_lhs] = mul_type::ANY;
                         if (univariate_consolidate[mult_uc_idx++]) {
                             std::size_t const pos = pos_multiplier[mult_pos_idx++];
                             buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
+                            values_type[pos] = mul_type::ANY;
                         }
                     }
                 }
@@ -710,9 +746,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = mul_type::ANY;
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::ANY;
                         }
                     }
 
@@ -723,9 +761,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos = pos_multiplier[mult_pos_idx++];
                         if (op_m) {
                             buffer_multipliers.values[pos] *= multiplier;
+                            values_type[pos] = mul_type::ANY;
                         }
                         else {
                             buffer_multipliers.values[pos] = multiplier;
+                            values_type[pos] = mul_type::ANY;
                         }
                     }
 
@@ -733,9 +773,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
                         std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
                         buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
+                        values_type[pos_lhs] = mul_type::ANY;
                         if (univariate_consolidate[mult_uc_idx++]) {
                             std::size_t const pos = pos_multiplier[mult_pos_idx++];
                             buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
+                            values_type[pos] = mul_type::ANY;
                         }
                     }
                 }
@@ -750,9 +792,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ONE;
                     }
                 }
                 id_idx += 2;
@@ -765,9 +809,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::MINUS_ONE;
                     }
                 }
                 id_idx += 2;
@@ -780,9 +826,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -796,9 +844,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -812,9 +862,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -828,9 +880,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -844,9 +898,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -860,9 +916,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -877,9 +935,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -894,9 +954,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 1;
@@ -910,9 +972,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 2;
@@ -927,9 +991,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 2;
@@ -944,9 +1010,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const pos = pos_multiplier[mult_pos_idx++];
                     if (op_m) {
                         buffer_multipliers.values[pos] *= multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                     else {
                         buffer_multipliers.values[pos] = multiplier;
+                        values_type[pos] = mul_type::ANY;
                     }
                 }
                 val_idx += 3;
@@ -965,7 +1033,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     // LOOP 4: backward, to create lossy opcode
     for (std::size_t op_idx = from; op_idx-- > to;) {
-        auto copy_mul = [this](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, double multiplier) {
+        auto copy_mul = [this](std::size_t res_pos,
+                               std::size_t& arg_pos,
+                               std::uint8_t buffer_id,
+                               double multiplier,
+                               mul_type multiplier_type) {
             bool arg_is_new = (arg_pos == passive_id<std::size_t>);
 
             if (arg_is_new) {
@@ -979,16 +1051,34 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     arg_buffer.free_positions.pop_back();
                 }
                 // this is a new value, we NEED to override
-                this->lossy_op.push_back(LossyOpCode::MUL_SET);
+                if (multiplier_type == mul_type::ANY) {
+                    this->lossy_op.push_back(LossyOpCode::MUL_SET);
+                }
+                else if (multiplier_type == mul_type::ONE) {
+                    this->lossy_op.push_back(LossyOpCode::COPY);
+                }
+                else if (multiplier_type == mul_type::MINUS_ONE) {
+                    this->lossy_op.push_back(LossyOpCode::COPY_MINUS);
+                }
             }
             else {
-                this->lossy_op.push_back(LossyOpCode::MUL_ADD);
+                if (multiplier_type == mul_type::ANY) {
+                    this->lossy_op.push_back(LossyOpCode::MUL_ADD);
+                }
+                else if (multiplier_type == mul_type::ONE) {
+                    this->lossy_op.push_back(LossyOpCode::ADD);
+                }
+                else if (multiplier_type == mul_type::MINUS_ONE) {
+                    this->lossy_op.push_back(LossyOpCode::SUB);
+                }
             }
 
             this->pos.push_back(res_pos);
             this->pos.push_back(arg_pos);
             this->on_which_buffer.push_back(buffer_id);
-            this->values.push_back(multiplier);
+            if (multiplier_type == mul_type::ANY) {
+                this->values.push_back(multiplier);
+            }
         };
 
         std::size_t const this_multiplier_origin = multiplier_origin[op_idx - to];
@@ -998,46 +1088,31 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             bool const keep_alive = multiplier_keep_alive[this_multiplier_origin];
 
             std::size_t& res_pos = this->node_location_on_buffer[res_id];
-            std::size_t& arg_pos = node_location_on_buffer[arg_id];
+            std::size_t& arg_pos = this->node_location_on_buffer[arg_id];
 
             double const multiplier = buffer_multipliers.values[this_multiplier_origin];
+            auto const multiplier_type = values_type[this_multiplier_origin];
 
             auto const arg_pos_data = get_loc(arg_id);
             bool arg_is_new = (arg_pos == passive_id<std::size_t>);
             bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
             if (arg_inplace && !keep_alive) {
-                // res id should now be arg id, avoiding a copy and a potential buffer increase
-                this->pos.push_back(res_pos);
+                if (multiplier_type != mul_type::ONE) {
+                    // res id should now be arg id, avoiding a copy and a potential buffer increase
+                    this->pos.push_back(res_pos);
+                    if (multiplier_type == mul_type::ANY) {
+                        this->values.push_back(multiplier);
+                        this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                    }
+                    else if (multiplier_type == mul_type::MINUS_ONE) {
+                        this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                    }
+                }
                 std::swap(res_pos, arg_pos);
-                this->values.push_back(multiplier);
-                this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
             }
             else {
-                // std::uint8_t const buffer_id = std::get<1>(arg_pos_data);
-
-                // if (arg_is_new) {
-                //     auto& arg_buffer = buffers[buffer_id];
-                //     if (arg_buffer.free_positions.empty()) {
-                //         arg_pos = arg_buffer.size;
-                //         ++arg_buffer.size;
-                //     }
-                //     else {
-                //         arg_pos = arg_buffer.free_positions.back();
-                //         arg_buffer.free_positions.pop_back();
-                //     }
-                //     lossy_op.push_back(LossyOpCode::MUL_SET);
-                // }
-                // else {
-                //     lossy_op.push_back(LossyOpCode::MUL_ADD);
-                // }
-
-                // pos.push_back(res_pos);
-                // pos.push_back(arg_pos);
-                // on_which_buffer.push_back(buffer_id);
-                // values.push_back(multiplier);
-
-                copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), multiplier);
+                copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), multiplier, multiplier_type);
 
                 if (!keep_alive) {
                     buffer_free_positions.push_back(res_pos);
@@ -1051,15 +1126,16 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             if (this_multiplier_origin_bi1 != passive_id<std::size_t>) {
                 double const mul_1 = buffer_multipliers.values[this_multiplier_origin_bi1];
                 double const mul_2 = buffer_multipliers.values[this_multiplier_origin_bi2];
+                auto const mul_1_type = values_type[this_multiplier_origin_bi1];
+                auto const mul_2_type = values_type[this_multiplier_origin_bi2];
 
                 std::size_t const lhs_id = multiplier_loc_from[this_multiplier_origin_bi1];
                 std::size_t const rhs_id = multiplier_loc_from[this_multiplier_origin_bi2];
                 std::size_t const res_id = multiplier_loc_to[this_multiplier_origin_bi1];
 
-                auto const res_pos = node_location_on_buffer[res_id];
-                node_location_on_buffer[res_id] = passive_id<std::size_t>;
-                std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
-                std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
+                std::size_t& res_pos = this->node_location_on_buffer[res_id];
+                std::size_t& lhs_pos = this->node_location_on_buffer[lhs_id];
+                std::size_t& rhs_pos = this->node_location_on_buffer[rhs_id];
 
                 auto const lhs_pos_data = get_loc(lhs_id);
                 auto const rhs_pos_data = get_loc(rhs_id);
@@ -1070,30 +1146,49 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
                 if (!lhs_inplace) {
-                    copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), mul_1);
+                    copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), mul_1, mul_1_type);
                 }
 
                 if (!rhs_inplace) {
-                    copy_mul(res_pos, rhs_pos, std::get<1>(rhs_pos_data), mul_2);
+                    copy_mul(res_pos, rhs_pos, std::get<1>(rhs_pos_data), mul_2, mul_2_type);
                 }
 
                 if (lhs_inplace) {
                     // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                    lhs_pos = res_pos;
-                    this->pos.push_back(lhs_pos);
-                    this->values.push_back(mul_1);
-                    this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                    if (mul_1_type != mul_type::ONE) {
+                        // res id should now be arg id, avoiding a copy and a potential buffer increase
+                        this->pos.push_back(res_pos);
+                        if (mul_1_type == mul_type::ANY) {
+                            this->values.push_back(mul_1);
+                            this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                        }
+                        else if (mul_1_type == mul_type::MINUS_ONE) {
+                            this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                        }
+                    }
+
+                    std::swap(res_pos, lhs_pos);
                 }
                 else if (rhs_inplace) {
                     // res id should now be rhs id, avoiding a copy and a potential buffer increase
-                    rhs_pos = res_pos;
-                    this->pos.push_back(rhs_pos);
-                    this->values.push_back(mul_2);
-                    this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                    if (mul_2_type != mul_type::ONE) {
+                        // res id should now be arg id, avoiding a copy and a potential buffer increase
+                        this->pos.push_back(res_pos);
+                        if (mul_2_type == mul_type::ANY) {
+                            this->values.push_back(mul_2);
+                            this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                        }
+                        else if (mul_2_type == mul_type::MINUS_ONE) {
+                            this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                        }
+                    }
+
+                    std::swap(res_pos, rhs_pos);
                 }
                 else {
                     // don't forget to free res_id from the buffer!
                     buffer_free_positions.push_back(res_pos);
+                    res_pos = passive_id<std::size_t>;
                 }
             }
         }
