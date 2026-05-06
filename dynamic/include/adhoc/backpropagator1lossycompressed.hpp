@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <numbers>
 #include <vector>
 
@@ -35,6 +34,11 @@ namespace adhoc {
 template<class Float, bool Vectorised = false>
 class BackPropagatorLossyCompressed {
   private:
+    std::size_t m_num_lanes{ 1 };
+
+    std::vector<std::size_t> node_location_on_buffer;
+
+    // lossy tape
     enum class LossyOpCode : std::uint8_t {
         COPY,          // result = source
         COPY_MINUS,    // result = -source
@@ -45,19 +49,10 @@ class BackPropagatorLossyCompressed {
         MUL_ADD,       // result += factor * source (multiply and accumulate)
         MUL_SET,       // result = factor * source (multiply and set)
     };
-
-    std::size_t m_num_lanes{ 1 };
-
-    std::vector<std::size_t> node_location_on_buffer;
-
-    // lossy tape
     std::vector<std::uint8_t> on_which_buffer;
     std::vector<std::size_t> pos;
     std::vector<LossyOpCode> lossy_op;
     std::vector<double> values;
-
-    std::size_t from_prev{ 0 };
-    std::size_t to_prev{ 0 };
 
     struct buffer_t {
         std::vector<double> values;
@@ -226,7 +221,7 @@ class BackPropagatorLossyCompressed {
     auto size_of(bool capacity = false) const -> std::size_t
     {
         std::size_t size = 0;
-        size += 3 * sizeof(std::size_t); // m_num_lanes, from_prev, to_prev
+        size += 1 * sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
         size += sizeof(std::uint8_t) * (capacity ? on_which_buffer.capacity() : on_which_buffer.size());
         size += sizeof(std::size_t) * (capacity ? pos.capacity() : pos.size());
@@ -261,9 +256,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     std::size_t val_idx = vals.size();
     std::size_t id_idx = ids.size();
-    // if (this->lossy_op.empty() || from_prev != from || to_prev != to) {
-    from_prev = from;
-    to_prev = to;
 
     this->on_which_buffer.clear();
     this->pos.clear();
@@ -1205,15 +1197,12 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         data.next_id = to;
 
         this->node_location_on_buffer.resize(to);
-
-        from_prev = 0;
-        to_prev = 0;
     }
 
     for (auto& b : buffers) {
         b.values.resize(b.size * this->m_num_lanes, 0.);
     }
-    auto& buffer = buffers.back().values;
+    auto& buffer_vals = buffers.back().values;
 
     std::size_t val_idx_l = 0;
     std::size_t id_idx_l = 0;
@@ -1229,7 +1218,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const out_pos = this->pos[id_idx_l++];
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1237,7 +1226,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] = buffer[out_pos];
+                    buffers[which].values[in_pos] = buffer_vals[out_pos];
                 }
                 break;
             }
@@ -1246,7 +1235,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const out_pos = this->pos[id_idx_l++];
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1254,7 +1243,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] = -buffer[out_pos];
+                    buffers[which].values[in_pos] = -buffer_vals[out_pos];
                 }
                 break;
             }
@@ -1263,7 +1252,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const out_pos = this->pos[id_idx_l++];
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1271,7 +1260,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] += buffer[out_pos];
+                    buffers[which].values[in_pos] += buffer_vals[out_pos];
                 }
                 break;
             }
@@ -1280,7 +1269,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const out_pos = this->pos[id_idx_l++];
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1288,21 +1277,21 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] -= buffer[out_pos];
+                    buffers[which].values[in_pos] -= buffer_vals[out_pos];
                 }
                 break;
             }
             case LossyOpCode::MINUS_INPLACE: {
                 std::size_t const pos = this->pos[id_idx_l++];
                 if constexpr (Vectorised) {
-                    double* dest = &buffer[pos * this->m_num_lanes];
+                    double* dest = &buffer_vals[pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                         dest[i] = -dest[i];
                     }
                 }
                 else {
-                    buffer[pos] = -buffer[pos];
+                    buffer_vals[pos] = -buffer_vals[pos];
                 }
                 break;
             }
@@ -1310,14 +1299,14 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const pos = this->pos[id_idx_l++];
                 double const multiplier = this->values[val_idx_l++];
                 if constexpr (Vectorised) {
-                    double* dest = &buffer[pos * this->m_num_lanes];
+                    double* dest = &buffer_vals[pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                         dest[i] *= multiplier;
                     }
                 }
                 else {
-                    buffer[pos] *= multiplier;
+                    buffer_vals[pos] *= multiplier;
                 }
                 break;
             }
@@ -1327,7 +1316,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 double const multiplier = this->values[val_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1335,7 +1324,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] += buffer[out_pos] * multiplier;
+                    buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
                 }
                 break;
             }
@@ -1345,7 +1334,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 std::size_t const in_pos = this->pos[id_idx_l++];
                 double const multiplier = this->values[val_idx_l++];
                 if constexpr (Vectorised) {
-                    const double* src = &buffer[out_pos * this->m_num_lanes];
+                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
                     double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                     for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -1353,7 +1342,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     }
                 }
                 else {
-                    buffers[which].values[in_pos] = buffer[out_pos] * multiplier;
+                    buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
                 }
                 break;
             }
