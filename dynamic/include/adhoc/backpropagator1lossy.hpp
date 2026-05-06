@@ -431,8 +431,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
           bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
           if (arg_inplace) {
-              // res id should now be arg id, avoiding a copy and a potential buffer increase
               mul_inplace(res_pos, der_local_1);
+              // res id should now be arg id, avoiding a copy and a potential buffer increase
               std::swap(arg_pos, res_pos);
           }
           else {
@@ -664,7 +664,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
                     if (arg_inplace) {
-                        // however this is a subtraction, so we need to negate the value in the buffer
+                        // this is a subtraction, so we need to negate the value in the buffer
                         minus_inplace(res_pos);
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
                         std::swap(arg_pos, res_pos);
