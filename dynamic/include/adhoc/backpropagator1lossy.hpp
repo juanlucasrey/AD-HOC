@@ -423,8 +423,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
        get_loc,
        &node_location_on_buffer = this->node_location_on_buffer,
        &buffer_free_positions](std::size_t const arg_id, std::size_t const res_id, double const der_local_1) {
-          auto const res_pos = node_location_on_buffer[res_id];
-          node_location_on_buffer[res_id] = passive_id<std::size_t>;
+          std::size_t& res_pos = node_location_on_buffer[res_id];
           std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
           auto const arg_pos_data = get_loc(arg_id);
@@ -433,12 +432,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
 
           if (arg_inplace) {
               // res id should now be arg id, avoiding a copy and a potential buffer increase
-              arg_pos = res_pos;
               mul_inplace(res_pos, der_local_1);
+              std::swap(arg_pos, res_pos);
           }
           else {
               copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), der_local_1);
               buffer_free_positions.push_back(res_pos);
+              res_pos = passive_id<std::size_t>;
           }
       };
 
@@ -449,6 +449,12 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
         switch (op) {
             case OpCode::REG_INPUT: {
                 id_idx -= 1;
+                if constexpr (Reset) {
+                    std::size_t const id = ids[id_idx];
+                    std::size_t& pos = node_location_on_buffer[id];
+                    buffer_free_positions.push_back(pos);
+                    pos = passive_id<std::size_t>;
+                }
                 break;
             }
             case OpCode::REG_OUTPUT: {
@@ -457,11 +463,29 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                     auto const arg_pos_data = get_loc(arg_id);
-                    copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+
+                    if constexpr (Reset) {
+                        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
+                        bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                        if (arg_inplace) {
+                            // res id should now be lhs id, avoiding a copy and a potential buffer increase
+                            std::swap(arg_pos, res_pos);
+                        }
+                        else {
+                            copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                            buffer_free_positions.push_back(res_pos);
+                            res_pos = passive_id<std::size_t>;
+                        }
+                    }
+                    else {
+                        copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                        // we don't reset so we don't free res_pos,
+                        // it will be potentially used in the next operations as an active node location
+                    }
                 }
                 break;
             }
@@ -472,8 +496,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
-                    node_location_on_buffer[res_id] = passive_id<std::size_t>;
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
@@ -495,15 +518,16 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
 
                     if (lhs_inplace) {
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                        lhs_pos = res_pos;
+                        std::swap(lhs_pos, res_pos);
                     }
                     else if (rhs_inplace) {
                         // res id should now be rhs id, avoiding a copy and a potential buffer increase
-                        rhs_pos = res_pos;
+                        std::swap(rhs_pos, res_pos);
                     }
                     else {
                         // don't forget to free res_id from the buffer!
                         buffer_free_positions.push_back(res_pos);
+                        res_pos = passive_id<std::size_t>;
                     }
                 }
                 break;
@@ -515,8 +539,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
-                    node_location_on_buffer[res_id] = passive_id<std::size_t>;
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
@@ -538,17 +561,18 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
 
                     if (lhs_inplace) {
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                        lhs_pos = res_pos;
+                        std::swap(lhs_pos, res_pos);
                     }
                     else if (rhs_inplace) {
+                        // this is a subtraction, so we need to negate the value in the buffer
+                        minus_inplace(res_pos);
                         // res id should now be rhs id, avoiding a copy and a potential buffer increase
-                        rhs_pos = res_pos;
-                        // however this is a subtraction, so we need to negate the value in the buffer
-                        minus_inplace(rhs_pos);
+                        std::swap(rhs_pos, res_pos);
                     }
                     else {
                         // don't forget to free res_id from the buffer!
                         buffer_free_positions.push_back(res_pos);
+                        res_pos = passive_id<std::size_t>;
                     }
                 }
                 break;
@@ -563,8 +587,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
-                    node_location_on_buffer[res_id] = passive_id<std::size_t>;
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
@@ -585,18 +608,19 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     }
 
                     if (lhs_inplace) {
+                        mul_inplace(res_pos, rhs_val);
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                        lhs_pos = res_pos;
-                        mul_inplace(lhs_pos, rhs_val);
+                        std::swap(lhs_pos, res_pos);
                     }
                     else if (rhs_inplace) {
+                        mul_inplace(res_pos, lhs_val);
                         // res id should now be rhs id, avoiding a copy and a potential buffer increase
-                        rhs_pos = res_pos;
-                        mul_inplace(rhs_pos, lhs_val);
+                        std::swap(rhs_pos, res_pos);
                     }
                     else {
                         // don't forget to free res_id from the buffer!
                         buffer_free_positions.push_back(res_pos);
+                        res_pos = passive_id<std::size_t>;
                     }
                 }
                 break;
@@ -607,8 +631,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
-                    node_location_on_buffer[res_id] = passive_id<std::size_t>;
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                     auto const arg_pos_data = get_loc(arg_id);
@@ -617,11 +640,12 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
 
                     if (arg_inplace) {
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                        arg_pos = res_pos;
+                        std::swap(arg_pos, res_pos);
                     }
                     else {
                         copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
+                        res_pos = passive_id<std::size_t>;
                     }
                 }
                 break;
@@ -632,8 +656,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    auto const res_pos = node_location_on_buffer[res_id];
-                    node_location_on_buffer[res_id] = passive_id<std::size_t>;
+                    std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                     auto const arg_pos_data = get_loc(arg_id);
@@ -641,14 +664,15 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
                     bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
                     if (arg_inplace) {
-                        // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                        arg_pos = res_pos;
                         // however this is a subtraction, so we need to negate the value in the buffer
-                        minus_inplace(arg_pos);
+                        minus_inplace(res_pos);
+                        // res id should now be lhs id, avoiding a copy and a potential buffer increase
+                        std::swap(arg_pos, res_pos);
                     }
                     else {
                         copy_sub(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
+                        res_pos = passive_id<std::size_t>;
                     }
                 }
                 break;
