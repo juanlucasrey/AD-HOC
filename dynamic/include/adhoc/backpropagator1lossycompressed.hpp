@@ -408,7 +408,8 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 1];
 
                     bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
+                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>) &&
+                                               (node_location_on_buffer[arg_id] == passive_id<std::size_t>);
 
                     if (arg_is_induced_path) {
                         op_multiply.push_back(true);
@@ -443,9 +444,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 2];
 
                     bool lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
-                                               (multiplier_origin[lhs_id - to] != passive_id<std::size_t>);
+                                               (multiplier_origin[lhs_id - to] != passive_id<std::size_t>) &&
+                                               (node_location_on_buffer[lhs_id] == passive_id<std::size_t>);
                     bool rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
-                                               (multiplier_origin[rhs_id - to] != passive_id<std::size_t>);
+                                               (multiplier_origin[rhs_id - to] != passive_id<std::size_t>) &&
+                                               (node_location_on_buffer[rhs_id] == passive_id<std::size_t>);
 
                     std::size_t multiplier_loc_lhs = 0;
                     if (lhs_is_induced_path) {
@@ -552,7 +555,8 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 1];
 
                     bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
+                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>) &&
+                                               (node_location_on_buffer[arg_id] == passive_id<std::size_t>);
 
                     if (arg_is_induced_path) {
                         op_multiply.push_back(true);
@@ -1032,55 +1036,55 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     };
 
     // LOOP 4: backward, to create lossy opcode
-    for (std::size_t op_idx = from; op_idx-- > to;) {
-        auto copy_mul = [this](std::size_t res_pos,
-                               std::size_t& arg_pos,
-                               std::uint8_t buffer_id,
-                               double multiplier,
-                               mul_type multiplier_type) {
-            bool arg_is_new = (arg_pos == passive_id<std::size_t>);
+    auto copy_mul = [this](std::size_t res_pos,
+                           std::size_t& arg_pos,
+                           std::uint8_t buffer_id,
+                           double multiplier,
+                           mul_type multiplier_type) {
+        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
 
-            if (arg_is_new) {
-                auto& arg_buffer = this->buffers[buffer_id];
-                if (arg_buffer.free_positions.empty()) {
-                    arg_pos = arg_buffer.size;
-                    ++arg_buffer.size;
-                }
-                else {
-                    arg_pos = arg_buffer.free_positions.back();
-                    arg_buffer.free_positions.pop_back();
-                }
-                // this is a new value, we NEED to override
-                if (multiplier_type == mul_type::ANY) {
-                    this->lossy_op.push_back(LossyOpCode::MUL_SET);
-                }
-                else if (multiplier_type == mul_type::ONE) {
-                    this->lossy_op.push_back(LossyOpCode::COPY);
-                }
-                else if (multiplier_type == mul_type::MINUS_ONE) {
-                    this->lossy_op.push_back(LossyOpCode::COPY_MINUS);
-                }
+        if (arg_is_new) {
+            auto& arg_buffer = this->buffers[buffer_id];
+            if (arg_buffer.free_positions.empty()) {
+                arg_pos = arg_buffer.size;
+                ++arg_buffer.size;
             }
             else {
-                if (multiplier_type == mul_type::ANY) {
-                    this->lossy_op.push_back(LossyOpCode::MUL_ADD);
-                }
-                else if (multiplier_type == mul_type::ONE) {
-                    this->lossy_op.push_back(LossyOpCode::ADD);
-                }
-                else if (multiplier_type == mul_type::MINUS_ONE) {
-                    this->lossy_op.push_back(LossyOpCode::SUB);
-                }
+                arg_pos = arg_buffer.free_positions.back();
+                arg_buffer.free_positions.pop_back();
             }
-
-            this->pos.push_back(res_pos);
-            this->pos.push_back(arg_pos);
-            this->on_which_buffer.push_back(buffer_id);
+            // this is a new value, we NEED to override
             if (multiplier_type == mul_type::ANY) {
-                this->values.push_back(multiplier);
+                this->lossy_op.push_back(LossyOpCode::MUL_SET);
             }
-        };
+            else if (multiplier_type == mul_type::ONE) {
+                this->lossy_op.push_back(LossyOpCode::COPY);
+            }
+            else if (multiplier_type == mul_type::MINUS_ONE) {
+                this->lossy_op.push_back(LossyOpCode::COPY_MINUS);
+            }
+        }
+        else {
+            if (multiplier_type == mul_type::ANY) {
+                this->lossy_op.push_back(LossyOpCode::MUL_ADD);
+            }
+            else if (multiplier_type == mul_type::ONE) {
+                this->lossy_op.push_back(LossyOpCode::ADD);
+            }
+            else if (multiplier_type == mul_type::MINUS_ONE) {
+                this->lossy_op.push_back(LossyOpCode::SUB);
+            }
+        }
 
+        this->pos.push_back(res_pos);
+        this->pos.push_back(arg_pos);
+        this->on_which_buffer.push_back(buffer_id);
+        if (multiplier_type == mul_type::ANY) {
+            this->values.push_back(multiplier);
+        }
+    };
+
+    for (std::size_t op_idx = from; op_idx-- > to;) {
         std::size_t const this_multiplier_origin = multiplier_origin[op_idx - to];
         if (this_multiplier_origin != passive_id<std::size_t>) {
             std::size_t const arg_id = multiplier_loc_from[this_multiplier_origin];
