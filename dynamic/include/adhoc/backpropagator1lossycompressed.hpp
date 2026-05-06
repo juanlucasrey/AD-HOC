@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <numbers>
 #include <vector>
 
@@ -35,6 +34,11 @@ namespace adhoc {
 template<class Float, bool Vectorised = false>
 class BackPropagatorLossyCompressed {
   private:
+    std::size_t m_num_lanes{ 1 };
+
+    std::vector<std::size_t> node_location_on_buffer;
+
+    // lossy tape
     enum class LossyOpCode : std::uint8_t {
         COPY,          // result = source
         COPY_MINUS,    // result = -source
@@ -45,19 +49,10 @@ class BackPropagatorLossyCompressed {
         MUL_ADD,       // result += factor * source (multiply and accumulate)
         MUL_SET,       // result = factor * source (multiply and set)
     };
-
-    std::size_t m_num_lanes{ 1 };
-
-    std::vector<std::size_t> node_location_on_buffer;
-
-    // lossy tape
     std::vector<std::uint8_t> on_which_buffer;
     std::vector<std::size_t> pos;
     std::vector<LossyOpCode> lossy_op;
     std::vector<double> values;
-
-    std::size_t from_prev{ 0 };
-    std::size_t to_prev{ 0 };
 
     struct buffer_t {
         std::vector<double> values;
@@ -226,7 +221,7 @@ class BackPropagatorLossyCompressed {
     auto size_of(bool capacity = false) const -> std::size_t
     {
         std::size_t size = 0;
-        size += 3 * sizeof(std::size_t); // m_num_lanes, from_prev, to_prev
+        size += 1 * sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
         size += sizeof(std::uint8_t) * (capacity ? on_which_buffer.capacity() : on_which_buffer.size());
         size += sizeof(std::size_t) * (capacity ? pos.capacity() : pos.size());
@@ -261,9 +256,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     std::size_t val_idx = vals.size();
     std::size_t id_idx = ids.size();
-    // if (this->lossy_op.empty() || from_prev != from || to_prev != to) {
-    from_prev = from;
-    to_prev = to;
 
     this->on_which_buffer.clear();
     this->pos.clear();
@@ -1205,9 +1197,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         data.next_id = to;
 
         this->node_location_on_buffer.resize(to);
-
-        from_prev = 0;
-        to_prev = 0;
     }
 
     for (auto& b : buffers) {
