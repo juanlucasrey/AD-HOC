@@ -362,7 +362,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
         return { it == checkpoints_c.end(), buffer_id };
     };
 
-    auto update_loc = [this, &buffer_vals, &buffers = this->buffers](std::size_t& arg_pos, std::uint8_t buffer_id) {
+    auto update_loc = [this, &buffers = this->buffers](std::size_t& arg_pos, std::uint8_t buffer_id) {
         if (arg_pos == passive_id<std::size_t>) {
             auto& arg_buffer = buffers[buffer_id];
             if (arg_buffer.free_positions.empty()) {
