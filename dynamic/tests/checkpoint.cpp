@@ -1589,6 +1589,97 @@ test_lossy_compressed_reset_registration()
     }
 }
 
+void
+test_lossy_multiple_checkpoints()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple, adhoc::Method::FirstOrderLossy };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto x1 = exp(inputD);
+        auto x2 = inputD * x1;
+        tape.set_checkpoint();
+        auto x3 = cos(x2);
+        auto x4 = erf(x3);
+        tape.set_checkpoint();
+        auto x5 = x3 * x4;
+        auto outputD = x1 * x5;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+
+        if (m == adhoc::Method::FirstOrderSimple) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            auto df2 = tape.get_derivative(inputD);
+            auto f2 = adhoc::passive_value(outputD);
+            EXPECT_NEAR_ABS(df, df2, 1e-13);
+            EXPECT_NEAR_ABS(f, f2, 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_multiple_checkpoints_reset()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderSimple, adhoc::Method::FirstOrderLossy };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+        auto pos = tape.get_position();
+
+        auto x1 = exp(inputD);
+        auto x2 = inputD * x1;
+        tape.set_checkpoint();
+        auto x3 = cos(x2);
+        auto x4 = erf(x3);
+        tape.set_checkpoint();
+        auto x5 = x3 * x4;
+        auto outputD = x1 * x5;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate_and_reset_to(pos);
+
+        if (m == adhoc::Method::FirstOrderSimple) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            auto df2 = tape.get_derivative(inputD);
+            auto f2 = adhoc::passive_value(outputD);
+            EXPECT_NEAR_ABS(df, df2, 1e-13);
+            EXPECT_NEAR_ABS(f, f2, 1e-13);
+        }
+    }
+}
+
 auto
 main() -> int
 {
@@ -1616,6 +1707,9 @@ main() -> int
     test_lossy_compressed_univariate_non_reduced();
     test_lossy_compressed_complex1_double_minus();
     test_lossy_compressed_reset_registration();
+
+    test_lossy_multiple_checkpoints();
+    test_lossy_multiple_checkpoints_reset();
 
     TEST_END;
 }
