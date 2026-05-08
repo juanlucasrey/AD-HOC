@@ -331,6 +331,12 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         number_dependents[arg_id - to] += 1;
                     }
                 }
+
+                if (this->node_location_on_buffer[op_idx] != passive_id<std::size_t>) {
+                    // if the node is already active, it measn it had at least on precedent
+                    // on other buffers
+                    number_dependents[op_idx - to] += 1;
+                }
                 break;
             }
             case OpCode::ADD:
@@ -346,6 +352,12 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     if (rhs_id >= to) {
                         number_dependents[rhs_id - to] += 1;
                     }
+                }
+
+                if (this->node_location_on_buffer[op_idx] != passive_id<std::size_t>) {
+                    // if the node is already active, it measn it had at least on precedent
+                    // on other buffers
+                    number_dependents[op_idx - to] += 1;
                 }
                 break;
             }
@@ -400,8 +412,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 1];
 
                     bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>) &&
-                                               (node_location_on_buffer[arg_id] == passive_id<std::size_t>);
+                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
 
                     if (arg_is_induced_path) {
                         op_multiply.push_back(true);
@@ -436,11 +447,9 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 2];
 
                     bool lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
-                                               (multiplier_origin[lhs_id - to] != passive_id<std::size_t>) &&
-                                               (node_location_on_buffer[lhs_id] == passive_id<std::size_t>);
+                                               (multiplier_origin[lhs_id - to] != passive_id<std::size_t>);
                     bool rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
-                                               (multiplier_origin[rhs_id - to] != passive_id<std::size_t>) &&
-                                               (node_location_on_buffer[rhs_id] == passive_id<std::size_t>);
+                                               (multiplier_origin[rhs_id - to] != passive_id<std::size_t>);
 
                     std::size_t multiplier_loc_lhs = 0;
                     if (lhs_is_induced_path) {
@@ -547,8 +556,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     std::size_t const res_id = ids[id_idx + 1];
 
                     bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>) &&
-                                               (node_location_on_buffer[arg_id] == passive_id<std::size_t>);
+                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
 
                     if (arg_is_induced_path) {
                         op_multiply.push_back(true);
