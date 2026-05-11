@@ -384,8 +384,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     id_idx = id_idx_start;
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
-        bool const use_this_op =
-          this->node_location_on_buffer[op_idx] != passive_id<std::size_t> || (number_dependents[op_idx - to] > 0);
+        bool const use_this_op = (number_dependents[op_idx - to] > 0);
 
         auto get_mult_loc = [&](std::size_t& mul_origin) {
             if (buffer_multipliers.free_positions.empty()) {
@@ -611,8 +610,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
-        bool const use_this_op =
-          this->node_location_on_buffer[op_idx] != passive_id<std::size_t> || (number_dependents2[op_idx - to] > 0);
+        bool const use_this_op = (number_dependents2[op_idx - to] > 0);
 
         switch (op) {
             case OpCode::REG_INPUT: {
