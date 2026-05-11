@@ -444,6 +444,8 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     multiplier_multiply_incoming.template operator()<M>(mul_origin);
                 }
                 multiplier_origin[res_id - to] = mul_origin;
+                multiplier_keep_alive[mul_origin] = KeepAlive;
+
                 mul_origin = passive_id<std::size_t>;
                 --number_dependents[arg_id - to];
             }
@@ -540,23 +542,25 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
                 multiplier_origin[res_id - to] = multiplier_loc_lhs;
 
-                auto& number_dependents_to_update = number_dependents[origin_id - to];
-                --number_dependents_to_update;
+                if (origin_id >= to) {
+                    auto& number_dependents_to_update = number_dependents[origin_id - to];
+                    --number_dependents_to_update;
 
-                bool univariate_consolidate_this =
-                  (number_dependents_to_update == 1) && (multiplier_origin[origin_id - to] != passive_id<std::size_t>);
-                if (univariate_consolidate_this) {
-                    // this node now has only one dependent, we can reintroduce a
-                    // multiplication chain
-                    auto& coming_from = multiplier_origin[origin_id - to];
-                    multiplier_multiply(coming_from, multiplier_loc_lhs);
+                    bool univariate_consolidate_this = (number_dependents_to_update == 1) &&
+                                                       (multiplier_origin[origin_id - to] != passive_id<std::size_t>);
+                    if (univariate_consolidate_this) {
+                        // this node now has only one dependent, we can reintroduce a
+                        // multiplication chain
+                        auto& coming_from = multiplier_origin[origin_id - to];
+                        multiplier_multiply(coming_from, multiplier_loc_lhs);
 
-                    buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
-                    multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
+                        buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
+                        multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
 
-                    multiplier_origin[res_id - to] = coming_from;
-                    coming_from = passive_id<std::size_t>;
-                    --number_dependents[origin_id - to];
+                        multiplier_origin[res_id - to] = coming_from;
+                        coming_from = passive_id<std::size_t>;
+                        --number_dependents[origin_id - to];
+                    }
                 }
             }
             else {
