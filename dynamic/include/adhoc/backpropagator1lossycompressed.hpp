@@ -343,19 +343,74 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     buffer_t buffer_multipliers;
 
-    std::vector<std::size_t> pos_multiplier;
-    std::vector<bool> op_multiply;
     std::vector<std::size_t> multiplier_loc_from;
     std::vector<bool> multiplier_keep_alive;
-    std::vector<bool> bivariate_consolidate;
-    std::vector<bool> univariate_consolidate;
     std::vector<std::size_t> multiplier_origin(from - to, passive_id<std::size_t>);
     std::vector<std::size_t> multiplier_origin_bi((from - to) * 2, passive_id<std::size_t>);
 
-    std::vector<std::size_t> number_dependents2(number_dependents.begin(), number_dependents.end());
+    // LOOP 2: forward, to calculate multipliers after compressing induced paths
+    enum class mul_type : std::uint8_t {
+        ANY,
+        ONE,
+        MINUS_ONE,
+    };
+    std::vector<mul_type> values_type;
 
-    // LOOP 2: forward, to detect multiplication chains and bivariate operators with same argument
+    auto combine_mul_type = [](mul_type a, mul_type b) -> mul_type {
+        if (a == mul_type::ANY || b == mul_type::ANY) {
+            return mul_type::ANY;
+        }
+        if (a == b) {
+            return mul_type::ONE;
+        }
+        return mul_type::MINUS_ONE;
+    };
+
+    auto multiplier_set_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
+        if constexpr (M == mul_type::ONE) {
+            buffer_multipliers.values[pos] = 1.0;
+            values_type[pos] = mul_type::ONE;
+        }
+        else if constexpr (M == mul_type::MINUS_ONE) {
+            buffer_multipliers.values[pos] = -1.0;
+            values_type[pos] = mul_type::MINUS_ONE;
+        }
+        else {
+            static_assert(M == mul_type::ANY, "Invalid multiplier type");
+            buffer_multipliers.values[pos] = multiplier;
+            values_type[pos] = mul_type::ANY;
+        }
+    };
+
+    auto multiplier_multiply_incoming = [&, combine_mul_type]<mul_type M>(std::size_t const pos,
+                                                                          double const multiplier = 0) {
+        if constexpr (M == mul_type::ONE) {
+            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
+        }
+        else if constexpr (M == mul_type::MINUS_ONE) {
+            buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
+            values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
+        }
+        else {
+            static_assert(M == mul_type::ANY, "Invalid multiplier type");
+            buffer_multipliers.values[pos] *= multiplier;
+            values_type[pos] = mul_type::ANY;
+        }
+    };
+
+    auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
+        buffer_multipliers.values[pos1] += buffer_multipliers.values[pos2];
+        values_type[pos1] = mul_type::ANY;
+    };
+
+    auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
+        buffer_multipliers.values[pos1] *= buffer_multipliers.values[pos2];
+        values_type[pos1] = mul_type::ANY;
+    };
+
     id_idx = id_idx_start;
+    val_idx = val_idx_start;
+
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op = (number_dependents[op_idx - to] > 0);
@@ -364,12 +419,149 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             if (buffer_multipliers.free_positions.empty()) {
                 mul_origin = buffer_multipliers.size;
                 ++buffer_multipliers.size;
+                buffer_multipliers.values.resize(buffer_multipliers.values.size() + 1);
+                values_type.resize(values_type.size() + 1);
                 multiplier_loc_from.resize(buffer_multipliers.size);
                 multiplier_keep_alive.resize(buffer_multipliers.size);
             }
             else {
                 mul_origin = buffer_multipliers.free_positions.back();
                 buffer_multipliers.free_positions.pop_back();
+            }
+        };
+
+        auto update_univariate = [&]<mul_type M, bool KeepAlive = false>(
+                                   std::size_t const arg_id, std::size_t const res_id, double const multiplier = 0) {
+            bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
+                                       (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
+
+            if (arg_is_induced_path) {
+                auto& mul_origin = multiplier_origin[arg_id - to];
+                if constexpr (M == mul_type::ANY) {
+                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin, multiplier);
+                }
+                else {
+                    multiplier_multiply_incoming.template operator()<M>(mul_origin);
+                }
+                multiplier_origin[res_id - to] = mul_origin;
+                mul_origin = passive_id<std::size_t>;
+                --number_dependents[arg_id - to];
+            }
+            else {
+                auto& mult_loc_res = multiplier_origin[res_id - to];
+                get_mult_loc(mult_loc_res);
+                if constexpr (M == mul_type::ANY) {
+                    multiplier_set_incoming.template operator()<mul_type::ANY>(mult_loc_res, multiplier);
+                }
+                else {
+                    multiplier_set_incoming.template operator()<M>(mult_loc_res);
+                }
+                multiplier_loc_from[mult_loc_res] = arg_id;
+                multiplier_keep_alive[mult_loc_res] = KeepAlive;
+            }
+        };
+
+        auto update_bivariate = [&]<mul_type M1, mul_type M2>(std::size_t const lhs_id,
+                                                              std::size_t const rhs_id,
+                                                              std::size_t const res_id,
+                                                              double const multiplier_lhs = 0,
+                                                              double const multiplier_rhs = 0) {
+            bool lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
+                                       (multiplier_origin[lhs_id - to] != passive_id<std::size_t>);
+            bool rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
+                                       (multiplier_origin[rhs_id - to] != passive_id<std::size_t>);
+
+            std::size_t multiplier_loc_lhs = 0;
+            if (lhs_is_induced_path) {
+                auto& mul_origin = multiplier_origin[lhs_id - to];
+                if constexpr (M1 == mul_type::ANY) {
+                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin, multiplier_lhs);
+                }
+                else {
+                    multiplier_multiply_incoming.template operator()<M1>(mul_origin);
+                }
+                multiplier_loc_lhs = mul_origin;
+                mul_origin = passive_id<std::size_t>;
+                --number_dependents[lhs_id - to];
+            }
+            else {
+                std::size_t& mult_loc_res = multiplier_loc_lhs;
+                get_mult_loc(mult_loc_res);
+                if constexpr (M1 == mul_type::ANY) {
+                    multiplier_set_incoming.template operator()<mul_type::ANY>(mult_loc_res, multiplier_lhs);
+                }
+                else {
+                    multiplier_set_incoming.template operator()<M1>(mult_loc_res);
+                }
+                multiplier_loc_from[mult_loc_res] = lhs_id;
+                multiplier_keep_alive[mult_loc_res] = false;
+            }
+
+            std::size_t multiplier_loc_rhs = 0;
+            if (rhs_is_induced_path) {
+                auto& mul_origin = multiplier_origin[rhs_id - to];
+                // multiplier_multiply_incoming.template operator()<mul_type::ONE>(mul_origin);
+                if constexpr (M2 == mul_type::ANY) {
+                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin, multiplier_rhs);
+                }
+                else {
+                    multiplier_multiply_incoming.template operator()<M2>(mul_origin);
+                }
+                multiplier_loc_rhs = mul_origin;
+                mul_origin = passive_id<std::size_t>;
+                --number_dependents[rhs_id - to];
+            }
+            else {
+                std::size_t& mult_loc_res = multiplier_loc_rhs;
+                get_mult_loc(mult_loc_res);
+                // multiplier_set_incoming.template operator()<mul_type::ONE>(mult_loc_res);
+                if constexpr (M2 == mul_type::ANY) {
+                    multiplier_set_incoming.template operator()<mul_type::ANY>(mult_loc_res, multiplier_rhs);
+                }
+                else {
+                    multiplier_set_incoming.template operator()<M2>(mult_loc_res);
+                }
+                multiplier_loc_from[mult_loc_res] = rhs_id;
+                multiplier_keep_alive[mult_loc_res] = false;
+            }
+
+            bool has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
+            // there is potential for a bivariate operator on the same argument, we need to check if
+            // this is the case and update the multiplier if so
+            bool bivariate_consolidate_this =
+              has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] == multiplier_loc_from[multiplier_loc_rhs]);
+
+            if (bivariate_consolidate_this) {
+                std::size_t origin_id = multiplier_loc_from[multiplier_loc_lhs];
+                multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
+
+                buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
+                multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
+
+                multiplier_origin[res_id - to] = multiplier_loc_lhs;
+
+                auto& number_dependents_to_update = number_dependents[origin_id - to];
+                --number_dependents_to_update;
+
+                bool univariate_consolidate_this =
+                  (number_dependents_to_update == 1) && (multiplier_origin[origin_id - to] != passive_id<std::size_t>);
+                if (univariate_consolidate_this) {
+                    // this node now has only one dependent, we can reintroduce a
+                    // multiplication chain
+                    auto& coming_from = multiplier_origin[origin_id - to];
+                    multiplier_multiply(coming_from, multiplier_loc_lhs);
+
+                    buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
+                    multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
+
+                    multiplier_origin[res_id - to] = coming_from;
+                    coming_from = passive_id<std::size_t>;
+                    --number_dependents[origin_id - to];
+                }
+            }
+            else {
+                multiplier_origin_bi[(res_id - to) * 2] = multiplier_loc_lhs;
+                multiplier_origin_bi[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
             }
         };
 
@@ -382,363 +574,40 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-
-                    bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
-
-                    if (arg_is_induced_path) {
-                        op_multiply.push_back(true);
-                        auto& mul_origin = multiplier_origin[arg_id - to];
-                        pos_multiplier.push_back(mul_origin);
-                        multiplier_keep_alive[mul_origin] = true;
-                        multiplier_origin[res_id - to] = mul_origin;
-                        mul_origin = passive_id<std::size_t>;
-                        --number_dependents[arg_id - to];
-                    }
-                    else {
-                        auto& mult_loc_res = multiplier_origin[res_id - to];
-                        get_mult_loc(mult_loc_res);
-
-                        op_multiply.push_back(false);
-                        pos_multiplier.push_back(mult_loc_res);
-                        multiplier_loc_from[mult_loc_res] = arg_id;
-                        multiplier_keep_alive[mult_loc_res] = true;
-                    }
-                }
-                id_idx += 2;
-                break;
-            }
-            case OpCode::SUB:
-            case OpCode::ADD:
-            case OpCode::MUL: {
-                if (use_this_op) {
-                    std::size_t const lhs_id = ids[id_idx];
-                    std::size_t const rhs_id = ids[id_idx + 1];
-                    std::size_t const res_id = ids[id_idx + 2];
-
-                    bool lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
-                                               (multiplier_origin[lhs_id - to] != passive_id<std::size_t>);
-                    bool rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
-                                               (multiplier_origin[rhs_id - to] != passive_id<std::size_t>);
-
-                    std::size_t multiplier_loc_lhs = 0;
-                    if (lhs_is_induced_path) {
-                        op_multiply.push_back(true);
-                        auto& mul_origin = multiplier_origin[lhs_id - to];
-                        pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_lhs = mul_origin;
-                        mul_origin = passive_id<std::size_t>;
-                        --number_dependents[lhs_id - to];
-                    }
-                    else {
-                        std::size_t& mult_loc_res = multiplier_loc_lhs;
-                        get_mult_loc(mult_loc_res);
-                        op_multiply.push_back(false);
-                        pos_multiplier.push_back(mult_loc_res);
-                        multiplier_loc_from[mult_loc_res] = lhs_id;
-                        multiplier_keep_alive[mult_loc_res] = false;
-                    }
-
-                    std::size_t multiplier_loc_rhs = 0;
-                    if (rhs_is_induced_path) {
-                        op_multiply.push_back(true);
-                        auto& mul_origin = multiplier_origin[rhs_id - to];
-                        pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_rhs = mul_origin;
-                        mul_origin = passive_id<std::size_t>;
-                        --number_dependents[rhs_id - to];
-                    }
-                    else {
-                        std::size_t& mult_loc_res = multiplier_loc_rhs;
-                        get_mult_loc(mult_loc_res);
-                        op_multiply.push_back(false);
-                        pos_multiplier.push_back(mult_loc_res);
-                        multiplier_loc_from[mult_loc_res] = rhs_id;
-                        multiplier_keep_alive[mult_loc_res] = false;
-                    }
-
-                    bool has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
-                    // there is potential for a bivariate operator on the same argument, we need to check if
-                    // this is the case and update the multiplier if so
-                    bool bivariate_consolidate_this = has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] ==
-                                                                           multiplier_loc_from[multiplier_loc_rhs]);
-                    bivariate_consolidate.push_back(bivariate_consolidate_this);
-
-                    if (bivariate_consolidate_this) {
-                        std::size_t origin_id = multiplier_loc_from[multiplier_loc_lhs];
-                        pos_multiplier.push_back(multiplier_loc_lhs);
-                        pos_multiplier.push_back(multiplier_loc_rhs);
-                        buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
-                        multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
-                        multiplier_origin[res_id - to] = multiplier_loc_lhs;
-
-                        auto& number_dependents_to_update = number_dependents[origin_id - to];
-                        --number_dependents_to_update;
-
-                        bool univariate_consolidate_this =
-                          (number_dependents_to_update == 1) &&
-                          (multiplier_origin[origin_id - to] != passive_id<std::size_t>);
-                        univariate_consolidate.push_back(univariate_consolidate_this);
-                        if (univariate_consolidate_this) {
-                            // this node now has only one dependent, we can reintroduce a
-                            // multiplication chain
-                            auto& coming_from = multiplier_origin[origin_id - to];
-                            pos_multiplier.push_back(coming_from);
-
-                            buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
-                            multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
-
-                            multiplier_origin[res_id - to] = coming_from;
-                            coming_from = passive_id<std::size_t>;
-                            --number_dependents[origin_id - to];
-                        }
-                    }
-                    else {
-                        multiplier_origin_bi[(res_id - to) * 2] = multiplier_loc_lhs;
-                        multiplier_origin_bi[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
-                    }
-                }
-                id_idx += 3;
-                break;
-            }
-            case OpCode::SUB_C:
-            case OpCode::ADD_C:
-            case OpCode::MUL_C:
-            case OpCode::NORM:
-            case OpCode::INV:
-            case OpCode::ABS:
-            case OpCode::EXP:
-            case OpCode::LOG:
-            case OpCode::ERF:
-            case OpCode::ERFC:
-            case OpCode::COS:
-            case OpCode::SQRT:
-            case OpCode::POW_C: {
-                if (use_this_op) {
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-
-                    bool arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                               (multiplier_origin[arg_id - to] != passive_id<std::size_t>);
-
-                    if (arg_is_induced_path) {
-                        op_multiply.push_back(true);
-                        auto& mul_origin = multiplier_origin[arg_id - to];
-                        pos_multiplier.push_back(mul_origin);
-                        multiplier_origin[res_id - to] = mul_origin;
-                        mul_origin = passive_id<std::size_t>;
-                        --number_dependents[arg_id - to];
-                    }
-                    else {
-                        auto& mult_loc_res = multiplier_origin[res_id - to];
-                        get_mult_loc(mult_loc_res);
-                        op_multiply.push_back(false);
-                        pos_multiplier.push_back(mult_loc_res);
-                        multiplier_loc_from[mult_loc_res] = arg_id;
-                        multiplier_keep_alive[mult_loc_res] = false;
-                    }
-                }
-                id_idx += 2;
-                break;
-            }
-        }
-    }
-
-    buffer_multipliers.values.resize(buffer_multipliers.size, 1.);
-    enum class mul_type : std::uint8_t {
-        ANY,
-        ONE,
-        MINUS_ONE,
-    };
-    std::vector<mul_type> values_type(buffer_multipliers.size);
-
-    // LOOP 3: forward, to calculate multipliers VALS->buffer_multipliers.values
-    id_idx = id_idx_start;
-    val_idx = val_idx_start;
-    std::size_t mult_op_idx = 0;
-    std::size_t mult_pos_idx = 0;
-    std::size_t mult_bc_idx = 0;
-    std::size_t mult_uc_idx = 0;
-
-    auto combine_mul_type = [](mul_type a, mul_type b) -> mul_type {
-        if (a == mul_type::ANY || b == mul_type::ANY) {
-            return mul_type::ANY;
-        }
-        if (a == b) {
-            return mul_type::ONE;
-        }
-        return mul_type::MINUS_ONE;
-    };
-
-    for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
-        OpCode const& op = ops[op_idx];
-        bool const use_this_op = (number_dependents2[op_idx - to] > 0);
-
-        switch (op) {
-            case OpCode::REG_INPUT: {
-                id_idx += 1;
-                break;
-            }
-            case OpCode::REG_OUTPUT: {
-                if (use_this_op) {
-                    double constexpr multiplier = 1.0;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ONE;
-                    }
+                    update_univariate.template operator()<mul_type::ONE, !Reset>(arg_id, res_id);
                 }
                 id_idx += 2;
                 break;
             }
             case OpCode::ADD: {
                 if (use_this_op) {
-                    double constexpr lhs_der = 1.0;
-                    double constexpr rhs_der = 1.0;
-
-                    // lhs multiplier
-                    {
-                        double constexpr multiplier = lhs_der;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::ONE;
-                        }
-                    }
-
-                    // rhs multiplier
-                    {
-                        double constexpr multiplier = rhs_der;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::ONE;
-                        }
-                    }
-
-                    if (bivariate_consolidate[mult_bc_idx++]) {
-                        std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
-                        std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
-                        buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
-                        values_type[pos_lhs] = mul_type::ANY;
-                        if (univariate_consolidate[mult_uc_idx++]) {
-                            std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                            buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
-                            values_type[pos] = mul_type::ANY;
-                        }
-                    }
+                    std::size_t const lhs_id = ids[id_idx];
+                    std::size_t const rhs_id = ids[id_idx + 1];
+                    std::size_t const res_id = ids[id_idx + 2];
+                    update_bivariate.template operator()<mul_type::ONE, mul_type::ONE>(lhs_id, rhs_id, res_id);
                 }
                 id_idx += 3;
                 break;
             }
             case OpCode::SUB: {
                 if (use_this_op) {
-                    double constexpr lhs_der = 1.0;
-                    double constexpr rhs_der = -1.0;
-
-                    // lhs multiplier
-                    {
-                        double constexpr multiplier = lhs_der;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::ONE;
-                        }
-                    }
-
-                    // rhs multiplier
-                    {
-                        double constexpr multiplier = rhs_der;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
-                            values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::MINUS_ONE;
-                        }
-                    }
-
-                    if (bivariate_consolidate[mult_bc_idx++]) {
-                        std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
-                        std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
-                        buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
-                        values_type[pos_lhs] = mul_type::ANY;
-                        if (univariate_consolidate[mult_uc_idx++]) {
-                            std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                            buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
-                            values_type[pos] = mul_type::ANY;
-                        }
-                    }
+                    std::size_t const lhs_id = ids[id_idx];
+                    std::size_t const rhs_id = ids[id_idx + 1];
+                    std::size_t const res_id = ids[id_idx + 2];
+                    update_bivariate.template operator()<mul_type::ONE, mul_type::MINUS_ONE>(lhs_id, rhs_id, res_id);
                 }
                 id_idx += 3;
                 break;
             }
             case OpCode::MUL: {
                 if (use_this_op) {
-
+                    std::size_t const lhs_id = ids[id_idx];
+                    std::size_t const rhs_id = ids[id_idx + 1];
+                    std::size_t const res_id = ids[id_idx + 2];
                     double const lhs_val = vals[val_idx];
                     double const rhs_val = vals[val_idx + 1];
-
-                    // lhs multiplier
-                    {
-                        double const multiplier = rhs_val;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            buffer_multipliers.values[pos] *= multiplier;
-                            values_type[pos] = mul_type::ANY;
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::ANY;
-                        }
-                    }
-
-                    // rhs multiplier
-                    {
-                        double const multiplier = lhs_val;
-                        bool const op_m = op_multiply[mult_op_idx++];
-                        std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                        if (op_m) {
-                            buffer_multipliers.values[pos] *= multiplier;
-                            values_type[pos] = mul_type::ANY;
-                        }
-                        else {
-                            buffer_multipliers.values[pos] = multiplier;
-                            values_type[pos] = mul_type::ANY;
-                        }
-                    }
-
-                    if (bivariate_consolidate[mult_bc_idx++]) {
-                        std::size_t const pos_lhs = pos_multiplier[mult_pos_idx++];
-                        std::size_t const pos_rhs = pos_multiplier[mult_pos_idx++];
-                        buffer_multipliers.values[pos_lhs] += buffer_multipliers.values[pos_rhs];
-                        values_type[pos_lhs] = mul_type::ANY;
-                        if (univariate_consolidate[mult_uc_idx++]) {
-                            std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                            buffer_multipliers.values[pos] *= buffer_multipliers.values[pos_lhs];
-                            values_type[pos] = mul_type::ANY;
-                        }
-                    }
+                    update_bivariate.template operator()<mul_type::ANY, mul_type::ANY>(
+                      lhs_id, rhs_id, res_id, rhs_val, lhs_val);
                 }
                 val_idx += 2;
                 id_idx += 3;
@@ -746,50 +615,28 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::ADD_C: {
                 if (use_this_op) {
-                    double constexpr multiplier = 1.;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ONE;
-                    }
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    update_univariate.template operator()<mul_type::ONE>(arg_id, res_id);
                 }
                 id_idx += 2;
                 break;
             }
             case OpCode::SUB_C: {
                 if (use_this_op) {
-                    double constexpr multiplier = -1.;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
-                        values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::MINUS_ONE;
-                    }
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    update_univariate.template operator()<mul_type::MINUS_ONE>(arg_id, res_id);
                 }
                 id_idx += 2;
                 break;
             }
             case OpCode::MUL_C: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = vals[val_idx];
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -797,17 +644,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::NORM: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = 2.0 * vals[val_idx];
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -815,17 +655,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::INV: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = -vals[val_idx] * vals[val_idx];
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -833,17 +666,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::ABS: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = std::copysign(1.0, vals[val_idx]);
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -851,17 +677,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::EXP: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = vals[val_idx];
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -869,17 +688,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::LOG: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = 1.0 / vals[val_idx];
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -887,18 +699,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::ERF: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
                     double const multiplier = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -906,18 +711,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::ERFC: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
                     double const multiplier = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 1;
                 id_idx += 2;
@@ -925,17 +723,10 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::COS: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const multiplier = -std::sin(vals[val_idx]);
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 2;
                 id_idx += 2;
@@ -943,18 +734,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::SQRT: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const one_over_in = 1. / vals[val_idx];
                     double const multiplier = 0.5 * vals[val_idx + 1] * one_over_in;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 2;
                 id_idx += 2;
@@ -962,19 +746,12 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             case OpCode::POW_C: {
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const lhs_arg = vals[val_idx];
                     double const rhs_arg = vals[val_idx + 1];
                     double const multiplier = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
-                    bool const op_m = op_multiply[mult_op_idx++];
-                    std::size_t const pos = pos_multiplier[mult_pos_idx++];
-                    if (op_m) {
-                        buffer_multipliers.values[pos] *= multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
-                    else {
-                        buffer_multipliers.values[pos] = multiplier;
-                        values_type[pos] = mul_type::ANY;
-                    }
+                    update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                 }
                 val_idx += 2;
                 id_idx += 2;
@@ -983,14 +760,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         }
     }
 
-    auto const& checkpoints_c = this->checkpoints;
-    auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
-        auto it = std::upper_bound(checkpoints_c.begin(), checkpoints_c.end(), id);
-        auto buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
-        return { it == checkpoints_c.end(), buffer_id };
-    };
-
-    // LOOP 4: backward, to create lossy opcode
+    // LOOP 3: backward, to calculate derivatives on multiple lanes
     auto& buffer_vals = buffers.back().values;
 
     auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
@@ -1145,6 +915,13 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 sub(buffer_id, res_pos, arg_pos);
             }
         }
+    };
+
+    auto const& checkpoints_c = this->checkpoints;
+    auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
+        auto it = std::upper_bound(checkpoints_c.begin(), checkpoints_c.end(), id);
+        auto buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
+        return { it == checkpoints_c.end(), buffer_id };
     };
 
     for (std::size_t op_idx = from; op_idx-- > to;) {
