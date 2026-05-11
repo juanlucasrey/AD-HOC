@@ -38,22 +38,6 @@ class BackPropagatorLossyCompressed {
 
     std::vector<std::size_t> node_location_on_buffer;
 
-    // lossy tape
-    enum class LossyOpCode : std::uint8_t {
-        COPY,          // result = source
-        COPY_MINUS,    // result = -source
-        ADD,           // result += source
-        SUB,           // result -= source
-        MINUS_INPLACE, // result = -result
-        MUL_INPLACE,   // result *= factor
-        MUL_ADD,       // result += factor * source (multiply and accumulate)
-        MUL_SET,       // result = factor * source (multiply and set)
-    };
-    std::vector<std::uint8_t> on_which_buffer;
-    std::vector<std::size_t> pos;
-    std::vector<LossyOpCode> lossy_op;
-    std::vector<double> values;
-
     struct buffer_t {
         std::vector<double> values;
         std::size_t size{ 0 };
@@ -223,10 +207,6 @@ class BackPropagatorLossyCompressed {
         std::size_t size = 0;
         size += 1 * sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
-        size += sizeof(std::uint8_t) * (capacity ? on_which_buffer.capacity() : on_which_buffer.size());
-        size += sizeof(std::size_t) * (capacity ? pos.capacity() : pos.size());
-        size += sizeof(LossyOpCode) * (capacity ? lossy_op.capacity() : lossy_op.size());
-        size += sizeof(double) * (capacity ? values.capacity() : values.size());
         size += sizeof(std::size_t) * (capacity ? checkpoints.capacity() : checkpoints.size());
         for (const auto& buffer : buffers) {
             size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
@@ -256,11 +236,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
     std::size_t val_idx = vals.size();
     std::size_t id_idx = ids.size();
-
-    this->on_which_buffer.clear();
-    this->pos.clear();
-    this->lossy_op.clear();
-    this->values.clear();
 
     this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
 
@@ -371,7 +346,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     std::vector<std::size_t> pos_multiplier;
     std::vector<bool> op_multiply;
     std::vector<std::size_t> multiplier_loc_from;
-    std::vector<std::size_t> multiplier_loc_to;
     std::vector<bool> multiplier_keep_alive;
     std::vector<bool> bivariate_consolidate;
     std::vector<bool> univariate_consolidate;
@@ -391,7 +365,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                 mul_origin = buffer_multipliers.size;
                 ++buffer_multipliers.size;
                 multiplier_loc_from.resize(buffer_multipliers.size);
-                multiplier_loc_to.resize(buffer_multipliers.size);
                 multiplier_keep_alive.resize(buffer_multipliers.size);
             }
             else {
@@ -417,7 +390,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(true);
                         auto& mul_origin = multiplier_origin[arg_id - to];
                         pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_to[mul_origin] = res_id;
                         multiplier_keep_alive[mul_origin] = true;
                         multiplier_origin[res_id - to] = mul_origin;
                         mul_origin = passive_id<std::size_t>;
@@ -430,7 +402,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(false);
                         pos_multiplier.push_back(mult_loc_res);
                         multiplier_loc_from[mult_loc_res] = arg_id;
-                        multiplier_loc_to[mult_loc_res] = res_id;
                         multiplier_keep_alive[mult_loc_res] = true;
                     }
                 }
@@ -455,7 +426,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(true);
                         auto& mul_origin = multiplier_origin[lhs_id - to];
                         pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_to[mul_origin] = res_id;
                         multiplier_loc_lhs = mul_origin;
                         mul_origin = passive_id<std::size_t>;
                         --number_dependents[lhs_id - to];
@@ -466,7 +436,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(false);
                         pos_multiplier.push_back(mult_loc_res);
                         multiplier_loc_from[mult_loc_res] = lhs_id;
-                        multiplier_loc_to[mult_loc_res] = res_id;
                         multiplier_keep_alive[mult_loc_res] = false;
                     }
 
@@ -475,7 +444,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(true);
                         auto& mul_origin = multiplier_origin[rhs_id - to];
                         pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_to[mul_origin] = res_id;
                         multiplier_loc_rhs = mul_origin;
                         mul_origin = passive_id<std::size_t>;
                         --number_dependents[rhs_id - to];
@@ -486,7 +454,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(false);
                         pos_multiplier.push_back(mult_loc_res);
                         multiplier_loc_from[mult_loc_res] = rhs_id;
-                        multiplier_loc_to[mult_loc_res] = res_id;
                         multiplier_keep_alive[mult_loc_res] = false;
                     }
 
@@ -503,7 +470,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         pos_multiplier.push_back(multiplier_loc_rhs);
                         buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
                         multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
-                        multiplier_loc_to[multiplier_loc_rhs] = passive_id<std::size_t>;
                         multiplier_origin[res_id - to] = multiplier_loc_lhs;
 
                         auto& number_dependents_to_update = number_dependents[origin_id - to];
@@ -518,11 +484,9 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                             // multiplication chain
                             auto& coming_from = multiplier_origin[origin_id - to];
                             pos_multiplier.push_back(coming_from);
-                            multiplier_loc_to[coming_from] = res_id;
 
                             buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
                             multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
-                            multiplier_loc_to[multiplier_loc_lhs] = passive_id<std::size_t>;
 
                             multiplier_origin[res_id - to] = coming_from;
                             coming_from = passive_id<std::size_t>;
@@ -561,7 +525,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(true);
                         auto& mul_origin = multiplier_origin[arg_id - to];
                         pos_multiplier.push_back(mul_origin);
-                        multiplier_loc_to[mul_origin] = res_id;
                         multiplier_origin[res_id - to] = mul_origin;
                         mul_origin = passive_id<std::size_t>;
                         --number_dependents[arg_id - to];
@@ -572,7 +535,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                         op_multiply.push_back(false);
                         pos_multiplier.push_back(mult_loc_res);
                         multiplier_loc_from[mult_loc_res] = arg_id;
-                        multiplier_loc_to[mult_loc_res] = res_id;
                         multiplier_keep_alive[mult_loc_res] = false;
                     }
                 }
@@ -1029,11 +991,125 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
     };
 
     // LOOP 4: backward, to create lossy opcode
-    auto copy_mul = [this](std::size_t res_pos,
-                           std::size_t& arg_pos,
-                           std::uint8_t buffer_id,
-                           double multiplier,
-                           mul_type multiplier_type) {
+    auto& buffer_vals = buffers.back().values;
+
+    auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] = src[i];
+            }
+        }
+        else {
+            buffers[which].values[in_pos] = buffer_vals[out_pos];
+        }
+    };
+
+    auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] = -src[i];
+            }
+        }
+        else {
+            buffers[which].values[in_pos] = -buffer_vals[out_pos];
+        }
+    };
+
+    auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] += src[i];
+            }
+        }
+        else {
+            buffers[which].values[in_pos] += buffer_vals[out_pos];
+        }
+    };
+
+    auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] -= src[i];
+            }
+        }
+        else {
+            buffers[which].values[in_pos] -= buffer_vals[out_pos];
+        }
+    };
+
+    auto minus_inplace = [&](std::size_t const pos) {
+        if constexpr (Vectorised) {
+            double* dest = &buffer_vals[pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] = -dest[i];
+            }
+        }
+        else {
+            buffer_vals[pos] = -buffer_vals[pos];
+        }
+    };
+
+    auto mul_inplace = [&](std::size_t const pos, double const multiplier) {
+        if constexpr (Vectorised) {
+            double* dest = &buffer_vals[pos * this->m_num_lanes];
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] *= multiplier;
+            }
+        }
+        else {
+            buffer_vals[pos] *= multiplier;
+        }
+    };
+
+    auto mul_add =
+      [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+          if constexpr (Vectorised) {
+              const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+              double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+              for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                  dest[i] += src[i] * multiplier;
+              }
+          }
+          else {
+              buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
+          }
+      };
+
+    auto mul_set =
+      [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+          if constexpr (Vectorised) {
+              const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+              double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+              for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                  dest[i] = src[i] * multiplier;
+              }
+          }
+          else {
+              buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
+          }
+      };
+
+    auto copy_mul = [this, mul_set, copy, copy_minus, mul_add, add, sub](std::size_t res_pos,
+                                                                         std::size_t& arg_pos,
+                                                                         std::uint8_t buffer_id,
+                                                                         double multiplier,
+                                                                         mul_type multiplier_type) {
         bool arg_is_new = (arg_pos == passive_id<std::size_t>);
 
         if (arg_is_new) {
@@ -1041,6 +1117,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             if (arg_buffer.free_positions.empty()) {
                 arg_pos = arg_buffer.size;
                 ++arg_buffer.size;
+                arg_buffer.values.resize(arg_buffer.values.size() + this->m_num_lanes);
             }
             else {
                 arg_pos = arg_buffer.free_positions.back();
@@ -1048,32 +1125,25 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             }
             // this is a new value, we NEED to override
             if (multiplier_type == mul_type::ANY) {
-                this->lossy_op.push_back(LossyOpCode::MUL_SET);
+                mul_set(buffer_id, res_pos, arg_pos, multiplier);
             }
             else if (multiplier_type == mul_type::ONE) {
-                this->lossy_op.push_back(LossyOpCode::COPY);
+                copy(buffer_id, res_pos, arg_pos);
             }
             else if (multiplier_type == mul_type::MINUS_ONE) {
-                this->lossy_op.push_back(LossyOpCode::COPY_MINUS);
+                copy_minus(buffer_id, res_pos, arg_pos);
             }
         }
         else {
             if (multiplier_type == mul_type::ANY) {
-                this->lossy_op.push_back(LossyOpCode::MUL_ADD);
+                mul_add(buffer_id, res_pos, arg_pos, multiplier);
             }
             else if (multiplier_type == mul_type::ONE) {
-                this->lossy_op.push_back(LossyOpCode::ADD);
+                add(buffer_id, res_pos, arg_pos);
             }
             else if (multiplier_type == mul_type::MINUS_ONE) {
-                this->lossy_op.push_back(LossyOpCode::SUB);
+                sub(buffer_id, res_pos, arg_pos);
             }
-        }
-
-        this->pos.push_back(res_pos);
-        this->pos.push_back(arg_pos);
-        this->on_which_buffer.push_back(buffer_id);
-        if (multiplier_type == mul_type::ANY) {
-            this->values.push_back(multiplier);
         }
     };
 
@@ -1081,7 +1151,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         std::size_t const this_multiplier_origin = multiplier_origin[op_idx - to];
         if (this_multiplier_origin != passive_id<std::size_t>) {
             std::size_t const arg_id = multiplier_loc_from[this_multiplier_origin];
-            std::size_t const res_id = multiplier_loc_to[this_multiplier_origin];
+            std::size_t const res_id = op_idx;
             bool const keep_alive = multiplier_keep_alive[this_multiplier_origin];
 
             std::size_t& res_pos = this->node_location_on_buffer[res_id];
@@ -1097,13 +1167,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             if (arg_inplace && !keep_alive) {
                 if (multiplier_type != mul_type::ONE) {
                     // res id should now be arg id, avoiding a copy and a potential buffer increase
-                    this->pos.push_back(res_pos);
                     if (multiplier_type == mul_type::ANY) {
-                        this->values.push_back(multiplier);
-                        this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                        mul_inplace(res_pos, multiplier);
                     }
                     else if (multiplier_type == mul_type::MINUS_ONE) {
-                        this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                        minus_inplace(res_pos);
                     }
                 }
                 std::swap(res_pos, arg_pos);
@@ -1128,7 +1196,7 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
 
                 std::size_t const lhs_id = multiplier_loc_from[this_multiplier_origin_bi1];
                 std::size_t const rhs_id = multiplier_loc_from[this_multiplier_origin_bi2];
-                std::size_t const res_id = multiplier_loc_to[this_multiplier_origin_bi1];
+                std::size_t const res_id = op_idx;
 
                 std::size_t& res_pos = this->node_location_on_buffer[res_id];
                 std::size_t& lhs_pos = this->node_location_on_buffer[lhs_id];
@@ -1154,13 +1222,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     // res id should now be lhs id, avoiding a copy and a potential buffer increase
                     if (mul_1_type != mul_type::ONE) {
                         // res id should now be arg id, avoiding a copy and a potential buffer increase
-                        this->pos.push_back(res_pos);
                         if (mul_1_type == mul_type::ANY) {
-                            this->values.push_back(mul_1);
-                            this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                            mul_inplace(res_pos, mul_1);
                         }
                         else if (mul_1_type == mul_type::MINUS_ONE) {
-                            this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                            minus_inplace(res_pos);
                         }
                     }
 
@@ -1170,13 +1236,11 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
                     // res id should now be rhs id, avoiding a copy and a potential buffer increase
                     if (mul_2_type != mul_type::ONE) {
                         // res id should now be arg id, avoiding a copy and a potential buffer increase
-                        this->pos.push_back(res_pos);
                         if (mul_2_type == mul_type::ANY) {
-                            this->values.push_back(mul_2);
-                            this->lossy_op.push_back(LossyOpCode::MUL_INPLACE);
+                            mul_inplace(res_pos, mul_2);
                         }
                         else if (mul_2_type == mul_type::MINUS_ONE) {
-                            this->lossy_op.push_back(LossyOpCode::MINUS_INPLACE);
+                            minus_inplace(res_pos);
                         }
                     }
 
@@ -1198,156 +1262,6 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
         data.next_id = to;
 
         this->node_location_on_buffer.resize(to);
-    }
-
-    for (auto& b : buffers) {
-        b.values.resize(b.size * this->m_num_lanes, 0.);
-    }
-    auto& buffer_vals = buffers.back().values;
-
-    std::size_t val_idx_l = 0;
-    std::size_t id_idx_l = 0;
-    std::size_t on_which_buffer_idx = 0;
-
-    // LOOP 5: backward, to execute lossy opcode
-    for (std::size_t lossy_op_idx = 0; lossy_op_idx < this->lossy_op.size(); ++lossy_op_idx) {
-        auto const& op = this->lossy_op[lossy_op_idx];
-
-        switch (op) {
-            case LossyOpCode::COPY: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = src[i];
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] = buffer_vals[out_pos];
-                }
-                break;
-            }
-            case LossyOpCode::COPY_MINUS: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = -src[i];
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] = -buffer_vals[out_pos];
-                }
-                break;
-            }
-            case LossyOpCode::ADD: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] += src[i];
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] += buffer_vals[out_pos];
-                }
-                break;
-            }
-            case LossyOpCode::SUB: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] -= src[i];
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] -= buffer_vals[out_pos];
-                }
-                break;
-            }
-            case LossyOpCode::MINUS_INPLACE: {
-                std::size_t const pos = this->pos[id_idx_l++];
-                if constexpr (Vectorised) {
-                    double* dest = &buffer_vals[pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = -dest[i];
-                    }
-                }
-                else {
-                    buffer_vals[pos] = -buffer_vals[pos];
-                }
-                break;
-            }
-            case LossyOpCode::MUL_INPLACE: {
-                std::size_t const pos = this->pos[id_idx_l++];
-                double const multiplier = this->values[val_idx_l++];
-                if constexpr (Vectorised) {
-                    double* dest = &buffer_vals[pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] *= multiplier;
-                    }
-                }
-                else {
-                    buffer_vals[pos] *= multiplier;
-                }
-                break;
-            }
-            case LossyOpCode::MUL_ADD: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                double const multiplier = this->values[val_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] += src[i] * multiplier;
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
-                }
-                break;
-            }
-            case LossyOpCode::MUL_SET: {
-                std::uint8_t const which = this->on_which_buffer[on_which_buffer_idx++];
-                std::size_t const out_pos = this->pos[id_idx_l++];
-                std::size_t const in_pos = this->pos[id_idx_l++];
-                double const multiplier = this->values[val_idx_l++];
-                if constexpr (Vectorised) {
-                    const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                    double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = src[i] * multiplier;
-                    }
-                }
-                else {
-                    buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
-                }
-                break;
-            }
-        }
     }
 
     if constexpr (Reset) {
