@@ -29,9 +29,11 @@
 #include <numbers>
 #include <vector>
 
+#include <map>
+
 namespace adhoc {
 
-template<class Float, bool Vectorised = false>
+template<class Float, bool Vectorised = false, bool ConsolidateLargeUnivariate = false>
 class BackPropagatorLossyCompressed {
   private:
     std::size_t m_num_lanes{ 1 };
@@ -219,10 +221,11 @@ class BackPropagatorLossyCompressed {
     void backpropagate_to(std::size_t to, TapeData& data);
 };
 
-template<class Float, bool Vectorised>
+template<class Float, bool Vectorised, bool ConsolidateLargeUnivariate>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t to, TapeData& data)
+BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(std::size_t to,
+                                                                                               TapeData& data)
 {
     std::size_t from = data.next_id;
     if (from == checkpoints.back()) {
@@ -566,6 +569,163 @@ BackPropagatorLossyCompressed<Float, Vectorised>::backpropagate_to(std::size_t t
             else {
                 multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
                 multiplier_origin[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
+
+                if constexpr (ConsolidateLargeUnivariate) {
+                    auto check_univariate_subtree = [&](std::size_t res_id) -> std::optional<std::size_t> {
+                        std::optional<std::size_t> result = std::nullopt;
+
+                        std::map<std::size_t, std::size_t> local_number_dependents;
+                        local_number_dependents[res_id] = number_dependents[res_id - to];
+
+                        // this while should not be needed, because allprevious nodes should have been checked for
+                        // univariate subtrees
+                        //  while (true) {
+                        do {
+                            auto const top_id = local_number_dependents.rbegin()->first;
+                            auto const top_deps = local_number_dependents.rbegin()->second;
+
+                            if (top_id < to) {
+                                // we reached a node that crosses boundaries
+                                return result;
+                            }
+
+                            if (top_deps != number_dependents[top_id - to]) {
+                                // a dependency is not included in this subtree, so we cannot consolidate
+                                return result;
+                            }
+
+                            local_number_dependents.erase(top_id);
+                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+
+                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
+                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
+                                ++local_number_dependents[id_origin1];
+                                ++local_number_dependents[id_origin2];
+                            }
+                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
+                                ++local_number_dependents[id_origin];
+                            }
+                            else {
+                                // we reached an input node, while number of dependents is larger than 1, so
+                                // this cannot be a univariate operator
+                                return result;
+                            }
+
+                        } while (local_number_dependents.size() > 1);
+
+                        result = local_number_dependents.rbegin()->first;
+                        // this while should not be needed, because allprevious nodes should have been checked for
+                        // univariate subtrees
+                        // }
+
+                        return result;
+                    };
+
+                    auto compress_univariate_subtree = [&](std::size_t in_id, std::size_t res_id) {
+                        // when compressing a univarate subtree, we do a forward pass.
+                        // why? because a forward pass is simpler, especially for higher orders.
+
+                        std::map<std::size_t, double> local_derivatives;
+                        local_derivatives[res_id] = 1.0;
+
+                        do {
+                            auto const top_id = local_derivatives.rbegin()->first;
+                            auto const top_der = local_derivatives.rbegin()->second;
+                            local_derivatives.erase(top_id);
+
+                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+
+                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
+                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
+
+                                std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
+                                std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
+                                local_derivatives[id_origin1] += top_der * buffer_multipliers.values[loc_multipler_1];
+                                local_derivatives[id_origin2] += top_der * buffer_multipliers.values[loc_multipler_2];
+
+                                buffer_multipliers.free_positions.push_back(loc_multipler_1);
+                                multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
+                                loc_multipler_1 = passive_id<std::size_t>;
+
+                                buffer_multipliers.free_positions.push_back(loc_multipler_2);
+                                multiplier_loc_from[loc_multipler_2] = passive_id<std::size_t>;
+                                loc_multipler_2 = passive_id<std::size_t>;
+
+                                if (id_origin1 >= to) {
+                                    --number_dependents[id_origin1 - to];
+                                }
+                                if (id_origin2 >= to) {
+                                    --number_dependents[id_origin2 - to];
+                                }
+                            }
+                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
+
+                                std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
+                                local_derivatives[id_origin] += top_der * buffer_multipliers.values[loc_multipler];
+
+                                buffer_multipliers.free_positions.push_back(loc_multipler);
+                                multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
+                                loc_multipler = passive_id<std::size_t>;
+
+                                if (id_origin >= to) {
+                                    --number_dependents[id_origin - to];
+                                }
+                            }
+                            else {
+                                // we reached an input node, while number of dependents is larger than 1, so
+                                // this cannot be a univariate operator
+                                throw;
+                            }
+
+                        } while (local_derivatives.size() > 1);
+
+                        if (local_derivatives.begin()->first != in_id) {
+                            // this should not happen, because we should have detected the univariate subtree correctly
+                            throw;
+                        }
+
+                        std::size_t new_pos = get_mult_loc();
+
+                        multiplier_loc_from[new_pos] = in_id;
+                        buffer_multipliers.values[new_pos] = local_derivatives.begin()->second;
+                        multiplier_origin[(res_id - to) * 2] = new_pos;
+                        if (in_id >= to) {
+                            ++number_dependents[in_id - to];
+
+                            bool const has_single_origin =
+                              (multiplier_origin[(in_id - to) * 2] != passive_id<std::size_t>) &&
+                              (multiplier_origin[((in_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+                            bool const univariate_consolidate_this =
+                              (number_dependents[in_id - to] == 1) && has_single_origin;
+
+                            if (univariate_consolidate_this) {
+                                // this node now has only one dependent, we can reintroduce a
+                                // multiplication chain
+                                auto& coming_from = multiplier_origin[(in_id - to) * 2];
+                                multiplier_multiply(coming_from, new_pos);
+
+                                buffer_multipliers.free_positions.push_back(new_pos);
+                                multiplier_loc_from[new_pos] = passive_id<std::size_t>;
+
+                                multiplier_origin[(res_id - to) * 2] = coming_from;
+                                coming_from = passive_id<std::size_t>;
+                                --number_dependents[in_id - to];
+                            }
+                        }
+                    };
+
+                    auto in_id_opt = check_univariate_subtree(res_id);
+                    if (in_id_opt) {
+                        compress_univariate_subtree(*in_id_opt, res_id);
+                    }
+                }
             }
         };
 
