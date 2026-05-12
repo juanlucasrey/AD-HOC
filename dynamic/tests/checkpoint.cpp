@@ -1403,6 +1403,44 @@ test_lossy_compressed_complex3()
 }
 
 void
+test_lossy_compressed_double_triangle_simple()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto x1 = inputD * 1.2;
+        auto x2 = x1 * inputD;
+        auto outputD = x1 * x2;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
+void
 test_lossy_compressed_double_triangle()
 {
     std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
@@ -1426,6 +1464,130 @@ test_lossy_compressed_double_triangle()
         auto x4 = erf(x3);
         auto x5 = x3 * x4;
         auto outputD = x1 * x5;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_compressed_double_triangle_checkpoint()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto x0 = cos(inputD);
+        auto x1 = exp(x0);
+        auto pos = tape.get_position();
+        auto x2 = 2.5 * x1;
+        auto x3 = cos(x2);
+        auto x4 = erf(x3);
+        auto x5 = x3 * x4;
+        auto outputD = x1 * x5;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate_to(pos);
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_compressed_double_triangle_checkpoint2()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+        auto pos = tape.get_position();
+
+        auto x1 = exp(inputD);
+        auto x2 = x1 * inputD;
+        auto outputD = x1 * x2;
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate_to(pos);
+
+        if (m == adhoc::Method::FirstOrderLossy) {
+            df = tape.get_derivative(inputD);
+            f = adhoc::passive_value(outputD);
+        }
+        else {
+            EXPECT_NEAR_ABS(df, tape.get_derivative(inputD), 1e-13);
+            EXPECT_NEAR_ABS(f, adhoc::passive_value(outputD), 1e-13);
+        }
+    }
+}
+
+void
+test_lossy_compressed_double_triangle_twice()
+{
+    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy, adhoc::Method::FirstOrderLossyCompressed };
+
+    double df = 0;
+    double f = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    for (auto m : methods) {
+        D inputD = 0.5;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(m);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+
+        auto x1 = exp(inputD);
+        auto x2 = x1 * inputD;
+        auto x3 = x1 * x2;
+
+        auto x4 = exp(x3);
+        auto x5 = x4 * x3;
+        auto outputD = x4 * x5;
 
         tape.register_output_variable(outputD);
 
@@ -1680,6 +1842,51 @@ test_lossy_multiple_checkpoints_reset()
     }
 }
 
+// void
+// test_mc_fwd()
+// {
+//     using adhoc_mode = adhoc::opcode<double>;
+//     using D = adhoc_mode::type;
+//     D inputD = 0.5;
+//     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+//     auto& tape = *tapeptr;
+//     tape.register_variable(inputD);
+
+//     auto x1 = exp(inputD);
+//     auto x2 = inputD * x1;
+
+//     D outputD = 0;
+//     tape.register_output_variable(outputD);
+//     auto pos = tape.get_position();
+//     tape.set_checkpoint();
+
+//     std::size_t npaths = 4;
+//     double one_over_npaths = 1.0 / static_cast<double>(npaths);
+//     for (std::size_t path = 0; path < 2; ++path) {
+//         auto x3 = cos(x2);
+//         if (path % 2 == 0) {
+//             x3 += x1;
+//         }
+//         auto path_val = erf(x3);
+
+//         outputD += path_val * one_over_npaths;
+//         // shoul be called propagate_and_reset_to
+//         tape.backpropagate_and_reset_to(pos);
+//     }
+
+//     auto df = tape.get_derivative(outputD);
+//     auto f = adhoc::passive_value(outputD);
+
+//     // tape.register_output_variable(outputD);
+//     // tape.set_derivative(inputD, 1.0);
+//     // tape.fwdpropagate_and_reset_to(pos);
+
+//     // auto x5 = x1 * x2;
+//     // auto path2 = x1 * x5;
+//     // outputD += path2 * 0.5;
+//     // tape.fwdpropagate_and_reset_to(pos);
+// }
+
 auto
 main() -> int
 {
@@ -1703,7 +1910,11 @@ main() -> int
     test_lossy_compressed_complex1_pre();
     test_lossy_compressed_complex1_pre2();
     test_lossy_compressed_complex1();
+    test_lossy_compressed_double_triangle_simple();
     test_lossy_compressed_double_triangle();
+    test_lossy_compressed_double_triangle_twice();
+    test_lossy_compressed_double_triangle_checkpoint();
+    test_lossy_compressed_double_triangle_checkpoint2();
     test_lossy_compressed_univariate_non_reduced();
     test_lossy_compressed_complex1_double_minus();
     test_lossy_compressed_reset_registration();
