@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <optional>
 #include <vector>
 
 #include <map>
