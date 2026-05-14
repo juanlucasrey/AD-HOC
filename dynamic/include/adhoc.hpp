@@ -198,7 +198,9 @@ enum class Method {
     FirstOrderLossy,
     FirstOrderVLossy,
     FirstOrderLossyCompressed,
-    FirstOrderVLossyCompressed
+    FirstOrderVLossyCompressed,
+    FirstOrderLossyPathReuse,
+    FirstOrderVLossyPathReuse,
 };
 
 template<class Float>
