@@ -37,14 +37,10 @@ compute_result(T x1, T x2, T x3, std::size_t num_paths) -> double
             y_path += x3 * z1 * z2;
         }
 
-        if constexpr (std::is_same_v<T, adhoc_t>) {
-        }
-        else {
-            result += y_path;
-        }
+        result += y_path * one_over_paths;
     }
 
-    return result * one_over_paths;
+    return result;
 }
 
 // Templated compute_result with if constexpr for tape handling
@@ -81,18 +77,23 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
             y_path += x3 * z1 * z2;
         }
 
+        T res = y_path * one_over_paths;
+
         if constexpr (std::is_same_v<T, adhoc_t>) {
-            tape->register_output_variable(y_path);
-            tape->set_derivative(y_path, one_over_paths);
-            tape->backpropagate_and_reset_to(pos2);
-            result += y_path.get_value();
+            result += adhoc::passive_value(res);
         }
         else {
-            result += y_path;
+            result += res;
+        }
+
+        if constexpr (std::is_same_v<T, adhoc_t>) {
+            tape->register_output_variable(res);
+            tape->set_derivative(res, 1.0);
+            tape->backpropagate_and_reset_to(pos2);
         }
     }
 
-    return result * one_over_paths;
+    return result;
 }
 
 void
@@ -1244,8 +1245,6 @@ test_lossy_compressed_complex1_pre2()
 
         auto y_init = x1 * x2;
 
-        double one_over_paths = 1.0;
-
         auto pos2 = tape->get_position();
         tape->set_checkpoint();
 
@@ -1256,11 +1255,11 @@ test_lossy_compressed_complex1_pre2()
         auto y_path = y_init * 0.8;
 
         tape->register_output_variable(y_path);
-        tape->set_derivative(y_path, one_over_paths);
+        tape->set_derivative(y_path, 1.0);
         tape->backpropagate_and_reset_to(pos2);
         result += y_path.get_value();
 
-        double res_lossy = result * one_over_paths;
+        double res_lossy = result;
 
         tape->backpropagate();
 
@@ -1887,9 +1886,48 @@ test_lossy_multiple_checkpoints_reset()
 //     // tape.fwdpropagate_and_reset_to(pos);
 // }
 
+void
+test_lossy_path_reuse()
+{
+    constexpr std::size_t num_paths = 1000;
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double res_adhoc = 0.;
+    double dx1_adhoc = 0.;
+    double dx2_adhoc = 0.;
+    double dx3_adhoc = 0.;
+
+    using adhoc_t = adhoc_t;
+    // Create tape
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
+    tape.set_method(adhoc::Method::FirstOrderLossyPathReuse);
+
+    // Initial input variables
+    adhoc_t x1, x2, x3;
+    x1 = x1_val;
+    x2 = x2_val;
+    x3 = x3_val;
+
+    // Register inputs
+    tape.register_variable(x1);
+    tape.register_variable(x2);
+    tape.register_variable(x3);
+
+    res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
+
+    tape.backpropagate();
+
+    dx1_adhoc = tape.get_derivative(x1);
+    dx2_adhoc = tape.get_derivative(x2);
+    dx3_adhoc = tape.get_derivative(x3);
+}
+
 auto
 main() -> int
 {
+    test_lossy_path_reuse();
+
     test_checkpoint_fd_vs_ad();
     test_checkpoint_branch_lossy();
     test_simd8_backpropagation();

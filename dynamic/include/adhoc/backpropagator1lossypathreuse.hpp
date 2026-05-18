@@ -21,13 +21,17 @@
 #ifndef ADHOC_BACKPROPAGATOR1LOSSYPATHREUSE_HPP
 #define ADHOC_BACKPROPAGATOR1LOSSYPATHREUSE_HPP
 
+#include "hash.hpp"
 #include "passive_id.hpp"
+#include "tape_converter.hpp"
 #include "tape_data.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <vector>
+
+#include <map>
 
 namespace adhoc {
 
@@ -38,14 +42,208 @@ class BackPropagatorLossyPathReuse {
 
     std::vector<std::size_t> node_location_on_buffer;
 
-    struct buffer_t {
-        std::vector<double> values;
-        std::size_t size{ 0 };
-        std::vector<std::size_t> free_positions;
-    };
-
     std::vector<std::size_t> checkpoints{ 0 };
     std::vector<buffer_t> buffers{ buffer_t{} };
+
+    std::vector<std::map<std::size_t, LossyTape> > hash_to_lossy_tape;
+
+    class ValueFetcher {
+      public:
+        explicit ValueFetcher(TapeData const& data_in, LossyTape const& lossy_tape_in, std::size_t to_in)
+          : data(data_in)
+          , lossy_tape(lossy_tape_in)
+          , op_idx(data.next_id)
+          , to(to_in)
+          , val_idx(data.vals.size())
+          , invert_mult_idx(lossy_tape_in.invert_mult.size())
+          , use_op_idx(lossy_tape_in.use_op.size())
+        {
+        }
+
+        auto operator()() -> double
+        {
+            if (use_cache) {
+                use_cache = false;
+                return cached_value;
+            }
+
+            const auto& ops = data.ops;
+
+            for (; op_idx-- > to;) {
+                OpCode const& op = ops[op_idx];
+                // bool const use_this_op = this->node_location_on_buffer[op_idx] != passive_id<std::size_t>;
+
+                switch (op) {
+                    case OpCode::REG_INPUT:
+                    case OpCode::REG_OUTPUT:
+                    case OpCode::ADD:
+                    case OpCode::SUB:
+                    case OpCode::ADD_C:
+                    case OpCode::SUB_C: {
+                        break;
+                    }
+                    case OpCode::MUL: {
+                        val_idx -= 2;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            invert_mult_idx -= 1;
+
+                            double const lhs_val = data.vals[val_idx];
+                            double const rhs_val = data.vals[val_idx + 1];
+                            bool const this_invert_idx = lossy_tape.invert_mult[invert_mult_idx];
+
+                            use_cache = true;
+                            if (this_invert_idx) {
+                                cached_value = lhs_val;
+                                return rhs_val;
+                            }
+                            else {
+                                cached_value = rhs_val;
+                                return lhs_val;
+                            }
+                        }
+                        break;
+                    }
+                    case OpCode::MUL_C: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = data.vals[val_idx];
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::NORM: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = 2.0 * data.vals[val_idx];
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::INV: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = -data.vals[val_idx] * data.vals[val_idx];
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::ABS: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = std::copysign(1.0, data.vals[val_idx]);
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::EXP: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = data.vals[val_idx];
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::LOG: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = 1.0 / data.vals[val_idx];
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::ERF: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
+                            double const der_local_1 =
+                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * two_over_root_pi;
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::ERFC: {
+                        val_idx -= 1;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
+                            double const der_local_1 =
+                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * minus_two_over_root_pi;
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::COS: {
+                        val_idx -= 2;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const der_local_1 = -std::sin(data.vals[val_idx]);
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::SQRT: {
+                        val_idx -= 2;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const one_over_in = 1. / data.vals[val_idx];
+                            double const der_local_1 = 0.5 * data.vals[val_idx + 1] * one_over_in;
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                    case OpCode::POW_C: {
+                        val_idx -= 2;
+                        use_op_idx -= 1;
+                        bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        if (use_this_op) {
+                            double const lhs_arg = data.vals[val_idx];
+                            double const rhs_arg = data.vals[val_idx + 1];
+                            double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
+                            return der_local_1;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // should not reach here
+            throw;
+            return 0.;
+        }
+
+      private:
+        TapeData const& data;
+        LossyTape const& lossy_tape;
+
+        std::size_t op_idx{ 0 };
+        std::size_t to{ 0 };
+
+        std::size_t val_idx{ 0 };
+        std::size_t invert_mult_idx{ 0 };
+        std::size_t use_op_idx{ 0 };
+
+        bool use_cache{ false };
+        double cached_value{ 0. };
+    };
 
   public:
     explicit BackPropagatorLossyPathReuse() = default;
@@ -60,6 +258,7 @@ class BackPropagatorLossyPathReuse {
         if (this->checkpoints.back() != ops_size) {
             this->checkpoints.push_back(ops_size);
             this->buffers.push_back(buffer_t{});
+            this->hash_to_lossy_tape.push_back(std::map<std::size_t, LossyTape>{});
         }
     }
     void set_lanes(std::size_t num_lanes)
@@ -89,8 +288,8 @@ class BackPropagatorLossyPathReuse {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -119,8 +318,8 @@ class BackPropagatorLossyPathReuse {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -153,9 +352,9 @@ class BackPropagatorLossyPathReuse {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto buffed_id = static_cast<std::uint8_t>(std::distance(checkpoints.cbegin(), it) - 1);
-            buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
+            this->buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
         }
         else {
             throw;
@@ -178,8 +377,9 @@ class BackPropagatorLossyPathReuse {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            return buffers[std::distance(checkpoints.cbegin(), it) - 1].values[(var_pos * this->m_num_lanes) + lane];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
+              .values[(var_pos * this->m_num_lanes) + lane];
         }
         else {
             throw;
@@ -197,7 +397,7 @@ class BackPropagatorLossyPathReuse {
 
     void zero_adjoints()
     {
-        for (auto& b : buffers) {
+        for (auto& b : this->buffers) {
             std::fill(b.values.begin(), b.values.end(), 0.0);
         }
     }
@@ -207,8 +407,8 @@ class BackPropagatorLossyPathReuse {
         std::size_t size = 0;
         size += 1 * sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
-        size += sizeof(std::size_t) * (capacity ? checkpoints.capacity() : checkpoints.size());
-        for (const auto& buffer : buffers) {
+        size += sizeof(std::size_t) * (capacity ? this->checkpoints.capacity() : this->checkpoints.size());
+        for (const auto& buffer : this->buffers) {
             size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
             size += sizeof(std::size_t) * (capacity ? buffer.free_positions.capacity() : buffer.free_positions.size());
         }
@@ -235,75 +435,302 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
 
     this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
 
-    std::size_t buffer_idx = this->checkpoints.size() - 1;
-    std::size_t loop_from = from;
-    std::size_t loop_to = from;
-    while (to != loop_to) {
-        loop_from = loop_to;
-        loop_to = std::max(to, this->checkpoints[buffer_idx]);
-        if constexpr (Reset) {
-            if (loop_from == checkpoints.back()) {
-                checkpoints.pop_back();
-                buffers.pop_back();
+    // if constexpr (Reset) {
+    if (from == this->checkpoints.back()) {
+        this->checkpoints.pop_back();
+        this->buffers.pop_back();
+        this->hash_to_lossy_tape.pop_back();
+    }
+    // }
+
+    if (this->checkpoints.size() > 1 && to != this->checkpoints.back()) {
+        // this is now allowed. if we have a buffer after the first one,
+        // it necessarily has to be in MC context, so backpropagation
+        // has to be all the way to the next checkpoint
+        // why? because otherwise code becomes too complex
+        throw;
+    }
+
+    // we assume the first section is not part of a MC simulation,
+    // so the first section lossy opcode won't be stored.
+    if (this->buffers.size() > 1) {
+        std::size_t id_idx = ids.size();
+        for (std::size_t op_idx = from; op_idx-- > to;) {
+            OpCode const& op = ops[op_idx];
+
+            switch (op) {
+                case OpCode::REG_INPUT: {
+                    id_idx -= 1;
+                    break;
+                }
+                case OpCode::REG_OUTPUT:
+                case OpCode::ADD_C:
+                case OpCode::SUB_C:
+                case OpCode::MUL_C:
+                case OpCode::NORM:
+                case OpCode::INV:
+                case OpCode::ABS:
+                case OpCode::EXP:
+                case OpCode::LOG:
+                case OpCode::ERF:
+                case OpCode::ERFC:
+                case OpCode::COS:
+                case OpCode::SQRT:
+                case OpCode::POW_C: {
+                    id_idx -= 2;
+                    break;
+                }
+                case OpCode::ADD:
+                case OpCode::SUB:
+                case OpCode::MUL: {
+                    id_idx -= 3;
+                    break;
+                }
             }
         }
 
-        auto& buffer_vals = buffers[buffer_idx].values;
-        auto& buffer_free_positions = buffers[buffer_idx].free_positions;
+        auto const h = hash(data, to, id_idx);
+
+        bool const tape_exists = hash_to_lossy_tape.back().find(h) != hash_to_lossy_tape.back().end();
+        auto& lossy_tape = hash_to_lossy_tape.back()[h];
+        if (!tape_exists) {
+            // we need to compute the lossy tape for this section.
+            lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints, buffers);
+        }
+        else {
+            // check equality of lossy tapes
+            auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints, buffers);
+
+            auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
+                if (lt1.lossy_op != lt2.lossy_op) {
+                    return false;
+                }
+
+                if (lt1.on_which_buffer != lt2.on_which_buffer) {
+                    return false;
+                }
+
+                if (lt1.pos != lt2.pos) {
+                    return false;
+                }
+
+                return true;
+            };
+
+            if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
+                throw;
+            }
+        }
+
+        ValueFetcher value_fetcher(data, lossy_tape, to);
+
+        auto const& lossy_op = lossy_tape.lossy_op;
+        auto const& on_which_buffer = lossy_tape.on_which_buffer;
+        auto const& pos = lossy_tape.pos;
+        auto& buffer_vals = buffers.back().values;
+
+        for (auto& b : buffers) {
+            b.values.resize(b.size * this->m_num_lanes, 0.);
+        }
+
+        std::size_t id_idx_l = 0;
+        std::size_t on_which_buffer_idx = 0;
+
+        for (std::size_t lossy_op_idx = 0; lossy_op_idx < lossy_op.size(); ++lossy_op_idx) {
+            auto const& op = lossy_op[lossy_op_idx];
+
+            switch (op) {
+                case LossyOpCode::COPY: {
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] = src[i];
+                        }
+                    }
+                    else {
+                        buffer_vals[in_pos] = buffer_vals[out_pos];
+                    }
+                    break;
+                }
+                case LossyOpCode::COPY_MINUS: {
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] = -src[i];
+                        }
+                    }
+                    else {
+                        buffer_vals[in_pos] = -buffer_vals[out_pos];
+                    }
+                    break;
+                }
+                case LossyOpCode::ADD: {
+                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] += src[i];
+                        }
+                    }
+                    else {
+                        buffers[which].values[in_pos] += buffer_vals[out_pos];
+                    }
+                    break;
+                }
+                case LossyOpCode::SUB: {
+                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] -= src[i];
+                        }
+                    }
+                    else {
+                        buffers[which].values[in_pos] -= buffer_vals[out_pos];
+                    }
+                    break;
+                }
+                case LossyOpCode::MINUS_INPLACE: {
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    if constexpr (Vectorised) {
+                        double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] = -dest[i];
+                        }
+                    }
+                    else {
+                        buffer_vals[out_pos] = -buffer_vals[out_pos];
+                    }
+                    break;
+                }
+                case LossyOpCode::MUL_INPLACE: {
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    double const multiplier = value_fetcher();
+                    if constexpr (Vectorised) {
+                        double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] *= multiplier;
+                        }
+                    }
+                    else {
+                        buffer_vals[out_pos] *= multiplier;
+                    }
+                    break;
+                }
+                case LossyOpCode::MUL_ADD: {
+                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    double const multiplier = value_fetcher();
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] += src[i] * multiplier;
+                        }
+                    }
+                    else {
+                        buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
+                    }
+                    break;
+                }
+                case LossyOpCode::MUL_SET: {
+                    std::size_t const out_pos = pos[id_idx_l++];
+                    std::size_t const in_pos = pos[id_idx_l++];
+                    double const multiplier = value_fetcher();
+                    if constexpr (Vectorised) {
+                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                            dest[i] = src[i] * multiplier;
+                        }
+                    }
+                    else {
+                        buffer_vals[in_pos] = buffer_vals[out_pos] * multiplier;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    else {
+
+        auto& buffer_vals = this->buffers.back().values;
+        auto& buffer_free_positions = buffers.back().free_positions;
 
         auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] = buffer_vals[out_pos];
+                this->buffers[which].values[in_pos] = buffer_vals[out_pos];
             }
         };
 
         auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = -src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] = -buffer_vals[out_pos];
+                this->buffers[which].values[in_pos] = -buffer_vals[out_pos];
             }
         };
 
         auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] += src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] += buffer_vals[out_pos];
+                this->buffers[which].values[in_pos] += buffer_vals[out_pos];
             }
         };
 
         auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] -= src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] -= buffer_vals[out_pos];
+                this->buffers[which].values[in_pos] -= buffer_vals[out_pos];
             }
         };
 
@@ -337,14 +764,14 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
           [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
               if constexpr (Vectorised) {
                   const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                  double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                   for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                       dest[i] += src[i] * multiplier;
                   }
               }
               else {
-                  buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
+                  this->buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
               }
           };
 
@@ -352,14 +779,14 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
           [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
               if constexpr (Vectorised) {
                   const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                  double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
 #pragma omp simd
                   for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                       dest[i] = src[i] * multiplier;
                   }
               }
               else {
-                  buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
+                  this->buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
               }
           };
 
@@ -371,9 +798,9 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
             return { it == checkpoints_c.end(), buffer_id };
         };
 
-        auto update_loc = [this, &buffers = this->buffers](std::size_t& arg_pos, std::uint8_t buffer_id) {
+        auto update_loc = [this](std::size_t& arg_pos, std::uint8_t buffer_id) {
             if (arg_pos == passive_id<std::size_t>) {
-                auto& arg_buffer = buffers[buffer_id];
+                auto& arg_buffer = this->buffers[buffer_id];
                 if (arg_buffer.free_positions.empty()) {
                     arg_pos = arg_buffer.size;
                     ++arg_buffer.size;
@@ -452,7 +879,7 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
               }
           };
 
-        for (std::size_t op_idx = loop_from; op_idx-- > loop_to;) {
+        for (std::size_t op_idx = from; op_idx-- > to;) {
             OpCode const& op = ops[op_idx];
             bool const use_this_op = this->node_location_on_buffer[op_idx] != passive_id<std::size_t>;
 
@@ -815,15 +1242,12 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to
                 }
             }
         }
+    }
 
-        if constexpr (Reset) {
-            if (!checkpoints.empty() && loop_to == checkpoints.back()) {
-                // buffers.pop_back();
-                buffers.back() = buffer_t{};
-            }
+    if constexpr (Reset) {
+        if (to == this->checkpoints.back()) {
+            this->buffers.back() = {};
         }
-
-        --buffer_idx;
     }
 
     if constexpr (Reset) {
