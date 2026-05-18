@@ -22,6 +22,7 @@
 #define ADHOC_BACKPROPAGATOR1LOSSY_HPP
 
 #include "passive_id.hpp"
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <algorithm>
@@ -216,14 +217,15 @@ class BackPropagatorLossy {
     }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeData& data)
+BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
 
     const auto& ops = data.ops;
@@ -817,8 +819,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(std::size_t to, TapeDat
         }
 
         if constexpr (Reset) {
-            if (!checkpoints.empty() && loop_to == checkpoints.back()) {
-                // buffers.pop_back();
+            if (loop_to == checkpoints.back()) {
                 buffers.back() = buffer_t{};
             }
         }

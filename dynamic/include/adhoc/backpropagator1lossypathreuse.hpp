@@ -23,6 +23,7 @@
 
 #include "hash.hpp"
 #include "passive_id.hpp"
+#include "position_impl.hpp"
 #include "tape_converter.hpp"
 #include "tape_data.hpp"
 
@@ -416,14 +417,15 @@ class BackPropagatorLossyPathReuse {
     }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(std::size_t to, TapeData& data)
+BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
 
     const auto& ops = data.ops;

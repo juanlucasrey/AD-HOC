@@ -21,6 +21,7 @@
 #ifndef ADHOC_BACKPROPAGATOR1_HPP
 #define ADHOC_BACKPROPAGATOR1_HPP
 
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <cmath>
@@ -107,14 +108,15 @@ class BackPropagator {
     }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator<Float, Vectorised>::backpropagate_to(std::size_t to, TapeData& data)
+BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
     const auto& ops = data.ops;
     const auto& vals = data.vals;

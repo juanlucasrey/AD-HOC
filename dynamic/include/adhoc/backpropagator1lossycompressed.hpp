@@ -22,6 +22,7 @@
 #define ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 
 #include "passive_id.hpp"
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <algorithm>
@@ -219,15 +220,16 @@ class BackPropagatorLossyCompressed {
     }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float, bool Vectorised, bool ConsolidateLargeUnivariate>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(std::size_t to,
+BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(PositionImpl const& pos,
                                                                                                TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
     if (from == checkpoints.back()) {
         checkpoints.pop_back();
