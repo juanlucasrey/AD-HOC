@@ -67,7 +67,6 @@ convert_to_lossy_tape(std::size_t to,
     const auto& ids = data.ids;
 
     std::size_t id_idx = ids.size();
-    std::size_t buffer_idx = buffers.size() - 1;
 
     auto& buffer_free_positions = buffers.back().free_positions;
 
@@ -310,8 +309,6 @@ convert_to_lossy_tape(std::size_t to,
                 id_idx -= 3;
                 result.use_op.push_back(use_this_op);
                 if (use_this_op) {
-                    double const lhs_val = 0;
-                    double const rhs_val = 0;
                     std::size_t const lhs_id = ids[id_idx];
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];

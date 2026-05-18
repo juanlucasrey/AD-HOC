@@ -56,8 +56,6 @@ class BackPropagatorLossyPathReuse {
           , op_idx(data.next_id)
           , to(to_in)
           , val_idx(data.vals.size())
-          , invert_mult_idx(lossy_tape_in.invert_mult.size())
-          , use_op_idx(lossy_tape_in.use_op.size())
         {
         }
 
@@ -85,31 +83,31 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::MUL: {
                         val_idx -= 2;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
-                            invert_mult_idx -= 1;
 
                             double const lhs_val = data.vals[val_idx];
                             double const rhs_val = data.vals[val_idx + 1];
                             bool const this_invert_idx = lossy_tape.invert_mult[invert_mult_idx];
+                            invert_mult_idx += 1;
 
                             use_cache = true;
                             if (this_invert_idx) {
-                                cached_value = lhs_val;
-                                return rhs_val;
-                            }
-                            else {
                                 cached_value = rhs_val;
                                 return lhs_val;
+                            }
+                            else {
+                                cached_value = lhs_val;
+                                return rhs_val;
                             }
                         }
                         break;
                     }
                     case OpCode::MUL_C: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = data.vals[val_idx];
                             return der_local_1;
@@ -118,8 +116,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::NORM: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = 2.0 * data.vals[val_idx];
                             return der_local_1;
@@ -128,8 +126,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::INV: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = -data.vals[val_idx] * data.vals[val_idx];
                             return der_local_1;
@@ -138,8 +136,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::ABS: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = std::copysign(1.0, data.vals[val_idx]);
                             return der_local_1;
@@ -148,8 +146,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::EXP: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = data.vals[val_idx];
                             return der_local_1;
@@ -158,8 +156,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::LOG: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = 1.0 / data.vals[val_idx];
                             return der_local_1;
@@ -168,8 +166,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::ERF: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
                             double const der_local_1 =
@@ -180,8 +178,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::ERFC: {
                         val_idx -= 1;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
                             double const der_local_1 =
@@ -192,8 +190,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::COS: {
                         val_idx -= 2;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const der_local_1 = -std::sin(data.vals[val_idx]);
                             return der_local_1;
@@ -202,8 +200,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::SQRT: {
                         val_idx -= 2;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const one_over_in = 1. / data.vals[val_idx];
                             double const der_local_1 = 0.5 * data.vals[val_idx + 1] * one_over_in;
@@ -213,8 +211,8 @@ class BackPropagatorLossyPathReuse {
                     }
                     case OpCode::POW_C: {
                         val_idx -= 2;
-                        use_op_idx -= 1;
                         bool const use_this_op = lossy_tape.use_op[use_op_idx];
+                        use_op_idx += 1;
                         if (use_this_op) {
                             double const lhs_arg = data.vals[val_idx];
                             double const rhs_arg = data.vals[val_idx + 1];
@@ -437,13 +435,11 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
 
     this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
 
-    // if constexpr (Reset) {
     if (from == this->checkpoints.back()) {
         this->checkpoints.pop_back();
         this->buffers.pop_back();
         this->hash_to_lossy_tape.pop_back();
     }
-    // }
 
     if (this->checkpoints.size() > 1 && to != this->checkpoints.back()) {
         // this is now allowed. if we have a buffer after the first one,
@@ -456,42 +452,7 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
     // we assume the first section is not part of a MC simulation,
     // so the first section lossy opcode won't be stored.
     if (this->buffers.size() > 1) {
-        std::size_t id_idx = ids.size();
-        for (std::size_t op_idx = from; op_idx-- > to;) {
-            OpCode const& op = ops[op_idx];
-
-            switch (op) {
-                case OpCode::REG_INPUT: {
-                    id_idx -= 1;
-                    break;
-                }
-                case OpCode::REG_OUTPUT:
-                case OpCode::ADD_C:
-                case OpCode::SUB_C:
-                case OpCode::MUL_C:
-                case OpCode::NORM:
-                case OpCode::INV:
-                case OpCode::ABS:
-                case OpCode::EXP:
-                case OpCode::LOG:
-                case OpCode::ERF:
-                case OpCode::ERFC:
-                case OpCode::COS:
-                case OpCode::SQRT:
-                case OpCode::POW_C: {
-                    id_idx -= 2;
-                    break;
-                }
-                case OpCode::ADD:
-                case OpCode::SUB:
-                case OpCode::MUL: {
-                    id_idx -= 3;
-                    break;
-                }
-            }
-        }
-
-        auto const h = hash(data, to, id_idx);
+        auto const h = hash(pos, data);
 
         bool const tape_exists = hash_to_lossy_tape.back().find(h) != hash_to_lossy_tape.back().end();
         auto& lossy_tape = hash_to_lossy_tape.back()[h];
@@ -677,62 +638,66 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
     }
     else {
 
-        auto& buffer_vals = this->buffers.back().values;
-        auto& buffer_free_positions = buffers.back().free_positions;
+        if (buffers.size() != 1) {
+            throw;
+        }
 
-        auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        auto& buffer_vals = this->buffers[0].values;
+        auto& buffer_free_positions = buffers[0].free_positions;
+
+        auto copy = [&](std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = src[i];
                 }
             }
             else {
-                this->buffers[which].values[in_pos] = buffer_vals[out_pos];
+                buffer_vals[in_pos] = buffer_vals[out_pos];
             }
         };
 
-        auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        auto copy_minus = [&](std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = -src[i];
                 }
             }
             else {
-                this->buffers[which].values[in_pos] = -buffer_vals[out_pos];
+                buffer_vals[in_pos] = -buffer_vals[out_pos];
             }
         };
 
-        auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        auto add = [&](std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] += src[i];
                 }
             }
             else {
-                this->buffers[which].values[in_pos] += buffer_vals[out_pos];
+                buffer_vals[in_pos] += buffer_vals[out_pos];
             }
         };
 
-        auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+        auto sub = [&](std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] -= src[i];
                 }
             }
             else {
-                this->buffers[which].values[in_pos] -= buffer_vals[out_pos];
+                buffer_vals[in_pos] -= buffer_vals[out_pos];
             }
         };
 
@@ -762,47 +727,37 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
             }
         };
 
-        auto mul_add =
-          [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
-              if constexpr (Vectorised) {
-                  const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
+        auto mul_add = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+            if constexpr (Vectorised) {
+                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
 #pragma omp simd
-                  for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                      dest[i] += src[i] * multiplier;
-                  }
-              }
-              else {
-                  this->buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
-              }
-          };
-
-        auto mul_set =
-          [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
-              if constexpr (Vectorised) {
-                  const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &this->buffers[which].values[in_pos * this->m_num_lanes];
-#pragma omp simd
-                  for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                      dest[i] = src[i] * multiplier;
-                  }
-              }
-              else {
-                  this->buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
-              }
-          };
-
-        // output is: is_new, is_current, buffer_id, position
-        auto const& checkpoints_c = this->checkpoints;
-        auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
-            auto it = std::upper_bound(checkpoints_c.begin(), checkpoints_c.end(), id);
-            auto buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
-            return { it == checkpoints_c.end(), buffer_id };
+                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                    dest[i] += src[i] * multiplier;
+                }
+            }
+            else {
+                buffer_vals[in_pos] += buffer_vals[out_pos] * multiplier;
+            }
         };
 
-        auto update_loc = [this](std::size_t& arg_pos, std::uint8_t buffer_id) {
+        auto mul_set = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+            if constexpr (Vectorised) {
+                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                    dest[i] = src[i] * multiplier;
+                }
+            }
+            else {
+                buffer_vals[in_pos] = buffer_vals[out_pos] * multiplier;
+            }
+        };
+
+        auto update_loc = [this](std::size_t& arg_pos) {
             if (arg_pos == passive_id<std::size_t>) {
-                auto& arg_buffer = this->buffers[buffer_id];
+                auto& arg_buffer = this->buffers[0];
                 if (arg_buffer.free_positions.empty()) {
                     arg_pos = arg_buffer.size;
                     ++arg_buffer.size;
@@ -815,43 +770,41 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
             }
         };
 
-        auto copy_add = [copy, add, update_loc](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id) {
+        auto copy_add = [copy, add, update_loc](std::size_t res_pos, std::size_t& arg_pos) {
             bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-            update_loc(arg_pos, buffer_id);
+            update_loc(arg_pos);
 
             if (arg_is_new) {
-                copy(buffer_id, res_pos, arg_pos);
+                copy(res_pos, arg_pos);
             }
             else {
-                add(buffer_id, res_pos, arg_pos);
+                add(res_pos, arg_pos);
             }
         };
 
-        auto copy_sub =
-          [copy_minus, sub, update_loc](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id) {
-              bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-              update_loc(arg_pos, buffer_id);
-
-              if (arg_is_new) {
-                  // this is a new value, we NEED to override
-                  copy_minus(buffer_id, res_pos, arg_pos);
-              }
-              else {
-                  sub(buffer_id, res_pos, arg_pos);
-              }
-          };
-
-        auto copy_mul = [mul_set, mul_add, update_loc](
-                          std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, double multiplier) {
+        auto copy_sub = [copy_minus, sub, update_loc](std::size_t res_pos, std::size_t& arg_pos) {
             bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-            update_loc(arg_pos, buffer_id);
+            update_loc(arg_pos);
 
             if (arg_is_new) {
                 // this is a new value, we NEED to override
-                mul_set(buffer_id, res_pos, arg_pos, multiplier);
+                copy_minus(res_pos, arg_pos);
             }
             else {
-                mul_add(buffer_id, res_pos, arg_pos, multiplier);
+                sub(res_pos, arg_pos);
+            }
+        };
+
+        auto copy_mul = [mul_set, mul_add, update_loc](std::size_t res_pos, std::size_t& arg_pos, double multiplier) {
+            bool arg_is_new = (arg_pos == passive_id<std::size_t>);
+            update_loc(arg_pos);
+
+            if (arg_is_new) {
+                // this is a new value, we NEED to override
+                mul_set(res_pos, arg_pos, multiplier);
+            }
+            else {
+                mul_add(res_pos, arg_pos, multiplier);
             }
         };
 
@@ -859,15 +812,12 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
           [mul_inplace,
            this,
            copy_mul,
-           get_loc,
            &node_location_on_buffer = this->node_location_on_buffer,
            &buffer_free_positions](std::size_t const arg_id, std::size_t const res_id, double const der_local_1) {
               std::size_t& res_pos = node_location_on_buffer[res_id];
               std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
-              auto const arg_pos_data = get_loc(arg_id);
-              bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-              bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+              bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
 
               if (arg_inplace) {
                   mul_inplace(res_pos, der_local_1);
@@ -875,7 +825,7 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                   std::swap(arg_pos, res_pos);
               }
               else {
-                  copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), der_local_1);
+                  copy_mul(res_pos, arg_pos, der_local_1);
                   buffer_free_positions.push_back(res_pos);
                   res_pos = passive_id<std::size_t>;
               }
@@ -905,23 +855,20 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& res_pos = node_location_on_buffer[res_id];
                         std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
-                        auto const arg_pos_data = get_loc(arg_id);
-
                         if constexpr (Reset) {
-                            bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                            bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                            bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
                             if (arg_inplace) {
                                 // res id should now be lhs id, avoiding a copy and a potential buffer increase
                                 std::swap(arg_pos, res_pos);
                             }
                             else {
-                                copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                                copy_add(res_pos, arg_pos);
                                 buffer_free_positions.push_back(res_pos);
                                 res_pos = passive_id<std::size_t>;
                             }
                         }
                         else {
-                            copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                            copy_add(res_pos, arg_pos);
                             // we don't reset so we don't free res_pos,
                             // it will be potentially used in the next operations as an active node location
                         }
@@ -939,20 +886,15 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                         std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
-                        auto const lhs_pos_data = get_loc(lhs_id);
-                        auto const rhs_pos_data = get_loc(rhs_id);
-
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
 
                         if (!lhs_inplace) {
-                            copy_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
+                            copy_add(res_pos, lhs_pos);
                         }
 
                         if (!rhs_inplace) {
-                            copy_add(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
+                            copy_add(res_pos, rhs_pos);
                         }
 
                         if (lhs_inplace) {
@@ -982,20 +924,15 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                         std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
-                        auto const lhs_pos_data = get_loc(lhs_id);
-                        auto const rhs_pos_data = get_loc(rhs_id);
-
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
 
                         if (!lhs_inplace) {
-                            copy_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
+                            copy_add(res_pos, lhs_pos);
                         }
 
                         if (!rhs_inplace) {
-                            copy_sub(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
+                            copy_sub(res_pos, rhs_pos);
                         }
 
                         if (lhs_inplace) {
@@ -1030,20 +967,15 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& lhs_pos = node_location_on_buffer[lhs_id];
                         std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
-                        auto const lhs_pos_data = get_loc(lhs_id);
-                        auto const rhs_pos_data = get_loc(rhs_id);
-
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
 
                         if (!lhs_inplace) {
-                            copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), rhs_val);
+                            copy_mul(res_pos, lhs_pos, rhs_val);
                         }
 
                         if (!rhs_inplace) {
-                            copy_mul(res_pos, rhs_pos, std::get<1>(rhs_pos_data), lhs_val);
+                            copy_mul(res_pos, rhs_pos, lhs_val);
                         }
 
                         if (lhs_inplace) {
@@ -1073,16 +1005,14 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& res_pos = node_location_on_buffer[res_id];
                         std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
-                        auto const arg_pos_data = get_loc(arg_id);
-                        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                        bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                        bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
 
                         if (arg_inplace) {
                             // res id should now be lhs id, avoiding a copy and a potential buffer increase
                             std::swap(arg_pos, res_pos);
                         }
                         else {
-                            copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                            copy_add(res_pos, arg_pos);
                             buffer_free_positions.push_back(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
@@ -1098,9 +1028,7 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                         std::size_t& res_pos = node_location_on_buffer[res_id];
                         std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
-                        auto const arg_pos_data = get_loc(arg_id);
-                        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                        bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                        bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
 
                         if (arg_inplace) {
                             // this is a subtraction, so we need to negate the value in the buffer
@@ -1109,7 +1037,7 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                             std::swap(arg_pos, res_pos);
                         }
                         else {
-                            copy_sub(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                            copy_sub(res_pos, arg_pos);
                             buffer_free_positions.push_back(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
@@ -1250,15 +1178,9 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
         if (to == this->checkpoints.back()) {
             this->buffers.back() = {};
         }
-    }
 
-    if constexpr (Reset) {
-        data.ops.resize(to);
-        data.vals.resize(val_idx);
-        data.ids.resize(id_idx);
-        data.next_id = to;
-
-        this->node_location_on_buffer.resize(to);
+        reset(pos, data);
+        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 

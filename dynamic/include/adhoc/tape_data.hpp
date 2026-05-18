@@ -56,7 +56,7 @@ struct TapeData {
     std::vector<OpCode> ops;
     std::vector<double> vals;
     std::vector<std::size_t> ids;
-    size_t next_id{ 0 };
+    std::size_t next_id{ 0 };
 };
 
 } // namespace adhoc

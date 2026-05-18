@@ -21,6 +21,7 @@
 #ifndef ADHOC_HASH_HPP
 #define ADHOC_HASH_HPP
 
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <functional>
@@ -41,10 +42,10 @@ hash_span(std::span<const T> v) -> std::size_t
 }
 
 inline auto
-hash(TapeData const& data, std::size_t const op_idx_start, std::size_t const id_idx_start) -> std::size_t
+hash(PositionImpl const& pos, TapeData const& data) -> std::size_t
 {
-    std::span<std::size_t const> ids_span(data.ids.data() + id_idx_start, data.ids.size() - id_idx_start);
-    std::span<OpCode const> ops_span(data.ops.data() + op_idx_start, data.ops.size() - op_idx_start);
+    std::span<std::size_t const> ids_span(data.ids.data() + pos.id_position, data.ids.size() - pos.id_position);
+    std::span<OpCode const> ops_span(data.ops.data() + pos.op_position, data.ops.size() - pos.op_position);
     auto const h1 = hash_span(ids_span);
     auto const h2 = hash_span(ops_span);
     auto const h = h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
