@@ -201,6 +201,18 @@ enum class Method {
     FirstOrderVLossyCompressed
 };
 
+struct PositionImpl;
+
+struct position_t2 {
+    position_t2();
+    ~position_t2();
+    auto operator=(position_t2 other) -> position_t2&;
+    // copy constructor
+    position_t2(const position_t2& other);
+
+    std::unique_ptr<PositionImpl> impl;
+};
+
 template<class Float>
 class Tape {
   private:
@@ -334,12 +346,15 @@ class Tape {
         data.ids.clear();
     }
 
+    friend position_t2;
+    using position_t = position_t2;
+
     void set_checkpoint();
     void backpropagate();
-    void backpropagate_to(std::size_t to);
+    void backpropagate_to(position_t const& to);
 
     template<bool ResetInPlace = false, bool Log = false>
-    void backpropagate_and_reset_to(std::size_t to);
+    void backpropagate_and_reset_to(position_t const& to);
     void set_derivative(adhoc_type<Float> const& var, double deriv, std::size_t lane = 0);
     auto get_derivative(adhoc_type<Float> const& var, std::size_t lane = 0) const -> double;
 
@@ -347,9 +362,7 @@ class Tape {
       -> double;
     void zero_adjoints();
 
-    using position_t = std::size_t;
-
-    auto get_position() const -> position_t { return data.next_id; }
+    auto get_position() const -> position_t;
 
     void print() const;
 
