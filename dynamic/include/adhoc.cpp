@@ -43,36 +43,31 @@ record_register(std::vector<OpCode>& ops, std::vector<std::size_t>& ids, OpCode 
 
 } // namespace
 
-struct PositionImpl {
-    //   public:
-    PositionImpl() = default;
-
-    explicit PositionImpl(std::size_t op_position_in, std::size_t id_position_in, std::size_t val_position_in)
-      : op_position(op_position_in)
-      , id_position(id_position_in)
-      , val_position(val_position_in)
-    {
-    }
-
-    //   private:
+template<class Float>
+struct Tape<Float>::PositionImpl {
     std::size_t op_position;
     std::size_t id_position;
     std::size_t val_position;
 };
 
-position_t2::position_t2()
-  : impl(std::make_unique<PositionImpl>()) {};
-position_t2::~position_t2() = default;
+template<class Float>
+Tape<Float>::position_t::position_t()
+  : impl(std::make_unique<PositionImpl>()){};
 
-position_t2&
-position_t2::operator=(position_t2 other)
+template<class Float>
+Tape<Float>::position_t::~position_t() = default;
+
+template<class Float>
+Tape<Float>::position_t&
+Tape<Float>::position_t::operator=(position_t other)
 {
     std::swap(this->impl, other.impl);
     return *this;
 }
 
-position_t2::position_t2(const position_t2& other)
-  : impl(std::make_unique<PositionImpl>(*other.impl))
+template<class Float>
+Tape<Float>::position_t::position_t(const position_t& other)
+  : impl(std::make_unique<Tape<Float>::PositionImpl>(*other.impl))
 {
 }
 
@@ -402,7 +397,7 @@ template<class Float>
 auto
 Tape<Float>::get_position() const -> position_t
 {
-    position_t2 result;
+    position_t result;
     result.impl = std::make_unique<PositionImpl>(data.ops.size(), data.ids.size(), data.vals.size());
     return result;
 }

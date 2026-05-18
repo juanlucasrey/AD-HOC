@@ -201,21 +201,10 @@ enum class Method {
     FirstOrderVLossyCompressed
 };
 
-struct PositionImpl;
-
-struct position_t2 {
-    position_t2();
-    ~position_t2();
-    auto operator=(position_t2 other) -> position_t2&;
-    // copy constructor
-    position_t2(const position_t2& other);
-
-    std::unique_ptr<PositionImpl> impl;
-};
-
 template<class Float>
 class Tape {
   private:
+    struct PositionImpl;
     struct Impl;
 
     std::unique_ptr<Impl> impl;
@@ -346,8 +335,16 @@ class Tape {
         data.ids.clear();
     }
 
-    friend position_t2;
-    using position_t = position_t2;
+    struct position_t {
+        position_t();
+        ~position_t();
+        auto operator=(position_t other) -> position_t&;
+        position_t(const position_t& other);
+
+      private:
+        friend Tape;
+        std::unique_ptr<PositionImpl> impl;
+    };
 
     void set_checkpoint();
     void backpropagate();
