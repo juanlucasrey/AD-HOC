@@ -93,7 +93,7 @@ convert_to_lossy_tape(std::size_t to,
         this_on_which_buffer.push_back(which);
     };
 
-    auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+    auto sub = [&](std::size_t const out_pos, std::size_t const in_pos, std::uint8_t const which) {
         this_lossy_op.push_back(LossyOpCode::SUB);
         this_pos.push_back(out_pos);
         this_pos.push_back(in_pos);
@@ -110,7 +110,7 @@ convert_to_lossy_tape(std::size_t to,
         this_pos.push_back(pos);
     };
 
-    auto mul_add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
+    auto mul_add = [&](std::size_t const out_pos, std::size_t const in_pos, std::uint8_t const which) {
         this_lossy_op.push_back(LossyOpCode::MUL_ADD);
         this_pos.push_back(out_pos);
         this_pos.push_back(in_pos);
@@ -326,10 +326,12 @@ convert_to_lossy_tape(std::size_t to,
                     bool const rhs_inplace_pre = rhs_is_new && std::get<0>(rhs_pos_data);
                     bool const rhs_inplace = !lhs_inplace && rhs_inplace_pre;
 
-                    bool this_invert_mult = false;
+                    // this is the only case when rhs_multiplier is used BEFORE lhs_multiplier.
+                    result.invert_mult.push_back(lhs_inplace);
+
                     if (!lhs_inplace) {
                         update_loc(lhs_pos, std::get<1>(lhs_pos_data));
-                        mul_add(std::get<1>(lhs_pos_data), res_pos, lhs_pos);
+                        mul_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
                     }
 
                     if (!rhs_inplace) {
@@ -338,10 +340,8 @@ convert_to_lossy_tape(std::size_t to,
                             mul_set(res_pos, rhs_pos);
                         }
                         else {
-                            mul_add(std::get<1>(rhs_pos_data), res_pos, rhs_pos);
+                            mul_add(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
                         }
-                        // htis is the only case when lhs_multiplier is used BEFORE rhs_multiplier.
-                        this_invert_mult = true;
                     }
 
                     if (lhs_inplace) {
@@ -359,7 +359,6 @@ convert_to_lossy_tape(std::size_t to,
                         buffer_free_positions.push_back(res_pos);
                         res_pos = passive_id<std::size_t>;
                     }
-                    result.invert_mult.push_back(this_invert_mult);
                 }
                 break;
             }
@@ -448,7 +447,7 @@ convert_to_lossy_tape(std::size_t to,
                     }
                     else {
                         update_loc(arg_pos, std::get<1>(arg_pos_data));
-                        mul_add(std::get<1>(arg_pos_data), res_pos, arg_pos);
+                        mul_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
                         res_pos = passive_id<std::size_t>;
                     }
