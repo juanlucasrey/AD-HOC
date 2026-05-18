@@ -44,6 +44,7 @@ struct LossyTape {
     std::vector<LossyOpCode> lossy_op;
     std::vector<bool> invert_mult;
     std::vector<bool> use_op;
+    std::size_t buffer_size{ 0 };
 };
 
 struct buffer_t {
@@ -456,6 +457,7 @@ convert_to_lossy_tape(std::size_t to,
             }
         }
     }
+    result.buffer_size = buffers.back().size;
 
     return result;
 }

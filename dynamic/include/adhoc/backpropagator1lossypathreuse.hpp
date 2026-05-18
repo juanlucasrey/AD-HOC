@@ -461,28 +461,31 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
             lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints, buffers);
         }
         else {
+            buffers.back().size = lossy_tape.buffer_size;
+
             // check equality of lossy tapes
-            auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints, buffers);
+            // auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints,
+            // buffers);
 
-            auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
-                if (lt1.lossy_op != lt2.lossy_op) {
-                    return false;
-                }
+            // auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
+            //     if (lt1.lossy_op != lt2.lossy_op) {
+            //         return false;
+            //     }
 
-                if (lt1.on_which_buffer != lt2.on_which_buffer) {
-                    return false;
-                }
+            //     if (lt1.on_which_buffer != lt2.on_which_buffer) {
+            //         return false;
+            //     }
 
-                if (lt1.pos != lt2.pos) {
-                    return false;
-                }
+            //     if (lt1.pos != lt2.pos) {
+            //         return false;
+            //     }
 
-                return true;
-            };
+            //     return true;
+            // };
 
-            if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
-                throw;
-            }
+            // if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
+            //     throw;
+            // }
         }
 
         ValueFetcher value_fetcher(data, lossy_tape, to);
