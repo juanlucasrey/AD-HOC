@@ -44,6 +44,34 @@ record_register(std::vector<OpCode>& ops, std::vector<std::size_t>& ids, OpCode 
 } // namespace
 
 template<class Float>
+struct Tape<Float>::PositionImpl {
+    std::size_t op_position;
+    std::size_t id_position;
+    std::size_t val_position;
+};
+
+template<class Float>
+Tape<Float>::position_t::position_t()
+  : impl(std::make_unique<PositionImpl>()){};
+
+template<class Float>
+Tape<Float>::position_t::~position_t() = default;
+
+template<class Float>
+Tape<Float>::position_t&
+Tape<Float>::position_t::operator=(position_t other)
+{
+    std::swap(this->impl, other.impl);
+    return *this;
+}
+
+template<class Float>
+Tape<Float>::position_t::position_t(const position_t& other)
+  : impl(std::make_unique<Tape<Float>::PositionImpl>(*other.impl))
+{
+}
+
+template<class Float>
 struct Tape<Float>::Impl {
     std::variant<BackPropagator<Float>,
                  BackPropagator<Float, true>,
@@ -306,16 +334,18 @@ Tape<Float>::backpropagate()
 
 template<class Float>
 void
-Tape<Float>::backpropagate_to(std::size_t to)
+Tape<Float>::backpropagate_to(position_t const& pos)
 {
+    std::size_t to = pos.impl->op_position;
     std::visit([to, &data = this->data](auto& arg) { arg.backpropagate_to(to, data); }, this->impl->bp);
 }
 
 template<class Float>
 template<bool ResetInPlace, bool Log>
 void
-Tape<Float>::backpropagate_and_reset_to(std::size_t to)
+Tape<Float>::backpropagate_and_reset_to(position_t const& pos)
 {
+    std::size_t to = pos.impl->op_position;
     std::visit(
       [to, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(to, data); },
       this->impl->bp);
@@ -361,6 +391,15 @@ void
 Tape<Float>::zero_adjoints()
 {
     std::visit([](auto& arg) { arg.zero_adjoints(); }, this->impl->bp);
+}
+
+template<class Float>
+auto
+Tape<Float>::get_position() const -> position_t
+{
+    position_t result;
+    result.impl = std::make_unique<PositionImpl>(data.ops.size(), data.ids.size(), data.vals.size());
+    return result;
 }
 
 template<class Float>
@@ -471,13 +510,13 @@ Tape<Float>::size_of(bool capacity) const -> std::size_t
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
 template void
-Tape<double>::backpropagate_and_reset_to<true, true>(std::size_t to);
+Tape<double>::backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<true, false>(std::size_t to);
+Tape<double>::backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<false, true>(std::size_t to);
+Tape<double>::backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<false, false>(std::size_t to);
+Tape<double>::backpropagate_and_reset_to<false, false>(position_t const& to);
 
 template class Tape<double>;
 #endif

@@ -204,6 +204,7 @@ enum class Method {
 template<class Float>
 class Tape {
   private:
+    struct PositionImpl;
     struct Impl;
 
     std::unique_ptr<Impl> impl;
@@ -334,12 +335,23 @@ class Tape {
         data.ids.clear();
     }
 
+    struct position_t {
+        position_t();
+        ~position_t();
+        auto operator=(position_t other) -> position_t&;
+        position_t(const position_t& other);
+
+      private:
+        friend Tape;
+        std::unique_ptr<PositionImpl> impl;
+    };
+
     void set_checkpoint();
     void backpropagate();
-    void backpropagate_to(std::size_t to);
+    void backpropagate_to(position_t const& to);
 
     template<bool ResetInPlace = false, bool Log = false>
-    void backpropagate_and_reset_to(std::size_t to);
+    void backpropagate_and_reset_to(position_t const& to);
     void set_derivative(adhoc_type<Float> const& var, double deriv, std::size_t lane = 0);
     auto get_derivative(adhoc_type<Float> const& var, std::size_t lane = 0) const -> double;
 
@@ -347,9 +359,7 @@ class Tape {
       -> double;
     void zero_adjoints();
 
-    using position_t = std::size_t;
-
-    auto get_position() const -> position_t { return data.next_id; }
+    auto get_position() const -> position_t;
 
     void print() const;
 
