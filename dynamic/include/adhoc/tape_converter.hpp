@@ -53,13 +53,14 @@ struct buffer_t {
     std::vector<std::size_t> free_positions;
 };
 
-template<bool Reset>
+template<bool Reset, bool Vectorised = false>
 auto
 convert_to_lossy_tape(std::size_t to,
                       TapeData const& data,
                       std::vector<std::size_t>& node_location_on_buffer,
                       std::vector<std::size_t> const& checkpoints,
-                      std::vector<buffer_t>& buffers) -> LossyTape
+                      std::vector<buffer_t>& buffers,
+                      std::size_t num_lanes) -> LossyTape
 {
     LossyTape result;
 
@@ -145,6 +146,21 @@ convert_to_lossy_tape(std::size_t to,
         }
     };
 
+    auto reset_loc = [&](std::size_t arg_pos, std::uint8_t buffer_id) {
+        if (buffers[buffer_id].values.size() > (arg_pos * num_lanes)) {
+            if constexpr (Vectorised) {
+                double* dest = &buffers[buffer_id].values[arg_pos * num_lanes];
+#pragma omp simd
+                for (std::size_t i = 0; i < num_lanes; ++i) {
+                    dest[i] = 0.;
+                }
+            }
+            else {
+                buffers[buffer_id].values[arg_pos] = 0.;
+            }
+        }
+    };
+
     for (std::size_t op_idx = from; op_idx-- > to;) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op = node_location_on_buffer[op_idx] != passive_id<std::size_t>;
@@ -170,7 +186,6 @@ convert_to_lossy_tape(std::size_t to,
                     std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                     auto const arg_pos_data = get_loc(arg_id);
-
                     bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
                     bool const arg_is_in_current_buffer = std::get<0>(arg_pos_data);
                     bool const arg_inplace = arg_is_new && arg_is_in_current_buffer;
@@ -185,6 +200,11 @@ convert_to_lossy_tape(std::size_t to,
                             add(res_pos, arg_pos, std::get<1>(arg_pos_data));
                             buffer_free_positions.push_back(res_pos);
                             res_pos = passive_id<std::size_t>;
+                            if (!arg_is_in_current_buffer && arg_is_new) {
+                                // if the argument is not in the current buffer and it's not new, we need to reset its
+                                // value to 0
+                                reset_loc(arg_pos, std::get<1>(arg_pos_data));
+                            }
                         }
                     }
                     else {
@@ -197,6 +217,11 @@ convert_to_lossy_tape(std::size_t to,
                         }
                         else {
                             add(res_pos, arg_pos, std::get<1>(arg_pos_data));
+                            if (!arg_is_in_current_buffer && arg_is_new) {
+                                // if the argument is not in the current buffer and it's not new, we need to reset its
+                                // value to 0
+                                reset_loc(arg_pos, std::get<1>(arg_pos_data));
+                            }
                         }
                     }
                 }
@@ -218,13 +243,20 @@ convert_to_lossy_tape(std::size_t to,
 
                     bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
                     bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                    bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                    bool const rhs_inplace_pre = rhs_is_new && std::get<0>(rhs_pos_data);
+                    bool const lhs_is_in_current_buffer = std::get<0>(lhs_pos_data);
+                    bool const rhs_is_in_current_buffer = std::get<0>(rhs_pos_data);
+                    bool const lhs_inplace = lhs_is_new && lhs_is_in_current_buffer;
+                    bool const rhs_inplace_pre = rhs_is_new && rhs_is_in_current_buffer;
                     bool const rhs_inplace = !lhs_inplace && rhs_inplace_pre;
 
                     if (!lhs_inplace) {
                         update_loc(lhs_pos, std::get<1>(lhs_pos_data));
                         add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
+                        if (!lhs_is_in_current_buffer && lhs_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(lhs_pos, std::get<1>(lhs_pos_data));
+                        }
                     }
 
                     if (!rhs_inplace) {
@@ -234,6 +266,11 @@ convert_to_lossy_tape(std::size_t to,
                         }
                         else {
                             add(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
+                            if (!rhs_is_in_current_buffer && rhs_is_new) {
+                                // if the argument is not in the current buffer and it's not new, we need to reset its
+                                // value to 0
+                                reset_loc(rhs_pos, std::get<1>(rhs_pos_data));
+                            }
                         }
                     }
 
@@ -269,13 +306,20 @@ convert_to_lossy_tape(std::size_t to,
 
                     bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
                     bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                    bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                    bool const rhs_inplace_pre = rhs_is_new && std::get<0>(rhs_pos_data);
+                    bool const lhs_is_in_current_buffer = std::get<0>(lhs_pos_data);
+                    bool const rhs_is_in_current_buffer = std::get<0>(rhs_pos_data);
+                    bool const lhs_inplace = lhs_is_new && lhs_is_in_current_buffer;
+                    bool const rhs_inplace_pre = rhs_is_new && rhs_is_in_current_buffer;
                     bool const rhs_inplace = !lhs_inplace && rhs_inplace_pre;
 
                     if (!lhs_inplace) {
                         update_loc(lhs_pos, std::get<1>(lhs_pos_data));
                         add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
+                        if (!lhs_is_in_current_buffer && lhs_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(lhs_pos, std::get<1>(lhs_pos_data));
+                        }
                     }
 
                     if (!rhs_inplace) {
@@ -285,6 +329,11 @@ convert_to_lossy_tape(std::size_t to,
                         }
                         else {
                             sub(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
+                            if (!rhs_is_in_current_buffer && rhs_is_new) {
+                                // if the argument is not in the current buffer and it's not new, we need to reset its
+                                // value to 0
+                                reset_loc(rhs_pos, std::get<1>(rhs_pos_data));
+                            }
                         }
                     }
 
@@ -323,8 +372,10 @@ convert_to_lossy_tape(std::size_t to,
 
                     bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
                     bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                    bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                    bool const rhs_inplace_pre = rhs_is_new && std::get<0>(rhs_pos_data);
+                    bool const lhs_is_in_current_buffer = std::get<0>(lhs_pos_data);
+                    bool const rhs_is_in_current_buffer = std::get<0>(rhs_pos_data);
+                    bool const lhs_inplace = lhs_is_new && lhs_is_in_current_buffer;
+                    bool const rhs_inplace_pre = rhs_is_new && rhs_is_in_current_buffer;
                     bool const rhs_inplace = !lhs_inplace && rhs_inplace_pre;
 
                     // this is the only case when rhs_multiplier is used BEFORE lhs_multiplier.
@@ -333,6 +384,11 @@ convert_to_lossy_tape(std::size_t to,
                     if (!lhs_inplace) {
                         update_loc(lhs_pos, std::get<1>(lhs_pos_data));
                         mul_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
+                        if (!lhs_is_in_current_buffer && lhs_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(lhs_pos, std::get<1>(lhs_pos_data));
+                        }
                     }
 
                     if (!rhs_inplace) {
@@ -342,6 +398,11 @@ convert_to_lossy_tape(std::size_t to,
                         }
                         else {
                             mul_add(res_pos, rhs_pos, std::get<1>(rhs_pos_data));
+                            if (!rhs_is_in_current_buffer && rhs_is_new) {
+                                // if the argument is not in the current buffer and it's not new, we need to reset its
+                                // value to 0
+                                reset_loc(rhs_pos, std::get<1>(rhs_pos_data));
+                            }
                         }
                     }
 
@@ -374,7 +435,8 @@ convert_to_lossy_tape(std::size_t to,
 
                     auto const arg_pos_data = get_loc(arg_id);
                     bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
-                    bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                    bool const arg_is_in_current_buffer = std::get<0>(arg_pos_data);
+                    bool const arg_inplace = arg_is_new && arg_is_in_current_buffer;
 
                     if (arg_inplace) {
                         // res id should now be lhs id, avoiding a copy and a potential buffer increase
@@ -385,6 +447,11 @@ convert_to_lossy_tape(std::size_t to,
                         add(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
                         res_pos = passive_id<std::size_t>;
+                        if (!arg_is_in_current_buffer && arg_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(arg_pos, std::get<1>(arg_pos_data));
+                        }
                     }
                 }
                 break;
@@ -400,7 +467,8 @@ convert_to_lossy_tape(std::size_t to,
 
                     auto const arg_pos_data = get_loc(arg_id);
                     bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
-                    bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                    bool const arg_is_in_current_buffer = std::get<0>(arg_pos_data);
+                    bool const arg_inplace = arg_is_new && arg_is_in_current_buffer;
 
                     if (arg_inplace) {
                         // this is a subtraction, so we need to negate the value in the buffer
@@ -413,6 +481,11 @@ convert_to_lossy_tape(std::size_t to,
                         sub(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
                         res_pos = passive_id<std::size_t>;
+                        if (!arg_is_in_current_buffer && arg_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(arg_pos, std::get<1>(arg_pos_data));
+                        }
                     }
                 }
                 break;
@@ -439,7 +512,8 @@ convert_to_lossy_tape(std::size_t to,
 
                     auto const arg_pos_data = get_loc(arg_id);
                     bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
-                    bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                    bool const arg_is_in_current_buffer = std::get<0>(arg_pos_data);
+                    bool const arg_inplace = arg_is_new && arg_is_in_current_buffer;
 
                     if (arg_inplace) {
                         mul_inplace(res_pos);
@@ -451,6 +525,11 @@ convert_to_lossy_tape(std::size_t to,
                         mul_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
                         buffer_free_positions.push_back(res_pos);
                         res_pos = passive_id<std::size_t>;
+                        if (!arg_is_in_current_buffer && arg_is_new) {
+                            // if the argument is not in the current buffer and it's not new, we need to reset its
+                            // value to 0
+                            reset_loc(arg_pos, std::get<1>(arg_pos_data));
+                        }
                     }
                 }
                 break;

@@ -458,7 +458,8 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
         auto& lossy_tape = hash_to_lossy_tape.back()[h];
         if (!tape_exists) {
             // we need to compute the lossy tape for this section.
-            lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints, buffers);
+            lossy_tape = convert_to_lossy_tape<Reset, Vectorised>(
+              to, data, node_location_on_buffer, checkpoints, buffers, this->m_num_lanes);
         }
         else {
             buffers.back().size = lossy_tape.buffer_size;
