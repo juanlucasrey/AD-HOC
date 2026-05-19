@@ -23,8 +23,10 @@
 #include "adhoc/backpropagator1.hpp"
 #include "adhoc/backpropagator1lossy.hpp"
 #include "adhoc/backpropagator1lossycompressed.hpp"
+#include "adhoc/backpropagator1lossypathreuse.hpp"
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2v.hpp"
+#include "adhoc/position_impl.hpp"
 
 #include <cstddef>
 #include <iostream>
@@ -44,13 +46,6 @@ record_register(std::vector<OpCode>& ops, std::vector<std::size_t>& ids, OpCode 
 } // namespace
 
 template<class Float>
-struct Tape<Float>::PositionImpl {
-    std::size_t op_position;
-    std::size_t id_position;
-    std::size_t val_position;
-};
-
-template<class Float>
 Tape<Float>::position_t::position_t()
   : impl(std::make_unique<PositionImpl>()){};
 
@@ -67,7 +62,7 @@ Tape<Float>::position_t::operator=(position_t other)
 
 template<class Float>
 Tape<Float>::position_t::position_t(const position_t& other)
-  : impl(std::make_unique<Tape<Float>::PositionImpl>(*other.impl))
+  : impl(std::make_unique<PositionImpl>(*other.impl))
 {
 }
 
@@ -83,7 +78,9 @@ struct Tape<Float>::Impl {
                  BackPropagatorLossy<Float>,
                  BackPropagatorLossy<Float, true>,
                  BackPropagatorLossyCompressed<Float>,
-                 BackPropagatorLossyCompressed<Float, true> >
+                 BackPropagatorLossyCompressed<Float, true>,
+                 BackPropagatorLossyPathReuse<Float>,
+                 BackPropagatorLossyPathReuse<Float, true> >
       bp = BackPropagator<Float>();
 };
 
@@ -213,6 +210,12 @@ Tape<Float>::set_method(Method m)
     else if (m == Method::FirstOrderVLossyCompressed) {
         this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
     }
+    else if (m == Method::FirstOrderLossyPathReuse) {
+        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
+    }
+    else if (m == Method::FirstOrderVLossyPathReuse) {
+        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
+    }
 }
 
 template<class Float>
@@ -261,6 +264,14 @@ Tape<Float>::get_method() const -> Method
 
     if (std::holds_alternative<BackPropagatorLossyCompressed<Float, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressed;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float> >(this->impl->bp)) {
+        return Method::FirstOrderLossyPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float, true> >(this->impl->bp)) {
+        return Method::FirstOrderVLossyPathReuse;
     }
 
     throw std::runtime_error("Invalid backpropagator type");
@@ -314,6 +325,14 @@ Tape<Float>::get_order() const -> std::size_t
         return 1;
     }
 
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float> >(this->impl->bp)) {
+        return 1;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float, true> >(this->impl->bp)) {
+        return 1;
+    }
+
     throw std::runtime_error("Invalid backpropagator type");
     return 0;
 }
@@ -329,15 +348,19 @@ template<class Float>
 void
 Tape<Float>::backpropagate()
 {
-    std::visit([&data = this->data](auto& arg) { arg.backpropagate_to(0, data); }, this->impl->bp);
+    std::visit(
+      [&data = this->data](auto& arg) {
+          PositionImpl pos0;
+          arg.backpropagate_to(pos0, data);
+      },
+      this->impl->bp);
 }
 
 template<class Float>
 void
 Tape<Float>::backpropagate_to(position_t const& pos)
 {
-    std::size_t to = pos.impl->op_position;
-    std::visit([to, &data = this->data](auto& arg) { arg.backpropagate_to(to, data); }, this->impl->bp);
+    std::visit([pos, &data = this->data](auto& arg) { arg.backpropagate_to(*pos.impl, data); }, this->impl->bp);
 }
 
 template<class Float>
@@ -345,9 +368,8 @@ template<bool ResetInPlace, bool Log>
 void
 Tape<Float>::backpropagate_and_reset_to(position_t const& pos)
 {
-    std::size_t to = pos.impl->op_position;
     std::visit(
-      [to, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(to, data); },
+      [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(*pos.impl, data); },
       this->impl->bp);
 }
 

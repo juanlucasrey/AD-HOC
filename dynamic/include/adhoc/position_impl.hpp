@@ -18,47 +18,30 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC_TAPE_DATA_HPP
-#define ADHOC_TAPE_DATA_HPP
+#ifndef ADHOC_POSITION_IMPL_HPP
+#define ADHOC_POSITION_IMPL_HPP
 
-#include <cstdint>
-#include <vector>
+#include "tape_data.hpp"
+
+#include <cstddef>
 
 namespace adhoc {
 
-enum class OpCode : std::uint8_t {
-    ADD,
-    SUB,
-    MUL,
-    ADD_C,
-    SUB_C,
-    MUL_C,
-    NORM, // a.k.a. SQUARE
-    ABS,
-    INV,
-    SQRT,
-    POW_C,
-    EXP,
-    LOG,
-    ERF,
-    ERFC,
-    COS,
-    REG_INPUT,
-    REG_OUTPUT,
-    // IFT
-    // IFT_START,
-    // IFT_END,
-    // REG_INPUT_IFT,
-    // REG_OUTPUT_IFT,
+struct PositionImpl {
+    std::size_t op_position{ 0 };
+    std::size_t id_position{ 0 };
+    std::size_t val_position{ 0 };
 };
 
-struct TapeData {
-    std::vector<OpCode> ops;
-    std::vector<double> vals;
-    std::vector<std::size_t> ids;
-    std::size_t next_id{ 0 };
-};
+inline void
+reset(PositionImpl const& pos, TapeData& data)
+{
+    data.ops.resize(pos.op_position);
+    data.vals.resize(pos.val_position);
+    data.ids.resize(pos.id_position);
+    data.next_id = pos.op_position;
+}
 
 } // namespace adhoc
 
-#endif // ADHOC_TAPE_DATA_HPP
+#endif // ADHOC_POSITION_IMPL_HPP

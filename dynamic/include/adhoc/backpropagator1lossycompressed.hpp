@@ -22,6 +22,7 @@
 #define ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 
 #include "passive_id.hpp"
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <algorithm>
@@ -219,15 +220,16 @@ class BackPropagatorLossyCompressed {
     }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float, bool Vectorised, bool ConsolidateLargeUnivariate>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(std::size_t to,
+BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(PositionImpl const& pos,
                                                                                                TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
     if (from == checkpoints.back()) {
         checkpoints.pop_back();
@@ -248,41 +250,11 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::vector<std::size_t> number_dependents(from - to);
 
     // LOOP 1: backward, to count number of dependents for each node and detect which nodes are active
-    val_idx = vals.size();
     id_idx = ids.size();
     for (std::size_t op_idx = from; op_idx-- > to;) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op =
           this->node_location_on_buffer[op_idx] != passive_id<std::size_t> || (number_dependents[op_idx - to] > 0);
-
-        switch (op) {
-            case OpCode::REG_INPUT:
-            case OpCode::REG_OUTPUT:
-            case OpCode::ADD:
-            case OpCode::SUB:
-            case OpCode::ADD_C:
-            case OpCode::SUB_C: {
-                break;
-            }
-            case OpCode::MUL_C:
-            case OpCode::NORM:
-            case OpCode::INV:
-            case OpCode::ABS:
-            case OpCode::EXP:
-            case OpCode::LOG:
-            case OpCode::ERF:
-            case OpCode::ERFC: {
-                val_idx -= 1;
-                break;
-            }
-            case OpCode::MUL:
-            case OpCode::COS:
-            case OpCode::SQRT:
-            case OpCode::POW_C: {
-                val_idx -= 2;
-                break;
-            }
-        }
 
         switch (op) {
             case OpCode::REG_INPUT: {
@@ -343,7 +315,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         }
     }
     std::size_t const id_idx_start = id_idx;
-    std::size_t const val_idx_start = val_idx;
+    std::size_t const val_idx_start = pos.val_position;
 
     buffer_t buffer_multipliers;
 

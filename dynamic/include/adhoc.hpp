@@ -198,13 +198,16 @@ enum class Method {
     FirstOrderLossy,
     FirstOrderVLossy,
     FirstOrderLossyCompressed,
-    FirstOrderVLossyCompressed
+    FirstOrderVLossyCompressed,
+    FirstOrderLossyPathReuse,
+    FirstOrderVLossyPathReuse,
 };
+
+struct PositionImpl;
 
 template<class Float>
 class Tape {
   private:
-    struct PositionImpl;
     struct Impl;
 
     std::unique_ptr<Impl> impl;

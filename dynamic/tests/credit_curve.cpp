@@ -2749,9 +2749,78 @@ lossy_test()
     EXPECT_NEAR_ABS(f12, f22, 2e-15);
 }
 
+void
+lossy_reuse_test()
+{
+    // cds?
+    double x = 0.0050000050000000001;
+    double cds_quote = 0.0025571700000000001;
+    auto sc = credit_curve(pricingDate);
+    sc.addLastPoint(2016y / 12 / 22, 1.0);
+
+    const auto yc = get_yc();
+    std::vector<CDS> cdsInstruments = get_cds();
+    auto& cds = cdsInstruments[0];
+    double df1 = 0;
+    double f1 = 0;
+
+    double df2 = 0;
+    double f2 = 0;
+
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+
+    {
+        D inputD = x;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(adhoc::Method::FirstOrderLossy);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+        D outputD = 0.0;
+
+        D cds_quote2 = cds_quote;
+        credit_curve<D> sc2(sc);
+
+        set_rate_and_price(sc2, yc, cds, cds_quote2, pricingDate, inputD, outputD);
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+        df1 = tape.get_derivative(inputD);
+        f1 = adhoc::passive_value(outputD);
+    }
+
+    {
+        D inputD = x;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        tapeptr->set_method(adhoc::Method::FirstOrderLossyPathReuse);
+        auto& tape = *tapeptr;
+        tape.register_variable(inputD);
+        D outputD = 0.0;
+
+        D cds_quote2 = cds_quote;
+        credit_curve<D> sc2(sc);
+
+        set_rate_and_price(sc2, yc, cds, cds_quote2, pricingDate, inputD, outputD);
+
+        tape.register_output_variable(outputD);
+
+        tape.set_derivative(outputD, 1.0);
+        tape.backpropagate();
+        df2 = tape.get_derivative(inputD);
+        f2 = adhoc::passive_value(outputD);
+    }
+
+    EXPECT_NEAR_ABS(df1, df2, 2e-14);
+    EXPECT_NEAR_ABS(f1, f2, 2e-15);
+}
+
 auto
 main() -> int
 {
+    lossy_reuse_test();
+
     lossy_test();
     compressed_test();
     normal_calib();

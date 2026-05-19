@@ -22,6 +22,7 @@
 #define ADHOC_BACKPROPAGATOR2_HPP
 
 #include "passive_id.hpp"
+#include "position_impl.hpp"
 #include "tape_data.hpp"
 
 #include <cmath>
@@ -113,14 +114,15 @@ class BackPropagator2 {
     auto size_of(bool /* capacity */ = false) const -> std::size_t { return 0; }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(std::size_t to, TapeData& data);
+    void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
 template<class Float>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator2<Float>::backpropagate_to(std::size_t to, TapeData& data)
+BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
+    std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
     const auto& ops = data.ops;
     const auto& vals = data.vals;
