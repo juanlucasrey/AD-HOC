@@ -90,8 +90,8 @@ class BackPropagatorLossy {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -120,8 +120,8 @@ class BackPropagatorLossy {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -154,20 +154,16 @@ class BackPropagatorLossy {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto buffed_id = static_cast<std::uint8_t>(std::distance(checkpoints.cbegin(), it) - 1);
-            buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
+            this->buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
         }
         else {
             throw;
         }
     }
 
-    void set_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, double /* deriv */)
-    {
-        // not supported for lossy tape (first order only)
-        throw;
-    }
+    void set_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, double /* deriv */) { throw; }
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
@@ -179,18 +175,17 @@ class BackPropagatorLossy {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            return buffers[std::distance(checkpoints.cbegin(), it) - 1].values[(var_pos * this->m_num_lanes) + lane];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
+              .values[(var_pos * this->m_num_lanes) + lane];
         }
-        else {
-            throw;
-        }
+
+        throw;
         return 0.;
     }
 
     auto get_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, std::size_t /* lane */) const -> double
     {
-        // order is too high for lossy tape
         return 0.;
     }
 
@@ -198,7 +193,7 @@ class BackPropagatorLossy {
 
     void zero_adjoints()
     {
-        for (auto& b : buffers) {
+        for (auto& b : this->buffers) {
             std::fill(b.values.begin(), b.values.end(), 0.0);
         }
     }
@@ -206,10 +201,10 @@ class BackPropagatorLossy {
     auto size_of(bool capacity = false) const -> std::size_t
     {
         std::size_t size = 0;
-        size += 1 * sizeof(std::size_t); // m_num_lanes
+        size += sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
-        size += sizeof(std::size_t) * (capacity ? checkpoints.capacity() : checkpoints.size());
-        for (const auto& buffer : buffers) {
+        size += sizeof(std::size_t) * (capacity ? this->checkpoints.capacity() : this->checkpoints.size());
+        for (const auto& buffer : this->buffers) {
             size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
             size += sizeof(std::size_t) * (capacity ? buffer.free_positions.capacity() : buffer.free_positions.size());
         }
@@ -375,7 +370,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
 
         auto update_loc = [this, &buffers = this->buffers](std::size_t& arg_pos, std::uint8_t buffer_id) {
             if (arg_pos == passive_id<std::size_t>) {
-                auto& arg_buffer = buffers[buffer_id];
+                auto& arg_buffer = this->buffers[buffer_id];
                 if (arg_buffer.free_positions.empty()) {
                     arg_pos = arg_buffer.size;
                     ++arg_buffer.size;
@@ -439,8 +434,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
               std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
               auto const arg_pos_data = get_loc(arg_id);
-              bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-              bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+              bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+              bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
               if (arg_inplace) {
                   mul_inplace(res_pos, der_local_1);
@@ -481,8 +476,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         auto const arg_pos_data = get_loc(arg_id);
 
                         if constexpr (Reset) {
-                            bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                            bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                            bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+                            bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
                             if (arg_inplace) {
                                 // res id should now be lhs id, avoiding a copy and a potential buffer increase
                                 std::swap(arg_pos, res_pos);
@@ -515,10 +510,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         auto const lhs_pos_data = get_loc(lhs_id);
                         auto const rhs_pos_data = get_loc(rhs_id);
 
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                        bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
+                        bool const rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
                         if (!lhs_inplace) {
                             copy_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
@@ -558,10 +553,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         auto const lhs_pos_data = get_loc(lhs_id);
                         auto const rhs_pos_data = get_loc(rhs_id);
 
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                        bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
+                        bool const rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
                         if (!lhs_inplace) {
                             copy_add(res_pos, lhs_pos, std::get<1>(lhs_pos_data));
@@ -606,10 +601,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         auto const lhs_pos_data = get_loc(lhs_id);
                         auto const rhs_pos_data = get_loc(rhs_id);
 
-                        bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-                        bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-                        bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-                        bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+                        bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
+                        bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                        bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
+                        bool const rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
                         if (!lhs_inplace) {
                             copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), rhs_val);
@@ -647,8 +642,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                         auto const arg_pos_data = get_loc(arg_id);
-                        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                        bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                        bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+                        bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
                         if (arg_inplace) {
                             // res id should now be lhs id, avoiding a copy and a potential buffer increase
@@ -672,8 +667,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
                         auto const arg_pos_data = get_loc(arg_id);
-                        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-                        bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+                        bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+                        bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
                         if (arg_inplace) {
                             // this is a subtraction, so we need to negate the value in the buffer
@@ -693,9 +688,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = vals[val_idx];
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = vals[val_idx];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -704,9 +699,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = 2.0 * vals[val_idx];
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = 2.0 * vals[val_idx];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -715,9 +710,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = -vals[val_idx] * vals[val_idx];
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = -vals[val_idx] * vals[val_idx];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -726,9 +721,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = std::copysign(1.0, vals[val_idx]);
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = std::copysign(1.0, vals[val_idx]);
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -737,9 +732,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = vals[val_idx];
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = vals[val_idx];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -748,9 +743,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = 1.0 / vals[val_idx];
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = 1.0 / vals[val_idx];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -759,10 +754,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                        double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
+                        double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -771,10 +766,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 1;
                     id_idx -= 2;
                     if (use_this_op) {
-                        constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                        double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
+                        double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -783,9 +778,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 2;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const der_local_1 = -std::sin(vals[val_idx]);
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const der_local_1 = -std::sin(vals[val_idx]);
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -794,10 +789,10 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 2;
                     id_idx -= 2;
                     if (use_this_op) {
-                        double const one_over_in = 1. / vals[val_idx];
-                        double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
+                        double const one_over_in = 1. / vals[val_idx];
+                        double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -806,11 +801,11 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     val_idx -= 2;
                     id_idx -= 2;
                     if (use_this_op) {
+                        std::size_t const arg_id = ids[id_idx];
+                        std::size_t const res_id = ids[id_idx + 1];
                         double const lhs_arg = vals[val_idx];
                         double const rhs_arg = vals[val_idx + 1];
                         double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
-                        std::size_t const arg_id = ids[id_idx];
-                        std::size_t const res_id = ids[id_idx + 1];
                         update_univariate(arg_id, res_id, der_local_1);
                     }
                     break;
@@ -820,7 +815,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
 
         if constexpr (Reset) {
             if (loop_to == checkpoints.back()) {
-                buffers.back() = buffer_t{};
+                this->buffers.back() = {};
             }
         }
 
@@ -828,12 +823,8 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
     }
 
     if constexpr (Reset) {
-        data.ops.resize(to);
-        data.vals.resize(val_idx);
-        data.ids.resize(id_idx);
-        data.next_id = to;
-
-        this->node_location_on_buffer.resize(to);
+        reset(pos, data);
+        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 

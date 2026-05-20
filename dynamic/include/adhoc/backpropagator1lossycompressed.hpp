@@ -27,11 +27,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <numbers>
 #include <optional>
 #include <vector>
-
-#include <map>
 
 namespace adhoc {
 
@@ -93,8 +92,8 @@ class BackPropagatorLossyCompressed {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -123,8 +122,8 @@ class BackPropagatorLossyCompressed {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto& var_buffer = buffers[std::distance(checkpoints.cbegin(), it) - 1];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
             if (var_buffer.free_positions.empty()) {
                 var_pos = var_buffer.size;
                 ++var_buffer.size;
@@ -157,20 +156,16 @@ class BackPropagatorLossyCompressed {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            auto buffed_id = static_cast<std::uint8_t>(std::distance(checkpoints.cbegin(), it) - 1);
-            buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
+            this->buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
         }
         else {
             throw;
         }
     }
 
-    void set_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, double /* deriv */)
-    {
-        // not supported for lossy tape (first order only)
-        throw;
-    }
+    void set_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, double /* deriv */) { throw; }
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
@@ -182,18 +177,17 @@ class BackPropagatorLossyCompressed {
                 throw;
             }
 
-            auto it = std::upper_bound(checkpoints.cbegin(), checkpoints.cend(), var_id);
-            return buffers[std::distance(checkpoints.cbegin(), it) - 1].values[(var_pos * this->m_num_lanes) + lane];
+            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+            return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
+              .values[(var_pos * this->m_num_lanes) + lane];
         }
-        else {
-            throw;
-        }
+
+        throw;
         return 0.;
     }
 
     auto get_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, std::size_t /* lane */) const -> double
     {
-        // order is too high for lossy tape
         return 0.;
     }
 
@@ -201,7 +195,7 @@ class BackPropagatorLossyCompressed {
 
     void zero_adjoints()
     {
-        for (auto& b : buffers) {
+        for (auto& b : this->buffers) {
             std::fill(b.values.begin(), b.values.end(), 0.0);
         }
     }
@@ -209,10 +203,10 @@ class BackPropagatorLossyCompressed {
     auto size_of(bool capacity = false) const -> std::size_t
     {
         std::size_t size = 0;
-        size += 1 * sizeof(std::size_t); // m_num_lanes
+        size += sizeof(std::size_t); // m_num_lanes
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
-        size += sizeof(std::size_t) * (capacity ? checkpoints.capacity() : checkpoints.size());
-        for (const auto& buffer : buffers) {
+        size += sizeof(std::size_t) * (capacity ? this->checkpoints.capacity() : this->checkpoints.size());
+        for (const auto& buffer : this->buffers) {
             size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
             size += sizeof(std::size_t) * (capacity ? buffer.free_positions.capacity() : buffer.free_positions.size());
         }
@@ -500,14 +494,14 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                 multiplier_keep_alive[multiplier_loc_rhs] = false;
             }
 
-            bool has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
+            bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
             // there is potential for a bivariate operator on the same argument, we need to check if
             // this is the case and update the multiplier if so
-            bool bivariate_consolidate_this =
+            bool const bivariate_consolidate_this =
               has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] == multiplier_loc_from[multiplier_loc_rhs]);
 
             if (bivariate_consolidate_this) {
-                std::size_t origin_id = multiplier_loc_from[multiplier_loc_lhs];
+                std::size_t const origin_id = multiplier_loc_from[multiplier_loc_lhs];
                 multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
 
                 buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
@@ -663,7 +657,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                             throw;
                         }
 
-                        std::size_t new_pos = get_mult_loc();
+                        std::size_t const new_pos = get_mult_loc();
 
                         multiplier_loc_from[new_pos] = in_id;
                         buffer_multipliers.values[new_pos] = local_derivatives.begin()->second;
@@ -1017,7 +1011,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                                                                          std::uint8_t buffer_id,
                                                                          double multiplier,
                                                                          mul_type multiplier_type) {
-        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
+        bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
 
         if (arg_is_new) {
             auto& arg_buffer = this->buffers[buffer_id];
@@ -1057,7 +1051,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     auto const& checkpoints_c = this->checkpoints;
     auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
         auto it = std::upper_bound(checkpoints_c.begin(), checkpoints_c.end(), id);
-        auto buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
+        auto const buffer_id = static_cast<std::uint8_t>(std::distance(checkpoints_c.cbegin(), it) - 1);
         return { it == checkpoints_c.end(), buffer_id };
     };
 
@@ -1076,8 +1070,8 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
             auto const multiplier_type = values_type[first_multiplier_origin];
 
             auto const arg_pos_data = get_loc(arg_id);
-            bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-            bool arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+            bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+            bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
             if (arg_inplace && !keep_alive) {
                 if (multiplier_type != mul_type::ONE) {
@@ -1117,10 +1111,10 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
             auto const lhs_pos_data = get_loc(lhs_id);
             auto const rhs_pos_data = get_loc(rhs_id);
 
-            bool lhs_is_new = (lhs_pos == passive_id<std::size_t>);
-            bool rhs_is_new = (rhs_pos == passive_id<std::size_t>);
-            bool lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
-            bool rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
+            bool const lhs_is_new = (lhs_pos == passive_id<std::size_t>);
+            bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+            bool const lhs_inplace = lhs_is_new && std::get<0>(lhs_pos_data);
+            bool const rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
             if (!lhs_inplace) {
                 copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), mul_1, mul_1_type);
@@ -1167,19 +1161,12 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     }
 
     if constexpr (Reset) {
-        data.ops.resize(to);
-        data.vals.resize(val_idx_start);
-        data.ids.resize(id_idx_start);
-        data.next_id = to;
-
-        this->node_location_on_buffer.resize(to);
-    }
-
-    if constexpr (Reset) {
         if (!checkpoints.empty() && to == checkpoints.back()) {
-            // buffers.pop_back();
-            buffers.back() = buffer_t{};
+            this->buffers.back() = {};
         }
+
+        reset(pos, data);
+        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 
