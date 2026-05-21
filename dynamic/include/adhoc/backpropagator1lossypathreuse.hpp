@@ -246,12 +246,13 @@ template<bool Reset, bool ResetInPlace, bool Log>
 void
 BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
-    auto convert_to_lossy_tape = [](std::size_t to,
+    auto convert_to_lossy_tape = [](PositionImpl const& pos,
                                     TapeData const& data,
                                     std::vector<std::size_t>& node_location_on_buffer,
                                     std::vector<std::size_t> const& checkpoints,
                                     std::vector<buffer_t>& buffers,
                                     std::size_t num_lanes) -> LossyTape {
+        std::size_t const to = pos.op_position;
         LossyTape result;
 
         std::size_t from = data.next_id;
@@ -937,8 +938,6 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
     std::size_t val_idx = vals.size();
     std::size_t id_idx = ids.size();
 
-    this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
-
     if (from == this->checkpoints.back()) {
         this->checkpoints.pop_back();
         this->buffers.pop_back();
@@ -962,35 +961,12 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
         auto& lossy_tape = hash_to_lossy_tape.back()[h];
         if (!tape_exists) {
             // we need to compute the lossy tape for this section.
+            this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
             lossy_tape =
-              convert_to_lossy_tape(to, data, node_location_on_buffer, checkpoints, buffers, this->m_num_lanes);
+              convert_to_lossy_tape(pos, data, node_location_on_buffer, checkpoints, buffers, this->m_num_lanes);
         }
         else {
             buffers.back().size = lossy_tape.buffer_size;
-
-            // check equality of lossy tapes
-            // auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints,
-            // buffers);
-
-            // auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
-            //     if (lt1.lossy_op != lt2.lossy_op) {
-            //         return false;
-            //     }
-
-            //     if (lt1.on_which_buffer != lt2.on_which_buffer) {
-            //         return false;
-            //     }
-
-            //     if (lt1.pos != lt2.pos) {
-            //         return false;
-            //     }
-
-            //     return true;
-            // };
-
-            // if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
-            //     throw;
-            // }
         }
 
         ValueFetcher value_fetcher(data, lossy_tape, to);
