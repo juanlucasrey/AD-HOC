@@ -325,56 +325,386 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     };
     std::vector<mul_type> values_type;
 
-    auto combine_mul_type = [](mul_type a, mul_type b) -> mul_type {
-        if (a == mul_type::ANY || b == mul_type::ANY) {
+    auto combine_mul_type = []<mul_type B>(mul_type a) -> mul_type {
+        if constexpr (B == mul_type::ANY) {
             return mul_type::ANY;
         }
-        if (a == b) {
-            return mul_type::ONE;
+        else {
+            if (a == mul_type::ANY) {
+                return mul_type::ANY;
+            }
+            if (a == B) {
+                return mul_type::ONE;
+            }
+            return mul_type::MINUS_ONE;
         }
-        return mul_type::MINUS_ONE;
+    };
+
+    auto get_multiplier = [&](std::size_t pos) -> double {
+        auto const mult_type = values_type[pos];
+        if (mult_type == mul_type::ONE) {
+            return 1.0;
+        }
+
+        if (mult_type == mul_type::MINUS_ONE) {
+            return -1.0;
+        }
+
+        return buffer_multipliers.values[pos];
     };
 
     auto multiplier_set_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
         if constexpr (M == mul_type::ONE) {
             buffer_multipliers.values[pos] = 1.0;
-            values_type[pos] = mul_type::ONE;
         }
         else if constexpr (M == mul_type::MINUS_ONE) {
             buffer_multipliers.values[pos] = -1.0;
-            values_type[pos] = mul_type::MINUS_ONE;
         }
         else {
             static_assert(M == mul_type::ANY, "Invalid multiplier type");
             buffer_multipliers.values[pos] = multiplier;
-            values_type[pos] = mul_type::ANY;
         }
     };
 
-    auto multiplier_multiply_incoming = [&, combine_mul_type]<mul_type M>(std::size_t const pos,
-                                                                          double const multiplier = 0) {
+    auto multiplier_multiply_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
         if constexpr (M == mul_type::ONE) {
-            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
         }
         else if constexpr (M == mul_type::MINUS_ONE) {
             buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
-            values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
         }
         else {
             static_assert(M == mul_type::ANY, "Invalid multiplier type");
             buffer_multipliers.values[pos] *= multiplier;
-            values_type[pos] = mul_type::ANY;
         }
     };
 
     auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
-        buffer_multipliers.values[pos1] += buffer_multipliers.values[pos2];
-        values_type[pos1] = mul_type::ANY;
+        buffer_multipliers.values[pos1] += get_multiplier(pos2);
     };
 
     auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
-        buffer_multipliers.values[pos1] *= buffer_multipliers.values[pos2];
-        values_type[pos1] = mul_type::ANY;
+        buffer_multipliers.values[pos1] *= get_multiplier(pos2);
+    };
+
+    auto get_mult_loc = [&]() -> std::size_t {
+        if (buffer_multipliers.free_positions.empty()) {
+            std::size_t result = buffer_multipliers.size;
+            ++buffer_multipliers.size;
+            buffer_multipliers.values.resize(buffer_multipliers.values.size() + 1);
+            values_type.resize(values_type.size() + 1);
+            multiplier_loc_from.resize(buffer_multipliers.size);
+            multiplier_keep_alive.resize(buffer_multipliers.size);
+            return result;
+        }
+
+        std::size_t result = buffer_multipliers.free_positions.back();
+        buffer_multipliers.free_positions.pop_back();
+        return result;
+    };
+
+    auto update_univariate = [&]<mul_type M, bool KeepAlive = false>(
+                               std::size_t const arg_id, std::size_t const res_id, double const multiplier = 0) {
+        bool const arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
+                                         (multiplier_origin[(arg_id - to) * 2] != passive_id<std::size_t>) &&
+                                         (multiplier_origin[((arg_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+        auto& mult_origin_res = multiplier_origin[(res_id - to) * 2];
+
+        if (arg_is_induced_path) {
+            auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
+            if constexpr (M == mul_type::ANY) {
+                multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier);
+            }
+            else {
+                multiplier_multiply_incoming.template operator()<M>(mul_origin_arg);
+            }
+            values_type[mul_origin_arg] = combine_mul_type.template operator()<M>(values_type[mul_origin_arg]);
+            multiplier_keep_alive[mul_origin_arg] = KeepAlive;
+
+            std::swap(mul_origin_arg, mult_origin_res);
+            --number_dependents[arg_id - to];
+        }
+        else {
+            mult_origin_res = get_mult_loc();
+            if constexpr (M == mul_type::ANY) {
+                multiplier_set_incoming.template operator()<mul_type::ANY>(mult_origin_res, multiplier);
+            }
+            else {
+                multiplier_set_incoming.template operator()<M>(mult_origin_res);
+            }
+            values_type[mult_origin_res] = M;
+            multiplier_loc_from[mult_origin_res] = arg_id;
+            multiplier_keep_alive[mult_origin_res] = KeepAlive;
+        }
+    };
+
+    auto update_bivariate = [&]<mul_type M1, mul_type M2>(std::size_t const lhs_id,
+                                                          std::size_t const rhs_id,
+                                                          std::size_t const res_id,
+                                                          double const multiplier_lhs = 0,
+                                                          double const multiplier_rhs = 0) {
+        bool const lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
+                                         (multiplier_origin[(lhs_id - to) * 2] != passive_id<std::size_t>) &&
+                                         (multiplier_origin[((lhs_id - to) * 2) + 1] == passive_id<std::size_t>);
+        bool const rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
+                                         (multiplier_origin[(rhs_id - to) * 2] != passive_id<std::size_t>) &&
+                                         (multiplier_origin[((rhs_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+        std::size_t multiplier_loc_lhs = passive_id<std::size_t>;
+        if (lhs_is_induced_path) {
+            auto& mul_origin_arg = multiplier_origin[(lhs_id - to) * 2];
+            if constexpr (M1 == mul_type::ANY) {
+                multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_lhs);
+            }
+            else {
+                multiplier_multiply_incoming.template operator()<M1>(mul_origin_arg);
+            }
+            values_type[mul_origin_arg] = combine_mul_type.template operator()<M1>(values_type[mul_origin_arg]);
+            std::swap(multiplier_loc_lhs, mul_origin_arg);
+            --number_dependents[lhs_id - to];
+        }
+        else {
+            multiplier_loc_lhs = get_mult_loc();
+            if constexpr (M1 == mul_type::ANY) {
+                multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_lhs, multiplier_lhs);
+            }
+            else {
+                multiplier_set_incoming.template operator()<M1>(multiplier_loc_lhs);
+            }
+            values_type[multiplier_loc_lhs] = M1;
+            multiplier_loc_from[multiplier_loc_lhs] = lhs_id;
+            multiplier_keep_alive[multiplier_loc_lhs] = false;
+        }
+
+        std::size_t multiplier_loc_rhs = passive_id<std::size_t>;
+        if (rhs_is_induced_path) {
+            auto& mul_origin_arg = multiplier_origin[(rhs_id - to) * 2];
+            if constexpr (M2 == mul_type::ANY) {
+                multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_rhs);
+            }
+            else {
+                multiplier_multiply_incoming.template operator()<M2>(mul_origin_arg);
+            }
+            values_type[mul_origin_arg] = combine_mul_type.template operator()<M2>(values_type[mul_origin_arg]);
+            std::swap(multiplier_loc_rhs, mul_origin_arg);
+            --number_dependents[rhs_id - to];
+        }
+        else {
+            multiplier_loc_rhs = get_mult_loc();
+            if constexpr (M2 == mul_type::ANY) {
+                multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_rhs, multiplier_rhs);
+            }
+            else {
+                multiplier_set_incoming.template operator()<M2>(multiplier_loc_rhs);
+            }
+            values_type[multiplier_loc_rhs] = M2;
+            multiplier_loc_from[multiplier_loc_rhs] = rhs_id;
+            multiplier_keep_alive[multiplier_loc_rhs] = false;
+        }
+
+        bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
+        // there is potential for a bivariate operator on the same argument, we need to check if
+        // this is the case and update the multiplier if so
+        bool const bivariate_consolidate_this =
+          has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] == multiplier_loc_from[multiplier_loc_rhs]);
+
+        if (bivariate_consolidate_this) {
+            std::size_t const origin_id = multiplier_loc_from[multiplier_loc_lhs];
+            multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
+            values_type[multiplier_loc_lhs] = mul_type::ANY;
+
+            buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
+            multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
+
+            multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
+
+            if (origin_id >= to) {
+                auto& number_dependents_to_update = number_dependents[origin_id - to];
+                --number_dependents_to_update;
+
+                bool const has_single_origin =
+                  (multiplier_origin[(origin_id - to) * 2] != passive_id<std::size_t>) &&
+                  (multiplier_origin[((origin_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+                bool const univariate_consolidate_this = (number_dependents_to_update == 1) && has_single_origin;
+                if (univariate_consolidate_this) {
+                    // this node now has only one dependent, we can reintroduce a
+                    // multiplication chain
+                    auto& coming_from = multiplier_origin[(origin_id - to) * 2];
+                    multiplier_multiply(coming_from, multiplier_loc_lhs);
+                    values_type[coming_from] = mul_type::ANY;
+
+                    buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
+                    multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
+
+                    multiplier_origin[(res_id - to) * 2] = coming_from;
+                    coming_from = passive_id<std::size_t>;
+                    --number_dependents[origin_id - to];
+                }
+            }
+        }
+        else {
+            multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
+            multiplier_origin[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
+
+            if constexpr (ConsolidateLargeUnivariate) {
+                auto check_univariate_subtree = [&](std::size_t res_id) -> std::optional<std::size_t> {
+                    std::optional<std::size_t> result = std::nullopt;
+
+                    std::map<std::size_t, std::size_t> local_number_dependents;
+                    local_number_dependents[res_id] = number_dependents[res_id - to];
+
+                    // this while should not be needed, because allprevious nodes should have been checked for
+                    // univariate subtrees
+                    //  while (true) {
+                    do {
+                        auto const top_id = local_number_dependents.rbegin()->first;
+                        auto const top_deps = local_number_dependents.rbegin()->second;
+
+                        if (top_id < to) {
+                            // we reached a node that crosses boundaries
+                            return result;
+                        }
+
+                        if (top_deps != number_dependents[top_id - to]) {
+                            // a dependency is not included in this subtree, so we cannot consolidate
+                            return result;
+                        }
+
+                        local_number_dependents.erase(top_id);
+                        std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                        std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+
+                        if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                            std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
+                            std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
+                            ++local_number_dependents[id_origin1];
+                            ++local_number_dependents[id_origin2];
+                        }
+                        else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                            std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
+                            ++local_number_dependents[id_origin];
+                        }
+                        else {
+                            // we reached an input node, while number of dependents is larger than 1, so
+                            // this cannot be a univariate operator
+                            return result;
+                        }
+
+                    } while (local_number_dependents.size() > 1);
+
+                    result = local_number_dependents.rbegin()->first;
+                    // this while should not be needed, because allprevious nodes should have been checked for
+                    // univariate subtrees
+                    // }
+
+                    return result;
+                };
+
+                auto compress_univariate_subtree = [&](std::size_t in_id, std::size_t res_id) {
+                    // when compressing a univarate subtree, we do a forward pass.
+                    // why? because a forward pass is simpler, especially for higher orders.
+
+                    std::map<std::size_t, double> local_derivatives;
+                    local_derivatives[res_id] = 1.0;
+
+                    do {
+                        auto const top_id = local_derivatives.rbegin()->first;
+                        auto const top_der = local_derivatives.rbegin()->second;
+                        local_derivatives.erase(top_id);
+
+                        std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                        std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+
+                        if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                            std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
+                            std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
+
+                            std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
+                            std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
+                            local_derivatives[id_origin1] += top_der * get_multiplier(loc_multipler_1);
+                            local_derivatives[id_origin2] += top_der * get_multiplier(loc_multipler_2);
+
+                            buffer_multipliers.free_positions.push_back(loc_multipler_1);
+                            multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
+                            loc_multipler_1 = passive_id<std::size_t>;
+
+                            buffer_multipliers.free_positions.push_back(loc_multipler_2);
+                            multiplier_loc_from[loc_multipler_2] = passive_id<std::size_t>;
+                            loc_multipler_2 = passive_id<std::size_t>;
+
+                            if (id_origin1 >= to) {
+                                --number_dependents[id_origin1 - to];
+                            }
+                            if (id_origin2 >= to) {
+                                --number_dependents[id_origin2 - to];
+                            }
+                        }
+                        else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                            std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
+
+                            std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
+                            local_derivatives[id_origin] += top_der * get_multiplier(loc_multipler);
+
+                            buffer_multipliers.free_positions.push_back(loc_multipler);
+                            multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
+                            loc_multipler = passive_id<std::size_t>;
+
+                            if (id_origin >= to) {
+                                --number_dependents[id_origin - to];
+                            }
+                        }
+                        else {
+                            // we reached an input node, while number of dependents is larger than 1, so
+                            // this cannot be a univariate operator
+                            throw;
+                        }
+
+                    } while (local_derivatives.size() > 1);
+
+                    if (local_derivatives.begin()->first != in_id) {
+                        // this should not happen, because we should have detected the univariate subtree correctly
+                        throw;
+                    }
+
+                    std::size_t const new_pos = get_mult_loc();
+
+                    multiplier_loc_from[new_pos] = in_id;
+                    buffer_multipliers.values[new_pos] = local_derivatives.begin()->second;
+                    multiplier_origin[(res_id - to) * 2] = new_pos;
+                    if (in_id >= to) {
+                        ++number_dependents[in_id - to];
+
+                        bool const has_single_origin =
+                          (multiplier_origin[(in_id - to) * 2] != passive_id<std::size_t>) &&
+                          (multiplier_origin[((in_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+                        bool const univariate_consolidate_this =
+                          (number_dependents[in_id - to] == 1) && has_single_origin;
+
+                        if (univariate_consolidate_this) {
+                            // this node now has only one dependent, we can reintroduce a
+                            // multiplication chain
+                            auto& coming_from = multiplier_origin[(in_id - to) * 2];
+                            multiplier_multiply(coming_from, new_pos);
+                            values_type[coming_from] = mul_type::ANY;
+
+                            buffer_multipliers.free_positions.push_back(new_pos);
+                            multiplier_loc_from[new_pos] = passive_id<std::size_t>;
+
+                            multiplier_origin[(res_id - to) * 2] = coming_from;
+                            coming_from = passive_id<std::size_t>;
+                            --number_dependents[in_id - to];
+                        }
+                    }
+                };
+
+                auto in_id_opt = check_univariate_subtree(res_id);
+                if (in_id_opt) {
+                    compress_univariate_subtree(*in_id_opt, res_id);
+                }
+            }
+        }
     };
 
     id_idx = id_idx_start;
@@ -383,318 +713,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op = (number_dependents[op_idx - to] > 0);
-
-        auto get_mult_loc = [&]() -> std::size_t {
-            if (buffer_multipliers.free_positions.empty()) {
-                std::size_t result = buffer_multipliers.size;
-                ++buffer_multipliers.size;
-                buffer_multipliers.values.resize(buffer_multipliers.values.size() + 1);
-                values_type.resize(values_type.size() + 1);
-                multiplier_loc_from.resize(buffer_multipliers.size);
-                multiplier_keep_alive.resize(buffer_multipliers.size);
-                return result;
-            }
-
-            std::size_t result = buffer_multipliers.free_positions.back();
-            buffer_multipliers.free_positions.pop_back();
-            return result;
-        };
-
-        auto update_univariate = [&]<mul_type M, bool KeepAlive = false>(
-                                   std::size_t const arg_id, std::size_t const res_id, double const multiplier = 0) {
-            bool const arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                             (multiplier_origin[(arg_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((arg_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-            auto& mult_origin_res = multiplier_origin[(res_id - to) * 2];
-
-            if (arg_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
-                if constexpr (M == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M>(mul_origin_arg);
-                }
-                multiplier_keep_alive[mul_origin_arg] = KeepAlive;
-
-                std::swap(mul_origin_arg, mult_origin_res);
-                --number_dependents[arg_id - to];
-            }
-            else {
-                mult_origin_res = get_mult_loc();
-                if constexpr (M == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(mult_origin_res, multiplier);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M>(mult_origin_res);
-                }
-                multiplier_loc_from[mult_origin_res] = arg_id;
-                multiplier_keep_alive[mult_origin_res] = KeepAlive;
-            }
-        };
-
-        auto update_bivariate = [&]<mul_type M1, mul_type M2>(std::size_t const lhs_id,
-                                                              std::size_t const rhs_id,
-                                                              std::size_t const res_id,
-                                                              double const multiplier_lhs = 0,
-                                                              double const multiplier_rhs = 0) {
-            bool const lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
-                                             (multiplier_origin[(lhs_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((lhs_id - to) * 2) + 1] == passive_id<std::size_t>);
-            bool const rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
-                                             (multiplier_origin[(rhs_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((rhs_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-            std::size_t multiplier_loc_lhs = passive_id<std::size_t>;
-            if (lhs_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(lhs_id - to) * 2];
-                if constexpr (M1 == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_lhs);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M1>(mul_origin_arg);
-                }
-                std::swap(multiplier_loc_lhs, mul_origin_arg);
-                --number_dependents[lhs_id - to];
-            }
-            else {
-                multiplier_loc_lhs = get_mult_loc();
-                if constexpr (M1 == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_lhs, multiplier_lhs);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M1>(multiplier_loc_lhs);
-                }
-                multiplier_loc_from[multiplier_loc_lhs] = lhs_id;
-                multiplier_keep_alive[multiplier_loc_lhs] = false;
-            }
-
-            std::size_t multiplier_loc_rhs = passive_id<std::size_t>;
-            if (rhs_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(rhs_id - to) * 2];
-                if constexpr (M2 == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_rhs);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M2>(mul_origin_arg);
-                }
-                std::swap(multiplier_loc_rhs, mul_origin_arg);
-                --number_dependents[rhs_id - to];
-            }
-            else {
-                multiplier_loc_rhs = get_mult_loc();
-                if constexpr (M2 == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_rhs, multiplier_rhs);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M2>(multiplier_loc_rhs);
-                }
-                multiplier_loc_from[multiplier_loc_rhs] = rhs_id;
-                multiplier_keep_alive[multiplier_loc_rhs] = false;
-            }
-
-            bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
-            // there is potential for a bivariate operator on the same argument, we need to check if
-            // this is the case and update the multiplier if so
-            bool const bivariate_consolidate_this =
-              has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] == multiplier_loc_from[multiplier_loc_rhs]);
-
-            if (bivariate_consolidate_this) {
-                std::size_t const origin_id = multiplier_loc_from[multiplier_loc_lhs];
-                multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
-
-                buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
-                multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
-
-                multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
-
-                if (origin_id >= to) {
-                    auto& number_dependents_to_update = number_dependents[origin_id - to];
-                    --number_dependents_to_update;
-
-                    bool const has_single_origin =
-                      (multiplier_origin[(origin_id - to) * 2] != passive_id<std::size_t>) &&
-                      (multiplier_origin[((origin_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-                    bool const univariate_consolidate_this = (number_dependents_to_update == 1) && has_single_origin;
-                    if (univariate_consolidate_this) {
-                        // this node now has only one dependent, we can reintroduce a
-                        // multiplication chain
-                        auto& coming_from = multiplier_origin[(origin_id - to) * 2];
-                        multiplier_multiply(coming_from, multiplier_loc_lhs);
-
-                        buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
-                        multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
-
-                        multiplier_origin[(res_id - to) * 2] = coming_from;
-                        coming_from = passive_id<std::size_t>;
-                        --number_dependents[origin_id - to];
-                    }
-                }
-            }
-            else {
-                multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
-                multiplier_origin[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
-
-                if constexpr (ConsolidateLargeUnivariate) {
-                    auto check_univariate_subtree = [&](std::size_t res_id) -> std::optional<std::size_t> {
-                        std::optional<std::size_t> result = std::nullopt;
-
-                        std::map<std::size_t, std::size_t> local_number_dependents;
-                        local_number_dependents[res_id] = number_dependents[res_id - to];
-
-                        // this while should not be needed, because allprevious nodes should have been checked for
-                        // univariate subtrees
-                        //  while (true) {
-                        do {
-                            auto const top_id = local_number_dependents.rbegin()->first;
-                            auto const top_deps = local_number_dependents.rbegin()->second;
-
-                            if (top_id < to) {
-                                // we reached a node that crosses boundaries
-                                return result;
-                            }
-
-                            if (top_deps != number_dependents[top_id - to]) {
-                                // a dependency is not included in this subtree, so we cannot consolidate
-                                return result;
-                            }
-
-                            local_number_dependents.erase(top_id);
-                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
-                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
-
-                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
-                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
-                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
-                                ++local_number_dependents[id_origin1];
-                                ++local_number_dependents[id_origin2];
-                            }
-                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
-                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
-                                ++local_number_dependents[id_origin];
-                            }
-                            else {
-                                // we reached an input node, while number of dependents is larger than 1, so
-                                // this cannot be a univariate operator
-                                return result;
-                            }
-
-                        } while (local_number_dependents.size() > 1);
-
-                        result = local_number_dependents.rbegin()->first;
-                        // this while should not be needed, because allprevious nodes should have been checked for
-                        // univariate subtrees
-                        // }
-
-                        return result;
-                    };
-
-                    auto compress_univariate_subtree = [&](std::size_t in_id, std::size_t res_id) {
-                        // when compressing a univarate subtree, we do a forward pass.
-                        // why? because a forward pass is simpler, especially for higher orders.
-
-                        std::map<std::size_t, double> local_derivatives;
-                        local_derivatives[res_id] = 1.0;
-
-                        do {
-                            auto const top_id = local_derivatives.rbegin()->first;
-                            auto const top_der = local_derivatives.rbegin()->second;
-                            local_derivatives.erase(top_id);
-
-                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
-                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
-
-                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
-                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
-                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
-
-                                std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
-                                std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
-                                local_derivatives[id_origin1] += top_der * buffer_multipliers.values[loc_multipler_1];
-                                local_derivatives[id_origin2] += top_der * buffer_multipliers.values[loc_multipler_2];
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler_1);
-                                multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
-                                loc_multipler_1 = passive_id<std::size_t>;
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler_2);
-                                multiplier_loc_from[loc_multipler_2] = passive_id<std::size_t>;
-                                loc_multipler_2 = passive_id<std::size_t>;
-
-                                if (id_origin1 >= to) {
-                                    --number_dependents[id_origin1 - to];
-                                }
-                                if (id_origin2 >= to) {
-                                    --number_dependents[id_origin2 - to];
-                                }
-                            }
-                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
-                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
-
-                                std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
-                                local_derivatives[id_origin] += top_der * buffer_multipliers.values[loc_multipler];
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler);
-                                multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
-                                loc_multipler = passive_id<std::size_t>;
-
-                                if (id_origin >= to) {
-                                    --number_dependents[id_origin - to];
-                                }
-                            }
-                            else {
-                                // we reached an input node, while number of dependents is larger than 1, so
-                                // this cannot be a univariate operator
-                                throw;
-                            }
-
-                        } while (local_derivatives.size() > 1);
-
-                        if (local_derivatives.begin()->first != in_id) {
-                            // this should not happen, because we should have detected the univariate subtree correctly
-                            throw;
-                        }
-
-                        std::size_t const new_pos = get_mult_loc();
-
-                        multiplier_loc_from[new_pos] = in_id;
-                        buffer_multipliers.values[new_pos] = local_derivatives.begin()->second;
-                        multiplier_origin[(res_id - to) * 2] = new_pos;
-                        if (in_id >= to) {
-                            ++number_dependents[in_id - to];
-
-                            bool const has_single_origin =
-                              (multiplier_origin[(in_id - to) * 2] != passive_id<std::size_t>) &&
-                              (multiplier_origin[((in_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-                            bool const univariate_consolidate_this =
-                              (number_dependents[in_id - to] == 1) && has_single_origin;
-
-                            if (univariate_consolidate_this) {
-                                // this node now has only one dependent, we can reintroduce a
-                                // multiplication chain
-                                auto& coming_from = multiplier_origin[(in_id - to) * 2];
-                                multiplier_multiply(coming_from, new_pos);
-
-                                buffer_multipliers.free_positions.push_back(new_pos);
-                                multiplier_loc_from[new_pos] = passive_id<std::size_t>;
-
-                                multiplier_origin[(res_id - to) * 2] = coming_from;
-                                coming_from = passive_id<std::size_t>;
-                                --number_dependents[in_id - to];
-                            }
-                        }
-                    };
-
-                    auto in_id_opt = check_univariate_subtree(res_id);
-                    if (in_id_opt) {
-                        compress_univariate_subtree(*in_id_opt, res_id);
-                    }
-                }
-            }
-        };
 
         switch (op) {
             case OpCode::REG_INPUT: {
