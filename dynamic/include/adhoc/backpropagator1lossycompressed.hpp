@@ -353,10 +353,8 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         return buffer_multipliers.values[pos];
     };
 
-    auto multiplier_set_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
-        if constexpr (M == mul_type::ANY) {
-            buffer_multipliers.values[pos] = multiplier;
-        }
+    auto multiplier_set_incoming = [&](std::size_t const pos, double const multiplier) {
+        buffer_multipliers.values[pos] = multiplier;
     };
 
     auto multiplier_multiply_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
@@ -442,10 +440,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         else {
             mult_origin_res = get_mult_loc();
             if constexpr (M == mul_type::ANY) {
-                multiplier_set_incoming.template operator()<mul_type::ANY>(mult_origin_res, multiplier);
-            }
-            else {
-                multiplier_set_incoming.template operator()<M>(mult_origin_res);
+                multiplier_set_incoming(mult_origin_res, multiplier);
             }
             values_type[mult_origin_res] = M;
             multiplier_loc_from[mult_origin_res] = arg_id;
@@ -476,10 +471,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         else {
             multiplier_loc_lhs = get_mult_loc();
             if constexpr (M1 == mul_type::ANY) {
-                multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_lhs, multiplier_lhs);
-            }
-            else {
-                multiplier_set_incoming.template operator()<M1>(multiplier_loc_lhs);
+                multiplier_set_incoming(multiplier_loc_lhs, multiplier_lhs);
             }
             values_type[multiplier_loc_lhs] = M1;
             multiplier_loc_from[multiplier_loc_lhs] = lhs_id;
@@ -497,10 +489,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         else {
             multiplier_loc_rhs = get_mult_loc();
             if constexpr (M2 == mul_type::ANY) {
-                multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_rhs, multiplier_rhs);
-            }
-            else {
-                multiplier_set_incoming.template operator()<M2>(multiplier_loc_rhs);
+                multiplier_set_incoming(multiplier_loc_rhs, multiplier_rhs);
             }
             values_type[multiplier_loc_rhs] = M2;
             multiplier_loc_from[multiplier_loc_rhs] = rhs_id;
@@ -675,8 +664,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                     std::size_t const new_pos = get_mult_loc();
 
                     multiplier_loc_from[new_pos] = in_id;
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(new_pos,
-                                                                               local_derivatives.begin()->second);
+                    multiplier_set_incoming(new_pos, local_derivatives.begin()->second);
                     values_type[new_pos] = mul_type::ANY;
 
                     multiplier_origin[(res_id - to) * 2] = new_pos;
