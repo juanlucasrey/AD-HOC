@@ -30,9 +30,59 @@
 #include <map>
 #include <numbers>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 namespace adhoc {
+
+template<class T = std::nullopt_t>
+class buffer_t2 {
+  private:
+    struct empty_t {};
+    std::conditional_t<std::is_same_v<T, std::nullopt_t>, empty_t, std::vector<T> > data;
+    std::size_t size{ 0 };
+    std::vector<std::size_t> free_positions;
+
+  public:
+    auto get_new_loc() -> std::size_t
+    {
+        if (this->free_positions.empty()) {
+            std::size_t pos = this->size;
+            ++this->size;
+            if constexpr (!std::is_same_v<T, empty_t>) {
+                this->data.resize(this->size);
+            }
+            return pos;
+        }
+
+        std::size_t pos = this->free_positions.back();
+        this->free_positions.pop_back();
+        return pos;
+    }
+
+    auto free_loc(std::size_t pos) -> void
+    {
+        if (pos < this->size) {
+            this->free_positions.push_back(pos);
+        }
+        else {
+            // should not happen
+            throw;
+        }
+    }
+
+    auto operator[](std::size_t pos) -> T&
+    {
+        static_assert(!std::is_same_v<T, empty_t>, "buffer_t2 does not hold values");
+        if (pos < this->size) {
+            return this->data[pos];
+        }
+        else {
+            // should not happen
+            throw;
+        }
+    }
+};
 
 template<class Float, bool Vectorised = false, bool ConsolidateLargeUnivariate = false>
 class BackPropagatorLossyCompressed {
@@ -316,115 +366,150 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::vector<std::size_t> multiplier_origin((from - to) * 2, passive_id<std::size_t>);
 
     // LOOP 2: forward, to calculate multipliers after compressing induced paths
+    buffer_t2<double> buffer_multipliers_values;
+    auto const one_loc = buffer_multipliers_values.get_new_loc();
+    buffer_multipliers_values[one_loc] = 1.0;
+    auto const minus_one_loc = buffer_multipliers_values.get_new_loc();
+    buffer_multipliers_values[minus_one_loc] = -1.0;
+
     enum class mul_type : std::uint8_t {
         ANY,
         ONE,
         MINUS_ONE,
     };
-    std::vector<mul_type> values_type;
-    buffer_t buffer_multipliers;
-    buffer_multipliers.size = 2;
-    buffer_multipliers.values.resize(2);
-    buffer_multipliers.values[0] = 1.0;
-    buffer_multipliers.values[1] = -1.0;
-    values_type.resize(2);
-    values_type[0] = mul_type::ANY;
-    values_type[1] = mul_type::ANY;
 
-    auto combine_mul_type = []<mul_type B>(mul_type a) -> mul_type {
-        if constexpr (B == mul_type::ANY) {
-            return mul_type::ANY;
-        }
-        else {
-            if (a == mul_type::ANY) {
-                return mul_type::ANY;
-            }
-            if (a == B) {
-                return mul_type::ONE;
-            }
-            return mul_type::MINUS_ONE;
-        }
+    struct buffer_positions_t {
+        std::vector<std::size_t> positions;
+        std::vector<mul_type> values_type;
+        std::size_t size{ 0 };
+        std::vector<std::size_t> free_positions;
     };
 
-    auto get_multiplier_index = [&](std::size_t pos) -> std::size_t {
-        auto const mult_type = values_type[pos];
-        if (mult_type == mul_type::ONE) {
-            return 0;
-        }
-
-        if (mult_type == mul_type::MINUS_ONE) {
-            return 1;
-        }
-
-        return pos;
-    };
+    buffer_positions_t buffer_multipliers;
 
     auto multiplier_set_incoming = [&](std::size_t const pos, double const multiplier) {
-        buffer_multipliers.values[pos] = multiplier;
-    };
-
-    auto multiplier_multiply_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
-        auto const origin_type = values_type[pos];
-
-        if constexpr (M == mul_type::MINUS_ONE) {
-            if (origin_type == mul_type::ANY) {
-                buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
-            }
-        }
-        else if constexpr (M == mul_type::ANY) {
-            if (origin_type == mul_type::ONE) {
-                buffer_multipliers.values[pos] = multiplier;
-            }
-            else if (origin_type == mul_type::MINUS_ONE) {
-                buffer_multipliers.values[pos] = -multiplier;
-            }
-            else {
-                buffer_multipliers.values[pos] *= multiplier;
-            }
-        }
+        auto const real_pos = buffer_multipliers.positions[pos];
+        buffer_multipliers_values[real_pos] = multiplier;
     };
 
     auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
-        auto const mult_type = values_type[pos1];
-        std::size_t const index = get_multiplier_index(pos2);
-        if (mult_type == mul_type::ONE) {
-            buffer_multipliers.values[pos1] = 1.0 + buffer_multipliers.values[index];
+        auto const mult_type1 = buffer_multipliers.values_type[pos1];
+        auto const mult_type2 = buffer_multipliers.values_type[pos2];
+        if (mult_type1 == mul_type::ANY && mult_type2 == mul_type::ANY) {
+            auto const pos1_buffer_loc = buffer_multipliers.positions[pos1];
+            auto const pos2_buffer_loc = buffer_multipliers.positions[pos2];
+            buffer_multipliers_values[pos1_buffer_loc] += buffer_multipliers_values[pos2_buffer_loc];
+            buffer_multipliers_values.free_loc(pos2_buffer_loc);
+
+            buffer_multipliers.positions[pos2] = passive_id<std::size_t>;
+            buffer_multipliers.positions[pos1] = pos1_buffer_loc;
         }
-        else if (mult_type == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos1] = -1.0 + buffer_multipliers.values[index];
+        else if (mult_type1 == mul_type::ANY) {
+            auto const pos1_buffer_loc = buffer_multipliers.positions[pos1];
+            if (mult_type2 == mul_type::ONE) {
+                buffer_multipliers_values[pos1_buffer_loc] += buffer_multipliers_values[0];
+            }
+            else if (mult_type2 == mul_type::MINUS_ONE) {
+                buffer_multipliers_values[pos1_buffer_loc] += buffer_multipliers_values[1];
+            }
+
+            buffer_multipliers.positions[pos1] = pos1_buffer_loc;
+        }
+        else if (mult_type2 == mul_type::ANY) {
+            auto const pos2_buffer_loc = buffer_multipliers.positions[pos2];
+            if (mult_type1 == mul_type::ONE) {
+                buffer_multipliers_values[pos2_buffer_loc] += buffer_multipliers_values[0];
+            }
+            else if (mult_type1 == mul_type::MINUS_ONE) {
+                buffer_multipliers_values[pos2_buffer_loc] += buffer_multipliers_values[1];
+            }
+
+            buffer_multipliers.positions[pos1] = pos2_buffer_loc;
         }
         else {
-            buffer_multipliers.values[pos1] += buffer_multipliers.values[index];
+            auto const new_pos = buffer_multipliers_values.get_new_loc();
+
+            if (mult_type1 == mul_type::ONE) {
+                buffer_multipliers_values[new_pos] += buffer_multipliers_values[0];
+            }
+            else if (mult_type1 == mul_type::MINUS_ONE) {
+                buffer_multipliers_values[new_pos] += buffer_multipliers_values[1];
+            }
+
+            if (mult_type2 == mul_type::ONE) {
+                buffer_multipliers_values[new_pos] += buffer_multipliers_values[0];
+            }
+            else if (mult_type2 == mul_type::MINUS_ONE) {
+                buffer_multipliers_values[new_pos] += buffer_multipliers_values[1];
+            }
+
+            buffer_multipliers.positions[pos1] = new_pos;
         }
+
+        buffer_multipliers.values_type[pos1] = mul_type::ANY;
     };
 
     auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
-        auto const mult_type = values_type[pos1];
-        std::size_t const index = get_multiplier_index(pos2);
-        if (mult_type == mul_type::ONE) {
-            buffer_multipliers.values[pos1] = buffer_multipliers.values[index];
+        auto const mult_type1 = buffer_multipliers.values_type[pos1];
+        auto const mult_type2 = buffer_multipliers.values_type[pos2];
+        if (mult_type2 != mul_type::ANY) {
+            // should not happen
+            throw;
         }
-        else if (mult_type == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos1] = -buffer_multipliers.values[index];
+
+        auto const pos2_buffer_loc = buffer_multipliers.positions[pos2];
+        if (mult_type1 == mul_type::ANY) {
+            auto const pos1_buffer_loc = buffer_multipliers.positions[pos1];
+
+            buffer_multipliers_values[pos1_buffer_loc] *= buffer_multipliers_values[pos2_buffer_loc];
+            buffer_multipliers_values.free_loc(pos2_buffer_loc);
+
+            buffer_multipliers.positions[pos2] = passive_id<std::size_t>;
+            buffer_multipliers.positions[pos1] = pos1_buffer_loc;
+        }
+        else if (mult_type1 == mul_type::ONE) {
+            buffer_multipliers.positions[pos1] = pos2_buffer_loc;
         }
         else {
-            buffer_multipliers.values[pos1] *= buffer_multipliers.values[index];
+            buffer_multipliers_values[pos2_buffer_loc] = -buffer_multipliers_values[pos2_buffer_loc];
+            buffer_multipliers.positions[pos1] = pos2_buffer_loc;
         }
+
+        buffer_multipliers.values_type[pos1] = mul_type::ANY;
     };
 
-    auto get_mult_loc = [&]() -> std::size_t {
+    auto get_mult_loc = [&]<mul_type M>() -> std::size_t {
         if (buffer_multipliers.free_positions.empty()) {
             std::size_t result = buffer_multipliers.size;
             ++buffer_multipliers.size;
-            buffer_multipliers.values.resize(buffer_multipliers.values.size() + 1);
-            values_type.resize(values_type.size() + 1);
+
+            buffer_multipliers.positions.resize(buffer_multipliers.size);
+            if constexpr (M == mul_type::ANY) {
+                std::size_t size_buff = buffer_multipliers_values.get_new_loc();
+                buffer_multipliers.positions[result] = size_buff;
+            }
+            else {
+                buffer_multipliers.positions[result] = passive_id<std::size_t>;
+            }
+
+            buffer_multipliers.values_type.resize(buffer_multipliers.size);
+            buffer_multipliers.values_type[result] = M;
             multiplier_loc_from.resize(buffer_multipliers.size);
             multiplier_keep_alive.resize(buffer_multipliers.size);
             return result;
         }
 
         std::size_t result = buffer_multipliers.free_positions.back();
+        buffer_multipliers.values_type[result] = M;
         buffer_multipliers.free_positions.pop_back();
+
+        if constexpr (M == mul_type::ANY) {
+            std::size_t size_buff = buffer_multipliers_values.get_new_loc();
+            buffer_multipliers.positions[result] = size_buff;
+        }
+        else {
+            buffer_multipliers.positions[result] = passive_id<std::size_t>;
+        }
         return result;
     };
 
@@ -438,19 +523,51 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
         if (arg_is_induced_path) {
             auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
-            multiplier_multiply_incoming.template operator()<M>(mul_origin_arg, multiplier);
-            values_type[mul_origin_arg] = combine_mul_type.template operator()<M>(values_type[mul_origin_arg]);
+            auto& origin_type = buffer_multipliers.values_type[mul_origin_arg];
+            auto& buffer_origin = buffer_multipliers.positions[mul_origin_arg];
+
+            if constexpr (M == mul_type::ANY) {
+                if (origin_type != mul_type::ANY) {
+                    buffer_origin = buffer_multipliers_values.get_new_loc();
+                    buffer_multipliers.positions[mul_origin_arg] = buffer_origin;
+                    if (origin_type == mul_type::ONE) {
+                        buffer_multipliers_values[buffer_origin] = multiplier;
+                    }
+                    else if (origin_type == mul_type::MINUS_ONE) {
+                        buffer_multipliers_values[buffer_origin] = -multiplier;
+                    }
+                    origin_type = mul_type::ANY;
+                }
+                else {
+                    auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                    buffer_multipliers_values[buffer_origin_loc] *= multiplier;
+                }
+            }
+            else {
+                if (origin_type == mul_type::ANY) {
+                    if constexpr (M == mul_type::MINUS_ONE) {
+                        auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                        buffer_multipliers_values[buffer_origin_loc] = -buffer_multipliers_values[buffer_origin_loc];
+                    }
+                }
+                else if (origin_type == M) {
+                    origin_type = mul_type::ONE;
+                }
+                else {
+                    origin_type = mul_type::MINUS_ONE;
+                }
+            }
+
             multiplier_keep_alive[mul_origin_arg] = KeepAlive;
 
             std::swap(mul_origin_arg, mult_origin_res);
             --number_dependents[arg_id - to];
         }
         else {
-            mult_origin_res = get_mult_loc();
+            mult_origin_res = get_mult_loc.template operator()<M>();
             if constexpr (M == mul_type::ANY) {
                 multiplier_set_incoming(mult_origin_res, multiplier);
             }
-            values_type[mult_origin_res] = M;
             multiplier_loc_from[mult_origin_res] = arg_id;
             multiplier_keep_alive[mult_origin_res] = KeepAlive;
         }
@@ -471,17 +588,49 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         std::size_t multiplier_loc_lhs = passive_id<std::size_t>;
         if (lhs_is_induced_path) {
             auto& mul_origin_arg = multiplier_origin[(lhs_id - to) * 2];
-            multiplier_multiply_incoming.template operator()<M1>(mul_origin_arg, multiplier_lhs);
-            values_type[mul_origin_arg] = combine_mul_type.template operator()<M1>(values_type[mul_origin_arg]);
+            auto& origin_type = buffer_multipliers.values_type[mul_origin_arg];
+            auto& buffer_origin = buffer_multipliers.positions[mul_origin_arg];
+
+            if constexpr (M1 == mul_type::ANY) {
+                if (origin_type != mul_type::ANY) {
+                    buffer_origin = buffer_multipliers_values.get_new_loc();
+                    buffer_multipliers.positions[mul_origin_arg] = buffer_origin;
+                    if (origin_type == mul_type::ONE) {
+                        buffer_multipliers_values[buffer_origin] = multiplier_lhs;
+                    }
+                    else if (origin_type == mul_type::MINUS_ONE) {
+                        buffer_multipliers_values[buffer_origin] = -multiplier_lhs;
+                    }
+                    origin_type = mul_type::ANY;
+                }
+                else {
+                    auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                    buffer_multipliers_values[buffer_origin_loc] *= multiplier_lhs;
+                }
+            }
+            else {
+                if (origin_type == mul_type::ANY) {
+                    if constexpr (M1 == mul_type::MINUS_ONE) {
+                        auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                        buffer_multipliers_values[buffer_origin_loc] = -buffer_multipliers_values[buffer_origin_loc];
+                    }
+                }
+                else if (origin_type == M1) {
+                    origin_type = mul_type::ONE;
+                }
+                else {
+                    origin_type = mul_type::MINUS_ONE;
+                }
+            }
+
             std::swap(multiplier_loc_lhs, mul_origin_arg);
             --number_dependents[lhs_id - to];
         }
         else {
-            multiplier_loc_lhs = get_mult_loc();
+            multiplier_loc_lhs = get_mult_loc.template operator()<M1>();
             if constexpr (M1 == mul_type::ANY) {
                 multiplier_set_incoming(multiplier_loc_lhs, multiplier_lhs);
             }
-            values_type[multiplier_loc_lhs] = M1;
             multiplier_loc_from[multiplier_loc_lhs] = lhs_id;
             multiplier_keep_alive[multiplier_loc_lhs] = false;
         }
@@ -489,17 +638,49 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         std::size_t multiplier_loc_rhs = passive_id<std::size_t>;
         if (rhs_is_induced_path) {
             auto& mul_origin_arg = multiplier_origin[(rhs_id - to) * 2];
-            multiplier_multiply_incoming.template operator()<M2>(mul_origin_arg, multiplier_rhs);
-            values_type[mul_origin_arg] = combine_mul_type.template operator()<M2>(values_type[mul_origin_arg]);
+            auto& origin_type = buffer_multipliers.values_type[mul_origin_arg];
+            auto& buffer_origin = buffer_multipliers.positions[mul_origin_arg];
+
+            if constexpr (M2 == mul_type::ANY) {
+                if (origin_type != mul_type::ANY) {
+                    buffer_origin = buffer_multipliers_values.get_new_loc();
+                    buffer_multipliers.positions[mul_origin_arg] = buffer_origin;
+                    if (origin_type == mul_type::ONE) {
+                        buffer_multipliers_values[buffer_origin] = multiplier_rhs;
+                    }
+                    else if (origin_type == mul_type::MINUS_ONE) {
+                        buffer_multipliers_values[buffer_origin] = -multiplier_rhs;
+                    }
+                    origin_type = mul_type::ANY;
+                }
+                else {
+                    auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                    buffer_multipliers_values[buffer_origin_loc] *= multiplier_rhs;
+                }
+            }
+            else {
+                if (origin_type == mul_type::ANY) {
+                    if constexpr (M2 == mul_type::MINUS_ONE) {
+                        auto const buffer_origin_loc = buffer_multipliers.positions[mul_origin_arg];
+                        buffer_multipliers_values[buffer_origin_loc] = -buffer_multipliers_values[buffer_origin_loc];
+                    }
+                }
+                else if (origin_type == M2) {
+                    origin_type = mul_type::ONE;
+                }
+                else {
+                    origin_type = mul_type::MINUS_ONE;
+                }
+            }
+
             std::swap(multiplier_loc_rhs, mul_origin_arg);
             --number_dependents[rhs_id - to];
         }
         else {
-            multiplier_loc_rhs = get_mult_loc();
+            multiplier_loc_rhs = get_mult_loc.template operator()<M2>();
             if constexpr (M2 == mul_type::ANY) {
                 multiplier_set_incoming(multiplier_loc_rhs, multiplier_rhs);
             }
-            values_type[multiplier_loc_rhs] = M2;
             multiplier_loc_from[multiplier_loc_rhs] = rhs_id;
             multiplier_keep_alive[multiplier_loc_rhs] = false;
         }
@@ -513,7 +694,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         if (bivariate_consolidate_this) {
             std::size_t const origin_id = multiplier_loc_from[multiplier_loc_lhs];
             multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
-            values_type[multiplier_loc_lhs] = mul_type::ANY;
 
             buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
             multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
@@ -534,7 +714,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                     // multiplication chain
                     auto& coming_from = multiplier_origin[(origin_id - to) * 2];
                     multiplier_multiply(coming_from, multiplier_loc_lhs);
-                    values_type[coming_from] = mul_type::ANY;
 
                     buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
                     multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
@@ -556,9 +735,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                     std::map<std::size_t, std::size_t> local_number_dependents;
                     local_number_dependents[res_id] = number_dependents[res_id - to];
 
-                    // this while should not be needed, because allprevious nodes should have been checked for
-                    // univariate subtrees
-                    //  while (true) {
                     do {
                         auto const top_id = local_number_dependents.rbegin()->first;
                         auto const top_deps = local_number_dependents.rbegin()->second;
@@ -596,9 +772,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                     } while (local_number_dependents.size() > 1);
 
                     result = local_number_dependents.rbegin()->first;
-                    // this while should not be needed, because allprevious nodes should have been checked for
-                    // univariate subtrees
-                    // }
 
                     return result;
                 };
@@ -623,11 +796,30 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                             std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
 
                             std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
+                            auto const mult_type1 = buffer_multipliers.values_type[loc_multipler_1];
+                            if (mult_type1 == mul_type::ONE) {
+                                local_derivatives[id_origin1] += top_der;
+                            }
+                            else if (mult_type1 == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin1] -= top_der;
+                            }
+                            else {
+                                auto const pos1_buffer_loc = buffer_multipliers.positions[loc_multipler_1];
+                                local_derivatives[id_origin1] += top_der * buffer_multipliers_values[pos1_buffer_loc];
+                            }
+
                             std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
-                            std::size_t const index1 = get_multiplier_index(loc_multipler_1);
-                            std::size_t const index2 = get_multiplier_index(loc_multipler_2);
-                            local_derivatives[id_origin1] += top_der * buffer_multipliers.values[index1];
-                            local_derivatives[id_origin2] += top_der * buffer_multipliers.values[index2];
+                            auto const mult_type2 = buffer_multipliers.values_type[loc_multipler_2];
+                            if (mult_type2 == mul_type::ONE) {
+                                local_derivatives[id_origin2] += top_der;
+                            }
+                            else if (mult_type2 == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin2] -= top_der;
+                            }
+                            else {
+                                auto const pos2_buffer_loc = buffer_multipliers.positions[loc_multipler_2];
+                                local_derivatives[id_origin2] += top_der * buffer_multipliers_values[pos2_buffer_loc];
+                            }
 
                             buffer_multipliers.free_positions.push_back(loc_multipler_1);
                             multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
@@ -648,8 +840,17 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                             std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
 
                             std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
-                            std::size_t const index = get_multiplier_index(loc_multipler);
-                            local_derivatives[id_origin] += top_der * buffer_multipliers.values[index];
+                            auto const mult_type = buffer_multipliers.values_type[loc_multipler];
+                            if (mult_type == mul_type::ONE) {
+                                local_derivatives[id_origin] += top_der;
+                            }
+                            else if (mult_type == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin] -= top_der;
+                            }
+                            else {
+                                auto const pos_buffer_loc = buffer_multipliers.positions[loc_multipler];
+                                local_derivatives[id_origin] += top_der * buffer_multipliers_values[pos_buffer_loc];
+                            }
 
                             buffer_multipliers.free_positions.push_back(loc_multipler);
                             multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
@@ -672,11 +873,10 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                         throw;
                     }
 
-                    std::size_t const new_pos = get_mult_loc();
+                    std::size_t const new_pos = get_mult_loc.template operator()<mul_type::ANY>();
 
                     multiplier_loc_from[new_pos] = in_id;
                     multiplier_set_incoming(new_pos, local_derivatives.begin()->second);
-                    values_type[new_pos] = mul_type::ANY;
 
                     multiplier_origin[(res_id - to) * 2] = new_pos;
                     if (in_id >= to) {
@@ -694,7 +894,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                             // multiplication chain
                             auto& coming_from = multiplier_origin[(in_id - to) * 2];
                             multiplier_multiply(coming_from, new_pos);
-                            values_type[coming_from] = mul_type::ANY;
 
                             buffer_multipliers.free_positions.push_back(new_pos);
                             multiplier_loc_from[new_pos] = passive_id<std::size_t>;
@@ -989,7 +1188,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     };
 
     auto mul_inplace = [&](std::size_t const pos, std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             double* dest = &buffer_vals[pos * this->m_num_lanes];
 #pragma omp simd
@@ -1006,7 +1205,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                        std::size_t const out_pos,
                        std::size_t const in_pos,
                        std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
             double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
@@ -1024,7 +1223,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                        std::size_t const out_pos,
                        std::size_t const in_pos,
                        std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
             double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
@@ -1040,7 +1239,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
     auto copy_mul =
       [&](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, std::size_t const multiplier_id) {
-          auto const multiplier_type = values_type[multiplier_id];
+          auto const multiplier_type = buffer_multipliers.values_type[multiplier_id];
           bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
 
           if (arg_is_new) {
@@ -1056,7 +1255,8 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
               }
               // this is a new value, we NEED to override
               if (multiplier_type == mul_type::ANY) {
-                  mul_set(buffer_id, res_pos, arg_pos, multiplier_id);
+                  auto const position_buffer = buffer_multipliers.positions[multiplier_id];
+                  mul_set(buffer_id, res_pos, arg_pos, position_buffer);
               }
               else if (multiplier_type == mul_type::ONE) {
                   copy(buffer_id, res_pos, arg_pos);
@@ -1067,7 +1267,8 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
           }
           else {
               if (multiplier_type == mul_type::ANY) {
-                  mul_add(buffer_id, res_pos, arg_pos, multiplier_id);
+                  auto const position_buffer = buffer_multipliers.positions[multiplier_id];
+                  mul_add(buffer_id, res_pos, arg_pos, position_buffer);
               }
               else if (multiplier_type == mul_type::ONE) {
                   add(buffer_id, res_pos, arg_pos);
@@ -1101,10 +1302,11 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
             bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
             if (arg_inplace && !keep_alive) {
-                auto const multiplier_type = values_type[first_multiplier_origin];
+                auto const multiplier_type = buffer_multipliers.values_type[first_multiplier_origin];
                 // res id should now be arg id, avoiding a copy and a potential buffer increase
                 if (multiplier_type == mul_type::ANY) {
-                    mul_inplace(res_pos, first_multiplier_origin);
+                    auto const position_buffer = buffer_multipliers.positions[first_multiplier_origin];
+                    mul_inplace(res_pos, position_buffer);
                 }
                 else if (multiplier_type == mul_type::MINUS_ONE) {
                     minus_inplace(res_pos);
@@ -1146,10 +1348,11 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
             }
 
             if (lhs_inplace) {
-                auto const mul_1_type = values_type[first_multiplier_origin];
+                auto const mul_1_type = buffer_multipliers.values_type[first_multiplier_origin];
                 // res id should now be lhs id, avoiding a copy and a potential buffer increase
                 if (mul_1_type == mul_type::ANY) {
-                    mul_inplace(res_pos, first_multiplier_origin);
+                    auto const position_buffer = buffer_multipliers.positions[first_multiplier_origin];
+                    mul_inplace(res_pos, position_buffer);
                 }
                 else if (mul_1_type == mul_type::MINUS_ONE) {
                     minus_inplace(res_pos);
@@ -1158,10 +1361,11 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                 std::swap(res_pos, lhs_pos);
             }
             else if (rhs_inplace) {
-                auto const mul_2_type = values_type[second_multiplier_origin];
+                auto const mul_2_type = buffer_multipliers.values_type[second_multiplier_origin];
                 // res id should now be arg id, avoiding a copy and a potential buffer increase
                 if (mul_2_type == mul_type::ANY) {
-                    mul_inplace(res_pos, second_multiplier_origin);
+                    auto const position_buffer = buffer_multipliers.positions[second_multiplier_origin];
+                    mul_inplace(res_pos, position_buffer);
                 }
                 else if (mul_2_type == mul_type::MINUS_ONE) {
                     minus_inplace(res_pos);
