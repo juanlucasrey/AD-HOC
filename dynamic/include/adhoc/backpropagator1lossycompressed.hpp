@@ -311,8 +311,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::size_t const id_idx_start = id_idx;
     std::size_t const val_idx_start = pos.val_position;
 
-    buffer_t buffer_multipliers;
-
     std::vector<std::size_t> multiplier_loc_from;
     std::vector<bool> multiplier_keep_alive;
     std::vector<std::size_t> multiplier_origin((from - to) * 2, passive_id<std::size_t>);
@@ -324,6 +322,14 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         MINUS_ONE,
     };
     std::vector<mul_type> values_type;
+    buffer_t buffer_multipliers;
+    buffer_multipliers.size = 2;
+    buffer_multipliers.values.resize(2);
+    buffer_multipliers.values[0] = 1.0;
+    buffer_multipliers.values[1] = -1.0;
+    values_type.resize(2);
+    values_type[0] = mul_type::ANY;
+    values_type[1] = mul_type::ANY;
 
     auto combine_mul_type = []<mul_type B>(mul_type a) -> mul_type {
         if constexpr (B == mul_type::ANY) {
@@ -340,17 +346,17 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         }
     };
 
-    auto get_multiplier = [&](std::size_t pos) -> double {
+    auto get_multiplier_index = [&](std::size_t pos) -> std::size_t {
         auto const mult_type = values_type[pos];
         if (mult_type == mul_type::ONE) {
-            return 1.0;
+            return 0;
         }
 
         if (mult_type == mul_type::MINUS_ONE) {
-            return -1.0;
+            return 1;
         }
 
-        return buffer_multipliers.values[pos];
+        return pos;
     };
 
     auto multiplier_set_incoming = [&](std::size_t const pos, double const multiplier) {
@@ -380,27 +386,29 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
     auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
         auto const mult_type = values_type[pos1];
+        std::size_t const index = get_multiplier_index(pos2);
         if (mult_type == mul_type::ONE) {
-            buffer_multipliers.values[pos1] = 1.0 + get_multiplier(pos2);
+            buffer_multipliers.values[pos1] = 1.0 + buffer_multipliers.values[index];
         }
         else if (mult_type == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos1] = -1.0 + get_multiplier(pos2);
+            buffer_multipliers.values[pos1] = -1.0 + buffer_multipliers.values[index];
         }
         else {
-            buffer_multipliers.values[pos1] += get_multiplier(pos2);
+            buffer_multipliers.values[pos1] += buffer_multipliers.values[index];
         }
     };
 
     auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
         auto const mult_type = values_type[pos1];
+        std::size_t const index = get_multiplier_index(pos2);
         if (mult_type == mul_type::ONE) {
-            buffer_multipliers.values[pos1] = get_multiplier(pos2);
+            buffer_multipliers.values[pos1] = buffer_multipliers.values[index];
         }
         else if (mult_type == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos1] = -get_multiplier(pos2);
+            buffer_multipliers.values[pos1] = -buffer_multipliers.values[index];
         }
         else {
-            buffer_multipliers.values[pos1] *= get_multiplier(pos2);
+            buffer_multipliers.values[pos1] *= buffer_multipliers.values[index];
         }
     };
 
@@ -616,8 +624,10 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
                             std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
                             std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
-                            local_derivatives[id_origin1] += top_der * get_multiplier(loc_multipler_1);
-                            local_derivatives[id_origin2] += top_der * get_multiplier(loc_multipler_2);
+                            std::size_t const index1 = get_multiplier_index(loc_multipler_1);
+                            std::size_t const index2 = get_multiplier_index(loc_multipler_2);
+                            local_derivatives[id_origin1] += top_der * buffer_multipliers.values[index1];
+                            local_derivatives[id_origin2] += top_der * buffer_multipliers.values[index2];
 
                             buffer_multipliers.free_positions.push_back(loc_multipler_1);
                             multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
@@ -638,7 +648,8 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                             std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
 
                             std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
-                            local_derivatives[id_origin] += top_der * get_multiplier(loc_multipler);
+                            std::size_t const index = get_multiplier_index(loc_multipler);
+                            local_derivatives[id_origin] += top_der * buffer_multipliers.values[index];
 
                             buffer_multipliers.free_positions.push_back(loc_multipler);
                             multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
