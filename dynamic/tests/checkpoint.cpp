@@ -1411,7 +1411,8 @@ test_lossy_compressed_double_triangle_simple()
 {
     std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderLossy,
                                                  adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse };
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
