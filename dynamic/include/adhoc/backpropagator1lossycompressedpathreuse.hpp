@@ -1168,9 +1168,9 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
 
     // we assume the first section is not part of a MC simulation,
     // so the first section lossy opcode won't be stored.
-    // if (this->buffers.size() > 1) {
-    if (true) {
-        this->hash_to_lossy_tape.push_back(std::map<std::size_t, LossyTape>{});
+    if (this->buffers.size() > 1) {
+        // if (true) {
+        // this->hash_to_lossy_tape.push_back(std::map<std::size_t, LossyTape>{});
 
         auto const h = hash(pos, data);
 
