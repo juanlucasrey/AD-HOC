@@ -21,6 +21,7 @@
 #ifndef ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 #define ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 
+#include "buffer_t.hpp"
 #include "passive_id.hpp"
 #include "position_impl.hpp"
 #include "tape_data.hpp"
@@ -41,14 +42,8 @@ class BackPropagatorLossyCompressed {
 
     std::vector<std::size_t> node_location_on_buffer;
 
-    struct buffer_t {
-        std::vector<double> values;
-        std::size_t size{ 0 };
-        std::vector<std::size_t> free_positions;
-    };
-
     std::vector<std::size_t> checkpoints{ 0 };
-    std::vector<buffer_t> buffers{ buffer_t{} };
+    std::vector<buffer_t<double> > buffers{ buffer_t<double>{} };
 
   public:
     explicit BackPropagatorLossyCompressed() = default;
@@ -62,7 +57,7 @@ class BackPropagatorLossyCompressed {
 
         if (this->checkpoints.back() != ops_size) {
             this->checkpoints.push_back(ops_size);
-            this->buffers.push_back(buffer_t{});
+            this->buffers.push_back(buffer_t<double>{ this->m_num_lanes });
         }
     }
     void set_lanes(std::size_t num_lanes)
@@ -74,16 +69,17 @@ class BackPropagatorLossyCompressed {
             }
         }
         this->m_num_lanes = num_lanes;
+        this->buffers = { buffer_t<double>{ this->m_num_lanes } };
     }
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t count_registered)
     {
-        this->buffers.back().values.reserve(this->buffers.back().values.size() +
+        this->buffers.back().data().reserve(this->buffers.back().data().size() +
                                             (this->m_num_lanes * count_registered));
     }
     void reserve_output(std::size_t count_registered)
     {
-        this->buffers.back().values.reserve(this->buffers.back().values.size() +
+        this->buffers.back().data().reserve(this->buffers.back().data().size() +
                                             (this->m_num_lanes * count_registered));
     }
     void register_variable(std::size_t var_id)
@@ -94,24 +90,16 @@ class BackPropagatorLossyCompressed {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            if (var_buffer.free_positions.empty()) {
-                var_pos = var_buffer.size;
-                ++var_buffer.size;
-                var_buffer.values.resize(var_buffer.size * this->m_num_lanes);
+            var_pos = var_buffer.get_new_loc();
+            if constexpr (Vectorised) {
+                double* dest = &var_buffer.data()[var_pos * this->m_num_lanes];
+#pragma omp simd
+                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                    dest[i] = 0.;
+                }
             }
             else {
-                var_pos = var_buffer.free_positions.back();
-                var_buffer.free_positions.pop_back();
-                if constexpr (Vectorised) {
-                    double* dest = &var_buffer.values[var_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = 0.;
-                    }
-                }
-                else {
-                    var_buffer.values[var_pos] = 0.;
-                }
+                var_buffer.data()[var_pos] = 0.;
             }
         }
     }
@@ -124,24 +112,16 @@ class BackPropagatorLossyCompressed {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            if (var_buffer.free_positions.empty()) {
-                var_pos = var_buffer.size;
-                ++var_buffer.size;
-                var_buffer.values.resize(var_buffer.size * this->m_num_lanes);
+            var_pos = var_buffer.get_new_loc();
+            if constexpr (Vectorised) {
+                double* dest = &var_buffer.data()[var_pos * this->m_num_lanes];
+#pragma omp simd
+                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                    dest[i] = 0.;
+                }
             }
             else {
-                var_pos = var_buffer.free_positions.back();
-                var_buffer.free_positions.pop_back();
-                if constexpr (Vectorised) {
-                    double* dest = &var_buffer.values[var_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = 0.;
-                    }
-                }
-                else {
-                    var_buffer.values[var_pos] = 0.;
-                }
+                var_buffer.data()[var_pos] = 0.;
             }
         }
     }
@@ -158,7 +138,7 @@ class BackPropagatorLossyCompressed {
 
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
-            this->buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
+            this->buffers[buffed_id].data()[(var_pos * this->m_num_lanes) + lane] = deriv;
         }
         else {
             throw;
@@ -179,7 +159,7 @@ class BackPropagatorLossyCompressed {
 
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
-              .values[(var_pos * this->m_num_lanes) + lane];
+              .data()[(var_pos * this->m_num_lanes) + lane];
         }
 
         throw;
@@ -196,7 +176,7 @@ class BackPropagatorLossyCompressed {
     void zero_adjoints()
     {
         for (auto& b : this->buffers) {
-            std::fill(b.values.begin(), b.values.end(), 0.0);
+            std::fill(b.data().begin(), b.data().end(), 0.0);
         }
     }
 
@@ -207,8 +187,7 @@ class BackPropagatorLossyCompressed {
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
         size += sizeof(std::size_t) * (capacity ? this->checkpoints.capacity() : this->checkpoints.size());
         for (const auto& buffer : this->buffers) {
-            size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
-            size += sizeof(std::size_t) * (capacity ? buffer.free_positions.capacity() : buffer.free_positions.size());
+            size += buffer.size_of(capacity);
         }
         return size;
     }
@@ -227,7 +206,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::size_t from = data.next_id;
     if (from == checkpoints.back()) {
         checkpoints.pop_back();
-        buffers.pop_back();
+        this->buffers.pop_back();
     }
 
     const auto& ops = data.ops;
@@ -238,8 +217,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::size_t id_idx = ids.size();
 
     this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
-
-    auto& buffer_free_positions = buffers.back().free_positions;
 
     std::vector<std::size_t> number_dependents(from - to);
 
@@ -311,70 +288,474 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::size_t const id_idx_start = id_idx;
     std::size_t const val_idx_start = pos.val_position;
 
-    buffer_t buffer_multipliers;
-
-    std::vector<std::size_t> multiplier_loc_from;
-    std::vector<bool> multiplier_keep_alive;
     std::vector<std::size_t> multiplier_origin((from - to) * 2, passive_id<std::size_t>);
 
     // LOOP 2: forward, to calculate multipliers after compressing induced paths
+    buffer_t<double> buffer_multipliers_values;
+    auto const one_loc = buffer_multipliers_values.get_new_loc();
+    buffer_multipliers_values[one_loc] = 1.0;
+    auto const minus_one_loc = buffer_multipliers_values.get_new_loc();
+    buffer_multipliers_values[minus_one_loc] = -1.0;
+
     enum class mul_type : std::uint8_t {
         ANY,
         ONE,
         MINUS_ONE,
     };
-    std::vector<mul_type> values_type;
 
-    auto combine_mul_type = [](mul_type a, mul_type b) -> mul_type {
-        if (a == mul_type::ANY || b == mul_type::ANY) {
-            return mul_type::ANY;
-        }
-        if (a == b) {
-            return mul_type::ONE;
-        }
-        return mul_type::MINUS_ONE;
+    struct multiplier_info_t {
+        std::size_t position;
+        mul_type value_type;
+        std::size_t loc_from;
+        bool keep_alive;
+    };
+    buffer_t<multiplier_info_t> buffer_multipliers;
+
+    auto copy_m = [&](std::size_t const pos, double const multiplier) { buffer_multipliers_values[pos] = multiplier; };
+
+    auto copy_minus_m = [&](std::size_t const pos, double const multiplier) {
+        buffer_multipliers_values[pos] = -multiplier;
     };
 
-    auto multiplier_set_incoming = [&]<mul_type M>(std::size_t const pos, double const multiplier = 0) {
-        if constexpr (M == mul_type::ONE) {
-            buffer_multipliers.values[pos] = 1.0;
-            values_type[pos] = mul_type::ONE;
-        }
-        else if constexpr (M == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos] = -1.0;
-            values_type[pos] = mul_type::MINUS_ONE;
-        }
-        else {
-            static_assert(M == mul_type::ANY, "Invalid multiplier type");
-            buffer_multipliers.values[pos] = multiplier;
-            values_type[pos] = mul_type::ANY;
-        }
+    auto minus_inplace_m = [&](std::size_t const pos) {
+        buffer_multipliers_values[pos] = -buffer_multipliers_values[pos];
     };
 
-    auto multiplier_multiply_incoming = [&, combine_mul_type]<mul_type M>(std::size_t const pos,
-                                                                          double const multiplier = 0) {
-        if constexpr (M == mul_type::ONE) {
-            values_type[pos] = combine_mul_type(values_type[pos], mul_type::ONE);
-        }
-        else if constexpr (M == mul_type::MINUS_ONE) {
-            buffer_multipliers.values[pos] = -buffer_multipliers.values[pos];
-            values_type[pos] = combine_mul_type(values_type[pos], mul_type::MINUS_ONE);
-        }
-        else {
-            static_assert(M == mul_type::ANY, "Invalid multiplier type");
-            buffer_multipliers.values[pos] *= multiplier;
-            values_type[pos] = mul_type::ANY;
-        }
+    auto mul_inplace_m = [&](std::size_t const pos, double const multiplier) {
+        buffer_multipliers_values[pos] *= multiplier;
+    };
+
+    auto add_internal = [&](std::size_t const pos1, std::size_t const pos2) {
+        buffer_multipliers_values[pos1] += buffer_multipliers_values[pos2];
+    };
+
+    auto mul_internal = [&](std::size_t const pos1, std::size_t const pos2) {
+        buffer_multipliers_values[pos1] *= buffer_multipliers_values[pos2];
+    };
+
+    auto multiplier_set_incoming = [&](std::size_t const pos, double const multiplier) {
+        auto const real_pos = buffer_multipliers.data()[pos].position;
+        copy_m(real_pos, multiplier);
     };
 
     auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
-        buffer_multipliers.values[pos1] += buffer_multipliers.values[pos2];
-        values_type[pos1] = mul_type::ANY;
+        auto& info1 = buffer_multipliers.data()[pos1];
+        auto& info2 = buffer_multipliers.data()[pos2];
+
+        auto const mult_type1 = info1.value_type;
+        auto const mult_type2 = info2.value_type;
+        if (mult_type1 == mul_type::ANY && mult_type2 == mul_type::ANY) {
+            auto const pos1_buffer_loc = info1.position;
+            auto const pos2_buffer_loc = info2.position;
+            add_internal(pos1_buffer_loc, pos2_buffer_loc);
+            buffer_multipliers_values.free_loc(pos2_buffer_loc);
+
+            info2.position = passive_id<std::size_t>;
+            // info1.position = pos1_buffer_loc;
+        }
+        else if (mult_type1 == mul_type::ANY) {
+            auto const pos1_buffer_loc = info1.position;
+            if (mult_type2 == mul_type::ONE) {
+                add_internal(pos1_buffer_loc, 0);
+            }
+            else if (mult_type2 == mul_type::MINUS_ONE) {
+                add_internal(pos1_buffer_loc, 1);
+            }
+
+            // info1.position = pos1_buffer_loc;
+        }
+        else if (mult_type2 == mul_type::ANY) {
+            auto const pos2_buffer_loc = info2.position;
+            if (mult_type1 == mul_type::ONE) {
+                add_internal(pos2_buffer_loc, 0);
+            }
+            else if (mult_type1 == mul_type::MINUS_ONE) {
+                add_internal(pos2_buffer_loc, 1);
+            }
+
+            info1.position = pos2_buffer_loc;
+        }
+        else {
+            auto const new_pos = buffer_multipliers_values.get_new_loc();
+
+            if (mult_type1 == mul_type::ONE) {
+                add_internal(new_pos, 0);
+            }
+            else if (mult_type1 == mul_type::MINUS_ONE) {
+                add_internal(new_pos, 1);
+            }
+
+            if (mult_type2 == mul_type::ONE) {
+                add_internal(new_pos, 0);
+            }
+            else if (mult_type2 == mul_type::MINUS_ONE) {
+                add_internal(new_pos, 1);
+            }
+
+            info1.position = new_pos;
+        }
+
+        info1.value_type = mul_type::ANY;
     };
 
     auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
-        buffer_multipliers.values[pos1] *= buffer_multipliers.values[pos2];
-        values_type[pos1] = mul_type::ANY;
+        auto& info1 = buffer_multipliers.data()[pos1];
+        auto& info2 = buffer_multipliers.data()[pos2];
+
+        auto const mult_type1 = info1.value_type;
+        auto const mult_type2 = info2.value_type;
+        if (mult_type2 != mul_type::ANY) {
+            // should not happen
+            throw;
+        }
+
+        auto const pos2_buffer_loc = info2.position;
+        if (mult_type1 == mul_type::ANY) {
+            auto const pos1_buffer_loc = info1.position;
+
+            mul_internal(pos1_buffer_loc, pos2_buffer_loc);
+            buffer_multipliers_values.free_loc(pos2_buffer_loc);
+
+            info2.position = passive_id<std::size_t>;
+            info1.position = pos1_buffer_loc;
+        }
+        else if (mult_type1 == mul_type::ONE) {
+            info1.position = pos2_buffer_loc;
+        }
+        else {
+            minus_inplace_m(pos2_buffer_loc);
+            info1.position = pos2_buffer_loc;
+        }
+
+        info1.value_type = mul_type::ANY;
+    };
+
+    auto get_mult_loc = [&]<mul_type M>() -> std::size_t {
+        std::size_t result = buffer_multipliers.get_new_loc();
+        auto& node_data = buffer_multipliers.data()[result];
+        node_data.value_type = M;
+
+        if constexpr (M == mul_type::ANY) {
+            std::size_t size_buff = buffer_multipliers_values.get_new_loc();
+            node_data.position = size_buff;
+        }
+        else {
+            node_data.position = passive_id<std::size_t>;
+        }
+        return result;
+    };
+
+    auto update_univariate_aux = [&]<mul_type M, bool KeepAlive = false>(std::size_t const arg_id,
+                                                                         std::size_t& mult_origin_res,
+                                                                         double const multiplier = 0) -> bool {
+        bool const arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
+                                         (multiplier_origin[(arg_id - to) * 2] != passive_id<std::size_t>) &&
+                                         (multiplier_origin[((arg_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+        if (arg_is_induced_path) {
+            auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
+            auto& node_data = buffer_multipliers.data()[mul_origin_arg];
+            auto& origin_type = node_data.value_type;
+            auto& buffer_origin = node_data.position;
+
+            if constexpr (M == mul_type::ANY) {
+                if (origin_type != mul_type::ANY) {
+                    buffer_origin = buffer_multipliers_values.get_new_loc();
+                    if (origin_type == mul_type::ONE) {
+                        copy_m(buffer_origin, multiplier);
+                    }
+                    else if (origin_type == mul_type::MINUS_ONE) {
+                        copy_minus_m(buffer_origin, multiplier);
+                    }
+                    origin_type = mul_type::ANY;
+                }
+                else {
+                    mul_inplace_m(buffer_origin, multiplier);
+                }
+            }
+            else {
+                if (origin_type == mul_type::ANY) {
+                    if constexpr (M == mul_type::MINUS_ONE) {
+                        minus_inplace_m(buffer_origin);
+                    }
+                }
+                else if (origin_type == M) {
+                    origin_type = mul_type::ONE;
+                }
+                else {
+                    origin_type = mul_type::MINUS_ONE;
+                }
+            }
+
+            node_data.keep_alive = KeepAlive;
+
+            std::swap(mul_origin_arg, mult_origin_res);
+            --number_dependents[arg_id - to];
+        }
+        else {
+            mult_origin_res = get_mult_loc.template operator()<M>();
+            if constexpr (M == mul_type::ANY) {
+                multiplier_set_incoming(mult_origin_res, multiplier);
+            }
+            auto& node_data = buffer_multipliers.data()[mult_origin_res];
+            node_data.loc_from = arg_id;
+            node_data.keep_alive = KeepAlive;
+        }
+
+        return arg_is_induced_path;
+    };
+
+    auto update_univariate = [&]<mul_type M, bool KeepAlive = false>(
+                               std::size_t const arg_id, std::size_t const res_id, double const multiplier = 0) {
+        auto& mult_origin_res = multiplier_origin[(res_id - to) * 2];
+        update_univariate_aux.template operator()<M, KeepAlive>(arg_id, mult_origin_res, multiplier);
+    };
+
+    auto update_bivariate = [&]<mul_type M1, mul_type M2>(std::size_t const lhs_id,
+                                                          std::size_t const rhs_id,
+                                                          std::size_t const res_id,
+                                                          double const multiplier_lhs = 0,
+                                                          double const multiplier_rhs = 0) {
+        std::size_t multiplier_loc_lhs = passive_id<std::size_t>;
+        bool const lhs_is_induced_path =
+          update_univariate_aux.template operator()<M1, false>(lhs_id, multiplier_loc_lhs, multiplier_lhs);
+
+        std::size_t multiplier_loc_rhs = passive_id<std::size_t>;
+        bool const rhs_is_induced_path =
+          update_univariate_aux.template operator()<M2, false>(rhs_id, multiplier_loc_rhs, multiplier_rhs);
+
+        bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
+        // there is potential for a bivariate operator on the same argument, we need to check if
+        // this is the case and update the multiplier if so
+        auto& node_data_lhs = buffer_multipliers.data()[multiplier_loc_lhs];
+        auto& node_data_rhs = buffer_multipliers.data()[multiplier_loc_rhs];
+        bool const bivariate_consolidate_this = has_induced_path && (node_data_lhs.loc_from == node_data_rhs.loc_from);
+
+        if (bivariate_consolidate_this) {
+            std::size_t const origin_id = node_data_lhs.loc_from;
+            multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
+            buffer_multipliers.free_loc(multiplier_loc_rhs);
+            multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
+
+            if (origin_id >= to) {
+                auto& number_dependents_to_update = number_dependents[origin_id - to];
+                --number_dependents_to_update;
+
+                bool const has_single_origin =
+                  (multiplier_origin[(origin_id - to) * 2] != passive_id<std::size_t>) &&
+                  (multiplier_origin[((origin_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+                bool const univariate_consolidate_this = (number_dependents_to_update == 1) && has_single_origin;
+                if (univariate_consolidate_this) {
+                    // this node now has only one dependent, we can reintroduce a
+                    // multiplication chain
+                    auto& coming_from = multiplier_origin[(origin_id - to) * 2];
+                    multiplier_multiply(coming_from, multiplier_loc_lhs);
+                    buffer_multipliers.free_loc(multiplier_loc_lhs);
+                    multiplier_origin[(res_id - to) * 2] = coming_from;
+                    coming_from = passive_id<std::size_t>;
+                    --number_dependents[origin_id - to];
+                }
+            }
+        }
+        else {
+            multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
+            multiplier_origin[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
+
+            if constexpr (ConsolidateLargeUnivariate) {
+                auto check_univariate_subtree = [&](std::size_t res_id) -> std::optional<std::size_t> {
+                    std::optional<std::size_t> result = std::nullopt;
+
+                    std::map<std::size_t, std::size_t> local_number_dependents;
+                    local_number_dependents[res_id] = number_dependents[res_id - to];
+
+                    do {
+                        auto const top_id = local_number_dependents.rbegin()->first;
+                        auto const top_deps = local_number_dependents.rbegin()->second;
+
+                        if (top_id < to) {
+                            // we reached a node that crosses boundaries
+                            return result;
+                        }
+
+                        if (top_deps != number_dependents[top_id - to]) {
+                            // a dependency is not included in this subtree, so we cannot consolidate
+                            return result;
+                        }
+
+                        local_number_dependents.erase(top_id);
+                        std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                        std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+                        auto const& node_data_1 = buffer_multipliers.data()[origin_multiplier_id_1];
+                        auto const& node_data_2 = buffer_multipliers.data()[origin_multiplier_id_2];
+
+                        if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                            std::size_t const id_origin1 = node_data_1.multiplier_loc_from;
+                            std::size_t const id_origin2 = node_data_2.multiplier_loc_from;
+                            ++local_number_dependents[id_origin1];
+                            ++local_number_dependents[id_origin2];
+                        }
+                        else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                            std::size_t const id_origin = node_data_1.multiplier_loc_from;
+                            ++local_number_dependents[id_origin];
+                        }
+                        else {
+                            // we reached an input node, while number of dependents is larger than 1, so
+                            // this cannot be a univariate operator
+                            return result;
+                        }
+
+                    } while (local_number_dependents.size() > 1);
+
+                    result = local_number_dependents.rbegin()->first;
+
+                    return result;
+                };
+
+                auto compress_univariate_subtree = [&](std::size_t in_id, std::size_t res_id) {
+                    // when compressing a univarate subtree, we do a forward pass.
+                    // why? because a forward pass is simpler, especially for higher orders.
+
+                    std::map<std::size_t, double> local_derivatives;
+                    local_derivatives[res_id] = 1.0;
+
+                    do {
+                        auto const top_id = local_derivatives.rbegin()->first;
+                        auto const top_der = local_derivatives.rbegin()->second;
+                        local_derivatives.erase(top_id);
+
+                        std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
+                        std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
+                        auto const& node_data_1 = buffer_multipliers.data()[origin_multiplier_id_1];
+                        auto const& node_data_2 = buffer_multipliers.data()[origin_multiplier_id_2];
+
+                        if (origin_multiplier_id_2 != passive_id<std::size_t>) {
+                            std::size_t const id_origin1 = node_data_1.multiplier_loc_from;
+                            std::size_t const id_origin2 = node_data_2.multiplier_loc_from;
+
+                            std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
+                            auto& node_data_loc_1 = buffer_multipliers.data()[loc_multipler_1];
+                            auto const mult_type1 = node_data_loc_1.values_type;
+                            if (mult_type1 == mul_type::ONE) {
+                                local_derivatives[id_origin1] += top_der;
+                            }
+                            else if (mult_type1 == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin1] -= top_der;
+                            }
+                            else {
+                                auto const pos1_buffer_loc = node_data_loc_1.position;
+                                local_derivatives[id_origin1] += top_der * buffer_multipliers_values[pos1_buffer_loc];
+                            }
+
+                            std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
+                            auto& node_data_loc_2 = buffer_multipliers.data()[loc_multipler_2];
+                            auto const mult_type2 = node_data_loc_2.values_type;
+                            if (mult_type2 == mul_type::ONE) {
+                                local_derivatives[id_origin2] += top_der;
+                            }
+                            else if (mult_type2 == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin2] -= top_der;
+                            }
+                            else {
+                                auto const pos2_buffer_loc = node_data_loc_2.position;
+                                local_derivatives[id_origin2] += top_der * buffer_multipliers_values[pos2_buffer_loc];
+                            }
+
+                            // unecessary?
+                            node_data_loc_1.multiplier_loc_from = passive_id<std::size_t>;
+                            buffer_multipliers.free_loc(loc_multipler_1);
+                            loc_multipler_1 = passive_id<std::size_t>;
+
+                            // unecessary?
+                            node_data_loc_2.multiplier_loc_from = passive_id<std::size_t>;
+                            buffer_multipliers.free_loc(loc_multipler_2);
+                            loc_multipler_2 = passive_id<std::size_t>;
+
+                            if (id_origin1 >= to) {
+                                --number_dependents[id_origin1 - to];
+                            }
+                            if (id_origin2 >= to) {
+                                --number_dependents[id_origin2 - to];
+                            }
+                        }
+                        else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
+                            std::size_t const id_origin =
+                              buffer_multipliers.data()[origin_multiplier_id_1].multiplier_loc_from;
+
+                            std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
+                            auto& node_data_loc = buffer_multipliers.data()[loc_multipler];
+                            auto const mult_type = node_data_loc.values_type;
+                            if (mult_type == mul_type::ONE) {
+                                local_derivatives[id_origin] += top_der;
+                            }
+                            else if (mult_type == mul_type::MINUS_ONE) {
+                                local_derivatives[id_origin] -= top_der;
+                            }
+                            else {
+                                auto const pos_buffer_loc = node_data_loc.position;
+                                local_derivatives[id_origin] += top_der * buffer_multipliers_values[pos_buffer_loc];
+                            }
+
+                            node_data_loc.multiplier_loc_from = passive_id<std::size_t>;
+                            buffer_multipliers.free_loc(loc_multipler);
+                            loc_multipler = passive_id<std::size_t>;
+
+                            if (id_origin >= to) {
+                                --number_dependents[id_origin - to];
+                            }
+                        }
+                        else {
+                            // we reached an input node, while number of dependents is larger than 1, so
+                            // this cannot be a univariate operator
+                            throw;
+                        }
+
+                    } while (local_derivatives.size() > 1);
+
+                    if (local_derivatives.begin()->first != in_id) {
+                        // this should not happen, because we should have detected the univariate subtree correctly
+                        throw;
+                    }
+
+                    std::size_t const new_pos = get_mult_loc.template operator()<mul_type::ANY>();
+                    auto& node_data_loc = buffer_multipliers.data()[new_pos];
+
+                    node_data_loc.multiplier_loc_from = in_id;
+                    multiplier_set_incoming(new_pos, local_derivatives.begin()->second);
+
+                    multiplier_origin[(res_id - to) * 2] = new_pos;
+                    if (in_id >= to) {
+                        ++number_dependents[in_id - to];
+
+                        bool const has_single_origin =
+                          (multiplier_origin[(in_id - to) * 2] != passive_id<std::size_t>) &&
+                          (multiplier_origin[((in_id - to) * 2) + 1] == passive_id<std::size_t>);
+
+                        bool const univariate_consolidate_this =
+                          (number_dependents[in_id - to] == 1) && has_single_origin;
+
+                        if (univariate_consolidate_this) {
+                            // this node now has only one dependent, we can reintroduce a
+                            // multiplication chain
+                            auto& coming_from = multiplier_origin[(in_id - to) * 2];
+                            multiplier_multiply(coming_from, new_pos);
+
+                            node_data_loc.multiplier_loc_from = passive_id<std::size_t>;
+                            buffer_multipliers.free_loc(new_pos);
+
+                            multiplier_origin[(res_id - to) * 2] = coming_from;
+                            coming_from = passive_id<std::size_t>;
+                            --number_dependents[in_id - to];
+                        }
+                    }
+                };
+
+                auto in_id_opt = check_univariate_subtree(res_id);
+                if (in_id_opt) {
+                    compress_univariate_subtree(*in_id_opt, res_id);
+                }
+            }
+        }
     };
 
     id_idx = id_idx_start;
@@ -383,318 +764,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     for (std::size_t op_idx = to; op_idx < from; ++op_idx) {
         OpCode const& op = ops[op_idx];
         bool const use_this_op = (number_dependents[op_idx - to] > 0);
-
-        auto get_mult_loc = [&]() -> std::size_t {
-            if (buffer_multipliers.free_positions.empty()) {
-                std::size_t result = buffer_multipliers.size;
-                ++buffer_multipliers.size;
-                buffer_multipliers.values.resize(buffer_multipliers.values.size() + 1);
-                values_type.resize(values_type.size() + 1);
-                multiplier_loc_from.resize(buffer_multipliers.size);
-                multiplier_keep_alive.resize(buffer_multipliers.size);
-                return result;
-            }
-
-            std::size_t result = buffer_multipliers.free_positions.back();
-            buffer_multipliers.free_positions.pop_back();
-            return result;
-        };
-
-        auto update_univariate = [&]<mul_type M, bool KeepAlive = false>(
-                                   std::size_t const arg_id, std::size_t const res_id, double const multiplier = 0) {
-            bool const arg_is_induced_path = (arg_id >= to) && (number_dependents[arg_id - to] == 1) &&
-                                             (multiplier_origin[(arg_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((arg_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-            auto& mult_origin_res = multiplier_origin[(res_id - to) * 2];
-
-            if (arg_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
-                if constexpr (M == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M>(mul_origin_arg);
-                }
-                multiplier_keep_alive[mul_origin_arg] = KeepAlive;
-
-                std::swap(mul_origin_arg, mult_origin_res);
-                --number_dependents[arg_id - to];
-            }
-            else {
-                mult_origin_res = get_mult_loc();
-                if constexpr (M == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(mult_origin_res, multiplier);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M>(mult_origin_res);
-                }
-                multiplier_loc_from[mult_origin_res] = arg_id;
-                multiplier_keep_alive[mult_origin_res] = KeepAlive;
-            }
-        };
-
-        auto update_bivariate = [&]<mul_type M1, mul_type M2>(std::size_t const lhs_id,
-                                                              std::size_t const rhs_id,
-                                                              std::size_t const res_id,
-                                                              double const multiplier_lhs = 0,
-                                                              double const multiplier_rhs = 0) {
-            bool const lhs_is_induced_path = (lhs_id >= to) && (number_dependents[lhs_id - to] == 1) &&
-                                             (multiplier_origin[(lhs_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((lhs_id - to) * 2) + 1] == passive_id<std::size_t>);
-            bool const rhs_is_induced_path = (rhs_id >= to) && (number_dependents[rhs_id - to] == 1) &&
-                                             (multiplier_origin[(rhs_id - to) * 2] != passive_id<std::size_t>) &&
-                                             (multiplier_origin[((rhs_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-            std::size_t multiplier_loc_lhs = passive_id<std::size_t>;
-            if (lhs_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(lhs_id - to) * 2];
-                if constexpr (M1 == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_lhs);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M1>(mul_origin_arg);
-                }
-                std::swap(multiplier_loc_lhs, mul_origin_arg);
-                --number_dependents[lhs_id - to];
-            }
-            else {
-                multiplier_loc_lhs = get_mult_loc();
-                if constexpr (M1 == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_lhs, multiplier_lhs);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M1>(multiplier_loc_lhs);
-                }
-                multiplier_loc_from[multiplier_loc_lhs] = lhs_id;
-                multiplier_keep_alive[multiplier_loc_lhs] = false;
-            }
-
-            std::size_t multiplier_loc_rhs = passive_id<std::size_t>;
-            if (rhs_is_induced_path) {
-                auto& mul_origin_arg = multiplier_origin[(rhs_id - to) * 2];
-                if constexpr (M2 == mul_type::ANY) {
-                    multiplier_multiply_incoming.template operator()<mul_type::ANY>(mul_origin_arg, multiplier_rhs);
-                }
-                else {
-                    multiplier_multiply_incoming.template operator()<M2>(mul_origin_arg);
-                }
-                std::swap(multiplier_loc_rhs, mul_origin_arg);
-                --number_dependents[rhs_id - to];
-            }
-            else {
-                multiplier_loc_rhs = get_mult_loc();
-                if constexpr (M2 == mul_type::ANY) {
-                    multiplier_set_incoming.template operator()<mul_type::ANY>(multiplier_loc_rhs, multiplier_rhs);
-                }
-                else {
-                    multiplier_set_incoming.template operator()<M2>(multiplier_loc_rhs);
-                }
-                multiplier_loc_from[multiplier_loc_rhs] = rhs_id;
-                multiplier_keep_alive[multiplier_loc_rhs] = false;
-            }
-
-            bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
-            // there is potential for a bivariate operator on the same argument, we need to check if
-            // this is the case and update the multiplier if so
-            bool const bivariate_consolidate_this =
-              has_induced_path && (multiplier_loc_from[multiplier_loc_lhs] == multiplier_loc_from[multiplier_loc_rhs]);
-
-            if (bivariate_consolidate_this) {
-                std::size_t const origin_id = multiplier_loc_from[multiplier_loc_lhs];
-                multiplier_add(multiplier_loc_lhs, multiplier_loc_rhs);
-
-                buffer_multipliers.free_positions.push_back(multiplier_loc_rhs);
-                multiplier_loc_from[multiplier_loc_rhs] = passive_id<std::size_t>;
-
-                multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
-
-                if (origin_id >= to) {
-                    auto& number_dependents_to_update = number_dependents[origin_id - to];
-                    --number_dependents_to_update;
-
-                    bool const has_single_origin =
-                      (multiplier_origin[(origin_id - to) * 2] != passive_id<std::size_t>) &&
-                      (multiplier_origin[((origin_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-                    bool const univariate_consolidate_this = (number_dependents_to_update == 1) && has_single_origin;
-                    if (univariate_consolidate_this) {
-                        // this node now has only one dependent, we can reintroduce a
-                        // multiplication chain
-                        auto& coming_from = multiplier_origin[(origin_id - to) * 2];
-                        multiplier_multiply(coming_from, multiplier_loc_lhs);
-
-                        buffer_multipliers.free_positions.push_back(multiplier_loc_lhs);
-                        multiplier_loc_from[multiplier_loc_lhs] = passive_id<std::size_t>;
-
-                        multiplier_origin[(res_id - to) * 2] = coming_from;
-                        coming_from = passive_id<std::size_t>;
-                        --number_dependents[origin_id - to];
-                    }
-                }
-            }
-            else {
-                multiplier_origin[(res_id - to) * 2] = multiplier_loc_lhs;
-                multiplier_origin[((res_id - to) * 2) + 1] = multiplier_loc_rhs;
-
-                if constexpr (ConsolidateLargeUnivariate) {
-                    auto check_univariate_subtree = [&](std::size_t res_id) -> std::optional<std::size_t> {
-                        std::optional<std::size_t> result = std::nullopt;
-
-                        std::map<std::size_t, std::size_t> local_number_dependents;
-                        local_number_dependents[res_id] = number_dependents[res_id - to];
-
-                        // this while should not be needed, because allprevious nodes should have been checked for
-                        // univariate subtrees
-                        //  while (true) {
-                        do {
-                            auto const top_id = local_number_dependents.rbegin()->first;
-                            auto const top_deps = local_number_dependents.rbegin()->second;
-
-                            if (top_id < to) {
-                                // we reached a node that crosses boundaries
-                                return result;
-                            }
-
-                            if (top_deps != number_dependents[top_id - to]) {
-                                // a dependency is not included in this subtree, so we cannot consolidate
-                                return result;
-                            }
-
-                            local_number_dependents.erase(top_id);
-                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
-                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
-
-                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
-                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
-                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
-                                ++local_number_dependents[id_origin1];
-                                ++local_number_dependents[id_origin2];
-                            }
-                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
-                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
-                                ++local_number_dependents[id_origin];
-                            }
-                            else {
-                                // we reached an input node, while number of dependents is larger than 1, so
-                                // this cannot be a univariate operator
-                                return result;
-                            }
-
-                        } while (local_number_dependents.size() > 1);
-
-                        result = local_number_dependents.rbegin()->first;
-                        // this while should not be needed, because allprevious nodes should have been checked for
-                        // univariate subtrees
-                        // }
-
-                        return result;
-                    };
-
-                    auto compress_univariate_subtree = [&](std::size_t in_id, std::size_t res_id) {
-                        // when compressing a univarate subtree, we do a forward pass.
-                        // why? because a forward pass is simpler, especially for higher orders.
-
-                        std::map<std::size_t, double> local_derivatives;
-                        local_derivatives[res_id] = 1.0;
-
-                        do {
-                            auto const top_id = local_derivatives.rbegin()->first;
-                            auto const top_der = local_derivatives.rbegin()->second;
-                            local_derivatives.erase(top_id);
-
-                            std::size_t const origin_multiplier_id_1 = multiplier_origin[(top_id - to) * 2];
-                            std::size_t const origin_multiplier_id_2 = multiplier_origin[((top_id - to) * 2) + 1];
-
-                            if (origin_multiplier_id_2 != passive_id<std::size_t>) {
-                                std::size_t const id_origin1 = multiplier_loc_from[origin_multiplier_id_1];
-                                std::size_t const id_origin2 = multiplier_loc_from[origin_multiplier_id_2];
-
-                                std::size_t& loc_multipler_1 = multiplier_origin[(top_id - to) * 2];
-                                std::size_t& loc_multipler_2 = multiplier_origin[((top_id - to) * 2) + 1];
-                                local_derivatives[id_origin1] += top_der * buffer_multipliers.values[loc_multipler_1];
-                                local_derivatives[id_origin2] += top_der * buffer_multipliers.values[loc_multipler_2];
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler_1);
-                                multiplier_loc_from[loc_multipler_1] = passive_id<std::size_t>;
-                                loc_multipler_1 = passive_id<std::size_t>;
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler_2);
-                                multiplier_loc_from[loc_multipler_2] = passive_id<std::size_t>;
-                                loc_multipler_2 = passive_id<std::size_t>;
-
-                                if (id_origin1 >= to) {
-                                    --number_dependents[id_origin1 - to];
-                                }
-                                if (id_origin2 >= to) {
-                                    --number_dependents[id_origin2 - to];
-                                }
-                            }
-                            else if (origin_multiplier_id_1 != passive_id<std::size_t>) {
-                                std::size_t const id_origin = multiplier_loc_from[origin_multiplier_id_1];
-
-                                std::size_t& loc_multipler = multiplier_origin[(top_id - to) * 2];
-                                local_derivatives[id_origin] += top_der * buffer_multipliers.values[loc_multipler];
-
-                                buffer_multipliers.free_positions.push_back(loc_multipler);
-                                multiplier_loc_from[loc_multipler] = passive_id<std::size_t>;
-                                loc_multipler = passive_id<std::size_t>;
-
-                                if (id_origin >= to) {
-                                    --number_dependents[id_origin - to];
-                                }
-                            }
-                            else {
-                                // we reached an input node, while number of dependents is larger than 1, so
-                                // this cannot be a univariate operator
-                                throw;
-                            }
-
-                        } while (local_derivatives.size() > 1);
-
-                        if (local_derivatives.begin()->first != in_id) {
-                            // this should not happen, because we should have detected the univariate subtree correctly
-                            throw;
-                        }
-
-                        std::size_t const new_pos = get_mult_loc();
-
-                        multiplier_loc_from[new_pos] = in_id;
-                        buffer_multipliers.values[new_pos] = local_derivatives.begin()->second;
-                        multiplier_origin[(res_id - to) * 2] = new_pos;
-                        if (in_id >= to) {
-                            ++number_dependents[in_id - to];
-
-                            bool const has_single_origin =
-                              (multiplier_origin[(in_id - to) * 2] != passive_id<std::size_t>) &&
-                              (multiplier_origin[((in_id - to) * 2) + 1] == passive_id<std::size_t>);
-
-                            bool const univariate_consolidate_this =
-                              (number_dependents[in_id - to] == 1) && has_single_origin;
-
-                            if (univariate_consolidate_this) {
-                                // this node now has only one dependent, we can reintroduce a
-                                // multiplication chain
-                                auto& coming_from = multiplier_origin[(in_id - to) * 2];
-                                multiplier_multiply(coming_from, new_pos);
-
-                                buffer_multipliers.free_positions.push_back(new_pos);
-                                multiplier_loc_from[new_pos] = passive_id<std::size_t>;
-
-                                multiplier_origin[(res_id - to) * 2] = coming_from;
-                                coming_from = passive_id<std::size_t>;
-                                --number_dependents[in_id - to];
-                            }
-                        }
-                    };
-
-                    auto in_id_opt = check_univariate_subtree(res_id);
-                    if (in_id_opt) {
-                        compress_univariate_subtree(*in_id_opt, res_id);
-                    }
-                }
-            }
-        };
 
         switch (op) {
             case OpCode::REG_INPUT: {
@@ -892,61 +961,61 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     }
 
     // LOOP 3: backward, to calculate derivatives on multiple lanes
-    auto& buffer_vals = buffers.back().values;
+    auto& buffer_vals = this->buffers.back().data();
 
     auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = src[i];
             }
         }
         else {
-            buffers[which].values[in_pos] = buffer_vals[out_pos];
+            this->buffers[which].data()[in_pos] = buffer_vals[out_pos];
         }
     };
 
     auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = -src[i];
             }
         }
         else {
-            buffers[which].values[in_pos] = -buffer_vals[out_pos];
+            this->buffers[which].data()[in_pos] = -buffer_vals[out_pos];
         }
     };
 
     auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] += src[i];
             }
         }
         else {
-            buffers[which].values[in_pos] += buffer_vals[out_pos];
+            this->buffers[which].data()[in_pos] += buffer_vals[out_pos];
         }
     };
 
     auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] -= src[i];
             }
         }
         else {
-            buffers[which].values[in_pos] -= buffer_vals[out_pos];
+            this->buffers[which].data()[in_pos] -= buffer_vals[out_pos];
         }
     };
 
@@ -964,7 +1033,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     };
 
     auto mul_inplace = [&](std::size_t const pos, std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             double* dest = &buffer_vals[pos * this->m_num_lanes];
 #pragma omp simd
@@ -981,17 +1050,17 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                        std::size_t const out_pos,
                        std::size_t const in_pos,
                        std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] += src[i] * multiplier;
             }
         }
         else {
-            buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
+            this->buffers[which].data()[in_pos] += buffer_vals[out_pos] * multiplier;
         }
     };
 
@@ -999,61 +1068,54 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                        std::size_t const out_pos,
                        std::size_t const in_pos,
                        std::size_t const multiplier_id) {
-        double const multiplier = buffer_multipliers.values[multiplier_id];
+        double const multiplier = buffer_multipliers_values[multiplier_id];
         if constexpr (Vectorised) {
             const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-            double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+            double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = src[i] * multiplier;
             }
         }
         else {
-            buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
+            this->buffers[which].data()[in_pos] = buffer_vals[out_pos] * multiplier;
         }
     };
 
-    auto copy_mul = [&](std::size_t res_pos,
-                        std::size_t& arg_pos,
-                        std::uint8_t buffer_id,
-                        std::size_t const multiplier_id,
-                        mul_type multiplier_type) {
-        bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+    auto copy_mul =
+      [&](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, std::size_t const multiplier_id) {
+          auto const& node_data = buffer_multipliers.data()[multiplier_id];
+          auto const multiplier_type = node_data.value_type;
+          bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
 
-        if (arg_is_new) {
-            auto& arg_buffer = this->buffers[buffer_id];
-            if (arg_buffer.free_positions.empty()) {
-                arg_pos = arg_buffer.size;
-                ++arg_buffer.size;
-                arg_buffer.values.resize(arg_buffer.values.size() + this->m_num_lanes);
-            }
-            else {
-                arg_pos = arg_buffer.free_positions.back();
-                arg_buffer.free_positions.pop_back();
-            }
-            // this is a new value, we NEED to override
-            if (multiplier_type == mul_type::ANY) {
-                mul_set(buffer_id, res_pos, arg_pos, multiplier_id);
-            }
-            else if (multiplier_type == mul_type::ONE) {
-                copy(buffer_id, res_pos, arg_pos);
-            }
-            else if (multiplier_type == mul_type::MINUS_ONE) {
-                copy_minus(buffer_id, res_pos, arg_pos);
-            }
-        }
-        else {
-            if (multiplier_type == mul_type::ANY) {
-                mul_add(buffer_id, res_pos, arg_pos, multiplier_id);
-            }
-            else if (multiplier_type == mul_type::ONE) {
-                add(buffer_id, res_pos, arg_pos);
-            }
-            else if (multiplier_type == mul_type::MINUS_ONE) {
-                sub(buffer_id, res_pos, arg_pos);
-            }
-        }
-    };
+          if (arg_is_new) {
+              auto& arg_buffer = this->buffers[buffer_id];
+              arg_pos = arg_buffer.get_new_loc();
+              // this is a new value, we NEED to override
+              if (multiplier_type == mul_type::ANY) {
+                  auto const position_buffer = node_data.position;
+                  mul_set(buffer_id, res_pos, arg_pos, position_buffer);
+              }
+              else if (multiplier_type == mul_type::ONE) {
+                  copy(buffer_id, res_pos, arg_pos);
+              }
+              else if (multiplier_type == mul_type::MINUS_ONE) {
+                  copy_minus(buffer_id, res_pos, arg_pos);
+              }
+          }
+          else {
+              if (multiplier_type == mul_type::ANY) {
+                  auto const position_buffer = node_data.position;
+                  mul_add(buffer_id, res_pos, arg_pos, position_buffer);
+              }
+              else if (multiplier_type == mul_type::ONE) {
+                  add(buffer_id, res_pos, arg_pos);
+              }
+              else if (multiplier_type == mul_type::MINUS_ONE) {
+                  sub(buffer_id, res_pos, arg_pos);
+              }
+          }
+      };
 
     auto const& checkpoints_c = this->checkpoints;
     auto get_loc = [checkpoints_c](std::size_t id) -> std::tuple<bool, std::uint8_t> {
@@ -1066,46 +1128,44 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         std::size_t const first_multiplier_origin = multiplier_origin[(op_idx - to) * 2];
         std::size_t const second_multiplier_origin = multiplier_origin[((op_idx - to) * 2) + 1];
         if (first_multiplier_origin != passive_id<std::size_t> && second_multiplier_origin == passive_id<std::size_t>) {
-            std::size_t const arg_id = multiplier_loc_from[first_multiplier_origin];
+            auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
+            std::size_t const arg_id = node_data_first.loc_from;
             std::size_t const res_id = op_idx;
-            bool const keep_alive = multiplier_keep_alive[first_multiplier_origin];
+            bool const keep_alive = node_data_first.keep_alive;
 
             std::size_t& res_pos = this->node_location_on_buffer[res_id];
             std::size_t& arg_pos = this->node_location_on_buffer[arg_id];
-
-            auto const multiplier_type = values_type[first_multiplier_origin];
 
             auto const arg_pos_data = get_loc(arg_id);
             bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
             bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
             if (arg_inplace && !keep_alive) {
-                if (multiplier_type != mul_type::ONE) {
-                    // res id should now be arg id, avoiding a copy and a potential buffer increase
-                    if (multiplier_type == mul_type::ANY) {
-                        mul_inplace(res_pos, first_multiplier_origin);
-                    }
-                    else if (multiplier_type == mul_type::MINUS_ONE) {
-                        minus_inplace(res_pos);
-                    }
+                auto const multiplier_type = node_data_first.value_type;
+                // res id should now be arg id, avoiding a copy and a potential buffer increase
+                if (multiplier_type == mul_type::ANY) {
+                    auto const position_buffer = node_data_first.position;
+                    mul_inplace(res_pos, position_buffer);
+                }
+                else if (multiplier_type == mul_type::MINUS_ONE) {
+                    minus_inplace(res_pos);
                 }
                 std::swap(res_pos, arg_pos);
             }
             else {
-                copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), first_multiplier_origin, multiplier_type);
+                copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), first_multiplier_origin);
 
                 if (!keep_alive) {
-                    buffer_free_positions.push_back(res_pos);
+                    this->buffers.back().free_loc(res_pos);
                     res_pos = passive_id<std::size_t>;
                 }
             }
         }
         else if (first_multiplier_origin != passive_id<std::size_t>) {
-            auto const mul_1_type = values_type[first_multiplier_origin];
-            auto const mul_2_type = values_type[second_multiplier_origin];
-
-            std::size_t const lhs_id = multiplier_loc_from[first_multiplier_origin];
-            std::size_t const rhs_id = multiplier_loc_from[second_multiplier_origin];
+            auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
+            auto const& node_data_second = buffer_multipliers.data()[second_multiplier_origin];
+            std::size_t const lhs_id = node_data_first.loc_from;
+            std::size_t const rhs_id = node_data_second.loc_from;
             std::size_t const res_id = op_idx;
 
             std::size_t& res_pos = this->node_location_on_buffer[res_id];
@@ -1121,44 +1181,42 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
             bool const rhs_inplace = !lhs_inplace && rhs_is_new && std::get<0>(rhs_pos_data);
 
             if (!lhs_inplace) {
-                copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), first_multiplier_origin, mul_1_type);
+                copy_mul(res_pos, lhs_pos, std::get<1>(lhs_pos_data), first_multiplier_origin);
             }
 
             if (!rhs_inplace) {
-                copy_mul(res_pos, rhs_pos, std::get<1>(rhs_pos_data), second_multiplier_origin, mul_2_type);
+                copy_mul(res_pos, rhs_pos, std::get<1>(rhs_pos_data), second_multiplier_origin);
             }
 
             if (lhs_inplace) {
+                auto const mul_1_type = node_data_first.value_type;
                 // res id should now be lhs id, avoiding a copy and a potential buffer increase
-                if (mul_1_type != mul_type::ONE) {
-                    // res id should now be arg id, avoiding a copy and a potential buffer increase
-                    if (mul_1_type == mul_type::ANY) {
-                        mul_inplace(res_pos, first_multiplier_origin);
-                    }
-                    else if (mul_1_type == mul_type::MINUS_ONE) {
-                        minus_inplace(res_pos);
-                    }
+                if (mul_1_type == mul_type::ANY) {
+                    auto const position_buffer = node_data_first.position;
+                    mul_inplace(res_pos, position_buffer);
+                }
+                else if (mul_1_type == mul_type::MINUS_ONE) {
+                    minus_inplace(res_pos);
                 }
 
                 std::swap(res_pos, lhs_pos);
             }
             else if (rhs_inplace) {
-                // res id should now be rhs id, avoiding a copy and a potential buffer increase
-                if (mul_2_type != mul_type::ONE) {
-                    // res id should now be arg id, avoiding a copy and a potential buffer increase
-                    if (mul_2_type == mul_type::ANY) {
-                        mul_inplace(res_pos, second_multiplier_origin);
-                    }
-                    else if (mul_2_type == mul_type::MINUS_ONE) {
-                        minus_inplace(res_pos);
-                    }
+                auto const mul_2_type = node_data_second.value_type;
+                // res id should now be arg id, avoiding a copy and a potential buffer increase
+                if (mul_2_type == mul_type::ANY) {
+                    auto const position_buffer = node_data_second.position;
+                    mul_inplace(res_pos, position_buffer);
+                }
+                else if (mul_2_type == mul_type::MINUS_ONE) {
+                    minus_inplace(res_pos);
                 }
 
                 std::swap(res_pos, rhs_pos);
             }
             else {
                 // don't forget to free res_id from the buffer!
-                buffer_free_positions.push_back(res_pos);
+                this->buffers.back().free_loc(res_pos);
                 res_pos = passive_id<std::size_t>;
             }
         }
@@ -1166,7 +1224,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
     if constexpr (Reset) {
         if (!checkpoints.empty() && to == checkpoints.back()) {
-            this->buffers.back() = {};
+            this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
         }
 
         reset(pos, data);

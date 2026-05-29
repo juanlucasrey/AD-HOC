@@ -201,6 +201,8 @@ enum class Method {
     FirstOrderVLossyCompressed,
     FirstOrderLossyPathReuse,
     FirstOrderVLossyPathReuse,
+    FirstOrderLossyCompressedPathReuse,
+    FirstOrderVLossyCompressedPathReuse,
 };
 
 struct PositionImpl;

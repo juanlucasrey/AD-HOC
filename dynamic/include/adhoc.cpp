@@ -23,6 +23,7 @@
 #include "adhoc/backpropagator1.hpp"
 #include "adhoc/backpropagator1lossy.hpp"
 #include "adhoc/backpropagator1lossycompressed.hpp"
+#include "adhoc/backpropagator1lossycompressedpathreuse.hpp"
 #include "adhoc/backpropagator1lossypathreuse.hpp"
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2v.hpp"
@@ -80,7 +81,9 @@ struct Tape<Float>::Impl {
                  BackPropagatorLossyCompressed<Float>,
                  BackPropagatorLossyCompressed<Float, true>,
                  BackPropagatorLossyPathReuse<Float>,
-                 BackPropagatorLossyPathReuse<Float, true> >
+                 BackPropagatorLossyPathReuse<Float, true>,
+                 BackPropagatorLossyCompressedPathReuse<Float>,
+                 BackPropagatorLossyCompressedPathReuse<Float, true> >
       bp = BackPropagator<Float>();
 };
 
@@ -216,6 +219,12 @@ Tape<Float>::set_method(Method m)
     else if (m == Method::FirstOrderVLossyPathReuse) {
         this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
     }
+    else if (m == Method::FirstOrderLossyCompressedPathReuse) {
+        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
+    }
+    else if (m == Method::FirstOrderVLossyCompressedPathReuse) {
+        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double, true> >();
+    }
 }
 
 template<class Float>
@@ -274,6 +283,14 @@ Tape<Float>::get_method() const -> Method
         return Method::FirstOrderVLossyPathReuse;
     }
 
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float> >(this->impl->bp)) {
+        return Method::FirstOrderLossyCompressedPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float, true> >(this->impl->bp)) {
+        return Method::FirstOrderVLossyCompressedPathReuse;
+    }
+
     throw std::runtime_error("Invalid backpropagator type");
 }
 
@@ -330,6 +347,14 @@ Tape<Float>::get_order() const -> std::size_t
     }
 
     if (std::holds_alternative<BackPropagatorLossyPathReuse<Float, true> >(this->impl->bp)) {
+        return 1;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float> >(this->impl->bp)) {
+        return 1;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float, true> >(this->impl->bp)) {
         return 1;
     }
 
