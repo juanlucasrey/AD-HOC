@@ -21,6 +21,7 @@
 #ifndef ADHOC_BUFFER_T_HPP
 #define ADHOC_BUFFER_T_HPP
 
+#include <optional>
 #include <type_traits>
 #include <vector>
 
