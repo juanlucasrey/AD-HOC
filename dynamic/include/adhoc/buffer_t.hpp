@@ -117,6 +117,8 @@ class buffer_t {
     auto size() const -> std::size_t { return this->m_size; }
 
     auto allocate() { this->m_data.resize(this->m_size * this->m_num_lanes); }
+
+    auto allocated_size() const -> std::size_t { return this->m_data.size(); }
 };
 
 } // namespace adhoc

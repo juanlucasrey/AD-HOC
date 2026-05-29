@@ -965,7 +965,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
         };
 
         auto reset_loc = [&](std::size_t arg_pos, std::uint8_t buffer_id) {
-            if (buffers[buffer_id].size() > (arg_pos)) {
+            if (buffers[buffer_id].allocated_size() > (arg_pos)) {
                 if constexpr (Vectorised) {
                     double* dest = &buffers[buffer_id].data()[arg_pos * this->m_num_lanes];
 #pragma omp simd

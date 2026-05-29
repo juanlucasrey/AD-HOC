@@ -1154,13 +1154,11 @@ test_lossy_compressed_complex1_pre()
 void
 test_lossy_compressed_complex1_pre2()
 {
-    std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy,
-        adhoc::Method::FirstOrderLossyCompressed,
-        adhoc::Method::FirstOrderLossyPathReuse /* ,
-         adhoc::Method::FirstOrderLossyCompressedPathReuse */
-    };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
+                                                 adhoc::Method::FirstOrderLossy,
+                                                 adhoc::Method::FirstOrderLossyCompressed,
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
@@ -1225,13 +1223,11 @@ test_lossy_compressed_complex1_pre2()
 void
 test_lossy_compressed_complex1()
 {
-    std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy,
-        adhoc::Method::FirstOrderLossyCompressed,
-        adhoc::Method::FirstOrderLossyPathReuse /* ,
-         adhoc::Method::FirstOrderLossyCompressedPathReuse */
-    };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
+                                                 adhoc::Method::FirstOrderLossy,
+                                                 adhoc::Method::FirstOrderLossyCompressed,
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
 
     constexpr std::size_t num_paths = 1000;
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
@@ -1891,13 +1887,11 @@ test_lossy_multiple_checkpoints_reset()
 void
 test_lossy_path_reuse()
 {
-    std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy,
-        adhoc::Method::FirstOrderLossyCompressed,
-        adhoc::Method::FirstOrderLossyPathReuse /* ,
-         adhoc::Method::FirstOrderLossyCompressedPathReuse */
-    };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
+                                                 adhoc::Method::FirstOrderLossy,
+                                                 adhoc::Method::FirstOrderLossyCompressed,
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -2011,13 +2005,11 @@ compute_result_branch_unused_ops(T x1, T x2, T x3, std::size_t num_paths) -> dou
 void
 test_lossy_path_reuse_unusedops()
 {
-    std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy,
-        adhoc::Method::FirstOrderLossyCompressed,
-        adhoc::Method::FirstOrderLossyPathReuse /* ,
-         adhoc::Method::FirstOrderLossyCompressedPathReuse */
-    };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
+                                                 adhoc::Method::FirstOrderLossy,
+                                                 adhoc::Method::FirstOrderLossyCompressed,
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -2124,13 +2116,11 @@ compute_result_branch_invertedmult(T x1, T x2, T x3, std::size_t num_paths) -> d
 void
 test_lossy_path_reuse_invertedmult()
 {
-    std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy,
-        adhoc::Method::FirstOrderLossyCompressed,
-        adhoc::Method::FirstOrderLossyPathReuse /* ,
-         adhoc::Method::FirstOrderLossyCompressedPathReuse  */
-    };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
+                                                 adhoc::Method::FirstOrderLossy,
+                                                 adhoc::Method::FirstOrderLossyCompressed,
+                                                 adhoc::Method::FirstOrderLossyPathReuse,
+                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -2162,28 +2152,25 @@ test_lossy_path_reuse_invertedmult()
         tape.register_variable(x2);
         tape.register_variable(x3);
 
-        if (m == safe_method) {
-            res_adhoc = compute_result_branch_invertedmult(x1, x2, x3, num_paths);
-        }
-        else {
-            double res_adhoc2 = compute_result_branch_invertedmult(x1, x2, x3, num_paths);
-            EXPECT_NEAR_ABS(res_adhoc, res_adhoc2, 1e-13);
-        }
+        double res_this = compute_result_branch_invertedmult(x1, x2, x3, num_paths);
 
         tape.backpropagate();
 
+        double dx1_this = tape.get_derivative(x1);
+        double dx2_this = tape.get_derivative(x2);
+        double dx3_this = tape.get_derivative(x3);
+
         if (m == safe_method) {
-            dx1_adhoc = tape.get_derivative(x1);
-            dx2_adhoc = tape.get_derivative(x2);
-            dx3_adhoc = tape.get_derivative(x3);
+            res_adhoc = res_this;
+            dx1_adhoc = dx1_this;
+            dx2_adhoc = dx2_this;
+            dx3_adhoc = dx3_this;
         }
         else {
-            double dx1_adhoc2 = tape.get_derivative(x1);
-            double dx2_adhoc2 = tape.get_derivative(x2);
-            double dx3_adhoc2 = tape.get_derivative(x3);
-            EXPECT_NEAR_ABS(dx1_adhoc, dx1_adhoc2, 1e-13);
-            EXPECT_NEAR_ABS(dx2_adhoc, dx2_adhoc2, 1e-13);
-            EXPECT_NEAR_ABS(dx3_adhoc, dx3_adhoc2, 1e-13);
+            EXPECT_NEAR_ABS(res_adhoc, res_this, 1e-13);
+            EXPECT_NEAR_ABS(dx1_adhoc, dx1_this, 1e-13);
+            EXPECT_NEAR_ABS(dx2_adhoc, dx2_this, 1e-13);
+            EXPECT_NEAR_ABS(dx3_adhoc, dx3_this, 1e-13);
         }
     }
 }
