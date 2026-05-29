@@ -31,6 +31,7 @@ template<class T = std::nullopt_t, bool CheckBounds = false>
 class buffer_t {
   private:
     std::size_t m_size{ 0 };
+    std::size_t m_allocated_size{ 0 };
     std::size_t m_num_lanes{ 1 };
     std::vector<std::size_t> free_positions;
 
@@ -52,6 +53,7 @@ class buffer_t {
             ++this->m_size;
             if constexpr (!std::is_same_v<T, std::nullopt_t> && Allocate) {
                 this->m_data.resize(this->m_size * this->m_num_lanes);
+                this->m_allocated_size = this->m_size;
             }
             return pos;
         }
@@ -111,15 +113,20 @@ class buffer_t {
     {
         if constexpr (!std::is_same_v<T, empty_t>) {
             this->m_data.resize(new_size * this->m_num_lanes);
+            this->m_allocated_size = new_size;
         }
         this->m_size = new_size;
     }
 
     auto size() const -> std::size_t { return this->m_size; }
 
-    auto allocate() { this->m_data.resize(this->m_size * this->m_num_lanes); }
+    auto allocate()
+    {
+        this->m_data.resize(this->m_size * this->m_num_lanes);
+        this->m_allocated_size = this->m_size;
+    }
 
-    auto allocated_size() const -> std::size_t { return this->m_data.size(); }
+    auto allocated_size() const -> std::size_t { return this->m_allocated_size; }
 };
 
 } // namespace adhoc

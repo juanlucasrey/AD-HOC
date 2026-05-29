@@ -421,7 +421,6 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
 
         std::size_t from = data.next_id;
         const auto& ops = data.ops;
-        const auto& vals = data.vals;
         const auto& ids = data.ids;
 
         std::vector<std::size_t> number_dependents(from - to);
@@ -526,14 +525,13 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             }
         }
         std::size_t const id_idx_start = id_idx;
-        std::size_t const val_idx_start = pos.val_position;
 
         std::vector<std::size_t> multiplier_origin((from - to) * 2, passive_id<std::size_t>);
 
         // LOOP 2: forward, to calculate multipliers after compressing induced paths
         buffer_t buffer_multipliers_values;
-        auto const one_loc = buffer_multipliers_values.get_new_loc();
-        auto const minus_one_loc = buffer_multipliers_values.get_new_loc();
+        buffer_multipliers_values.get_new_loc(); // one_loc
+        buffer_multipliers_values.get_new_loc(); // minus_one_loc
 
         enum class mul_type : std::uint8_t {
             ANY,
@@ -2229,7 +2227,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
 
     if constexpr (Reset) {
         if (to == this->checkpoints.back()) {
-            this->buffers.back() = {};
+            this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
         }
 
         reset(pos, data);
