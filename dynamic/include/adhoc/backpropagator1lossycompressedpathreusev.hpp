@@ -1340,7 +1340,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     }
                     case MultiplierOpCode::MINUS_INPLACE: {
                         std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                        buffer_multipliers_values[pos] = -buffer_multipliers_values[pos];
 
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
@@ -1378,7 +1377,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     }
                     case MultiplierOpCode::ADD_ONE: {
                         std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                        buffer_multipliers_values[pos] += 1.;
 
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
