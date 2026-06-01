@@ -54,6 +54,8 @@ class BackPropagatorLossyCompressedPathReuse {
         MINUS_INPLACE, // data[i0] = -data[i0]
         MUL_INPLACE,   // data[i0] *= source
         ADD_INTERNAL,  // data[i0] += data[i1]
+        ADD_ONE,       // data[i0] += 1.0
+        SUB_ONE,       // data[i0] -= 1.0
         MUL_INTERNAL,  // data[i0] *= data[i1]
     };
 
@@ -530,8 +532,6 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
 
         // LOOP 2: forward, to calculate multipliers after compressing induced paths
         buffer_t buffer_multipliers_values;
-        buffer_multipliers_values.get_new_loc(); // one_loc
-        buffer_multipliers_values.get_new_loc(); // minus_one_loc
 
         enum class mul_type : std::uint8_t {
             ANY,
@@ -573,6 +573,16 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             result.m_pos.push_back(pos2);
         };
 
+        auto add_one = [&](std::size_t const pos1) {
+            result.m_op.push_back(MultiplierOpCode::ADD_ONE);
+            result.m_pos.push_back(pos1);
+        };
+
+        auto sub_one = [&](std::size_t const pos1) {
+            result.m_op.push_back(MultiplierOpCode::SUB_ONE);
+            result.m_pos.push_back(pos1);
+        };
+
         auto mul_internal = [&](std::size_t const pos1, std::size_t const pos2) {
             result.m_op.push_back(MultiplierOpCode::MUL_INTERNAL);
             result.m_pos.push_back(pos1);
@@ -602,10 +612,10 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             else if (mult_type1 == mul_type::ANY) {
                 auto const pos1_buffer_loc = info1.position;
                 if (mult_type2 == mul_type::ONE) {
-                    add_internal(pos1_buffer_loc, 0);
+                    add_one(pos1_buffer_loc);
                 }
                 else if (mult_type2 == mul_type::MINUS_ONE) {
-                    add_internal(pos1_buffer_loc, 1);
+                    sub_one(pos1_buffer_loc);
                 }
 
                 // info1.position = pos1_buffer_loc;
@@ -613,10 +623,10 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             else if (mult_type2 == mul_type::ANY) {
                 auto const pos2_buffer_loc = info2.position;
                 if (mult_type1 == mul_type::ONE) {
-                    add_internal(pos2_buffer_loc, 0);
+                    add_one(pos2_buffer_loc);
                 }
                 else if (mult_type1 == mul_type::MINUS_ONE) {
-                    add_internal(pos2_buffer_loc, 1);
+                    sub_one(pos2_buffer_loc);
                 }
 
                 info1.position = pos2_buffer_loc;
@@ -625,17 +635,17 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                 auto const new_pos = buffer_multipliers_values.get_new_loc();
 
                 if (mult_type1 == mul_type::ONE) {
-                    add_internal(new_pos, 0);
+                    add_one(new_pos);
                 }
                 else if (mult_type1 == mul_type::MINUS_ONE) {
-                    add_internal(new_pos, 1);
+                    sub_one(new_pos);
                 }
 
                 if (mult_type2 == mul_type::ONE) {
-                    add_internal(new_pos, 0);
+                    add_one(new_pos);
                 }
                 else if (mult_type2 == mul_type::MINUS_ONE) {
-                    add_internal(new_pos, 1);
+                    sub_one(new_pos);
                 }
 
                 info1.position = new_pos;
@@ -1212,8 +1222,6 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
         ValueFetcher value_fetcher(data, lossy_tape, pos);
         std::vector<double> buffer_multipliers_values;
         buffer_multipliers_values.resize(lossy_tape.mult_size, 0.);
-        buffer_multipliers_values[0] = 1.;
-        buffer_multipliers_values[1] = -1.;
 
         std::size_t pos_idx = 0;
         for (std::size_t i = 0; i < lossy_tape.m_op.size(); ++i) {
@@ -1243,6 +1251,16 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     std::size_t const pos1 = lossy_tape.m_pos[pos_idx++];
                     std::size_t const pos2 = lossy_tape.m_pos[pos_idx++];
                     buffer_multipliers_values[pos1] += buffer_multipliers_values[pos2];
+                    break;
+                }
+                case MultiplierOpCode::ADD_ONE: {
+                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                    buffer_multipliers_values[pos] += 1.;
+                    break;
+                }
+                case MultiplierOpCode::SUB_ONE: {
+                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                    buffer_multipliers_values[pos] -= 1.;
                     break;
                 }
                 case MultiplierOpCode::MUL_INTERNAL: {
