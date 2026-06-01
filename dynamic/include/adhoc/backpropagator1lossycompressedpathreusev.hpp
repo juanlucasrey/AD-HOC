@@ -40,6 +40,9 @@ namespace adhoc {
 template<class Float, bool Vectorised = false>
 class BackPropagatorLossyCompressedPathReuseV {
   private:
+    // for now
+    std::size_t m_num_paths{ 8 };
+
     std::size_t m_num_lanes{ 1 };
 
     std::vector<std::size_t> node_location_on_buffer;
@@ -72,6 +75,9 @@ class BackPropagatorLossyCompressedPathReuseV {
     };
 
     struct LossyTape {
+        std::vector<double> simd_values;
+        std::size_t path_idx = 0;
+
         std::vector<MultiplierOpCode> m_op;
         std::vector<std::size_t> m_pos;
         std::vector<bool> use_op;
@@ -250,17 +256,19 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
           , op_idx(pos.op_position)
           , from(data.next_id)
           , val_idx(pos.val_position)
+          , val_idx_init(pos.val_position)
+          , cached_result(lossy_tape_in.path_idx)
         {
         }
 
-        auto operator()() -> double
+        auto operator()() -> std::span<double const>
         {
             if (use_cache) {
                 use_cache = false;
                 return cached_value;
             }
 
-            std::optional<double> result;
+            std::optional<std::span<double const> > result;
             const auto& ops = data.ops;
 
             while (op_idx <= from && !result.has_value()) {
@@ -278,11 +286,16 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::MUL: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const lhs_val = data.vals[val_idx];
-                            double const rhs_val = data.vals[val_idx + 1];
+                            std::size_t lhs_idx = val_idx;
+                            std::size_t rhs_idx = val_idx + 1;
                             use_cache = true;
-                            cached_value = lhs_val;
-                            result = rhs_val;
+
+                            cached_value = std::span<double const>{ lossy_tape.simd_values.data() +
+                                                                      ((lhs_idx - val_idx_init) * lossy_tape.path_idx),
+                                                                    lossy_tape.path_idx };
+                            result = std::span<double const>{ lossy_tape.simd_values.data() +
+                                                                ((rhs_idx - val_idx_init) * lossy_tape.path_idx),
+                                                              lossy_tape.path_idx };
                         }
                         val_idx += 2;
                         break;
@@ -290,8 +303,9 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::MUL_C: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = data.vals[val_idx];
-                            result = der_local_1;
+                            result = std::span<double const>{ lossy_tape.simd_values.data() +
+                                                                ((val_idx - val_idx_init) * lossy_tape.path_idx),
+                                                              lossy_tape.path_idx };
                         }
                         val_idx += 1;
                         break;
@@ -299,8 +313,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::NORM: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = 2.0 * data.vals[val_idx];
-                            result = der_local_1;
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = 2.0 * src[i];
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -308,8 +329,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::INV: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = -data.vals[val_idx] * data.vals[val_idx];
-                            result = der_local_1;
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = -src[i] * src[i];
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -317,8 +345,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::ABS: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = std::copysign(1.0, data.vals[val_idx]);
-                            result = der_local_1;
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = std::copysign(1.0, src[i]);
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -326,8 +361,9 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::EXP: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = data.vals[val_idx];
-                            result = der_local_1;
+                            result = std::span<double const>{ lossy_tape.simd_values.data() +
+                                                                ((val_idx - val_idx_init) * lossy_tape.path_idx),
+                                                              lossy_tape.path_idx };
                         }
                         val_idx += 1;
                         break;
@@ -335,8 +371,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::LOG: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = 1.0 / data.vals[val_idx];
-                            result = der_local_1;
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = 1.0 / src[i];
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -345,9 +388,16 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
                             constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                            double const der_local_1 =
-                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * two_over_root_pi;
-                            result = der_local_1;
+
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = std::exp(-src[i] * src[i]) * two_over_root_pi;
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -356,9 +406,16 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
                             constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                            double const der_local_1 =
-                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * minus_two_over_root_pi;
-                            result = der_local_1;
+
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = std::exp(-src[i] * src[i]) * minus_two_over_root_pi;
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 1;
                         break;
@@ -366,8 +423,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::COS: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = -std::sin(data.vals[val_idx]);
-                            result = der_local_1;
+                            const double* src =
+                              lossy_tape.simd_values.data() + ((val_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = -std::sin(src[i]);
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 2;
                         break;
@@ -375,9 +439,26 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::SQRT: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const one_over_in = 1. / data.vals[val_idx];
-                            double const der_local_1 = 0.5 * data.vals[val_idx + 1] * one_over_in;
-                            result = der_local_1;
+                            std::size_t const idx1 = val_idx;
+                            std::size_t const idx2 = val_idx + 1;
+
+                            const double* src1 =
+                              lossy_tape.simd_values.data() + ((idx1 - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = 1. / src1[i];
+                            }
+
+                            const double* src2 =
+                              lossy_tape.simd_values.data() + ((idx2 - val_idx_init) * lossy_tape.path_idx);
+
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] *= 0.5 * src2[i];
+                            }
+
+                            result = std::span<double const>{ cached_result.data(), cached_result.size() };
                         }
                         val_idx += 2;
                         break;
@@ -385,10 +466,18 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                     case OpCode::POW_C: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const lhs_arg = data.vals[val_idx];
-                            double const rhs_arg = data.vals[val_idx + 1];
-                            double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
-                            result = der_local_1;
+                            std::size_t const lhs_idx = val_idx;
+                            std::size_t const rhs_idx = val_idx + 1;
+                            const double* lhs_src =
+                              lossy_tape.simd_values.data() + ((lhs_idx - val_idx_init) * lossy_tape.path_idx);
+                            const double* rhs_src =
+                              lossy_tape.simd_values.data() + ((rhs_idx - val_idx_init) * lossy_tape.path_idx);
+                            double* dest = cached_result.data();
+
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = rhs_src[i] != 0.0 ? rhs_src[i] * std::pow(lhs_src[i], rhs_src[i] - 1.) : 0.0;
+                            }
                         }
                         val_idx += 2;
                         break;
@@ -411,10 +500,14 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         std::size_t from{ 0 };
 
         std::size_t val_idx{ 0 };
+        std::size_t val_idx_init{ 0 };
         std::size_t use_op_idx{ 0 };
 
         bool use_cache{ false };
-        double cached_value{ 0. };
+        // double cached_value{ 0. };
+        std::span<double const> cached_value;
+
+        std::vector<double> cached_result;
     };
 
     auto convert_to_lossy_tape = [&](PositionImpl const& pos, TapeData const& data) -> LossyTape {
@@ -1189,236 +1282,326 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         if (!tape_exists) {
             // we need to compute the lossy tape for this section.
             lossy_tape = convert_to_lossy_tape(pos, data);
+
+            std::size_t const from_vals = pos.val_position;
+            std::size_t const to_vals = vals.size();
+            lossy_tape.simd_values.resize((to_vals - from_vals) * this->m_num_paths, 0.);
         }
-        else {
-            buffers.back().resize(lossy_tape.buffer_size);
 
-            // check equality of lossy tapes
-            // auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints,
-            // buffers);
+        if (lossy_tape.path_idx < this->m_num_paths) {
+            // store values of the tape
+            std::size_t const from_vals = pos.val_position;
+            std::size_t const to_vals = vals.size();
+            std::size_t const offset = lossy_tape.path_idx;
+            for (std::size_t i = 0; i < (to_vals - from_vals); ++i) {
+                auto const& val = vals[i + from_vals];
+                lossy_tape.simd_values[(i * this->m_num_paths) + offset] = val;
+            }
+            ++lossy_tape.path_idx;
 
-            // auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
-            //     if (lt1.lossy_op != lt2.lossy_op) {
-            //         return false;
+            // if constexpr (Reset) {
+
+            //     reset(pos, data);
+
+            //     if (lossy_tape.path_idx == this->m_num_paths) {
+            //         if (to == this->checkpoints.back()) {
+            //             this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+            //         }
+
+            //         this->node_location_on_buffer.resize(pos.op_position);
             //     }
-
-            //     if (lt1.on_which_buffer != lt2.on_which_buffer) {
-            //         return false;
-            //     }
-
-            //     if (lt1.pos != lt2.pos) {
-            //         return false;
-            //     }
-
-            //     return true;
-            // };
-
-            // if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
-            //     throw;
             // }
         }
 
-        // loop 1: calculate multipliers
-        ValueFetcher value_fetcher(data, lossy_tape, pos);
-        std::vector<double> buffer_multipliers_values;
-        buffer_multipliers_values.resize(lossy_tape.mult_size, 0.);
+        if (lossy_tape.path_idx == this->m_num_paths) {
 
-        std::size_t pos_idx = 0;
-        for (std::size_t i = 0; i < lossy_tape.m_op.size(); ++i) {
-            auto const& op = lossy_tape.m_op[i];
-            switch (op) {
-                case MultiplierOpCode::COPY: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] = value_fetcher();
-                    break;
-                }
-                case MultiplierOpCode::COPY_MINUS: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] = -value_fetcher();
-                    break;
-                }
-                case MultiplierOpCode::MINUS_INPLACE: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] = -buffer_multipliers_values[pos];
-                    break;
-                }
-                case MultiplierOpCode::MUL_INPLACE: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] = buffer_multipliers_values[pos] * value_fetcher();
-                    break;
-                }
-                case MultiplierOpCode::ADD_INTERNAL: {
-                    std::size_t const pos1 = lossy_tape.m_pos[pos_idx++];
-                    std::size_t const pos2 = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos1] += buffer_multipliers_values[pos2];
-                    break;
-                }
-                case MultiplierOpCode::ADD_ONE: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] += 1.;
-                    break;
-                }
-                case MultiplierOpCode::SUB_ONE: {
-                    std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] -= 1.;
-                    break;
-                }
-                case MultiplierOpCode::MUL_INTERNAL: {
-                    std::size_t const pos1 = lossy_tape.m_pos[pos_idx++];
-                    std::size_t const pos2 = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos1] *= buffer_multipliers_values[pos2];
-                    break;
-                }
-            }
-        }
+            // loop 1: calculate multipliers
+            buffers.back().resize(lossy_tape.buffer_size);
+            ValueFetcher value_fetcher(data, lossy_tape, pos);
+            std::vector<double> buffer_multipliers_values;
+            buffer_multipliers_values.resize(lossy_tape.mult_size * this->m_num_paths, 0.);
 
-        // loop 2: propagate
-        this->buffers.back().resize(lossy_tape.buffer_size);
-        auto& buffer_vals = this->buffers.back().data();
+            std::size_t pos_idx = 0;
+            for (std::size_t i = 0; i < lossy_tape.m_op.size(); ++i) {
+                auto const& op = lossy_tape.m_op[i];
+                switch (op) {
+                    case MultiplierOpCode::COPY: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                        auto const value = value_fetcher();
 
-        auto const& lossy_op = lossy_tape.lossy_op;
-        auto const& on_which_buffer = lossy_tape.on_which_buffer;
-        auto const& pos = lossy_tape.pos;
-
-        std::size_t id_idx_l = 0;
-        std::size_t on_which_buffer_idx = 0;
-
-        for (std::size_t i = 0; i < lossy_op.size(); ++i) {
-            auto const& op = lossy_op[i];
-            switch (op) {
-                case LossyOpCode::COPY: {
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+                        const double* src = value.data();
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
                             dest[i] = src[i];
                         }
+
+                        break;
                     }
-                    else {
-                        buffer_vals[in_pos] = buffer_vals[out_pos];
-                    }
-                    break;
-                }
-                case LossyOpCode::COPY_MINUS: {
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+                    case MultiplierOpCode::COPY_MINUS: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                        auto const value = value_fetcher();
+
+                        const double* src = value.data();
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
                             dest[i] = -src[i];
                         }
+
+                        break;
                     }
-                    else {
-                        buffer_vals[in_pos] = -buffer_vals[out_pos];
-                    }
-                    break;
-                }
-                case LossyOpCode::ADD: {
-                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+                    case MultiplierOpCode::MINUS_INPLACE: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                        buffer_multipliers_values[pos] = -buffer_multipliers_values[pos];
+
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                            dest[i] += src[i];
-                        }
-                    }
-                    else {
-                        buffers[which].data()[in_pos] += buffer_vals[out_pos];
-                    }
-                    break;
-                }
-                case LossyOpCode::SUB: {
-                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
-#pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                            dest[i] -= src[i];
-                        }
-                    }
-                    else {
-                        buffers[which].data()[in_pos] -= buffer_vals[out_pos];
-                    }
-                    break;
-                }
-                case LossyOpCode::MINUS_INPLACE: {
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    if constexpr (Vectorised) {
-                        double* dest = &buffer_vals[out_pos * this->m_num_lanes];
-#pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
                             dest[i] = -dest[i];
                         }
+
+                        break;
                     }
-                    else {
-                        buffer_vals[out_pos] = -buffer_vals[out_pos];
-                    }
-                    break;
-                }
-                case LossyOpCode::MUL_INPLACE: {
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const mul_pos = pos[id_idx_l++];
-                    double const multiplier = buffer_multipliers_values[mul_pos];
-                    if constexpr (Vectorised) {
-                        double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+                    case MultiplierOpCode::MUL_INPLACE: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                        auto const value = value_fetcher();
+
+                        const double* src = value.data();
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                            dest[i] *= multiplier;
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
+                            dest[i] *= src[i];
+                        }
+
+                        break;
+                    }
+                    case MultiplierOpCode::ADD_INTERNAL: {
+                        std::size_t const pos1 = lossy_tape.m_pos[pos_idx++];
+                        std::size_t const pos2 = lossy_tape.m_pos[pos_idx++];
+
+                        const double* src = &buffer_multipliers_values[pos2 * this->m_num_paths];
+                        double* dest = &buffer_multipliers_values[pos1 * this->m_num_paths];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
+                            dest[i] += src[i];
+                        }
+
+                        break;
+                    }
+                    case MultiplierOpCode::ADD_ONE: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+                        buffer_multipliers_values[pos] += 1.;
+
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
+                            dest[i] += 1.;
+                        }
+                        break;
+                    }
+                    case MultiplierOpCode::SUB_ONE: {
+                        std::size_t const pos = lossy_tape.m_pos[pos_idx++];
+
+                        double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
+                            dest[i] -= 1.;
+                        }
+
+                        break;
+                    }
+                    case MultiplierOpCode::MUL_INTERNAL: {
+                        std::size_t const pos1 = lossy_tape.m_pos[pos_idx++];
+                        std::size_t const pos2 = lossy_tape.m_pos[pos_idx++];
+
+                        const double* src = &buffer_multipliers_values[pos2 * this->m_num_paths];
+                        double* dest = &buffer_multipliers_values[pos1 * this->m_num_paths];
+#pragma omp simd
+                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
+                            dest[i] *= src[i];
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            // loop 2: propagate
+            this->buffers.back().resize(lossy_tape.buffer_size);
+
+            auto const& lossy_op = lossy_tape.lossy_op;
+            auto const& on_which_buffer = lossy_tape.on_which_buffer;
+            auto const& ltpos = lossy_tape.pos;
+
+            for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                auto copy_last_buffer = this->buffers.back();
+                auto& buffer_vals = copy_last_buffer.data();
+                std::size_t id_idx_l = 0;
+                std::size_t on_which_buffer_idx = 0;
+
+                for (std::size_t i = 0; i < lossy_op.size(); ++i) {
+                    auto const& op = lossy_op[i];
+                    switch (op) {
+                        case LossyOpCode::COPY: {
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] = src[i];
+                                }
+                            }
+                            else {
+                                buffer_vals[in_pos] = buffer_vals[out_pos];
+                            }
+                            break;
+                        }
+                        case LossyOpCode::COPY_MINUS: {
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] = -src[i];
+                                }
+                            }
+                            else {
+                                buffer_vals[in_pos] = -buffer_vals[out_pos];
+                            }
+                            break;
+                        }
+                        case LossyOpCode::ADD: {
+                            std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] += src[i];
+                                }
+                            }
+                            else {
+                                buffers[which].data()[in_pos] += buffer_vals[out_pos];
+                            }
+                            break;
+                        }
+                        case LossyOpCode::SUB: {
+                            std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] -= src[i];
+                                }
+                            }
+                            else {
+                                buffers[which].data()[in_pos] -= buffer_vals[out_pos];
+                            }
+                            break;
+                        }
+                        case LossyOpCode::MINUS_INPLACE: {
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            if constexpr (Vectorised) {
+                                double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] = -dest[i];
+                                }
+                            }
+                            else {
+                                buffer_vals[out_pos] = -buffer_vals[out_pos];
+                            }
+                            break;
+                        }
+                        case LossyOpCode::MUL_INPLACE: {
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const mul_pos = ltpos[id_idx_l++];
+                            double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
+                            if constexpr (Vectorised) {
+                                double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] *= multiplier;
+                                }
+                            }
+                            else {
+                                buffer_vals[out_pos] *= multiplier;
+                            }
+                            break;
+                        }
+                        case LossyOpCode::MUL_ADD: {
+                            std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            std::size_t const mul_pos = ltpos[id_idx_l++];
+                            double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] += src[i] * multiplier;
+                                }
+                            }
+                            else {
+                                buffers[which].data()[in_pos] += buffer_vals[out_pos] * multiplier;
+                            }
+                            break;
+                        }
+                        case LossyOpCode::MUL_SET: {
+                            std::size_t const out_pos = ltpos[id_idx_l++];
+                            std::size_t const in_pos = ltpos[id_idx_l++];
+                            std::size_t const mul_pos = ltpos[id_idx_l++];
+                            double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
+                            if constexpr (Vectorised) {
+                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+#pragma omp simd
+                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                    dest[i] = src[i] * multiplier;
+                                }
+                            }
+                            else {
+                                buffer_vals[in_pos] = buffer_vals[out_pos] * multiplier;
+                            }
+                            break;
                         }
                     }
-                    else {
-                        buffer_vals[out_pos] *= multiplier;
-                    }
-                    break;
                 }
-                case LossyOpCode::MUL_ADD: {
-                    std::uint8_t const which = on_which_buffer[on_which_buffer_idx++];
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    std::size_t const mul_pos = pos[id_idx_l++];
-                    double const multiplier = buffer_multipliers_values[mul_pos];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
-#pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                            dest[i] += src[i] * multiplier;
-                        }
-                    }
-                    else {
-                        buffers[which].data()[in_pos] += buffer_vals[out_pos] * multiplier;
-                    }
-                    break;
+            }
+
+            lossy_tape.path_idx = 0;
+
+            // if constexpr (Reset) {
+            //     if (to == this->checkpoints.back()) {
+            //         this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+            //     }
+
+            //     reset(pos, data);
+            //     this->node_location_on_buffer.resize(pos.op_position);
+            // }
+        }
+
+        if constexpr (Reset) {
+
+            reset(pos, data);
+
+            if (lossy_tape.path_idx == this->m_num_paths) {
+                if (to == this->checkpoints.back()) {
+                    this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
                 }
-                case LossyOpCode::MUL_SET: {
-                    std::size_t const out_pos = pos[id_idx_l++];
-                    std::size_t const in_pos = pos[id_idx_l++];
-                    std::size_t const mul_pos = pos[id_idx_l++];
-                    double const multiplier = buffer_multipliers_values[mul_pos];
-                    if constexpr (Vectorised) {
-                        const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                        double* dest = &buffer_vals[in_pos * this->m_num_lanes];
-#pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                            dest[i] = src[i] * multiplier;
-                        }
-                    }
-                    else {
-                        buffer_vals[in_pos] = buffer_vals[out_pos] * multiplier;
-                    }
-                    break;
-                }
+
+                this->node_location_on_buffer.resize(pos.op_position);
             }
         }
     }
@@ -2241,15 +2424,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 }
             }
         }
-    }
 
-    if constexpr (Reset) {
-        if (to == this->checkpoints.back()) {
-            this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+        if constexpr (Reset) {
+            if (to == this->checkpoints.back()) {
+                this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+            }
+
+            reset(pos, data);
+            this->node_location_on_buffer.resize(pos.op_position);
         }
-
-        reset(pos, data);
-        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 

@@ -1244,7 +1244,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                 }
                 case MultiplierOpCode::MUL_INPLACE: {
                     std::size_t const pos = lossy_tape.m_pos[pos_idx++];
-                    buffer_multipliers_values[pos] = buffer_multipliers_values[pos] * value_fetcher();
+                    buffer_multipliers_values[pos] *= value_fetcher();
                     break;
                 }
                 case MultiplierOpCode::ADD_INTERNAL: {
