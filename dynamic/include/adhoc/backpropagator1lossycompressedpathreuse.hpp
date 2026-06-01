@@ -1190,35 +1190,9 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             // we need to compute the lossy tape for this section.
             lossy_tape = convert_to_lossy_tape(pos, data);
         }
-        else {
-            buffers.back().resize(lossy_tape.buffer_size);
-
-            // check equality of lossy tapes
-            // auto new_lossy_tape = convert_to_lossy_tape<Reset>(to, data, node_location_on_buffer, checkpoints,
-            // buffers);
-
-            // auto equal_lossy_tape = [](LossyTape const& lt1, LossyTape const& lt2) -> bool {
-            //     if (lt1.lossy_op != lt2.lossy_op) {
-            //         return false;
-            //     }
-
-            //     if (lt1.on_which_buffer != lt2.on_which_buffer) {
-            //         return false;
-            //     }
-
-            //     if (lt1.pos != lt2.pos) {
-            //         return false;
-            //     }
-
-            //     return true;
-            // };
-
-            // if (!equal_lossy_tape(lossy_tape, new_lossy_tape)) {
-            //     throw;
-            // }
-        }
 
         // loop 1: calculate multipliers
+        buffers.back().resize(lossy_tape.buffer_size);
         ValueFetcher value_fetcher(data, lossy_tape, pos);
         std::vector<double> buffer_multipliers_values;
         buffer_multipliers_values.resize(lossy_tape.mult_size, 0.);
