@@ -1298,19 +1298,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 lossy_tape.simd_values[(i * this->m_num_paths) + offset] = val;
             }
             ++lossy_tape.path_idx;
-
-            // if constexpr (Reset) {
-
-            //     reset(pos, data);
-
-            //     if (lossy_tape.path_idx == this->m_num_paths) {
-            //         if (to == this->checkpoints.back()) {
-            //             this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
-            //         }
-
-            //         this->node_location_on_buffer.resize(pos.op_position);
-            //     }
-            // }
         }
 
         if (lossy_tape.path_idx == this->m_num_paths) {
@@ -1332,8 +1319,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         const double* src = value.data();
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] = src[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] = src[p];
                         }
 
                         break;
@@ -1345,8 +1332,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         const double* src = value.data();
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] = -src[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] = -src[p];
                         }
 
                         break;
@@ -1357,8 +1344,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] = -dest[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] = -dest[p];
                         }
 
                         break;
@@ -1370,8 +1357,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         const double* src = value.data();
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] *= src[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] *= src[p];
                         }
 
                         break;
@@ -1383,8 +1370,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         const double* src = &buffer_multipliers_values[pos2 * this->m_num_paths];
                         double* dest = &buffer_multipliers_values[pos1 * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] += src[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] += src[p];
                         }
 
                         break;
@@ -1395,8 +1382,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] += 1.;
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] += 1.;
                         }
                         break;
                     }
@@ -1405,8 +1392,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
                         double* dest = &buffer_multipliers_values[pos * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] -= 1.;
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] -= 1.;
                         }
 
                         break;
@@ -1418,8 +1405,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                         const double* src = &buffer_multipliers_values[pos2 * this->m_num_paths];
                         double* dest = &buffer_multipliers_values[pos1 * this->m_num_paths];
 #pragma omp simd
-                        for (std::size_t i = 0; i < this->m_num_paths; ++i) {
-                            dest[i] *= src[i];
+                        for (std::size_t p = 0; p < this->m_num_paths; ++p) {
+                            dest[p] *= src[p];
                         }
 
                         break;
@@ -1581,15 +1568,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             }
 
             lossy_tape.path_idx = 0;
-
-            // if constexpr (Reset) {
-            //     if (to == this->checkpoints.back()) {
-            //         this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
-            //     }
-
-            //     reset(pos, data);
-            //     this->node_location_on_buffer.resize(pos.op_position);
-            // }
         }
 
         if constexpr (Reset) {
