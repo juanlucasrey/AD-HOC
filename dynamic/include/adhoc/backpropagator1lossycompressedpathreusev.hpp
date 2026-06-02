@@ -506,7 +506,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         std::size_t use_op_idx{ 0 };
 
         bool use_cache{ false };
-        // double cached_value{ 0. };
         std::span<double const> cached_value;
 
         std::vector<double> cached_result;
@@ -1416,14 +1415,17 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
             // loop 2: propagate
             this->buffers.back().resize(lossy_tape.buffer_size);
+            auto& buffer_vals = this->buffers.back().data();
 
             auto const& lossy_op = lossy_tape.lossy_op;
             auto const& on_which_buffer = lossy_tape.on_which_buffer;
             auto const& ltpos = lossy_tape.pos;
 
+            auto copy_last_buffer = this->buffers.back();
+
             for (std::size_t p = 0; p < this->m_num_paths; ++p) {
-                auto copy_last_buffer = this->buffers.back();
-                auto& buffer_vals = copy_last_buffer.data();
+                this->buffers.back() = copy_last_buffer;
+
                 std::size_t id_idx_l = 0;
                 std::size_t on_which_buffer_idx = 0;
 
@@ -1567,20 +1569,21 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 }
             }
 
+            if constexpr (Reset) {
+                if (lossy_tape.path_idx == this->m_num_paths) {
+                    if (to == this->checkpoints.back()) {
+                        this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+                    }
+
+                    this->node_location_on_buffer.resize(pos.op_position);
+                }
+            }
+
             lossy_tape.path_idx = 0;
         }
 
         if constexpr (Reset) {
-
             reset(pos, data);
-
-            if (lossy_tape.path_idx == this->m_num_paths) {
-                if (to == this->checkpoints.back()) {
-                    this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
-                }
-
-                this->node_location_on_buffer.resize(pos.op_position);
-            }
         }
     }
     else {
