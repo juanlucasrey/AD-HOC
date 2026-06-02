@@ -271,7 +271,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             std::optional<std::span<double const> > result;
             const auto& ops = data.ops;
 
-            while (op_idx <= from && !result.has_value()) {
+            while (op_idx < from && !result.has_value()) {
                 OpCode const& op = ops[op_idx++];
 
                 switch (op) {
@@ -350,7 +350,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             double* dest = cached_result.data();
 #pragma omp simd
                             for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] = std::copysign(1.0, src[i]);
+                                dest[i] = (src[i] < 0.0) ? -1.0 : 1.0;
                             }
 
                             result = std::span<double const>{ cached_result.data(), cached_result.size() };
@@ -394,7 +394,17 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             double* dest = cached_result.data();
 #pragma omp simd
                             for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] = std::exp(-src[i] * src[i]) * two_over_root_pi;
+                                dest[i] = -src[i] * src[i];
+                            }
+
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = std::exp(dest[i]);
+                            }
+
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] *= two_over_root_pi;
                             }
 
                             result = std::span<double const>{ cached_result.data(), cached_result.size() };
@@ -412,7 +422,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             double* dest = cached_result.data();
 #pragma omp simd
                             for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] = std::exp(-src[i] * src[i]) * minus_two_over_root_pi;
+                                dest[i] = -src[i] * src[i];
+                            }
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = std::exp(dest[i]);
+                            }
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] *= minus_two_over_root_pi;
                             }
 
                             result = std::span<double const>{ cached_result.data(), cached_result.size() };
@@ -444,18 +462,12 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
                             const double* src1 =
                               lossy_tape.simd_values.data() + ((idx1 - val_idx_init) * lossy_tape.path_idx);
+                            const double* src2 =
+                              lossy_tape.simd_values.data() + ((idx2 - val_idx_init) * lossy_tape.path_idx);
                             double* dest = cached_result.data();
 #pragma omp simd
                             for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] = 1. / src1[i];
-                            }
-
-                            const double* src2 =
-                              lossy_tape.simd_values.data() + ((idx2 - val_idx_init) * lossy_tape.path_idx);
-
-#pragma omp simd
-                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] *= 0.5 * src2[i];
+                                dest[i] = 0.5 * src2[i] / src1[i];
                             }
 
                             result = std::span<double const>{ cached_result.data(), cached_result.size() };
@@ -476,7 +488,11 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
 #pragma omp simd
                             for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
-                                dest[i] = rhs_src[i] != 0.0 ? rhs_src[i] * std::pow(lhs_src[i], rhs_src[i] - 1.) : 0.0;
+                                dest[i] = std::pow(lhs_src[i], rhs_src[i] - 1.);
+                            }
+#pragma omp simd
+                            for (std::size_t i = 0; i < lossy_tape.path_idx; ++i) {
+                                dest[i] = (rhs_src[i] != 0.0) ? rhs_src[i] * dest[i] : 0.0;
                             }
 
                             result = std::span<double const>{ cached_result.data(), cached_result.size() };
