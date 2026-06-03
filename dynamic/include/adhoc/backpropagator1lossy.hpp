@@ -39,10 +39,68 @@ class BackPropagatorLossy {
 
     std::vector<std::size_t> node_location_on_buffer;
 
-    struct buffer_t {
-        std::vector<double> values;
-        std::size_t size{ 0 };
+    class buffer_t {
+      private:
+        std::size_t m_size{ 0 };
+        std::size_t m_allocated_size{ 0 };
+        std::size_t m_num_lanes{ 1 };
         std::vector<std::size_t> free_positions;
+
+      public:
+        std::vector<double> m_data;
+
+        buffer_t() = default;
+        explicit buffer_t(std::size_t lanes)
+          : m_num_lanes(lanes)
+        {
+        }
+
+        template<bool Reset = false, bool Allocate = true>
+        auto get_new_loc() -> std::size_t
+        {
+            if (this->free_positions.empty()) {
+                std::size_t pos = this->m_size;
+                ++this->m_size;
+                if constexpr (Allocate) {
+                    this->m_data.resize(this->m_size * this->m_num_lanes);
+                    this->m_allocated_size = this->m_size;
+                }
+                return pos;
+            }
+
+            std::size_t pos = this->free_positions.back();
+            this->free_positions.pop_back();
+
+            if constexpr (Reset) {
+                if constexpr (Vectorised) {
+                    double* dest = &this->m_data[pos * this->m_num_lanes];
+#pragma omp simd
+                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                        dest[i] = 0.;
+                    }
+                }
+                else {
+                    this->m_data[pos] = 0.;
+                }
+            }
+            return pos;
+        }
+
+        auto free_loc(std::size_t pos) -> void { this->free_positions.push_back(pos); }
+
+        auto size_of(bool capacity = false) const -> std::size_t
+        {
+            std::size_t size = 0;
+            size += 2 * sizeof(std::size_t); // m_num_lanes, size
+            size += sizeof(std::size_t) * (capacity ? this->free_positions.capacity() : this->free_positions.size());
+            size += sizeof(double) * (capacity ? this->m_data.capacity() : this->m_data.size());
+
+            return size;
+        }
+
+        auto size() const -> std::size_t { return this->m_size; }
+
+        void reserve(std::size_t reserve_size) { this->m_data.reserve(this->m_num_lanes * reserve_size); }
     };
 
     std::vector<std::size_t> checkpoints{ 0 };
@@ -60,9 +118,10 @@ class BackPropagatorLossy {
 
         if (this->checkpoints.back() != ops_size) {
             this->checkpoints.push_back(ops_size);
-            this->buffers.push_back(buffer_t{});
+            this->buffers.push_back(buffer_t{ this->m_num_lanes });
         }
     }
+
     void set_lanes(std::size_t num_lanes)
     {
         if constexpr (!Vectorised) {
@@ -72,18 +131,21 @@ class BackPropagatorLossy {
             }
         }
         this->m_num_lanes = num_lanes;
+        this->buffers = { buffer_t{ this->m_num_lanes } };
     }
+
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
+
     void reserve_input(std::size_t count_registered)
     {
-        this->buffers.back().values.reserve(this->buffers.back().values.size() +
-                                            (this->m_num_lanes * count_registered));
+        this->buffers.back().reserve(this->buffers.back().size() + count_registered);
     }
+
     void reserve_output(std::size_t count_registered)
     {
-        this->buffers.back().values.reserve(this->buffers.back().values.size() +
-                                            (this->m_num_lanes * count_registered));
+        this->buffers.back().reserve(this->buffers.back().size() + count_registered);
     }
+
     void register_variable(std::size_t var_id)
     {
         this->node_location_on_buffer.resize(std::max(this->node_location_on_buffer.size(), var_id + 1),
@@ -92,25 +154,7 @@ class BackPropagatorLossy {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            if (var_buffer.free_positions.empty()) {
-                var_pos = var_buffer.size;
-                ++var_buffer.size;
-                var_buffer.values.resize(var_buffer.size * this->m_num_lanes);
-            }
-            else {
-                var_pos = var_buffer.free_positions.back();
-                var_buffer.free_positions.pop_back();
-                if constexpr (Vectorised) {
-                    double* dest = &var_buffer.values[var_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = 0.;
-                    }
-                }
-                else {
-                    var_buffer.values[var_pos] = 0.;
-                }
-            }
+            var_pos = var_buffer.template get_new_loc<true>();
         }
     }
 
@@ -122,25 +166,7 @@ class BackPropagatorLossy {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            if (var_buffer.free_positions.empty()) {
-                var_pos = var_buffer.size;
-                ++var_buffer.size;
-                var_buffer.values.resize(var_buffer.size * this->m_num_lanes);
-            }
-            else {
-                var_pos = var_buffer.free_positions.back();
-                var_buffer.free_positions.pop_back();
-                if constexpr (Vectorised) {
-                    double* dest = &var_buffer.values[var_pos * this->m_num_lanes];
-#pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                        dest[i] = 0.;
-                    }
-                }
-                else {
-                    var_buffer.values[var_pos] = 0.;
-                }
-            }
+            var_pos = var_buffer.template get_new_loc<true>();
         }
     }
 
@@ -156,7 +182,7 @@ class BackPropagatorLossy {
 
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
-            this->buffers[buffed_id].values[(var_pos * this->m_num_lanes) + lane] = deriv;
+            this->buffers[buffed_id].m_data[(var_pos * this->m_num_lanes) + lane] = deriv;
         }
         else {
             throw;
@@ -177,7 +203,7 @@ class BackPropagatorLossy {
 
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
-              .values[(var_pos * this->m_num_lanes) + lane];
+              .m_data[(var_pos * this->m_num_lanes) + lane];
         }
 
         throw;
@@ -194,7 +220,7 @@ class BackPropagatorLossy {
     void zero_adjoints()
     {
         for (auto& b : this->buffers) {
-            std::fill(b.values.begin(), b.values.end(), 0.0);
+            std::fill(b.m_data.begin(), b.m_data.end(), 0.0);
         }
     }
 
@@ -205,8 +231,7 @@ class BackPropagatorLossy {
         size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
         size += sizeof(std::size_t) * (capacity ? this->checkpoints.capacity() : this->checkpoints.size());
         for (const auto& buffer : this->buffers) {
-            size += sizeof(double) * (capacity ? buffer.values.capacity() : buffer.values.size());
-            size += sizeof(std::size_t) * (capacity ? buffer.free_positions.capacity() : buffer.free_positions.size());
+            size += buffer.size_of(capacity);
         }
         return size;
     }
@@ -245,62 +270,61 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
 
-        auto& buffer_vals = buffers[buffer_idx].values;
-        auto& buffer_free_positions = buffers[buffer_idx].free_positions;
+        auto& buffer_vals = buffers[buffer_idx].m_data;
 
         auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] = buffer_vals[out_pos];
+                buffers[which].m_data[in_pos] = buffer_vals[out_pos];
             }
         };
 
         auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] = -src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] = -buffer_vals[out_pos];
+                buffers[which].m_data[in_pos] = -buffer_vals[out_pos];
             }
         };
 
         auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] += src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] += buffer_vals[out_pos];
+                buffers[which].m_data[in_pos] += buffer_vals[out_pos];
             }
         };
 
         auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
                 const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                 for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                     dest[i] -= src[i];
                 }
             }
             else {
-                buffers[which].values[in_pos] -= buffer_vals[out_pos];
+                buffers[which].m_data[in_pos] -= buffer_vals[out_pos];
             }
         };
 
@@ -334,14 +358,14 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
           [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
               if constexpr (Vectorised) {
                   const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                  double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                   for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                       dest[i] += src[i] * multiplier;
                   }
               }
               else {
-                  buffers[which].values[in_pos] += buffer_vals[out_pos] * multiplier;
+                  buffers[which].m_data[in_pos] += buffer_vals[out_pos] * multiplier;
               }
           };
 
@@ -349,14 +373,14 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
           [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
               if constexpr (Vectorised) {
                   const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                  double* dest = &buffers[which].values[in_pos * this->m_num_lanes];
+                  double* dest = &buffers[which].m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
                   for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                       dest[i] = src[i] * multiplier;
                   }
               }
               else {
-                  buffers[which].values[in_pos] = buffer_vals[out_pos] * multiplier;
+                  buffers[which].m_data[in_pos] = buffer_vals[out_pos] * multiplier;
               }
           };
 
@@ -371,15 +395,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
         auto update_loc = [this, &buffers = this->buffers](std::size_t& arg_pos, std::uint8_t buffer_id) {
             if (arg_pos == passive_id<std::size_t>) {
                 auto& arg_buffer = this->buffers[buffer_id];
-                if (arg_buffer.free_positions.empty()) {
-                    arg_pos = arg_buffer.size;
-                    ++arg_buffer.size;
-                    arg_buffer.values.resize(arg_buffer.values.size() + this->m_num_lanes);
-                }
-                else {
-                    arg_pos = arg_buffer.free_positions.back();
-                    arg_buffer.free_positions.pop_back();
-                }
+                arg_pos = arg_buffer.get_new_loc();
             }
         };
 
@@ -423,31 +439,25 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         };
 
-        auto update_univariate =
-          [mul_inplace,
-           this,
-           copy_mul,
-           get_loc,
-           &node_location_on_buffer = this->node_location_on_buffer,
-           &buffer_free_positions](std::size_t const arg_id, std::size_t const res_id, double const der_local_1) {
-              std::size_t& res_pos = node_location_on_buffer[res_id];
-              std::size_t& arg_pos = node_location_on_buffer[arg_id];
+        auto update_univariate = [&](std::size_t const arg_id, std::size_t const res_id, double const der_local_1) {
+            std::size_t& res_pos = node_location_on_buffer[res_id];
+            std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
-              auto const arg_pos_data = get_loc(arg_id);
-              bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
-              bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
+            auto const arg_pos_data = get_loc(arg_id);
+            bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
+            bool const arg_inplace = arg_is_new && std::get<0>(arg_pos_data);
 
-              if (arg_inplace) {
-                  mul_inplace(res_pos, der_local_1);
-                  // res id should now be arg id, avoiding a copy and a potential buffer increase
-                  std::swap(arg_pos, res_pos);
-              }
-              else {
-                  copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), der_local_1);
-                  buffer_free_positions.push_back(res_pos);
-                  res_pos = passive_id<std::size_t>;
-              }
-          };
+            if (arg_inplace) {
+                mul_inplace(res_pos, der_local_1);
+                // res id should now be arg id, avoiding a copy and a potential buffer increase
+                std::swap(arg_pos, res_pos);
+            }
+            else {
+                copy_mul(res_pos, arg_pos, std::get<1>(arg_pos_data), der_local_1);
+                buffers[buffer_idx].free_loc(res_pos);
+                res_pos = passive_id<std::size_t>;
+            }
+        };
 
         for (std::size_t op_idx = loop_from; op_idx-- > loop_to;) {
             OpCode const& op = ops[op_idx];
@@ -459,7 +469,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     if constexpr (Reset) {
                         std::size_t const id = ids[id_idx];
                         std::size_t& pos = node_location_on_buffer[id];
-                        buffer_free_positions.push_back(pos);
+                        buffers[buffer_idx].free_loc(pos);
                         pos = passive_id<std::size_t>;
                     }
                     break;
@@ -484,7 +494,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                             }
                             else {
                                 copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
-                                buffer_free_positions.push_back(res_pos);
+                                buffers[buffer_idx].free_loc(res_pos);
                                 res_pos = passive_id<std::size_t>;
                             }
                         }
@@ -533,7 +543,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         }
                         else {
                             // don't forget to free res_id from the buffer!
-                            buffer_free_positions.push_back(res_pos);
+                            buffers[buffer_idx].free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
@@ -578,7 +588,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         }
                         else {
                             // don't forget to free res_id from the buffer!
-                            buffer_free_positions.push_back(res_pos);
+                            buffers[buffer_idx].free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
@@ -626,7 +636,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         }
                         else {
                             // don't forget to free res_id from the buffer!
-                            buffer_free_positions.push_back(res_pos);
+                            buffers[buffer_idx].free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
@@ -651,7 +661,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         }
                         else {
                             copy_add(res_pos, arg_pos, std::get<1>(arg_pos_data));
-                            buffer_free_positions.push_back(res_pos);
+                            buffers[buffer_idx].free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
@@ -678,7 +688,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         }
                         else {
                             copy_sub(res_pos, arg_pos, std::get<1>(arg_pos_data));
-                            buffer_free_positions.push_back(res_pos);
+                            buffers[buffer_idx].free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
@@ -815,7 +825,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
 
         if constexpr (Reset) {
             if (loop_to == checkpoints.back()) {
-                this->buffers.back() = {};
+                this->buffers.back() = buffer_t{ this->m_num_lanes };
             }
         }
 
