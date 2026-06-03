@@ -56,12 +56,13 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
 
     // For AD types, get the tape and save position after initial calcs
     [[maybe_unused]] adhoc_mode::tape_t::position_t pos2{};
-    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
 
     double one_over_paths = 1.0 / static_cast<double>(num_paths);
     if constexpr (std::is_same_v<T, adhoc_t>) {
-        pos2 = tape->get_position();
-        tape->set_checkpoint();
+        pos2 = tape.get_position();
+        tape.set_checkpoint();
     }
 
     double result = 0.0;
@@ -87,9 +88,9 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
         }
 
         if constexpr (std::is_same_v<T, adhoc_t>) {
-            tape->register_output_variable(res);
-            tape->set_derivative(res, 1.0);
-            tape->backpropagate_and_reset_to(pos2);
+            tape.register_output_variable(res);
+            tape.set_derivative(res, 1.0);
+            tape.backpropagate_and_reset_to(pos2);
         }
     }
 
@@ -135,7 +136,8 @@ test_checkpoint_fd_vs_ad()
     {
         using adhoc_t = adhoc_t;
         // Create tape
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -144,17 +146,17 @@ test_checkpoint_fd_vs_ad()
         x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
 
-        tape->backpropagate();
+        tape.backpropagate();
 
-        dx1_adhoc = tape->get_derivative(x1);
-        dx2_adhoc = tape->get_derivative(x2);
-        dx3_adhoc = tape->get_derivative(x3);
+        dx1_adhoc = tape.get_derivative(x1);
+        dx2_adhoc = tape.get_derivative(x2);
+        dx3_adhoc = tape.get_derivative(x3);
     }
 
     // check that the values are close in between methods
@@ -189,7 +191,8 @@ test_checkpoint_branch_lossy()
 
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -198,23 +201,23 @@ test_checkpoint_branch_lossy()
         x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         double result = compute_result_branch(x1, x2, x3, num_paths);
-        tape->backpropagate();
+        tape.backpropagate();
 
         if (m == safe_method) {
             result_val = result;
-            deriv_val1 = tape->get_derivative(x1);
-            deriv_val2 = tape->get_derivative(x2);
-            deriv_val3 = tape->get_derivative(x3);
+            deriv_val1 = tape.get_derivative(x1);
+            deriv_val2 = tape.get_derivative(x2);
+            deriv_val3 = tape.get_derivative(x3);
         }
         else {
-            double deriv_val1_compare = tape->get_derivative(x1);
-            double deriv_val2_compare = tape->get_derivative(x2);
-            double deriv_val3_compare = tape->get_derivative(x3);
+            double deriv_val1_compare = tape.get_derivative(x1);
+            double deriv_val2_compare = tape.get_derivative(x2);
+            double deriv_val3_compare = tape.get_derivative(x3);
 
             EXPECT_NEAR_ABS(result_val, result, 1e-13);
             EXPECT_NEAR_ABS(deriv_val1, deriv_val1_compare, 1e-13);
@@ -250,11 +253,12 @@ test_simd8_backpropagation()
     // SIMD8 backpropagation - all 8 lanes at once
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Set method to SIMD8
-        tape->set_method(adhoc::Method::FirstOrderSimd8);
-        tape->set_lanes(8);
+        tape.set_method(adhoc::Method::FirstOrderSimd8);
+        tape.set_lanes(8);
 
         // Input variables
         adhoc_t x1 = x1_val;
@@ -262,9 +266,9 @@ test_simd8_backpropagation()
         adhoc_t x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         // Compute 8 different outputs (one per lane)
         // We'll compute each path and register as output
@@ -286,18 +290,18 @@ test_simd8_backpropagation()
             results[lane] = y_paths[lane].get_value();
 
             // Register output and set derivative for this lane
-            tape->register_output_variable(y_paths[lane]);
-            tape->set_derivative(y_paths[lane], 1.0, lane);
+            tape.register_output_variable(y_paths[lane]);
+            tape.set_derivative(y_paths[lane], 1.0, lane);
         }
 
         // Single backpropagation pass for all 8 outputs
-        tape->backpropagate();
+        tape.backpropagate();
 
         // Get derivatives for each lane
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx1_simd[lane] = tape->get_derivative(x1, lane);
-            dx2_simd[lane] = tape->get_derivative(x2, lane);
-            dx3_simd[lane] = tape->get_derivative(x3, lane);
+            dx1_simd[lane] = tape.get_derivative(x1, lane);
+            dx2_simd[lane] = tape.get_derivative(x2, lane);
+            dx3_simd[lane] = tape.get_derivative(x3, lane);
         }
     }
 
@@ -306,18 +310,19 @@ test_simd8_backpropagation()
 
     for (std::size_t lane = 0; lane < num_lanes; ++lane) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Use standard first-order method
-        tape->set_method(adhoc::Method::FirstOrderSimple);
+        tape.set_method(adhoc::Method::FirstOrderSimple);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
         adhoc_t x3 = x3_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         double z1 = z1_vals[lane];
         double z2 = z2_vals[lane];
@@ -329,13 +334,13 @@ test_simd8_backpropagation()
             y_path += x3 * z1 * z2;
         }
 
-        tape->register_output_variable(y_path);
-        tape->set_derivative(y_path, 1.0);
-        tape->backpropagate();
+        tape.register_output_variable(y_path);
+        tape.set_derivative(y_path, 1.0);
+        tape.backpropagate();
 
-        dx1_ref[lane] = tape->get_derivative(x1);
-        dx2_ref[lane] = tape->get_derivative(x2);
-        dx3_ref[lane] = tape->get_derivative(x3);
+        dx1_ref[lane] = tape.get_derivative(x1);
+        dx2_ref[lane] = tape.get_derivative(x2);
+        dx3_ref[lane] = tape.get_derivative(x3);
     }
 
     // Compare SIMD8 results with reference
@@ -362,19 +367,21 @@ test_simd8_monte_carlo()
     // SIMD8 Monte Carlo
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::FirstOrderSimd8);
-        tape->set_lanes(8);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(adhoc::Method::FirstOrderSimd8);
+        tape.set_lanes(8);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
         adhoc_t x3 = x3_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
-        auto pos = tape->get_position();
+        auto pos = tape.get_position();
 
         std::mt19937 generator(42);
         std::normal_distribution<double> normal_dist(0.0, 1.0);
@@ -399,24 +406,24 @@ test_simd8_monte_carlo()
 
                 result_simd += y_paths[lane].get_value();
 
-                tape->register_output_variable(y_paths[lane]);
-                tape->set_derivative(y_paths[lane], one_over_paths, lane);
+                tape.register_output_variable(y_paths[lane]);
+                tape.set_derivative(y_paths[lane], one_over_paths, lane);
             }
 
             // Single backprop for all 8 paths
-            tape->backpropagate_and_reset_to(pos);
+            tape.backpropagate_and_reset_to(pos);
         }
 
         // Get accumulated derivatives
-        dx1_simd_total = tape->get_derivative(x1);
-        dx2_simd_total = tape->get_derivative(x2);
-        dx3_simd_total = tape->get_derivative(x3);
+        dx1_simd_total = tape.get_derivative(x1);
+        dx2_simd_total = tape.get_derivative(x2);
+        dx3_simd_total = tape.get_derivative(x3);
 
         // Also sum derivatives from all lanes
         for (std::size_t lane = 1; lane < num_lanes; ++lane) {
-            dx1_simd_total += tape->get_derivative(x1, lane);
-            dx2_simd_total += tape->get_derivative(x2, lane);
-            dx3_simd_total += tape->get_derivative(x3, lane);
+            dx1_simd_total += tape.get_derivative(x1, lane);
+            dx2_simd_total += tape.get_derivative(x2, lane);
+            dx3_simd_total += tape.get_derivative(x3, lane);
         }
 
         result_simd *= one_over_paths;
@@ -428,18 +435,19 @@ test_simd8_monte_carlo()
 
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::FirstOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::FirstOrderSimple);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
         adhoc_t x3 = x3_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
-        auto pos = tape->get_position();
+        auto pos = tape.get_position();
 
         std::mt19937 generator(42);
         std::normal_distribution<double> normal_dist(0.0, 1.0);
@@ -459,14 +467,14 @@ test_simd8_monte_carlo()
 
             result_ref += y_path.get_value();
 
-            tape->register_output_variable(y_path);
-            tape->set_derivative(y_path, one_over_paths);
-            tape->backpropagate_and_reset_to(pos);
+            tape.register_output_variable(y_path);
+            tape.set_derivative(y_path, one_over_paths);
+            tape.backpropagate_and_reset_to(pos);
         }
 
-        dx1_ref_total = tape->get_derivative(x1);
-        dx2_ref_total = tape->get_derivative(x2);
-        dx3_ref_total = tape->get_derivative(x3);
+        dx1_ref_total = tape.get_derivative(x1);
+        dx2_ref_total = tape.get_derivative(x2);
+        dx3_ref_total = tape.get_derivative(x3);
 
         result_ref *= one_over_paths;
     }
@@ -505,11 +513,12 @@ test_simd8_second_order_backpropagation()
     // SIMD8 second-order backpropagation - all 8 lanes at once
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Set method to SecondOrderSimd8
-        tape->set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape->set_lanes(8);
+        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
+        tape.set_lanes(8);
 
         // Input variables
         adhoc_t x1 = x1_val;
@@ -517,9 +526,9 @@ test_simd8_second_order_backpropagation()
         adhoc_t x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         // Compute a simple expression: y = x1 * x2 + x3^2
         adhoc_t y = x1 * x2 + x3 * x3;
@@ -527,27 +536,27 @@ test_simd8_second_order_backpropagation()
         results[0] = y.get_value();
 
         // Register output and set derivative for each lane
-        tape->register_output_variable(y);
+        tape.register_output_variable(y);
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            tape->set_derivative(y, 1.0, lane);
+            tape.set_derivative(y, 1.0, lane);
         }
 
         // Single backpropagation pass for all 8 lanes
-        tape->backpropagate();
+        tape.backpropagate();
 
         // Get first-order derivatives for each lane
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx1_simd[lane] = tape->get_derivative(x1, lane);
-            dx2_simd[lane] = tape->get_derivative(x2, lane);
-            dx3_simd[lane] = tape->get_derivative(x3, lane);
+            dx1_simd[lane] = tape.get_derivative(x1, lane);
+            dx2_simd[lane] = tape.get_derivative(x2, lane);
+            dx3_simd[lane] = tape.get_derivative(x3, lane);
 
             // Get second-order derivatives
-            d2x1x1_simd[lane] = tape->get_derivative(x1, x1, lane);
-            d2x1x2_simd[lane] = tape->get_derivative(x1, x2, lane);
-            d2x1x3_simd[lane] = tape->get_derivative(x1, x3, lane);
-            d2x2x2_simd[lane] = tape->get_derivative(x2, x2, lane);
-            d2x2x3_simd[lane] = tape->get_derivative(x2, x3, lane);
-            d2x3x3_simd[lane] = tape->get_derivative(x3, x3, lane);
+            d2x1x1_simd[lane] = tape.get_derivative(x1, x1, lane);
+            d2x1x2_simd[lane] = tape.get_derivative(x1, x2, lane);
+            d2x1x3_simd[lane] = tape.get_derivative(x1, x3, lane);
+            d2x2x2_simd[lane] = tape.get_derivative(x2, x2, lane);
+            d2x2x3_simd[lane] = tape.get_derivative(x2, x3, lane);
+            d2x3x3_simd[lane] = tape.get_derivative(x3, x3, lane);
         }
     }
 
@@ -558,37 +567,38 @@ test_simd8_second_order_backpropagation()
 
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
 
         // Use standard second-order method
-        tape->set_method(adhoc::Method::SecondOrderSimple);
+        tape.set_method(adhoc::Method::SecondOrderSimple);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
         adhoc_t x3 = x3_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         adhoc_t y = x1 * x2 + x3 * x3;
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.0);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.0);
+        tape.backpropagate();
 
         // Reference values (same for all lanes since computation is identical)
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx1_ref[lane] = tape->get_derivative(x1);
-            dx2_ref[lane] = tape->get_derivative(x2);
-            dx3_ref[lane] = tape->get_derivative(x3);
+            dx1_ref[lane] = tape.get_derivative(x1);
+            dx2_ref[lane] = tape.get_derivative(x2);
+            dx3_ref[lane] = tape.get_derivative(x3);
 
-            d2x1x1_ref[lane] = tape->get_derivative(x1, x1);
-            d2x1x2_ref[lane] = tape->get_derivative(x1, x2);
-            d2x1x3_ref[lane] = tape->get_derivative(x1, x3);
-            d2x2x2_ref[lane] = tape->get_derivative(x2, x2);
-            d2x2x3_ref[lane] = tape->get_derivative(x2, x3);
-            d2x3x3_ref[lane] = tape->get_derivative(x3, x3);
+            d2x1x1_ref[lane] = tape.get_derivative(x1, x1);
+            d2x1x2_ref[lane] = tape.get_derivative(x1, x2);
+            d2x1x3_ref[lane] = tape.get_derivative(x1, x3);
+            d2x2x2_ref[lane] = tape.get_derivative(x2, x2);
+            d2x2x3_ref[lane] = tape.get_derivative(x2, x3);
+            d2x3x3_ref[lane] = tape.get_derivative(x3, x3);
         }
     }
 
@@ -624,32 +634,33 @@ test_simd8_second_order_with_transcendentals()
     // SIMD8 second-order backpropagation
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape->set_lanes(8);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
+        tape.set_lanes(8);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         // y = exp(x1) * log(x2 + 1) + sqrt(x1 + x2)
         adhoc_t y = exp(x1) * log(x2 + 1.0) + sqrt(x1 + x2);
 
-        tape->register_output_variable(y);
+        tape.register_output_variable(y);
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            tape->set_derivative(y, 1.0, lane);
+            tape.set_derivative(y, 1.0, lane);
         }
 
-        tape->backpropagate();
+        tape.backpropagate();
 
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx1_simd[lane] = tape->get_derivative(x1, lane);
-            dx2_simd[lane] = tape->get_derivative(x2, lane);
-            d2x1x1_simd[lane] = tape->get_derivative(x1, x1, lane);
-            d2x1x2_simd[lane] = tape->get_derivative(x1, x2, lane);
-            d2x2x2_simd[lane] = tape->get_derivative(x2, x2, lane);
+            dx1_simd[lane] = tape.get_derivative(x1, lane);
+            dx2_simd[lane] = tape.get_derivative(x2, lane);
+            d2x1x1_simd[lane] = tape.get_derivative(x1, x1, lane);
+            d2x1x2_simd[lane] = tape.get_derivative(x1, x2, lane);
+            d2x2x2_simd[lane] = tape.get_derivative(x2, x2, lane);
         }
     }
 
@@ -659,26 +670,27 @@ test_simd8_second_order_with_transcendentals()
 
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         adhoc_t y = exp(x1) * log(x2 + 1.0) + sqrt(x1 + x2);
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.0);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.0);
+        tape.backpropagate();
 
-        dx1_ref = tape->get_derivative(x1);
-        dx2_ref = tape->get_derivative(x2);
-        d2x1x1_ref = tape->get_derivative(x1, x1);
-        d2x1x2_ref = tape->get_derivative(x1, x2);
-        d2x2x2_ref = tape->get_derivative(x2, x2);
+        dx1_ref = tape.get_derivative(x1);
+        dx2_ref = tape.get_derivative(x2);
+        d2x1x1_ref = tape.get_derivative(x1, x1);
+        d2x1x2_ref = tape.get_derivative(x1, x2);
+        d2x2x2_ref = tape.get_derivative(x2, x2);
     }
 
     // Compare
@@ -728,17 +740,19 @@ test_simd8_second_order_monte_carlo()
     // SIMD8 second-order Monte Carlo
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape->set_lanes(8);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
+        tape.set_lanes(8);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
-        auto pos = tape->get_position();
+        auto pos = tape.get_position();
 
         std::mt19937 generator(42);
         std::normal_distribution<double> normal_dist(0.0, 1.0);
@@ -758,21 +772,21 @@ test_simd8_second_order_monte_carlo()
 
                 result_simd += y_paths[lane].get_value();
 
-                tape->register_output_variable(y_paths[lane]);
-                tape->set_derivative(y_paths[lane], one_over_paths, lane);
+                tape.register_output_variable(y_paths[lane]);
+                tape.set_derivative(y_paths[lane], one_over_paths, lane);
             }
 
             // Single backprop for all 8 paths
-            tape->backpropagate_and_reset_to(pos);
+            tape.backpropagate_and_reset_to(pos);
         }
 
         // Get accumulated derivatives from all lanes
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx1_simd_total += tape->get_derivative(x1, lane);
-            dx2_simd_total += tape->get_derivative(x2, lane);
-            d2x1x1_simd_total += tape->get_derivative(x1, x1, lane);
-            d2x1x2_simd_total += tape->get_derivative(x1, x2, lane);
-            d2x2x2_simd_total += tape->get_derivative(x2, x2, lane);
+            dx1_simd_total += tape.get_derivative(x1, lane);
+            dx2_simd_total += tape.get_derivative(x2, lane);
+            d2x1x1_simd_total += tape.get_derivative(x1, x1, lane);
+            d2x1x2_simd_total += tape.get_derivative(x1, x2, lane);
+            d2x2x2_simd_total += tape.get_derivative(x2, x2, lane);
         }
 
         result_simd *= one_over_paths;
@@ -785,16 +799,18 @@ test_simd8_second_order_monte_carlo()
 
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(adhoc::Method::SecondOrderSimple);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
 
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
-        auto pos = tape->get_position();
+        auto pos = tape.get_position();
 
         std::mt19937 generator(42);
         std::normal_distribution<double> normal_dist(0.0, 1.0);
@@ -809,16 +825,16 @@ test_simd8_second_order_monte_carlo()
 
             result_ref += y.get_value();
 
-            tape->register_output_variable(y);
-            tape->set_derivative(y, one_over_paths);
-            tape->backpropagate_and_reset_to(pos);
+            tape.register_output_variable(y);
+            tape.set_derivative(y, one_over_paths);
+            tape.backpropagate_and_reset_to(pos);
         }
 
-        dx1_ref_total = tape->get_derivative(x1);
-        dx2_ref_total = tape->get_derivative(x2);
-        d2x1x1_ref_total = tape->get_derivative(x1, x1);
-        d2x1x2_ref_total = tape->get_derivative(x1, x2);
-        d2x2x2_ref_total = tape->get_derivative(x2, x2);
+        dx1_ref_total = tape.get_derivative(x1);
+        dx2_ref_total = tape.get_derivative(x2);
+        d2x1x1_ref_total = tape.get_derivative(x1, x1);
+        d2x1x2_ref_total = tape.get_derivative(x1, x2);
+        d2x2x2_ref_total = tape.get_derivative(x2, x2);
 
         result_ref *= one_over_paths;
     }
@@ -847,30 +863,32 @@ test_simd8_second_order_different_seeds_per_lane()
     // SIMD8 computation
     {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape->set_lanes(8);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
+        tape.set_lanes(8);
 
         adhoc_t x = x_val;
-        tape->register_variable(x);
+        tape.register_variable(x);
 
         // Compute y = (x * m)^2 where m is different per lane
         // But we can only have one tape, so we compute with m=1 and scale
         // derivatives
         adhoc_t y = x * x;
 
-        tape->register_output_variable(y);
+        tape.register_output_variable(y);
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
             // Scale the seed derivative by multiplier^2 to account for chain
             // rule
-            tape->set_derivative(y, multipliers[lane] * multipliers[lane], lane);
+            tape.set_derivative(y, multipliers[lane] * multipliers[lane], lane);
         }
 
-        tape->backpropagate();
+        tape.backpropagate();
 
         for (std::size_t lane = 0; lane < num_lanes; ++lane) {
-            dx_simd[lane] = tape->get_derivative(x, lane);
-            d2xx_simd[lane] = tape->get_derivative(x, x, lane);
+            dx_simd[lane] = tape.get_derivative(x, lane);
+            d2xx_simd[lane] = tape.get_derivative(x, x, lane);
         }
     }
 
@@ -879,20 +897,22 @@ test_simd8_second_order_different_seeds_per_lane()
 
     for (std::size_t lane = 0; lane < num_lanes; ++lane) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(adhoc::Method::SecondOrderSimple);
 
         adhoc_t x = x_val;
-        tape->register_variable(x);
+        tape.register_variable(x);
 
         adhoc_t y = x * x;
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, multipliers[lane] * multipliers[lane]);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, multipliers[lane] * multipliers[lane]);
+        tape.backpropagate();
 
-        dx_ref[lane] = tape->get_derivative(x);
-        d2xx_ref[lane] = tape->get_derivative(x, x);
+        dx_ref[lane] = tape.get_derivative(x);
+        d2xx_ref[lane] = tape.get_derivative(x, x);
     }
 
     // Compare
@@ -913,15 +933,17 @@ test_lossy_compressed_1in1out()
     double deriv_val = -199.95882307798402;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x = 2.3;
-        tape->register_variable(x);
+        tape.register_variable(x);
         auto y = log(erfc(exp(x)));
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.);
-        tape->backpropagate();
-        EXPECT_NEAR_ABS(deriv_val, tape->get_derivative(x), 1e-8);
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.);
+        tape.backpropagate();
+        EXPECT_NEAR_ABS(deriv_val, tape.get_derivative(x), 1e-8);
     }
 }
 
@@ -937,22 +959,24 @@ test_lossy_compressed_2in1out()
     double deriv_val2 = -269.97895210733441;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1.1;
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         auto y1 = log(erfc(exp(x1)));
         auto y2 = exp(erfc(log(x2)));
         auto y = erf(cos(y1 * y2));
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.);
-        tape->backpropagate();
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
-        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-8);
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.);
+        tape.backpropagate();
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-8);
     }
 }
 
@@ -967,17 +991,19 @@ test_lossy_compressed_1in1out2paths()
     double deriv_val1 = -2.381398009286281;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x1 = 2.3;
-        tape->register_variable(x1);
+        tape.register_variable(x1);
 
         auto y = cos(x1) * x1;
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.);
-        tape->backpropagate();
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.);
+        tape.backpropagate();
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
     }
 }
 
@@ -993,22 +1019,24 @@ test_lossy_compressed_1in1out2paths2()
     double deriv_val2 = -5.4772154213584461;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1;
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         auto prod = x1 * x2;
         auto y = cos(prod) * prod;
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.);
+        tape.backpropagate();
 
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
-        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-13);
     }
 }
 
@@ -1024,24 +1052,26 @@ test_lossy_compressed_2in1out2()
     double deriv_val2 = -22.124287930267304;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1.1;
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         auto y1 = log(erfc(exp(x1)));
         auto y2 = exp(erfc(log(x2)));
         auto prod = y1 * y2;
         auto y = erf(cos(prod)) * exp(prod * 0.01);
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.);
+        tape.backpropagate();
 
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
-        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-8);
     }
 }
 
@@ -1059,37 +1089,38 @@ test_lossy_compressed_1in2out()
     double deriv_val3 = 376.00678353116808;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        auto& tape_ref = *tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
         adhoc_t x1 = 2.3;
-        tape->register_variable(x1);
+        tape.register_variable(x1);
 
         auto int1 = log(erfc(exp(x1)));
         auto y1 = log(cos(int1));
         auto y2 = erfc(exp(int1 * -0.01));
 
-        tape->register_output_variable(y1);
-        tape->register_output_variable(y2);
-        tape->set_derivative(y1, 1.);
-        tape->set_derivative(y2, 0.);
-        tape->backpropagate();
+        tape.register_output_variable(y1);
+        tape.register_output_variable(y2);
+        tape.set_derivative(y1, 1.);
+        tape.set_derivative(y2, 0.);
+        tape.backpropagate();
 
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-8);
 
-        tape->zero_adjoints();
-        tape->set_derivative(y1, 0.);
-        tape->set_derivative(y2, 1.);
-        tape->backpropagate();
+        tape.zero_adjoints();
+        tape.set_derivative(y1, 0.);
+        tape.set_derivative(y2, 1.);
+        tape.backpropagate();
 
-        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x1), 1e-8);
 
-        tape->zero_adjoints();
-        tape->set_derivative(y1, 0.5);
-        tape->set_derivative(y2, 0.5);
-        tape->backpropagate();
+        tape.zero_adjoints();
+        tape.set_derivative(y1, 0.5);
+        tape.set_derivative(y2, 0.5);
+        tape.backpropagate();
 
-        EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x1), 1e-8);
+        EXPECT_NEAR_ABS(deriv_val3, tape.get_derivative(x1), 1e-8);
     }
 }
 
@@ -1112,8 +1143,10 @@ test_lossy_compressed_complex1_pre()
 
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1122,9 +1155,9 @@ test_lossy_compressed_complex1_pre()
         x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         double z1 = 0.8;
         double z2 = 0.2;
@@ -1132,21 +1165,21 @@ test_lossy_compressed_complex1_pre()
         auto y_init = x1 * x2;
         auto y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
         auto y = y_path + x3 * z1 * z2;
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.0);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.0);
+        tape.backpropagate();
 
         if (m == safe_method) {
             result_val = y.get_value();
-            deriv_val1 = tape->get_derivative(x1);
-            deriv_val2 = tape->get_derivative(x2);
-            deriv_val3 = tape->get_derivative(x3);
+            deriv_val1 = tape.get_derivative(x1);
+            deriv_val2 = tape.get_derivative(x2);
+            deriv_val3 = tape.get_derivative(x3);
         }
         else {
             EXPECT_NEAR_ABS(result_val, y.get_value(), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val3, tape.get_derivative(x3), 1e-13);
         }
     }
 }
@@ -1171,8 +1204,10 @@ test_lossy_compressed_complex1_pre2()
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
         // Create tape
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1181,14 +1216,14 @@ test_lossy_compressed_complex1_pre2()
         x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         auto y_init = x1 * x2;
 
-        auto pos2 = tape->get_position();
-        tape->set_checkpoint();
+        auto pos2 = tape.get_position();
+        tape.set_checkpoint();
 
         double result = 0.0;
         double z1 = 0.8;
@@ -1196,26 +1231,26 @@ test_lossy_compressed_complex1_pre2()
 
         auto y_path = y_init * 0.8;
 
-        tape->register_output_variable(y_path);
-        tape->set_derivative(y_path, 1.0);
-        tape->backpropagate_and_reset_to(pos2);
+        tape.register_output_variable(y_path);
+        tape.set_derivative(y_path, 1.0);
+        tape.backpropagate_and_reset_to(pos2);
         result += y_path.get_value();
 
         double res_lossy = result;
 
-        tape->backpropagate();
+        tape.backpropagate();
 
         if (m == safe_method) {
             result_val = res_lossy;
-            deriv_val1 = tape->get_derivative(x1);
-            deriv_val2 = tape->get_derivative(x2);
-            deriv_val3 = tape->get_derivative(x3);
+            deriv_val1 = tape.get_derivative(x1);
+            deriv_val2 = tape.get_derivative(x2);
+            deriv_val3 = tape.get_derivative(x3);
         }
         else {
             EXPECT_NEAR_ABS(result_val, res_lossy, 1e-13);
-            EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val3, tape.get_derivative(x3), 1e-13);
         }
     }
 }
@@ -1240,8 +1275,10 @@ test_lossy_compressed_complex1()
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
         // Create tape
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1250,18 +1287,18 @@ test_lossy_compressed_complex1()
         x3 = x3_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
-        tape->register_variable(x3);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
 
         double res_lossy = compute_result_branch(x1, x2, x3, num_paths);
 
-        tape->backpropagate();
+        tape.backpropagate();
 
         EXPECT_NEAR_ABS(result_val, res_lossy, 1e-13);
-        EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
-        EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
-        EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-13);
+        EXPECT_NEAR_ABS(deriv_val3, tape.get_derivative(x3), 1e-13);
     }
 }
 
@@ -1284,8 +1321,9 @@ test_lossy_compressed_complex2()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto const scEnd = inputD * 1.2;
@@ -1326,8 +1364,9 @@ test_lossy_compressed_complex3()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto const scEnd = inputD * 1.2;
@@ -1369,8 +1408,9 @@ test_lossy_compressed_double_triangle_simple()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto x1 = inputD * 1.2;
@@ -1412,8 +1452,9 @@ test_lossy_compressed_double_triangle()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1458,8 +1499,9 @@ test_lossy_compressed_double_triangle_checkpoint()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto x0 = cos(inputD);
@@ -1506,8 +1548,9 @@ test_lossy_compressed_double_triangle_checkpoint2()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
         auto pos = tape.get_position();
 
@@ -1549,8 +1592,9 @@ test_lossy_compressed_double_triangle_twice()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1596,8 +1640,9 @@ test_lossy_compressed_univariate_non_reduced()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto const scStart = exp(inputD);
@@ -1648,8 +1693,10 @@ test_lossy_compressed_complex1_double_minus()
 
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
-        tape->set_method(m);
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
+        tape.set_method(m);
 
         // Initial input variables
         adhoc_t x1, x2;
@@ -1657,27 +1704,27 @@ test_lossy_compressed_complex1_double_minus()
         x2 = x2_val;
 
         // Register inputs
-        tape->register_variable(x1);
-        tape->register_variable(x2);
+        tape.register_variable(x1);
+        tape.register_variable(x2);
 
         // auto y = x1 - (x1 - x2);
         auto y = x1 - (-x2);
 
-        tape->register_output_variable(y);
-        tape->set_derivative(y, 1.0);
-        tape->backpropagate();
+        tape.register_output_variable(y);
+        tape.set_derivative(y, 1.0);
+        tape.backpropagate();
 
         if (m == safe_method) {
             result_val = y.get_value();
-            deriv_val1 = tape->get_derivative(x1);
-            deriv_val2 = tape->get_derivative(x2);
-            // deriv_val3 = tape->get_derivative(x3);
+            deriv_val1 = tape.get_derivative(x1);
+            deriv_val2 = tape.get_derivative(x2);
+            // deriv_val3 = tape.get_derivative(x3);
         }
         else {
             EXPECT_NEAR_ABS(result_val, y.get_value(), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val1, tape->get_derivative(x1), 1e-13);
-            EXPECT_NEAR_ABS(deriv_val2, tape->get_derivative(x2), 1e-13);
-            // EXPECT_NEAR_ABS(deriv_val3, tape->get_derivative(x3), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val1, tape.get_derivative(x1), 1e-13);
+            EXPECT_NEAR_ABS(deriv_val2, tape.get_derivative(x2), 1e-13);
+            // EXPECT_NEAR_ABS(deriv_val3, tape.get_derivative(x3), 1e-13);
         }
     }
 }
@@ -1702,8 +1749,9 @@ test_lossy_compressed_reset_registration()
         D inputD1 = 0.5;
         D inputD2 = 0.8;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD1);
 
         auto const scEnd = inputD1 * 1.2;
@@ -1755,8 +1803,9 @@ test_lossy_multiple_checkpoints()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1807,8 +1856,9 @@ test_lossy_multiple_checkpoints_reset()
     for (auto m : methods) {
         D inputD = 0.5;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(m);
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
         tape.register_variable(inputD);
         auto pos = tape.get_position();
 
@@ -1910,6 +1960,7 @@ test_lossy_path_reuse()
         // Create tape
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
+
         tape.set_method(m);
 
         // Initial input variables
@@ -1961,12 +2012,13 @@ compute_result_branch_unused_ops(T x1, T x2, T x3, std::size_t num_paths) -> dou
 
     // For AD types, get the tape and save position after initial calcs
     [[maybe_unused]] adhoc_mode::tape_t::position_t pos2{};
-    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
 
     double one_over_paths = 1.0 / static_cast<double>(num_paths);
     if constexpr (std::is_same_v<T, adhoc_t>) {
-        pos2 = tape->get_position();
-        tape->set_checkpoint();
+        pos2 = tape.get_position();
+        tape.set_checkpoint();
     }
 
     double result = 0.0;
@@ -1993,9 +2045,9 @@ compute_result_branch_unused_ops(T x1, T x2, T x3, std::size_t num_paths) -> dou
         }
 
         if constexpr (std::is_same_v<T, adhoc_t>) {
-            tape->register_output_variable(res);
-            tape->set_derivative(res, 1.0);
-            tape->backpropagate_and_reset_to(pos2);
+            tape.register_output_variable(res);
+            tape.set_derivative(res, 1.0);
+            tape.backpropagate_and_reset_to(pos2);
         }
     }
 
@@ -2028,6 +2080,7 @@ test_lossy_path_reuse_unusedops()
         // Create tape
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
+
         tape.set_method(m);
 
         // Initial input variables
@@ -2079,12 +2132,13 @@ compute_result_branch_invertedmult(T x1, T x2, T x3, std::size_t num_paths) -> d
 
     // For AD types, get the tape and save position after initial calcs
     [[maybe_unused]] adhoc_mode::tape_t::position_t pos2{};
-    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tape;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
 
     double one_over_paths = 1.0 / static_cast<double>(num_paths);
     if constexpr (std::is_same_v<T, adhoc_t>) {
-        pos2 = tape->get_position();
-        tape->set_checkpoint();
+        pos2 = tape.get_position();
+        tape.set_checkpoint();
     }
 
     double result = 0.0;
@@ -2104,9 +2158,9 @@ compute_result_branch_invertedmult(T x1, T x2, T x3, std::size_t num_paths) -> d
         }
 
         if constexpr (std::is_same_v<T, adhoc_t>) {
-            tape->register_output_variable(res);
-            tape->set_derivative(res, 1.0);
-            tape->backpropagate_and_reset_to(pos2);
+            tape.register_output_variable(res);
+            tape.set_derivative(res, 1.0);
+            tape.backpropagate_and_reset_to(pos2);
         }
     }
 
@@ -2139,6 +2193,67 @@ test_lossy_path_reuse_invertedmult()
         // Create tape
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
+
+        tape.set_method(m);
+
+        // Initial input variables
+        adhoc_t x1, x2, x3;
+        x1 = x1_val;
+        x2 = x2_val;
+        x3 = x3_val;
+
+        // Register inputs
+        tape.register_variable(x1);
+        tape.register_variable(x2);
+        tape.register_variable(x3);
+
+        double res_this = compute_result_branch_invertedmult(x1, x2, x3, num_paths);
+
+        tape.backpropagate();
+
+        double dx1_this = tape.get_derivative(x1);
+        double dx2_this = tape.get_derivative(x2);
+        double dx3_this = tape.get_derivative(x3);
+
+        if (m == safe_method) {
+            res_adhoc = res_this;
+            dx1_adhoc = dx1_this;
+            dx2_adhoc = dx2_this;
+            dx3_adhoc = dx3_this;
+        }
+        else {
+            EXPECT_NEAR_ABS(res_adhoc, res_this, 1e-13);
+            EXPECT_NEAR_ABS(dx1_adhoc, dx1_this, 1e-13);
+            EXPECT_NEAR_ABS(dx2_adhoc, dx2_this, 1e-13);
+            EXPECT_NEAR_ABS(dx3_adhoc, dx3_this, 1e-13);
+        }
+    }
+}
+
+void
+test_simd_across_paths()
+{
+    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderVLossyCompressedPathReuse,
+                                                 adhoc::Method::FirstOrderVLossyCompressedPathReuseV };
+    auto const safe_method = methods[0];
+
+    double df = 0;
+    double f = 0;
+
+    constexpr std::size_t num_paths = 256;
+    double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
+
+    double res_adhoc = 0.;
+    double dx1_adhoc = 0.;
+    double dx2_adhoc = 0.;
+    double dx3_adhoc = 0.;
+
+    for (auto m : methods) {
+        using adhoc_t = adhoc_t;
+        // Create tape
+        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        auto& tape = *tapeptr;
+
         tape.set_method(m);
 
         // Initial input variables
@@ -2178,6 +2293,8 @@ test_lossy_path_reuse_invertedmult()
 auto
 main() -> int
 {
+    test_simd_across_paths();
+
     test_checkpoint_fd_vs_ad();
     test_checkpoint_branch_lossy();
     test_simd8_backpropagation();
