@@ -45,10 +45,9 @@ class BackPropagatorLossy {
         std::size_t m_allocated_size{ 0 };
         std::size_t m_num_lanes{ 1 };
         std::vector<std::size_t> free_positions;
-
-      public:
         std::vector<double> m_data;
 
+      public:
         buffer_t() = default;
         explicit buffer_t(std::size_t lanes)
           : m_num_lanes(lanes)
@@ -88,6 +87,9 @@ class BackPropagatorLossy {
 
         auto free_loc(std::size_t pos) -> void { this->free_positions.push_back(pos); }
 
+        auto operator[](std::size_t pos) -> double& { return this->m_data[pos * this->m_num_lanes]; }
+        auto operator[](std::size_t pos) const -> const double& { return this->m_data[pos * this->m_num_lanes]; }
+
         auto size_of(bool capacity = false) const -> std::size_t
         {
             std::size_t size = 0;
@@ -101,6 +103,8 @@ class BackPropagatorLossy {
         auto size() const -> std::size_t { return this->m_size; }
 
         void reserve(std::size_t reserve_size) { this->m_data.reserve(this->m_num_lanes * reserve_size); }
+
+        auto zero() { std::fill(this->m_data.begin(), this->m_data.end(), 0.0); }
     };
 
     buffer_t buffer;
@@ -158,7 +162,7 @@ class BackPropagatorLossy {
                 throw;
             }
 
-            this->buffer.m_data[(var_pos * this->m_num_lanes) + lane] = deriv;
+            (&this->buffer[var_pos])[lane] = deriv;
         }
         else {
             throw;
@@ -177,7 +181,7 @@ class BackPropagatorLossy {
                 throw;
             }
 
-            return this->buffer.m_data[(var_pos * this->m_num_lanes) + lane];
+            return (&this->buffer[var_pos])[lane];
         }
 
         throw;
@@ -191,7 +195,7 @@ class BackPropagatorLossy {
 
     void clear() {}
 
-    void zero_adjoints() { std::fill(this->buffer.m_data.begin(), this->buffer.m_data.end(), 0.0); }
+    void zero_adjoints() { this->buffer.zero(); }
 
     auto size_of(bool capacity = false) const -> std::size_t
     {
@@ -225,111 +229,111 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
 
     auto copy = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = src[i];
             }
         }
         else {
-            this->buffer.m_data[in_pos] = this->buffer.m_data[out_pos];
+            this->buffer[in_pos] = this->buffer[out_pos];
         }
     };
 
     auto copy_minus = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = -src[i];
             }
         }
         else {
-            this->buffer.m_data[in_pos] = -this->buffer.m_data[out_pos];
+            this->buffer[in_pos] = -this->buffer[out_pos];
         }
     };
 
     auto add = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] += src[i];
             }
         }
         else {
-            this->buffer.m_data[in_pos] += this->buffer.m_data[out_pos];
+            this->buffer[in_pos] += this->buffer[out_pos];
         }
     };
 
     auto sub = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] -= src[i];
             }
         }
         else {
-            this->buffer.m_data[in_pos] -= this->buffer.m_data[out_pos];
+            this->buffer[in_pos] -= this->buffer[out_pos];
         }
     };
 
     auto minus_inplace = [&](std::size_t const pos) {
         if constexpr (Vectorised) {
-            double* dest = &this->buffer.m_data[pos * this->m_num_lanes];
+            double* dest = &this->buffer[pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = -dest[i];
             }
         }
         else {
-            this->buffer.m_data[pos] = -this->buffer.m_data[pos];
+            this->buffer[pos] = -this->buffer[pos];
         }
     };
 
     auto mul_inplace = [&](std::size_t const pos, double const multiplier) {
         if constexpr (Vectorised) {
-            double* dest = &this->buffer.m_data[pos * this->m_num_lanes];
+            double* dest = &this->buffer[pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] *= multiplier;
             }
         }
         else {
-            this->buffer.m_data[pos] *= multiplier;
+            this->buffer[pos] *= multiplier;
         }
     };
 
     auto mul_add = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] += src[i] * multiplier;
             }
         }
         else {
-            this->buffer.m_data[in_pos] += this->buffer.m_data[out_pos] * multiplier;
+            this->buffer[in_pos] += this->buffer[out_pos] * multiplier;
         }
     };
 
     auto mul_set = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
         if constexpr (Vectorised) {
-            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
-            double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
+            const double* src = &this->buffer[out_pos];
+            double* dest = &this->buffer[in_pos];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = src[i] * multiplier;
             }
         }
         else {
-            this->buffer.m_data[in_pos] = this->buffer.m_data[out_pos] * multiplier;
+            this->buffer[in_pos] = this->buffer[out_pos] * multiplier;
         }
     };
 
