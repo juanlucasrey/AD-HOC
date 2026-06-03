@@ -134,8 +134,7 @@ class BackPropagatorLossy {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto& var_buffer = this->buffer;
-            var_pos = var_buffer.template get_new_loc<true>();
+            var_pos = this->buffer.template get_new_loc<true>();
         }
     }
 
@@ -145,8 +144,7 @@ class BackPropagatorLossy {
                                              passive_id<std::size_t>);
         std::size_t& var_pos = this->node_location_on_buffer[var_id];
         if (var_pos == passive_id<std::size_t>) {
-            auto& var_buffer = this->buffer;
-            var_pos = var_buffer.template get_new_loc<true>();
+            var_pos = this->buffer.template get_new_loc<true>();
         }
     }
 
@@ -225,11 +223,9 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
 
     this->node_location_on_buffer.resize(ops.size(), passive_id<std::size_t>);
 
-    auto& buffer_vals = this->buffer.m_data;
-
     auto copy = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -237,13 +233,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] = buffer_vals[out_pos];
+            this->buffer.m_data[in_pos] = this->buffer.m_data[out_pos];
         }
     };
 
     auto copy_minus = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -251,13 +247,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] = -buffer_vals[out_pos];
+            this->buffer.m_data[in_pos] = -this->buffer.m_data[out_pos];
         }
     };
 
     auto add = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -265,13 +261,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] += buffer_vals[out_pos];
+            this->buffer.m_data[in_pos] += this->buffer.m_data[out_pos];
         }
     };
 
     auto sub = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -279,39 +275,39 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] -= buffer_vals[out_pos];
+            this->buffer.m_data[in_pos] -= this->buffer.m_data[out_pos];
         }
     };
 
     auto minus_inplace = [&](std::size_t const pos) {
         if constexpr (Vectorised) {
-            double* dest = &buffer_vals[pos * this->m_num_lanes];
+            double* dest = &this->buffer.m_data[pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] = -dest[i];
             }
         }
         else {
-            buffer_vals[pos] = -buffer_vals[pos];
+            this->buffer.m_data[pos] = -this->buffer.m_data[pos];
         }
     };
 
     auto mul_inplace = [&](std::size_t const pos, double const multiplier) {
         if constexpr (Vectorised) {
-            double* dest = &buffer_vals[pos * this->m_num_lanes];
+            double* dest = &this->buffer.m_data[pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
                 dest[i] *= multiplier;
             }
         }
         else {
-            buffer_vals[pos] *= multiplier;
+            this->buffer.m_data[pos] *= multiplier;
         }
     };
 
     auto mul_add = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -319,13 +315,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] += buffer_vals[out_pos] * multiplier;
+            this->buffer.m_data[in_pos] += this->buffer.m_data[out_pos] * multiplier;
         }
     };
 
     auto mul_set = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
         if constexpr (Vectorised) {
-            const double* src = &buffer_vals[out_pos * this->m_num_lanes];
+            const double* src = &this->buffer.m_data[out_pos * this->m_num_lanes];
             double* dest = &this->buffer.m_data[in_pos * this->m_num_lanes];
 #pragma omp simd
             for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
@@ -333,14 +329,13 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             }
         }
         else {
-            this->buffer.m_data[in_pos] = buffer_vals[out_pos] * multiplier;
+            this->buffer.m_data[in_pos] = this->buffer.m_data[out_pos] * multiplier;
         }
     };
 
     auto update_loc = [&](std::size_t& arg_pos) {
         if (arg_pos == passive_id<std::size_t>) {
-            auto& arg_buffer = this->buffer;
-            arg_pos = arg_buffer.get_new_loc();
+            arg_pos = this->buffer.get_new_loc();
         }
     };
 
