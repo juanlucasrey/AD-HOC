@@ -45,32 +45,44 @@ enum class MapType {
     BOOST_UNORDERED_MAP,
 };
 
-template<class Float, MapType maptype>
+template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Simd8 {
     static constexpr std::size_t SIMD_WIDTH = 8;
 
   private:
+    // this works with vector instead of array, but its 3x slower!!
+
+    // using der_container_t = std::conditional_t<Vectorised, std::vector<double>, double>;
+    using der_container_t = std::conditional_t<Vectorised, std::array<double, 8>, double>;
+
     using map_t = std::conditional_t<
       maptype == MapType::STD_MAP,
-      std::map<std::size_t, std::array<double, 8> >,
+      std::map<std::size_t, der_container_t>,
       std::conditional_t<maptype == MapType::STD_UNORDERED_MAP,
-                         std::unordered_map<std::size_t, std::array<double, 8> >,
+                         std::unordered_map<std::size_t, der_container_t>,
                          std::conditional_t<maptype == MapType::ANKERL_UNORDERED_DENSE,
-                                            ankerl::unordered_dense::map<std::size_t, std::array<double, 8> >,
-                                            boost::unordered_flat_map<std::size_t, std::array<double, 8> > > > >;
+                                            ankerl::unordered_dense::map<std::size_t, der_container_t>,
+                                            boost::unordered_flat_map<std::size_t, der_container_t> > > >;
 
     std::size_t m_num_lanes{ 1 };
     std::vector<map_t> derivatives;
-
     std::vector<bool> use_op;
 
-    std::map<std::size_t, std::map<std::size_t, std::array<double, SIMD_WIDTH> > > derivatives_input_map;
+    std::map<std::size_t, std::map<std::size_t, der_container_t> > derivatives_input_map;
 
   public:
     explicit BackPropagator2Simd8() = default;
 
     void set_checkpoint(std::size_t /* ops_size */) {}
-    void set_lanes(std::size_t num_lanes) { this->m_num_lanes = num_lanes; }
+    void set_lanes(std::size_t num_lanes)
+    {
+        this->m_num_lanes = num_lanes;
+        if constexpr (Vectorised) {
+            if (this->m_num_lanes != SIMD_WIDTH) {
+                throw;
+            }
+        }
+    }
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t /* count_registered */) {}
     void reserve_output(std::size_t /* count_registered */) {}
@@ -79,12 +91,24 @@ class BackPropagator2Simd8 {
 
     void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t lane = 0)
     {
-        this->derivatives_input_map[var_id][passive_id<std::size_t>][lane] = deriv;
+        if (lane >= this->m_num_lanes) {
+            return;
+        }
+
+        auto& derivatives = this->derivatives_input_map[var_id][passive_id<std::size_t>];
+        if constexpr (Vectorised) {
+            // is using vector this needs to be uncommented
+            // derivatives.resize(this->m_num_lanes, 0.0);
+            derivatives[lane] = deriv;
+        }
+        else {
+            derivatives = deriv;
+        }
     }
 
     void set_derivative(std::size_t var_id1, std::size_t var_id2, double deriv, std::size_t lane = 0)
     {
-        if (lane >= SIMD_WIDTH) {
+        if (lane >= this->m_num_lanes) {
             return;
         }
         if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
@@ -95,11 +119,17 @@ class BackPropagator2Simd8 {
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
-        auto const& idmap = this->derivatives[var_id];
-        auto const it = idmap.find(passive_id<std::size_t>);
-
-        if (it != idmap.end()) {
-            return it->second[lane];
+        if (lane < this->m_num_lanes) {
+            auto const& idmap = this->derivatives[var_id];
+            auto const it = idmap.find(passive_id<std::size_t>);
+            if (it != idmap.end()) {
+                if constexpr (Vectorised) {
+                    return it->second[lane];
+                }
+                else {
+                    return it->second;
+                }
+            }
         }
 
         return 0.;
@@ -114,7 +144,12 @@ class BackPropagator2Simd8 {
         auto const& idmap = this->derivatives[var_id1];
         auto const it = idmap.find(var_id2);
         if (it != idmap.end()) {
-            return it->second[lane];
+            if constexpr (Vectorised) {
+                return it->second[lane];
+            }
+            else {
+                return it->second;
+            }
         }
 
         return 0.;
@@ -139,10 +174,10 @@ class BackPropagator2Simd8 {
     void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
-template<class Float, MapType maptype>
+template<class Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagator2Simd8<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -213,47 +248,77 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
 
     this->derivatives.resize(ops.size());
 
-    // SIMD helper lambda for adding derivatives
-    auto add_derivative = [&](std::size_t id1, std::size_t id2, const std::array<double, SIMD_WIDTH>& value) {
+    auto add_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
         if (id1 < id2 && id2 != passive_id<std::size_t>) {
             std::swap(id1, id2);
         }
-        double* dest = this->derivatives[id1][id2].data();
-        const double* src = value.data();
+
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
+
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+
+            double* dest = dest_vec.data();
+            const double* src = value.data();
 #pragma omp simd
-        for (std::size_t i = 0; i < SIMD_WIDTH; ++i) {
-            dest[i] += src[i];
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] += src[i];
+            }
+        }
+        else {
+            this->derivatives[id1][id2] += value;
         }
     };
 
-    auto sub_derivative = [&](std::size_t id1, std::size_t id2, const std::array<double, SIMD_WIDTH>& value) {
+    auto sub_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
         if (id1 < id2 && id2 != passive_id<std::size_t>) {
             std::swap(id1, id2);
         }
-        double* dest = derivatives[id1][id2].data();
-        const double* src = value.data();
+
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
+
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+            double* dest = dest_vec.data();
+            const double* src = value.data();
 #pragma omp simd
-        for (std::size_t i = 0; i < SIMD_WIDTH; ++i) {
-            dest[i] -= src[i];
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] -= src[i];
+            }
+        }
+        else {
+            this->derivatives[id1][id2] -= value;
         }
     };
 
-    auto add_derivative_scaled =
-      [&](std::size_t id1, std::size_t id2, const std::array<double, SIMD_WIDTH>& value, double scale) {
-          if (id1 < id2 && id2 != passive_id<std::size_t>) {
-              std::swap(id1, id2);
-          }
-          double* dest = derivatives[id1][id2].data();
-          const double* src = value.data();
-#pragma omp simd
-          for (std::size_t i = 0; i < SIMD_WIDTH; ++i) {
-              dest[i] += src[i] * scale;
-          }
-      };
+    auto add_derivative_scaled = [&](std::size_t id1, std::size_t id2, auto const& value, double scale) {
+        if (id1 < id2 && id2 != passive_id<std::size_t>) {
+            std::swap(id1, id2);
+        }
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
 
-    // std::size_t map_max = 0;
-    // std::size_t map_average = 0;
-    // std::size_t map_count = 0;
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+            double* dest = dest_vec.data();
+            const double* src = value.data();
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] += src[i] * scale;
+            }
+        }
+        else {
+            this->derivatives[id1][id2] += value * scale;
+        }
+    };
 
     val_idx = vals.size();
     id_idx = ids.size();
@@ -338,9 +403,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 2];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -368,10 +430,7 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const rhs_id = ids[id_idx + 1];
                 std::size_t const res_id = ids[id_idx + 2];
 
-                auto const& der_list = derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
+                auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -404,9 +463,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 2];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -434,10 +490,7 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const arg_id = ids[id_idx];
                 std::size_t const res_id = ids[id_idx + 1];
 
-                auto const& der_list = derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
+                auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -459,10 +512,7 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const arg_id = ids[id_idx];
                 std::size_t const res_id = ids[id_idx + 1];
 
-                auto const& der_list = derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
+                auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -487,10 +537,7 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const arg_id = ids[id_idx];
                 std::size_t const res_id = ids[id_idx + 1];
 
-                auto const& der_list = derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
+                auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -516,10 +563,7 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const arg_id = ids[id_idx];
                 std::size_t const res_id = ids[id_idx + 1];
 
-                auto const& der_list = derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
+                auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -546,9 +590,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -576,9 +617,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -605,9 +643,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -634,9 +669,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -666,9 +698,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -700,9 +729,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -730,9 +756,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -760,9 +783,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -789,9 +809,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
                 std::size_t const res_id = ids[id_idx + 1];
 
                 auto const& der_list = this->derivatives[res_id];
-                // map_max = std::max(map_max, der_list.size());
-                // map_average += der_list.size();
-                // ++map_count;
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
                     auto const& der_value = der_pair.second;
@@ -826,9 +843,6 @@ BackPropagator2Simd8<Float, maptype>::backpropagate_to(PositionImpl const& pos, 
 
         use_op.resize(to);
     }
-
-    // double average_d = static_cast<double>(map_average) / static_cast<double>(map_count);
-    // std::cout << "max: " << map_max << " average: " << average_d << std::endl;
 }
 
 } // namespace adhoc
