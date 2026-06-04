@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC_BACKPROPAGATOR2V_HPP
-#define ADHOC_BACKPROPAGATOR2V_HPP
+#ifndef ADHOC_BACKPROPAGATOR2_HPP
+#define ADHOC_BACKPROPAGATOR2_HPP
 
 #include "passive_id.hpp"
 #include "position_impl.hpp"
@@ -46,7 +46,7 @@ enum class MapType {
 };
 
 template<class Float, MapType maptype, bool Vectorised = false>
-class BackPropagator2Simd8 {
+class BackPropagator2 {
     static constexpr std::size_t SIMD_WIDTH = 8;
 
   private:
@@ -71,7 +71,7 @@ class BackPropagator2Simd8 {
     std::map<std::size_t, std::map<std::size_t, der_container_t> > derivatives_input_map;
 
   public:
-    explicit BackPropagator2Simd8() = default;
+    explicit BackPropagator2() = default;
 
     void set_checkpoint(std::size_t /* ops_size */) {}
     void set_lanes(std::size_t num_lanes)
@@ -177,7 +177,7 @@ class BackPropagator2Simd8 {
 template<class Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator2Simd8<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -847,4 +847,4 @@ BackPropagator2Simd8<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
 
 } // namespace adhoc
 
-#endif // ADHOC_BACKPROPAGATOR2V_HPP
+#endif // ADHOC_BACKPROPAGATOR2_HPP

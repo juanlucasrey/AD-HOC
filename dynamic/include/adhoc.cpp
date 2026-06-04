@@ -26,7 +26,7 @@
 #include "adhoc/backpropagator1lossycompressedpathreuse.hpp"
 #include "adhoc/backpropagator1lossycompressedpathreusev.hpp"
 #include "adhoc/backpropagator1lossypathreuse.hpp"
-#include "adhoc/backpropagator2v.hpp"
+#include "adhoc/backpropagator2.hpp"
 #include "adhoc/position_impl.hpp"
 
 #include <cstddef>
@@ -71,11 +71,11 @@ template<class Float>
 struct Tape<Float>::Impl {
     std::variant<BackPropagator<Float>,
                  BackPropagator<Float, true>,
-                 BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2Simd8<Float, MapType::STD_MAP, true>,
-                 BackPropagator2Simd8<Float, MapType::STD_UNORDERED_MAP, true>,
-                 BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE, true>,
-                 BackPropagator2Simd8<Float, MapType::BOOST_UNORDERED_MAP, true>,
+                 BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE>,
+                 BackPropagator2<Float, MapType::STD_MAP, true>,
+                 BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true>,
+                 BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true>,
                  BackPropagatorLossy<Float>,
                  BackPropagatorLossy<Float, true>,
                  BackPropagatorLossyCompressed<Float>,
@@ -189,19 +189,19 @@ Tape<Float>::set_method(Method m)
         this->impl->bp.template emplace<BackPropagator<double, true> >();
     }
     else if (m == Method::SecondOrderSimple) {
-        this->impl->bp.template emplace<BackPropagator2Simd8<double, MapType::ANKERL_UNORDERED_DENSE> >();
+        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >();
     }
     else if (m == Method::SecondOrderSimd8_stdmap) {
-        this->impl->bp.template emplace<BackPropagator2Simd8<double, MapType::STD_MAP, true> >();
+        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP, true> >();
     }
     else if (m == Method::SecondOrderSimd8_stdunorderedmap) {
-        this->impl->bp.template emplace<BackPropagator2Simd8<double, MapType::STD_UNORDERED_MAP, true> >();
+        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >();
     }
     else if (m == Method::SecondOrderSimd8_ankerl) {
-        this->impl->bp.template emplace<BackPropagator2Simd8<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
     }
     else if (m == Method::SecondOrderSimd8_boost) {
-        this->impl->bp.template emplace<BackPropagator2Simd8<double, MapType::BOOST_UNORDERED_MAP, true> >();
+        this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >();
     }
     else if (m == Method::FirstOrderLossy) {
         this->impl->bp.template emplace<BackPropagatorLossy<double> >();
@@ -247,23 +247,23 @@ Tape<Float>::get_method() const -> Method
         return Method::FirstOrderSimd8;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return Method::SecondOrderSimple;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_stdmap;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_stdunorderedmap;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_ankerl;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_boost;
     }
 
@@ -322,23 +322,23 @@ Tape<Float>::get_order() const -> std::size_t
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2Simd8<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
