@@ -25,21 +25,50 @@
 #include "position_impl.hpp"
 #include "tape_data.hpp"
 
+#include <array>
 #include <cmath>
-#include <map>
 #include <numbers>
 #include <vector>
 
+// maps
+#include "map/ankerl_unordered_dense.h"
+#include "map/boost_unordered.hpp"
+#include <map>
+#include <unordered_map>
+
 namespace adhoc {
 
-template<class Float>
+enum class MapType {
+    STD_MAP,
+    STD_UNORDERED_MAP,
+    ANKERL_UNORDERED_DENSE,
+    BOOST_UNORDERED_MAP,
+};
+
+template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2 {
+    static constexpr std::size_t SIMD_WIDTH = 8;
+
   private:
+    // this works with vector instead of array, but its 3x slower!!
+
+    // using der_container_t = std::conditional_t<Vectorised, std::vector<double>, double>;
+    using der_container_t = std::conditional_t<Vectorised, std::array<double, 8>, double>;
+
+    using map_t = std::conditional_t<
+      maptype == MapType::STD_MAP,
+      std::map<std::size_t, der_container_t>,
+      std::conditional_t<maptype == MapType::STD_UNORDERED_MAP,
+                         std::unordered_map<std::size_t, der_container_t>,
+                         std::conditional_t<maptype == MapType::ANKERL_UNORDERED_DENSE,
+                                            ankerl::unordered_dense::map<std::size_t, der_container_t>,
+                                            boost::unordered_flat_map<std::size_t, der_container_t> > > >;
+
     std::size_t m_num_lanes{ 1 };
-    std::vector<std::map<std::size_t, double> > derivatives;
+    std::vector<map_t> derivatives;
     std::vector<bool> use_op;
 
-    std::map<std::size_t, std::map<std::size_t, double> > derivatives_input_map;
+    std::map<std::size_t, std::map<std::size_t, der_container_t> > derivatives_input_map;
 
   public:
     explicit BackPropagator2() = default;
@@ -47,11 +76,12 @@ class BackPropagator2 {
     void set_checkpoint(std::size_t /* ops_size */) {}
     void set_lanes(std::size_t num_lanes)
     {
-        if (this->m_num_lanes != 1) {
-            // This backpropagator is not designed for multiple lanes
-            throw;
-        }
         this->m_num_lanes = num_lanes;
+        if constexpr (Vectorised) {
+            if (this->m_num_lanes != SIMD_WIDTH) {
+                throw;
+            }
+        }
     }
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t /* count_registered */) {}
@@ -59,31 +89,53 @@ class BackPropagator2 {
     void register_variable(std::size_t /* var_id */) {}
     void register_output_variable(std::size_t /* var_id */, std::size_t /* ops_size */) {}
 
-    void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t /* lane */ = 0)
+    void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t lane = 0)
     {
-        this->derivatives_input_map[var_id][passive_id<std::size_t>] = deriv;
+        if (lane >= this->m_num_lanes) {
+            return;
+        }
+
+        auto& derivatives = this->derivatives_input_map[var_id][passive_id<std::size_t>];
+        if constexpr (Vectorised) {
+            // is using vector this needs to be uncommented
+            // derivatives.resize(this->m_num_lanes, 0.0);
+            derivatives[lane] = deriv;
+        }
+        else {
+            derivatives = deriv;
+        }
     }
 
-    void set_derivative(std::size_t var_id1, std::size_t var_id2, double deriv)
+    void set_derivative(std::size_t var_id1, std::size_t var_id2, double deriv, std::size_t lane = 0)
     {
+        if (lane >= this->m_num_lanes) {
+            return;
+        }
         if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
             std::swap(var_id1, var_id2);
         }
-        this->derivatives_input_map[var_id1][var_id2] = deriv;
+        this->derivatives_input_map[var_id1][var_id2][lane] = deriv;
     }
 
-    auto get_derivative(std::size_t var_id, std::size_t /* lane */) const -> double
+    auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
-        auto const& idmap = this->derivatives[var_id];
-        auto const it = idmap.find(passive_id<std::size_t>);
-        if (it != idmap.end()) {
-            return it->second;
+        if (lane < this->m_num_lanes) {
+            auto const& idmap = this->derivatives[var_id];
+            auto const it = idmap.find(passive_id<std::size_t>);
+            if (it != idmap.end()) {
+                if constexpr (Vectorised) {
+                    return it->second[lane];
+                }
+                else {
+                    return it->second;
+                }
+            }
         }
 
         return 0.;
     }
 
-    auto get_derivative(std::size_t var_id1, std::size_t var_id2, std::size_t /* lane */) const -> double
+    auto get_derivative(std::size_t var_id1, std::size_t var_id2, std::size_t lane) const -> double
     {
         if (var_id1 < var_id2) {
             std::swap(var_id1, var_id2);
@@ -92,7 +144,12 @@ class BackPropagator2 {
         auto const& idmap = this->derivatives[var_id1];
         auto const it = idmap.find(var_id2);
         if (it != idmap.end()) {
-            return it->second;
+            if constexpr (Vectorised) {
+                return it->second[lane];
+            }
+            else {
+                return it->second;
+            }
         }
 
         return 0.;
@@ -117,10 +174,10 @@ class BackPropagator2 {
     void backpropagate_to(PositionImpl const& pos, TapeData& data);
 };
 
-template<class Float>
+template<class Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -191,11 +248,76 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
 
     this->derivatives.resize(ops.size());
 
-    auto add_derivative = [&](std::size_t id1, std::size_t id2, double value) {
+    auto add_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
         if (id1 < id2 && id2 != passive_id<std::size_t>) {
             std::swap(id1, id2);
         }
-        this->derivatives[id1][id2] += value;
+
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
+
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+
+            double* dest = dest_vec.data();
+            const double* src = value.data();
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] += src[i];
+            }
+        }
+        else {
+            this->derivatives[id1][id2] += value;
+        }
+    };
+
+    auto sub_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
+        if (id1 < id2 && id2 != passive_id<std::size_t>) {
+            std::swap(id1, id2);
+        }
+
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
+
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+            double* dest = dest_vec.data();
+            const double* src = value.data();
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] -= src[i];
+            }
+        }
+        else {
+            this->derivatives[id1][id2] -= value;
+        }
+    };
+
+    auto add_derivative_scaled = [&](std::size_t id1, std::size_t id2, auto const& value, double scale) {
+        if (id1 < id2 && id2 != passive_id<std::size_t>) {
+            std::swap(id1, id2);
+        }
+        if constexpr (Vectorised) {
+            auto& dest_vec = this->derivatives[id1][id2];
+
+            // is using vector this needs to be uncommented
+            // if (dest_vec.empty()) {
+            //     dest_vec.resize(this->m_num_lanes, 0.0);
+            // }
+            double* dest = dest_vec.data();
+            const double* src = value.data();
+#pragma omp simd
+            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                dest[i] += src[i] * scale;
+            }
+        }
+        else {
+            this->derivatives[id1][id2] += value * scale;
+        }
     };
 
     val_idx = vals.size();
@@ -264,7 +386,7 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                     // on the output we SET the derivative
                     this->derivatives[res_id][der_pair.first] = der_pair.second;
                     // on the dependent variable we ADD the derivative
-                    this->derivatives[arg_id][der_pair.first] += der_pair.second;
+                    add_derivative(arg_id, der_pair.first, der_pair.second);
                 }
 
                 if constexpr (Reset) {
@@ -283,7 +405,7 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
 
                     if (der_id == passive_id<std::size_t>) {
                         add_derivative(lhs_id, der_id, der_value);
@@ -295,8 +417,8 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                         add_derivative(rhs_id, rhs_id, der_value);
                     }
                     else {
-                        add_derivative(lhs_id, der_id, (lhs_id == der_id ? 2. : 1.) * der_value);
-                        add_derivative(rhs_id, der_id, (rhs_id == der_id ? 2. : 1.) * der_value);
+                        add_derivative_scaled(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.));
+                        add_derivative_scaled(rhs_id, der_id, der_value, (rhs_id == der_id ? 2. : 1.));
                     }
                 }
                 break;
@@ -311,20 +433,20 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
 
                     if (der_id == passive_id<std::size_t>) {
                         add_derivative(lhs_id, der_id, der_value);
-                        add_derivative(rhs_id, der_id, -der_value);
+                        sub_derivative(rhs_id, der_id, der_value);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(lhs_id, rhs_id, -der_value);
+                        sub_derivative(lhs_id, rhs_id, der_value);
                         add_derivative(lhs_id, lhs_id, der_value);
                         add_derivative(rhs_id, rhs_id, der_value);
                     }
                     else {
-                        add_derivative(lhs_id, der_id, (lhs_id == der_id ? 2. : 1.) * der_value);
-                        add_derivative(rhs_id, der_id, -(rhs_id == der_id ? 2. : 1.) * der_value);
+                        add_derivative_scaled(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.));
+                        add_derivative_scaled(rhs_id, der_id, der_value, -(rhs_id == der_id ? 2. : 1.));
                     }
                 }
                 break;
@@ -343,21 +465,21 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
 
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(lhs_id, der_id, rhs_val * der_value);
-                        add_derivative(rhs_id, der_id, lhs_val * der_value);
+                        add_derivative_scaled(lhs_id, der_id, der_value, rhs_val);
+                        add_derivative_scaled(rhs_id, der_id, der_value, lhs_val);
                         add_derivative(rhs_id, lhs_id, der_value);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(rhs_id, lhs_id, rhs_val * lhs_val * der_value);
-                        add_derivative(lhs_id, lhs_id, rhs_val * rhs_val * der_value);
-                        add_derivative(rhs_id, rhs_id, lhs_val * lhs_val * der_value);
+                        add_derivative_scaled(rhs_id, lhs_id, der_value, rhs_val * lhs_val);
+                        add_derivative_scaled(lhs_id, lhs_id, der_value, rhs_val * rhs_val);
+                        add_derivative_scaled(rhs_id, rhs_id, der_value, lhs_val * lhs_val);
                     }
                     else {
-                        add_derivative(lhs_id, der_id, (lhs_id == der_id ? 2. : 1.) * rhs_val * der_value);
-                        add_derivative(rhs_id, der_id, (rhs_id == der_id ? 2. : 1.) * lhs_val * der_value);
+                        add_derivative_scaled(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.) * rhs_val);
+                        add_derivative_scaled(rhs_id, der_id, der_value, (rhs_id == der_id ? 2. : 1.) * lhs_val);
                     }
                 }
                 break;
@@ -371,7 +493,7 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
                         add_derivative(arg_id, der_id, der_value);
                     }
@@ -379,7 +501,7 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                         add_derivative(arg_id, arg_id, der_value);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.));
                     }
                 }
                 break;
@@ -393,15 +515,15 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, -der_value);
+                        sub_derivative(arg_id, der_id, der_value);
                     }
                     else if (der_id == res_id) {
                         add_derivative(arg_id, arg_id, der_value);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * -der_value);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * -1.0);
                     }
                 }
                 break;
@@ -418,15 +540,15 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * arg_val);
+                        add_derivative_scaled(arg_id, der_id, der_value, arg_val);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, arg_val * arg_val * der_value);
+                        add_derivative_scaled(arg_id, arg_id, der_value, arg_val * arg_val);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * arg_val * der_value);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * arg_val);
                     }
                 }
                 break;
@@ -444,16 +566,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -470,17 +592,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        double const der_exp_local = der_value * der_exp;
-                        add_derivative(arg_id, der_id, der_exp_local);
-                        add_derivative(arg_id, arg_id, der_exp_local);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_exp);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_exp);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_exp * der_exp * der_value);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_exp * der_exp);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_exp * der_value);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_exp);
                     }
                 }
                 break;
@@ -498,16 +619,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -524,16 +645,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -550,16 +671,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -579,16 +700,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -610,16 +731,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -637,16 +758,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -664,16 +785,16 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
-                        add_derivative(arg_id, arg_id, der_value * der_local_2);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
@@ -690,15 +811,15 @@ BackPropagator2<Float>::backpropagate_to(PositionImpl const& pos, TapeData& data
                 auto const& der_list = this->derivatives[res_id];
                 for (auto const& der_pair : der_list) {
                     std::size_t const der_id = der_pair.first;
-                    double const der_value = der_pair.second;
+                    auto const& der_value = der_pair.second;
                     if (der_id == passive_id<std::size_t>) {
-                        add_derivative(arg_id, der_id, der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
                     }
                     else if (der_id == res_id) {
-                        add_derivative(arg_id, arg_id, der_value * der_local_1 * der_local_1);
+                        add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                     }
                     else {
-                        add_derivative(arg_id, der_id, (arg_id == der_id ? 2. : 1.) * der_value * der_local_1);
+                        add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                     }
                 }
                 break;
