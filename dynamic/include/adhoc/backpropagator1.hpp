@@ -127,7 +127,7 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
     this->use_op.resize(ops.size());
 
     auto add_derivative = [&](std::size_t arg_id, std::size_t res_id) {
-        use_op[arg_id] = true;
+        this->use_op[arg_id] = true;
         if constexpr (Vectorised) {
             const double* src = &this->derivatives[res_id * this->m_num_lanes];
             double* dest = &this->derivatives[arg_id * this->m_num_lanes];
@@ -142,7 +142,7 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
     };
 
     auto sub_derivative = [&](std::size_t arg_id, std::size_t res_id) {
-        use_op[arg_id] = true;
+        this->use_op[arg_id] = true;
         if constexpr (Vectorised) {
             const double* src = &this->derivatives[res_id * this->m_num_lanes];
             double* dest = &this->derivatives[arg_id * this->m_num_lanes];
@@ -157,7 +157,7 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
     };
 
     auto mul_add_derivative = [&](std::size_t arg_id, std::size_t res_id, double multiplier) {
-        use_op[arg_id] = true;
+        this->use_op[arg_id] = true;
         if constexpr (Vectorised) {
             const double* src = &this->derivatives[res_id * this->m_num_lanes];
             double* dest = &this->derivatives[arg_id * this->m_num_lanes];
@@ -175,7 +175,7 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
     std::size_t id_idx = ids.size();
     for (std::size_t op_idx = from; op_idx-- > to;) {
         OpCode const& op = ops[op_idx];
-        bool const use_this_op = use_op[op_idx];
+        bool const use_this_op = this->use_op[op_idx];
 
         switch (op) {
             case OpCode::REG_INPUT: {
@@ -381,11 +381,11 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
     if constexpr (Log) {
         // calculate the percentage of operations saved using the vector use_op
         std::size_t avoided_ops = 0;
-        for (std::size_t i = 0; i < use_op.size(); ++i) {
-            avoided_ops += !use_op[i];
+        for (std::size_t i = 0; i < this->use_op.size(); ++i) {
+            avoided_ops += !this->use_op[i];
         }
 
-        double percentage = static_cast<double>(avoided_ops) / static_cast<double>(use_op.size());
+        double percentage = static_cast<double>(avoided_ops) / static_cast<double>(this->use_op.size());
         std::cout.precision(std::numeric_limits<double>::max_digits10);
         std::cout << "backpropagation saved operations: " << percentage << std::endl;
     }
