@@ -66,9 +66,7 @@ class BackPropagator2 {
 
     std::size_t m_num_lanes{ 1 };
     std::vector<map_t> derivatives;
-    std::vector<bool> use_op;
-
-    std::map<std::size_t, std::map<std::size_t, der_container_t> > derivatives_input_map;
+    std::vector<char> use_op;
 
   public:
     explicit BackPropagator2() = default;
@@ -76,12 +74,18 @@ class BackPropagator2 {
     void set_checkpoint(std::size_t /* ops_size */) {}
     void set_lanes(std::size_t num_lanes)
     {
-        this->m_num_lanes = num_lanes;
-        if constexpr (Vectorised) {
-            if (this->m_num_lanes != SIMD_WIDTH) {
+        if constexpr (!Vectorised) {
+            if (num_lanes != 1) {
+                // This backpropagator is not designed for multiple lanes
                 throw;
             }
         }
+        else {
+            if (num_lanes != SIMD_WIDTH) {
+                throw;
+            }
+        }
+        this->m_num_lanes = num_lanes;
     }
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t /* count_registered */) {}
@@ -93,32 +97,48 @@ class BackPropagator2 {
         this->use_op[var_id] = true;
     }
 
-    void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t lane = 0)
+    void set_derivative(std::size_t var_id, double deriv, std::size_t ops_size, std::size_t lane = 0)
     {
-        if (lane >= this->m_num_lanes) {
-            return;
-        }
+        if (lane < this->m_num_lanes) {
+            this->derivatives.resize(ops_size);
 
-        auto& derivatives = this->derivatives_input_map[var_id][passive_id<std::size_t>];
-        if constexpr (Vectorised) {
-            // is using vector this needs to be uncommented
-            // derivatives.resize(this->m_num_lanes, 0.0);
-            derivatives[lane] = deriv;
+            auto& derivatives_local = this->derivatives[var_id][passive_id<std::size_t>];
+            if constexpr (Vectorised) {
+                // is using vector this needs to be uncommented
+                // derivatives_local.resize(this->m_num_lanes, 0.0);
+                derivatives_local[lane] = deriv;
+            }
+            else {
+                derivatives_local = deriv;
+            }
         }
         else {
-            derivatives = deriv;
+            throw;
         }
     }
 
     void set_derivative(std::size_t var_id1, std::size_t var_id2, double deriv, std::size_t lane = 0)
     {
-        if (lane >= this->m_num_lanes) {
-            return;
+        if (lane < this->m_num_lanes) {
+            // this->derivatives.resize(ops_size);
+
+            if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
+                std::swap(var_id1, var_id2);
+            }
+
+            auto& derivatives_local = this->derivatives[var_id1][var_id2];
+            if constexpr (Vectorised) {
+                // is using vector this needs to be uncommented
+                // derivatives_local.resize(this->m_num_lanes, 0.0);
+                derivatives_local[lane] = deriv;
+            }
+            else {
+                derivatives_local = deriv;
+            }
         }
-        if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
-            std::swap(var_id1, var_id2);
+        else {
+            throw;
         }
-        this->derivatives_input_map[var_id1][var_id2][lane] = deriv;
     }
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
@@ -134,45 +154,52 @@ class BackPropagator2 {
                     return it->second;
                 }
             }
+            return 0.;
         }
 
+        throw;
         return 0.;
     }
 
     auto get_derivative(std::size_t var_id1, std::size_t var_id2, std::size_t lane) const -> double
     {
-        if (var_id1 < var_id2) {
-            std::swap(var_id1, var_id2);
+        if (lane < this->m_num_lanes) {
+            if (var_id1 < var_id2) {
+                std::swap(var_id1, var_id2);
+            }
+
+            auto const& idmap = this->derivatives[var_id1];
+            auto const it = idmap.find(var_id2);
+            if (it != idmap.end()) {
+                if constexpr (Vectorised) {
+                    return it->second[lane];
+                }
+                else {
+                    return it->second;
+                }
+            }
+
+            return 0.;
         }
 
-        auto const& idmap = this->derivatives[var_id1];
-        auto const it = idmap.find(var_id2);
-        if (it != idmap.end()) {
-            if constexpr (Vectorised) {
-                return it->second[lane];
-            }
-            else {
-                return it->second;
-            }
-        }
-
+        throw;
         return 0.;
     }
 
-    // Clear all derivatives
     void clear()
     {
-        this->derivatives_input_map.clear();
         this->derivatives.clear();
+        this->use_op.clear();
     }
 
-    void zero_adjoints()
+    void zero_adjoints() { this->derivatives.clear(); }
+
+    auto size_of(bool /* capacity */ = false) const -> std::size_t
     {
-        this->derivatives_input_map.clear();
-        this->derivatives.clear();
+        std::size_t size = 0;
+        // TODO
+        return size;
     }
-
-    auto size_of(bool /* capacity */ = false) const -> std::size_t { return 0; }
 
     template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
     void backpropagate_to(PositionImpl const& pos, TapeData& data);
@@ -185,13 +212,13 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
+
     const auto& ops = data.ops;
     const auto& vals = data.vals;
     const auto& ids = data.ids;
 
-    this->use_op.resize(ops.size());
-
     this->derivatives.resize(ops.size());
+    this->use_op.resize(ops.size());
 
     auto add_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
         if (id1 < id2 && id2 != passive_id<std::size_t>) {
@@ -278,34 +305,26 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             }
             case OpCode::REG_OUTPUT: {
                 id_idx -= 2;
-
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
+
                     this->use_op[arg_id] = true;
 
-                    auto const& der_list = this->derivatives_input_map[res_id];
+                    auto const& der_list = this->derivatives[res_id];
                     for (auto const& der_pair : der_list) {
-                        // on the output we SET the derivative
-                        this->derivatives[res_id][der_pair.first] = der_pair.second;
-                        // on the dependent variable we ADD the derivative
                         add_derivative(arg_id, der_pair.first, der_pair.second);
-                    }
-
-                    if constexpr (Reset) {
-                        // delete the derivative input from the map to reset
-                        this->derivatives_input_map.erase(res_id);
                     }
                 }
                 break;
             }
             case OpCode::ADD: {
                 id_idx -= 3;
-
                 if (use_this_op) {
                     std::size_t const lhs_id = ids[id_idx];
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
+
                     this->use_op[lhs_id] = true;
                     this->use_op[rhs_id] = true;
 
@@ -333,11 +352,11 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             }
             case OpCode::SUB: {
                 id_idx -= 3;
-
                 if (use_this_op) {
                     std::size_t const lhs_id = ids[id_idx];
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
+
                     this->use_op[lhs_id] = true;
                     this->use_op[rhs_id] = true;
 
@@ -366,14 +385,13 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             case OpCode::MUL: {
                 val_idx -= 2;
                 id_idx -= 3;
-
                 if (use_this_op) {
                     double const lhs_val = vals[val_idx];
                     double const rhs_val = vals[val_idx + 1];
-
                     std::size_t const lhs_id = ids[id_idx];
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
+
                     this->use_op[lhs_id] = true;
                     this->use_op[rhs_id] = true;
 
@@ -402,10 +420,10 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             }
             case OpCode::ADD_C: {
                 id_idx -= 2;
-
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
+
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -427,10 +445,10 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             }
             case OpCode::SUB_C: {
                 id_idx -= 2;
-
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
+
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -453,12 +471,11 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             case OpCode::MUL_C: {
                 val_idx -= 1;
                 id_idx -= 2;
-
                 if (use_this_op) {
-                    double const arg_val = vals[val_idx];
-
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
+                    double const der_local_1 = vals[val_idx];
+
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -466,13 +483,14 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
                         std::size_t const der_id = der_pair.first;
                         auto const& der_value = der_pair.second;
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, arg_val);
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
                         }
                         else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, arg_val * arg_val);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
                         }
                         else {
-                            add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * arg_val);
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
                         }
                     }
                 }
@@ -481,235 +499,12 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             case OpCode::NORM: {
                 val_idx -= 1;
                 id_idx -= 2;
-
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = 2.0 * vals[val_idx];
                     double const der_local_2 = 2.0;
 
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::EXP: {
-                val_idx -= 1;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    double const der_exp = vals[val_idx];
-
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_exp);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_exp);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_exp * der_exp);
-                        }
-                        else {
-                            add_derivative_scaled(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_exp);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::LOG: {
-                val_idx -= 1;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    double const der_local_1 = 1.0 / vals[val_idx];
-                    double const der_local_2 = -der_local_1 * der_local_1;
-
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::ERF: {
-                val_idx -= 1;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    constexpr double minus_two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
-                    double const der_local_2 = -2. * vals[val_idx] * der_local_1;
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::ERFC: {
-                val_idx -= 1;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
-                    double const der_local_2 = -2. * vals[val_idx] * der_local_1;
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::SQRT: {
-                val_idx -= 2;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    double const one_over_in = 1. / vals[val_idx];
-
-                    double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
-                    double const der_local_2 = -0.5 * der_local_1 * one_over_in;
-
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::POW_C: {
-                val_idx -= 2;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    double const lhs_arg = vals[val_idx];
-                    double const rhs_arg = vals[val_idx + 1];
-
-                    double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
-                    double const der_local_2 = rhs_arg != 0.0 && rhs_arg != 1.0
-                                                 ? rhs_arg * (rhs_arg - 1.0) * std::pow(lhs_arg, rhs_arg - 2.)
-                                                 : 0.0;
-
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
-                        if (der_id == passive_id<std::size_t>) {
-                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
-                        }
-                        else if (der_id == res_id) {
-                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
-                        }
-                        else {
-                            add_derivative_scaled(
-                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
-                        }
-                    }
-                }
-                break;
-            }
-            case OpCode::COS: {
-                val_idx -= 2;
-                id_idx -= 2;
-
-                if (use_this_op) {
-                    double const der_local_1 = -std::sin(vals[val_idx]);
-                    double const der_local_2 = -vals[val_idx + 1];
-
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -734,13 +529,12 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             case OpCode::INV: {
                 val_idx -= 1;
                 id_idx -= 2;
-
                 if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = -vals[val_idx] * vals[val_idx];
                     double const der_local_2 = -2.0 * der_local_1 * vals[val_idx];
 
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -765,12 +559,11 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             case OpCode::ABS: {
                 val_idx -= 1;
                 id_idx -= 2;
-
                 if (use_this_op) {
-                    double const der_local_1 = std::copysign(1.0, vals[val_idx]);
-
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
+                    double const der_local_1 = std::copysign(1.0, vals[val_idx]);
+
                     this->use_op[arg_id] = true;
 
                     auto const& der_list = this->derivatives[res_id];
@@ -791,24 +584,237 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
                 }
                 break;
             }
-        }
+            case OpCode::EXP: {
+                val_idx -= 1;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    double const der_local_1 = vals[val_idx];
+                    double const der_local_2 = der_local_1;
 
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::LOG: {
+                val_idx -= 1;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    double const der_local_1 = 1.0 / vals[val_idx];
+                    double const der_local_2 = -der_local_1 * der_local_1;
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::ERF: {
+                val_idx -= 1;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
+                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
+                    double const der_local_2 = -2. * vals[val_idx] * der_local_1;
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::ERFC: {
+                val_idx -= 1;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
+                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
+                    double const der_local_2 = -2. * vals[val_idx] * der_local_1;
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::COS: {
+                val_idx -= 2;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    double const der_local_1 = -std::sin(vals[val_idx]);
+                    double const der_local_2 = -vals[val_idx + 1];
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::SQRT: {
+                val_idx -= 2;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    double const one_over_in = 1. / vals[val_idx];
+                    double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
+                    double const der_local_2 = -0.5 * der_local_1 * one_over_in;
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+            case OpCode::POW_C: {
+                val_idx -= 2;
+                id_idx -= 2;
+                if (use_this_op) {
+                    std::size_t const arg_id = ids[id_idx];
+                    std::size_t const res_id = ids[id_idx + 1];
+                    double const lhs_arg = vals[val_idx];
+                    double const rhs_arg = vals[val_idx + 1];
+                    double const der_local_1 = rhs_arg != 0.0 ? rhs_arg * std::pow(lhs_arg, rhs_arg - 1.) : 0.0;
+                    double const der_local_2 = rhs_arg != 0.0 && rhs_arg != 1.0
+                                                 ? rhs_arg * (rhs_arg - 1.0) * std::pow(lhs_arg, rhs_arg - 2.)
+                                                 : 0.0;
+
+                    this->use_op[arg_id] = true;
+
+                    auto const& der_list = this->derivatives[res_id];
+                    for (auto const& der_pair : der_list) {
+                        std::size_t const der_id = der_pair.first;
+                        auto const& der_value = der_pair.second;
+                        if (der_id == passive_id<std::size_t>) {
+                            add_derivative_scaled(arg_id, der_id, der_value, der_local_1);
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_2);
+                        }
+                        else if (der_id == res_id) {
+                            add_derivative_scaled(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                        }
+                        else {
+                            add_derivative_scaled(
+                              arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                        }
+                    }
+                }
+                break;
+            }
+        }
         if constexpr (Reset && ResetInPlace) {
             this->derivatives.resize(this->derivatives.size() - 1);
+            this->use_op.resize(this->use_op.size() - 1);
         }
     }
 
     if constexpr (Reset && !ResetInPlace) {
         this->derivatives.resize(to);
+        this->use_op.resize(to);
     }
 
     if constexpr (Reset) {
-        data.ops.resize(to);
-        data.vals.resize(val_idx);
-        data.ids.resize(id_idx);
-        data.next_id = to;
-
-        this->use_op.resize(to);
+        reset(pos, data);
     }
 }
 
