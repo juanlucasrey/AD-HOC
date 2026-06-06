@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC_BACKPROPAGATOR2_HPP
-#define ADHOC_BACKPROPAGATOR2_HPP
+#ifndef ADHOC_BACKPROPAGATOR2LOSSY_HPP
+#define ADHOC_BACKPROPAGATOR2LOSSY_HPP
 
 #include "maps.hpp"
 #include "passive_id.hpp"
@@ -34,7 +34,7 @@
 namespace adhoc {
 
 template<class Float, MapType maptype, bool Vectorised = false>
-class BackPropagator2 {
+class BackPropagator2Lossy {
     static constexpr std::size_t SIMD_WIDTH = 8;
 
   private:
@@ -48,7 +48,7 @@ class BackPropagator2 {
     std::vector<char> use_op;
 
   public:
-    explicit BackPropagator2() = default;
+    explicit BackPropagator2Lossy() = default;
 
     void set_checkpoint(std::size_t /* ops_size */) {}
     void set_lanes(std::size_t num_lanes)
@@ -187,7 +187,7 @@ class BackPropagator2 {
 template<class Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log>
 void
-BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -625,4 +625,4 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
 
 } // namespace adhoc
 
-#endif // ADHOC_BACKPROPAGATOR2_HPP
+#endif // ADHOC_BACKPROPAGATOR2LOSSY_HPP
