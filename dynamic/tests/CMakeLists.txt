@@ -22,7 +22,7 @@ add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include)
 
 # Create adhoc library from adhoc.cpp
-add_library(adhoc_lib STATIC ../include/adhoc.cpp)
+add_library(adhoc_lib STATIC ../include/tape.cpp)
 target_include_directories(adhoc_lib PUBLIC ../include)
 
 # Library-linked tests

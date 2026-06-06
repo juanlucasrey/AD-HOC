@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "adhoc.hpp"
+#include "tape.hpp"
 
 #include "adhoc/backpropagator1.hpp"
 #include "adhoc/backpropagator1lossy.hpp"
@@ -90,8 +90,9 @@ struct Tape<Float>::Impl {
 };
 
 template<class Float>
-Tape<Float>::Tape()
+Tape<Float>::Tape(TapeData& tape_data)
   : impl(std::make_unique<Impl>())
+  , data(tape_data)
 {
 }
 
@@ -117,7 +118,7 @@ void
 Tape<Float>::register_variable(adhoc_type<Float> const& var)
 {
     if (var.is_passive()) {
-        std::size_t const new_id = generate_id();
+        std::size_t const new_id = this->data.generate_id();
         var.id = new_id;
         record_register(data.ops, data.ids, OpCode::REG_INPUT, new_id);
         std::visit([new_id](auto& arg) { arg.register_variable(new_id); }, this->impl->bp);
@@ -129,7 +130,7 @@ void
 Tape<Float>::register_variable(adhoc_type<Float>& var)
 {
     if (var.is_passive()) {
-        std::size_t const new_id = generate_id();
+        std::size_t const new_id = this->data.generate_id();
         var.id = new_id;
         record_register(data.ops, data.ids, OpCode::REG_INPUT, new_id);
         std::visit([new_id](auto& arg) { arg.register_variable(new_id); }, this->impl->bp);
@@ -141,7 +142,7 @@ void
 Tape<Float>::register_output_variable(adhoc_type<Float> const& var)
 {
     if (var.is_active()) {
-        std::size_t const new_id = generate_id();
+        std::size_t const new_id = this->data.generate_id();
         data.ids.push_back(var.id);
         var.id = new_id;
         record_register(data.ops, data.ids, OpCode::REG_OUTPUT, new_id);
@@ -155,7 +156,7 @@ void
 Tape<Float>::register_output_variable(adhoc_type<Float>& var)
 {
     if (var.is_active()) {
-        std::size_t const new_id = generate_id();
+        std::size_t const new_id = this->data.generate_id();
         data.ids.push_back(var.id);
         var.id = new_id;
         record_register(data.ops, data.ids, OpCode::REG_OUTPUT, new_id);
