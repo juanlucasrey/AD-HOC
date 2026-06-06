@@ -242,7 +242,7 @@ class adhoc_type {
             result.id = opcode<Float>::global_tape_data->generate_id();
             opcode<Float>::global_tape_data->record_unary(OpCode::POW_C, lhs.id, result.id);
             opcode<Float>::global_tape_data->record_value(lhs.value);
-            opcode<Float>::global_tape_data->record_value(static_cast<Float>(rhs));
+            opcode<Float>::global_tape_data->record_value(rhs);
         }
         return result;
     }
