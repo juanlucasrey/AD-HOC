@@ -57,6 +57,25 @@ struct TapeData {
     std::vector<double> vals;
     std::vector<std::size_t> ids;
     std::size_t next_id{ 0 };
+
+    void record_unary(OpCode op, std::size_t arg_id, std::size_t res_id)
+    {
+        this->ops.push_back(op);
+        this->ids.push_back(arg_id);
+        this->ids.push_back(res_id);
+    }
+
+    void record_binary(OpCode op, std::size_t lhs_id, std::size_t rhs_id, std::size_t res_id)
+    {
+        this->ops.push_back(op);
+        this->ids.push_back(lhs_id);
+        this->ids.push_back(rhs_id);
+        this->ids.push_back(res_id);
+    }
+
+    auto generate_id() -> std::size_t { return this->next_id++; }
+
+    void record_value(double const value) { this->vals.push_back(value); }
 };
 
 } // namespace adhoc

@@ -4,7 +4,7 @@
 #include "credit/fi_instruments.hpp"
 #include "credit/mdspan.hpp"
 #include "credit/yield_curve.hpp"
-#include <adhoc.hpp>
+#include <tape.hpp>
 
 #include <chrono>
 #include <cstddef>
@@ -2370,7 +2370,8 @@ create_curve_adhoc()
 {
     using adhoc_mode = adhoc::opcode<double>;
     using D = adhoc_mode::type;
-    adhoc_mode::tape_t tape;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
 
     std::vector<CDS> cdsInstruments = get_cds();
     const auto yc = get_yc();
