@@ -47,7 +47,11 @@ class opcode {
     using tape_t = Tape<T>;
     inline static thread_local tape_t* global_tape = nullptr;
 
+    // for some reason windows doesn't like it when these are private, even though they are only used in the friend
+    // classes`w`e
+#ifndef _MSC_VER
   private:
+#endif
     friend class adhoc_type<T>;
     friend class smart_tape_ptr_t<opcode<T> >;
     inline static thread_local TapeData* global_tape_data = nullptr;
