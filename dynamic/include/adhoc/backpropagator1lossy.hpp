@@ -93,9 +93,9 @@ class BackPropagatorLossy {
 
         auto free_loc(std::size_t pos) -> void { this->free_positions.push_back(pos); }
 
-        using der_container_t = std::conditional_t<Vectorised, std::span<double>, double&>;
+        using buffer_result_t = std::conditional_t<Vectorised, std::span<double>, double&>;
 
-        auto operator[](std::size_t pos) -> der_container_t
+        auto operator[](std::size_t pos) -> buffer_result_t
         {
             if constexpr (Vectorised) {
                 return std::span<double>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);
@@ -105,9 +105,9 @@ class BackPropagatorLossy {
             }
         }
 
-        using der_container_const_t = std::conditional_t<Vectorised, std::span<double const>, double>;
+        using buffer_result_const_t = std::conditional_t<Vectorised, std::span<double const>, double>;
 
-        auto operator[](std::size_t pos) const -> const der_container_const_t
+        auto operator[](std::size_t pos) const -> const buffer_result_const_t
         {
             if constexpr (Vectorised) {
                 return std::span<double const>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);

@@ -378,18 +378,15 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         else {
             auto const new_pos = buffer_multipliers_values.get_new_loc();
 
-            if (mult_type1 == mul_type::ONE) {
-                add_one(new_pos);
-            }
-            else if (mult_type1 == mul_type::MINUS_ONE) {
-                sub_one(new_pos);
-            }
-
-            if (mult_type2 == mul_type::ONE) {
-                add_one(new_pos);
-            }
-            else if (mult_type2 == mul_type::MINUS_ONE) {
-                sub_one(new_pos);
+            if (mult_type1 == mult_type2) {
+                if (mult_type1 == mul_type::ONE) {
+                    add_one(new_pos);
+                    add_one(new_pos);
+                }
+                else {
+                    sub_one(new_pos);
+                    sub_one(new_pos);
+                }
             }
 
             info1.position = new_pos;
