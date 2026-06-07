@@ -1681,10 +1681,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
         // LOOP 2: forward, to calculate multipliers after compressing induced paths
         buffer_t<double> buffer_multipliers_values;
-        auto const one_loc = buffer_multipliers_values.get_new_loc();
-        buffer_multipliers_values[one_loc] = 1.0;
-        auto const minus_one_loc = buffer_multipliers_values.get_new_loc();
-        buffer_multipliers_values[minus_one_loc] = -1.0;
 
         enum class mul_type : std::uint8_t {
             ANY,
@@ -1720,6 +1716,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             buffer_multipliers_values[pos1] += buffer_multipliers_values[pos2];
         };
 
+        auto add_one = [&](std::size_t const pos1) { buffer_multipliers_values[pos1] += 1.0; };
+
+        auto sub_one = [&](std::size_t const pos1) { buffer_multipliers_values[pos1] -= 1.0; };
+
         auto mul_internal = [&](std::size_t const pos1, std::size_t const pos2) {
             buffer_multipliers_values[pos1] *= buffer_multipliers_values[pos2];
         };
@@ -1747,10 +1747,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             else if (mult_type1 == mul_type::ANY) {
                 auto const pos1_buffer_loc = info1.position;
                 if (mult_type2 == mul_type::ONE) {
-                    add_internal(pos1_buffer_loc, 0);
+                    add_one(pos1_buffer_loc);
                 }
                 else if (mult_type2 == mul_type::MINUS_ONE) {
-                    add_internal(pos1_buffer_loc, 1);
+                    sub_one(pos1_buffer_loc);
                 }
 
                 // info1.position = pos1_buffer_loc;
@@ -1758,10 +1758,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             else if (mult_type2 == mul_type::ANY) {
                 auto const pos2_buffer_loc = info2.position;
                 if (mult_type1 == mul_type::ONE) {
-                    add_internal(pos2_buffer_loc, 0);
+                    add_one(pos2_buffer_loc);
                 }
                 else if (mult_type1 == mul_type::MINUS_ONE) {
-                    add_internal(pos2_buffer_loc, 1);
+                    sub_one(pos2_buffer_loc);
                 }
 
                 info1.position = pos2_buffer_loc;
@@ -1769,18 +1769,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             else {
                 auto const new_pos = buffer_multipliers_values.get_new_loc();
 
-                if (mult_type1 == mul_type::ONE) {
-                    add_internal(new_pos, 0);
-                }
-                else if (mult_type1 == mul_type::MINUS_ONE) {
-                    add_internal(new_pos, 1);
-                }
-
-                if (mult_type2 == mul_type::ONE) {
-                    add_internal(new_pos, 0);
-                }
-                else if (mult_type2 == mul_type::MINUS_ONE) {
-                    add_internal(new_pos, 1);
+                if (mult_type1 == mult_type2) {
+                    if (mult_type1 == mul_type::ONE) {
+                        add_one(new_pos);
+                        add_one(new_pos);
+                    }
+                    else {
+                        sub_one(new_pos);
+                        sub_one(new_pos);
+                    }
                 }
 
                 info1.position = new_pos;
