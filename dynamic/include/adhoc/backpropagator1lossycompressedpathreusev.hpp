@@ -48,7 +48,7 @@ class BackPropagatorLossyCompressedPathReuseV {
     std::vector<std::size_t> node_location_on_buffer;
 
     std::vector<std::size_t> checkpoints{ 0 };
-    std::vector<buffer_t<double> > buffers{ buffer_t<double>{} };
+    std::vector<buffer_t<double, Vectorised> > buffers{ buffer_t<double, Vectorised>{} };
 
     // lossy tape
     enum class MultiplierOpCode : std::uint8_t {
@@ -103,7 +103,7 @@ class BackPropagatorLossyCompressedPathReuseV {
 
         if (this->checkpoints.back() != ops_size) {
             this->checkpoints.push_back(ops_size);
-            this->buffers.push_back(buffer_t<double>{ this->m_num_lanes });
+            this->buffers.push_back(buffer_t<double, Vectorised>{ this->get_lanes() });
             this->hash_to_lossy_tape.push_back(std::map<std::size_t, LossyTape>{});
         }
     }
@@ -116,18 +116,16 @@ class BackPropagatorLossyCompressedPathReuseV {
             }
         }
         this->m_num_lanes = num_lanes;
-        this->buffers = { buffer_t<double>{ this->m_num_lanes } };
+        this->buffers = { buffer_t<double, Vectorised>{ this->m_num_lanes } };
     }
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t count_registered)
     {
-        this->buffers.back().data().reserve(this->buffers.back().data().size() +
-                                            (this->m_num_lanes * count_registered));
+        this->buffers.back().reserve(this->buffers.back().size() + count_registered);
     }
     void reserve_output(std::size_t count_registered)
     {
-        this->buffers.back().data().reserve(this->buffers.back().data().size() +
-                                            (this->m_num_lanes * count_registered));
+        this->buffers.back().reserve(this->buffers.back().size() + count_registered);
     }
     void register_variable(std::size_t var_id)
     {
@@ -137,17 +135,7 @@ class BackPropagatorLossyCompressedPathReuseV {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            var_pos = var_buffer.get_new_loc();
-            if constexpr (Vectorised) {
-                double* dest = &var_buffer.data()[var_pos * this->m_num_lanes];
-#pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                    dest[i] = 0.;
-                }
-            }
-            else {
-                var_buffer.data()[var_pos] = 0.;
-            }
+            var_pos = var_buffer.template get_new_loc<true>();
         }
     }
 
@@ -159,36 +147,38 @@ class BackPropagatorLossyCompressedPathReuseV {
         if (var_pos == passive_id<std::size_t>) {
             auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
             auto& var_buffer = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1];
-            var_pos = var_buffer.get_new_loc();
-            if constexpr (Vectorised) {
-                double* dest = &var_buffer.data()[var_pos * this->m_num_lanes];
-#pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                    dest[i] = 0.;
-                }
-            }
-            else {
-                var_buffer.data()[var_pos] = 0.;
-            }
+            var_pos = var_buffer.template get_new_loc<true>();
         }
     }
 
     void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t lane = 0)
     {
-        if (lane < this->m_num_lanes) {
-            std::size_t const var_pos = this->node_location_on_buffer[var_id];
-            if (var_pos == passive_id<std::size_t>) {
-                // this derivative is not on buffer.
-                // this is probably nor an input nor an output.
+        std::size_t const var_pos = this->node_location_on_buffer[var_id];
+        if (var_pos == passive_id<std::size_t>) {
+            // this derivative is not on buffer.
+            // this is probably nor an input nor an output.
+            throw;
+        }
+
+        auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+        auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
+
+        if constexpr (Vectorised) {
+            auto val = this->buffers[buffed_id][var_pos];
+
+            if (lane >= val.size()) {
+                // lane value too large
                 throw;
             }
 
-            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
-            auto buffed_id = static_cast<std::uint8_t>(std::distance(this->checkpoints.cbegin(), it) - 1);
-            this->buffers[buffed_id].data()[(var_pos * this->m_num_lanes) + lane] = deriv;
+            val[lane] = deriv;
         }
         else {
-            throw;
+            if (lane != 0) {
+                // This backpropagator is not designed for multiple lanes
+                throw;
+            }
+            this->buffers[buffed_id][var_pos] = deriv;
         }
     }
 
@@ -196,21 +186,32 @@ class BackPropagatorLossyCompressedPathReuseV {
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
-        if (lane < this->m_num_lanes) {
-            std::size_t const var_pos = this->node_location_on_buffer[var_id];
-            if (var_pos == passive_id<std::size_t>) {
-                // this derivative is not on buffer.
-                // this is probably nor an input nor an output.
+        std::size_t const var_pos = this->node_location_on_buffer[var_id];
+        if (var_pos == passive_id<std::size_t>) {
+            // this derivative is not on buffer.
+            // this is probably nor an input nor an output.
+            throw;
+        }
+
+        auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
+
+        if constexpr (Vectorised) {
+            auto const val = this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1][var_pos];
+
+            if (lane >= val.size()) {
+                // lane value too large
                 throw;
             }
 
-            auto it = std::upper_bound(this->checkpoints.cbegin(), this->checkpoints.cend(), var_id);
-            return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1]
-              .data()[(var_pos * this->m_num_lanes) + lane];
+            return val[lane];
         }
-
-        throw;
-        return 0.;
+        else {
+            if (lane != 0) {
+                // This backpropagator is not designed for multiple lanes
+                throw;
+            }
+            return this->buffers[std::distance(this->checkpoints.cbegin(), it) - 1][var_pos];
+        }
     }
 
     auto get_derivative(std::size_t /* var_id1 */, std::size_t /* var_id2 */, std::size_t /* lane */) const -> double
@@ -223,7 +224,7 @@ class BackPropagatorLossyCompressedPathReuseV {
     void zero_adjoints()
     {
         for (auto& b : this->buffers) {
-            std::fill(b.data().begin(), b.data().end(), 0.0);
+            b.zero();
         }
     }
 
@@ -700,13 +701,13 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         };
 
         auto multiplier_set_incoming = [&](std::size_t const pos) {
-            auto const real_pos = buffer_multipliers.data()[pos].position;
+            auto const real_pos = buffer_multipliers[pos].position;
             copy_m(real_pos);
         };
 
         auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
-            auto& info1 = buffer_multipliers.data()[pos1];
-            auto& info2 = buffer_multipliers.data()[pos2];
+            auto& info1 = buffer_multipliers[pos1];
+            auto& info2 = buffer_multipliers[pos2];
 
             auto const mult_type1 = info1.value_type;
             auto const mult_type2 = info2.value_type;
@@ -762,8 +763,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         };
 
         auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
-            auto& info1 = buffer_multipliers.data()[pos1];
-            auto& info2 = buffer_multipliers.data()[pos2];
+            auto& info1 = buffer_multipliers[pos1];
+            auto& info2 = buffer_multipliers[pos2];
 
             auto const mult_type1 = info1.value_type;
             auto const mult_type2 = info2.value_type;
@@ -795,7 +796,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
         auto get_mult_loc = [&]<mul_type M>() -> std::size_t {
             std::size_t result = buffer_multipliers.get_new_loc();
-            auto& node_data = buffer_multipliers.data()[result];
+            auto& node_data = buffer_multipliers[result];
             node_data.value_type = M;
 
             if constexpr (M == mul_type::ANY) {
@@ -816,7 +817,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
             if (arg_is_induced_path) {
                 auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
-                auto& node_data = buffer_multipliers.data()[mul_origin_arg];
+                auto& node_data = buffer_multipliers[mul_origin_arg];
                 auto& origin_type = node_data.value_type;
                 auto& buffer_origin = node_data.position;
 
@@ -859,7 +860,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 if constexpr (M == mul_type::ANY) {
                     multiplier_set_incoming(mult_origin_res);
                 }
-                auto& node_data = buffer_multipliers.data()[mult_origin_res];
+                auto& node_data = buffer_multipliers[mult_origin_res];
                 node_data.loc_from = arg_id;
                 node_data.keep_alive = KeepAlive;
             }
@@ -886,8 +887,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
               bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
               // there is potential for a bivariate operator on the same argument, we need to check if
               // this is the case and update the multiplier if so
-              auto& node_data_lhs = buffer_multipliers.data()[multiplier_loc_lhs];
-              auto& node_data_rhs = buffer_multipliers.data()[multiplier_loc_rhs];
+              auto& node_data_lhs = buffer_multipliers[multiplier_loc_lhs];
+              auto& node_data_rhs = buffer_multipliers[multiplier_loc_rhs];
               bool const bivariate_consolidate_this =
                 has_induced_path && (node_data_lhs.loc_from == node_data_rhs.loc_from);
 
@@ -1082,14 +1083,14 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         auto reset_loc = [&](std::size_t arg_pos, std::uint8_t buffer_id) {
             if (buffers[buffer_id].allocated_size() > (arg_pos)) {
                 if constexpr (Vectorised) {
-                    double* dest = &buffers[buffer_id].data()[arg_pos * this->m_num_lanes];
+                    auto dest = buffers[buffer_id][arg_pos];
 #pragma omp simd
-                    for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                    for (std::size_t i = 0; i < dest.size(); ++i) {
                         dest[i] = 0.;
                     }
                 }
                 else {
-                    buffers[buffer_id].data()[arg_pos] = 0.;
+                    buffers[buffer_id][arg_pos] = 0.;
                 }
             }
         };
@@ -1099,7 +1100,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             bool const in_current_buffer,
                             std::uint8_t const buffer_id,
                             std::size_t const multiplier_id) {
-            auto const& node_data = buffer_multipliers.data()[multiplier_id];
+            auto const& node_data = buffer_multipliers[multiplier_id];
             auto const multiplier_type = node_data.value_type;
             bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
 
@@ -1148,7 +1149,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             std::size_t const second_multiplier_origin = multiplier_origin[((op_idx - to) * 2) + 1];
             if (first_multiplier_origin != passive_id<std::size_t> &&
                 second_multiplier_origin == passive_id<std::size_t>) {
-                auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
+                auto const& node_data_first = buffer_multipliers[first_multiplier_origin];
                 std::size_t const arg_id = node_data_first.loc_from;
                 std::size_t const res_id = op_idx;
                 bool const keep_alive = node_data_first.keep_alive;
@@ -1184,8 +1185,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 }
             }
             else if (first_multiplier_origin != passive_id<std::size_t>) {
-                auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
-                auto const& node_data_second = buffer_multipliers.data()[second_multiplier_origin];
+                auto const& node_data_first = buffer_multipliers[first_multiplier_origin];
+                auto const& node_data_second = buffer_multipliers[second_multiplier_origin];
                 std::size_t const lhs_id = node_data_first.loc_from;
                 std::size_t const rhs_id = node_data_second.loc_from;
                 std::size_t const res_id = op_idx;
@@ -1428,7 +1429,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
             // loop 2: propagate
             this->buffers.back().resize(lossy_tape.buffer_size);
-            auto& buffer_vals = this->buffers.back().data();
+            auto& buffer_vals = this->buffers.back();
 
             auto const& lossy_op = lossy_tape.lossy_op;
             auto const& on_which_buffer = lossy_tape.on_which_buffer;
@@ -1449,10 +1450,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const out_pos = ltpos[id_idx_l++];
                             std::size_t const in_pos = ltpos[id_idx_l++];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffer_vals[in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] = src[i];
                                 }
                             }
@@ -1465,10 +1466,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const out_pos = ltpos[id_idx_l++];
                             std::size_t const in_pos = ltpos[id_idx_l++];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffer_vals[in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] = -src[i];
                                 }
                             }
@@ -1482,15 +1483,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const out_pos = ltpos[id_idx_l++];
                             std::size_t const in_pos = ltpos[id_idx_l++];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffers[which][in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] += src[i];
                                 }
                             }
                             else {
-                                buffers[which].data()[in_pos] += buffer_vals[out_pos];
+                                buffers[which][in_pos] += buffer_vals[out_pos];
                             }
                             break;
                         }
@@ -1499,24 +1500,24 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const out_pos = ltpos[id_idx_l++];
                             std::size_t const in_pos = ltpos[id_idx_l++];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffers[which][in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] -= src[i];
                                 }
                             }
                             else {
-                                buffers[which].data()[in_pos] -= buffer_vals[out_pos];
+                                buffers[which][in_pos] -= buffer_vals[out_pos];
                             }
                             break;
                         }
                         case LossyOpCode::MINUS_INPLACE: {
                             std::size_t const out_pos = ltpos[id_idx_l++];
                             if constexpr (Vectorised) {
-                                double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+                                auto dest = buffer_vals[out_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] = -dest[i];
                                 }
                             }
@@ -1530,9 +1531,9 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const mul_pos = ltpos[id_idx_l++];
                             double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
                             if constexpr (Vectorised) {
-                                double* dest = &buffer_vals[out_pos * this->m_num_lanes];
+                                auto dest = buffer_vals[out_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] *= multiplier;
                                 }
                             }
@@ -1548,15 +1549,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const mul_pos = ltpos[id_idx_l++];
                             double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffers[which].data()[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffers[which][in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] += src[i] * multiplier;
                                 }
                             }
                             else {
-                                buffers[which].data()[in_pos] += buffer_vals[out_pos] * multiplier;
+                                buffers[which][in_pos] += buffer_vals[out_pos] * multiplier;
                             }
                             break;
                         }
@@ -1566,10 +1567,10 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                             std::size_t const mul_pos = ltpos[id_idx_l++];
                             double const multiplier = buffer_multipliers_values[(mul_pos * this->m_num_paths) + p];
                             if constexpr (Vectorised) {
-                                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                                double* dest = &buffer_vals[in_pos * this->m_num_lanes];
+                                auto const src = buffer_vals[out_pos];
+                                auto dest = buffer_vals[in_pos];
 #pragma omp simd
-                                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                                for (std::size_t i = 0; i < dest.size(); ++i) {
                                     dest[i] = src[i] * multiplier;
                                 }
                             }
@@ -1585,7 +1586,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             if constexpr (Reset) {
                 if (lossy_tape.path_idx == this->m_num_paths) {
                     if (to == this->checkpoints.back()) {
-                        this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+                        this->buffers.back() = buffer_t<double, Vectorised>{ this->m_num_lanes };
                     }
 
                     this->node_location_on_buffer.resize(pos.op_position);
@@ -1722,13 +1723,13 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         };
 
         auto multiplier_set_incoming = [&](std::size_t const pos, double const multiplier) {
-            auto const real_pos = buffer_multipliers.data()[pos].position;
+            auto const real_pos = buffer_multipliers[pos].position;
             copy_m(real_pos, multiplier);
         };
 
         auto multiplier_add = [&](std::size_t const pos1, std::size_t const pos2) {
-            auto& info1 = buffer_multipliers.data()[pos1];
-            auto& info2 = buffer_multipliers.data()[pos2];
+            auto& info1 = buffer_multipliers[pos1];
+            auto& info2 = buffer_multipliers[pos2];
 
             auto const mult_type1 = info1.value_type;
             auto const mult_type2 = info2.value_type;
@@ -1784,8 +1785,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         };
 
         auto multiplier_multiply = [&](std::size_t const pos1, std::size_t const pos2) {
-            auto& info1 = buffer_multipliers.data()[pos1];
-            auto& info2 = buffer_multipliers.data()[pos2];
+            auto& info1 = buffer_multipliers[pos1];
+            auto& info2 = buffer_multipliers[pos2];
 
             auto const mult_type1 = info1.value_type;
             auto const mult_type2 = info2.value_type;
@@ -1817,7 +1818,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
         auto get_mult_loc = [&]<mul_type M>() -> std::size_t {
             std::size_t result = buffer_multipliers.get_new_loc();
-            auto& node_data = buffer_multipliers.data()[result];
+            auto& node_data = buffer_multipliers[result];
             node_data.value_type = M;
 
             if constexpr (M == mul_type::ANY) {
@@ -1839,7 +1840,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
             if (arg_is_induced_path) {
                 auto& mul_origin_arg = multiplier_origin[(arg_id - to) * 2];
-                auto& node_data = buffer_multipliers.data()[mul_origin_arg];
+                auto& node_data = buffer_multipliers[mul_origin_arg];
                 auto& origin_type = node_data.value_type;
                 auto& buffer_origin = node_data.position;
 
@@ -1882,7 +1883,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 if constexpr (M == mul_type::ANY) {
                     multiplier_set_incoming(mult_origin_res, multiplier);
                 }
-                auto& node_data = buffer_multipliers.data()[mult_origin_res];
+                auto& node_data = buffer_multipliers[mult_origin_res];
                 node_data.loc_from = arg_id;
                 node_data.keep_alive = KeepAlive;
             }
@@ -1912,8 +1913,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             bool const has_induced_path = lhs_is_induced_path || rhs_is_induced_path;
             // there is potential for a bivariate operator on the same argument, we need to check if
             // this is the case and update the multiplier if so
-            auto& node_data_lhs = buffer_multipliers.data()[multiplier_loc_lhs];
-            auto& node_data_rhs = buffer_multipliers.data()[multiplier_loc_rhs];
+            auto& node_data_lhs = buffer_multipliers[multiplier_loc_lhs];
+            auto& node_data_rhs = buffer_multipliers[multiplier_loc_rhs];
             bool const bivariate_consolidate_this =
               has_induced_path && (node_data_lhs.loc_from == node_data_rhs.loc_from);
 
@@ -2154,69 +2155,69 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         }
 
         // LOOP 3: backward, to calculate derivatives on multiple lanes
-        auto& buffer_vals = this->buffers.back().data();
+        auto& buffer_vals = this->buffers.back();
 
         auto copy = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] = src[i];
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] = buffer_vals[out_pos];
+                this->buffers[which][in_pos] = buffer_vals[out_pos];
             }
         };
 
         auto copy_minus = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] = -src[i];
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] = -buffer_vals[out_pos];
+                this->buffers[which][in_pos] = -buffer_vals[out_pos];
             }
         };
 
         auto add = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] += src[i];
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] += buffer_vals[out_pos];
+                this->buffers[which][in_pos] += buffer_vals[out_pos];
             }
         };
 
         auto sub = [&](std::uint8_t const which, std::size_t const out_pos, std::size_t const in_pos) {
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] -= src[i];
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] -= buffer_vals[out_pos];
+                this->buffers[which][in_pos] -= buffer_vals[out_pos];
             }
         };
 
         auto minus_inplace = [&](std::size_t const pos) {
             if constexpr (Vectorised) {
-                double* dest = &buffer_vals[pos * this->m_num_lanes];
+                auto dest = buffer_vals[pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] = -dest[i];
                 }
             }
@@ -2228,9 +2229,9 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         auto mul_inplace = [&](std::size_t const pos, std::size_t const multiplier_id) {
             double const multiplier = buffer_multipliers_values[multiplier_id];
             if constexpr (Vectorised) {
-                double* dest = &buffer_vals[pos * this->m_num_lanes];
+                auto dest = buffer_vals[pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] *= multiplier;
                 }
             }
@@ -2245,15 +2246,15 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                            std::size_t const multiplier_id) {
             double const multiplier = buffer_multipliers_values[multiplier_id];
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] += src[i] * multiplier;
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] += buffer_vals[out_pos] * multiplier;
+                this->buffers[which][in_pos] += buffer_vals[out_pos] * multiplier;
             }
         };
 
@@ -2263,21 +2264,21 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                            std::size_t const multiplier_id) {
             double const multiplier = buffer_multipliers_values[multiplier_id];
             if constexpr (Vectorised) {
-                const double* src = &buffer_vals[out_pos * this->m_num_lanes];
-                double* dest = &this->buffers[which].data()[in_pos * this->m_num_lanes];
+                auto const src = buffer_vals[out_pos];
+                auto dest = this->buffers[which][in_pos];
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] = src[i] * multiplier;
                 }
             }
             else {
-                this->buffers[which].data()[in_pos] = buffer_vals[out_pos] * multiplier;
+                this->buffers[which][in_pos] = buffer_vals[out_pos] * multiplier;
             }
         };
 
         auto copy_mul =
           [&](std::size_t res_pos, std::size_t& arg_pos, std::uint8_t buffer_id, std::size_t const multiplier_id) {
-              auto const& node_data = buffer_multipliers.data()[multiplier_id];
+              auto const& node_data = buffer_multipliers[multiplier_id];
               auto const multiplier_type = node_data.value_type;
               bool const arg_is_new = (arg_pos == passive_id<std::size_t>);
 
@@ -2322,7 +2323,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             std::size_t const second_multiplier_origin = multiplier_origin[((op_idx - to) * 2) + 1];
             if (first_multiplier_origin != passive_id<std::size_t> &&
                 second_multiplier_origin == passive_id<std::size_t>) {
-                auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
+                auto const& node_data_first = buffer_multipliers[first_multiplier_origin];
                 std::size_t const arg_id = node_data_first.loc_from;
                 std::size_t const res_id = op_idx;
                 bool const keep_alive = node_data_first.keep_alive;
@@ -2356,8 +2357,8 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 }
             }
             else if (first_multiplier_origin != passive_id<std::size_t>) {
-                auto const& node_data_first = buffer_multipliers.data()[first_multiplier_origin];
-                auto const& node_data_second = buffer_multipliers.data()[second_multiplier_origin];
+                auto const& node_data_first = buffer_multipliers[first_multiplier_origin];
+                auto const& node_data_second = buffer_multipliers[second_multiplier_origin];
                 std::size_t const lhs_id = node_data_first.loc_from;
                 std::size_t const rhs_id = node_data_second.loc_from;
                 std::size_t const res_id = op_idx;
@@ -2418,7 +2419,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
         if constexpr (Reset) {
             if (to == this->checkpoints.back()) {
-                this->buffers.back() = buffer_t<double>{ this->m_num_lanes };
+                this->buffers.back() = buffer_t<double, Vectorised>{ this->m_num_lanes };
             }
 
             reset(pos, data);
