@@ -25,7 +25,7 @@
 #include "position_impl.hpp"
 #include "tape_data.hpp"
 
-#include "buffer_t2.hpp"
+#include "buffer_t.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -38,14 +38,14 @@ template<class Float, bool Vectorised = false>
 class BackPropagatorLossy {
   private:
     std::vector<std::size_t> node_location_on_buffer;
-    buffer_t2<double, Vectorised> buffer;
+    buffer_t<double, Vectorised> buffer;
 
   public:
     explicit BackPropagatorLossy() = default;
 
     void set_checkpoint(std::size_t /* ops_size */) {}
 
-    void set_lanes(std::size_t num_lanes) { this->buffer = buffer_t2<double, Vectorised>{ num_lanes }; }
+    void set_lanes(std::size_t num_lanes) { this->buffer = buffer_t<double, Vectorised>{ num_lanes }; }
 
     auto get_lanes() const -> std::size_t { return this->buffer.lanes(); }
 

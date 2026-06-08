@@ -21,7 +21,7 @@
 #ifndef ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 #define ADHOC_BACKPROPAGATOR1LOSSYCOMPRESSED_HPP
 
-#include "buffer_t2.hpp"
+#include "buffer_t.hpp"
 #include "passive_id.hpp"
 #include "position_impl.hpp"
 #include "tape_data.hpp"
@@ -40,7 +40,7 @@ class BackPropagatorLossyCompressed {
   private:
     std::vector<std::size_t> node_location_on_buffer;
     std::vector<std::size_t> checkpoints{ 0 };
-    std::vector<buffer_t2<double, Vectorised> > buffers{ buffer_t2<double, Vectorised>{} };
+    std::vector<buffer_t<double, Vectorised> > buffers{ buffer_t<double, Vectorised>{} };
 
   public:
     explicit BackPropagatorLossyCompressed() = default;
@@ -54,10 +54,10 @@ class BackPropagatorLossyCompressed {
 
         if (this->checkpoints.back() != ops_size) {
             this->checkpoints.push_back(ops_size);
-            this->buffers.push_back(buffer_t2<double, Vectorised>{ this->get_lanes() });
+            this->buffers.push_back(buffer_t<double, Vectorised>{ this->get_lanes() });
         }
     }
-    void set_lanes(std::size_t num_lanes) { this->buffers = { buffer_t2<double, Vectorised>{ num_lanes } }; }
+    void set_lanes(std::size_t num_lanes) { this->buffers = { buffer_t<double, Vectorised>{ num_lanes } }; }
     auto get_lanes() const -> std::size_t { return this->buffers.front().lanes(); }
     void reserve_input(std::size_t count_registered)
     {
@@ -280,7 +280,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
     std::vector<std::size_t> multiplier_origin((from - to) * 2, passive_id<std::size_t>);
 
     // LOOP 2: forward, to calculate multipliers after compressing induced paths
-    buffer_t2<double> buffer_multipliers_values;
+    buffer_t<double> buffer_multipliers_values;
 
     enum class mul_type : std::uint8_t {
         ANY,
@@ -294,7 +294,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
         std::size_t loc_from;
         bool keep_alive;
     };
-    buffer_t2<multiplier_info_t> buffer_multipliers;
+    buffer_t<multiplier_info_t> buffer_multipliers;
 
     auto copy_m = [&](std::size_t const pos, double const multiplier) { buffer_multipliers_values[pos] = multiplier; };
 
@@ -1210,7 +1210,7 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
 
     if constexpr (Reset) {
         if (!checkpoints.empty() && to == checkpoints.back()) {
-            this->buffers.back() = buffer_t2<double, Vectorised>{ this->get_lanes() };
+            this->buffers.back() = buffer_t<double, Vectorised>{ this->get_lanes() };
         }
 
         reset(pos, data);
