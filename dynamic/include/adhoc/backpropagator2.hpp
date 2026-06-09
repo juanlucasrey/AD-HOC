@@ -70,11 +70,7 @@ class BackPropagator2 {
     void reserve_input(std::size_t /* count_registered */) {}
     void reserve_output(std::size_t /* count_registered */) {}
     void register_variable(std::size_t /* var_id */) {}
-    void register_output_variable(std::size_t var_id, std::size_t ops_size)
-    {
-        this->use_op.resize(ops_size);
-        this->use_op[var_id] = true;
-    }
+    void register_output_variable(std::size_t /* var_id */, std::size_t /* ops_size */) {}
 
     void set_derivative(std::size_t var_id, double deriv, std::size_t ops_size, std::size_t lane = 0)
     {
@@ -306,16 +302,14 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
             }
             case OpCode::REG_OUTPUT: {
                 id_idx -= 2;
-                if (use_this_op) {
-                    std::size_t const arg_id = ids[id_idx];
-                    std::size_t const res_id = ids[id_idx + 1];
+                std::size_t const arg_id = ids[id_idx];
+                std::size_t const res_id = ids[id_idx + 1];
 
-                    this->use_op[arg_id] = true;
+                this->use_op[arg_id] = true;
 
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
-                        add_derivative(arg_id, der_pair.first, der_pair.second);
-                    }
+                auto const& der_list = this->derivatives[res_id];
+                for (auto const& der_pair : der_list) {
+                    add_derivative(arg_id, der_pair.first, der_pair.second);
                 }
                 break;
             }
