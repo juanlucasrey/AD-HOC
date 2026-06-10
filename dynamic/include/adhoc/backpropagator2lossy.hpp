@@ -21,6 +21,7 @@
 #ifndef ADHOC_BACKPROPAGATOR2LOSSY_HPP
 #define ADHOC_BACKPROPAGATOR2LOSSY_HPP
 
+#include "buffer_t.hpp"
 #include "maps.hpp"
 #include "passive_id.hpp"
 #include "position_impl.hpp"
@@ -35,148 +36,170 @@ namespace adhoc {
 
 template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Lossy {
-    static constexpr std::size_t SIMD_WIDTH = 8;
-
   private:
-    // this works with vector instead of array, but its 3x slower!!
-
-    // using der_container_t = std::conditional_t<Vectorised, std::vector<double>, double>;
-    using der_container_t = std::conditional_t<Vectorised, std::array<double, 8>, double>;
-
-    std::size_t m_num_lanes{ 1 };
-    std::vector<map_t<maptype, der_container_t> > derivatives;
-    std::vector<char> use_op;
+    std::vector<map_t<maptype, std::size_t> > node_location_on_buffer;
+    buffer_t<double, Vectorised> buffer;
 
   public:
     explicit BackPropagator2Lossy() = default;
 
     void set_checkpoint(std::size_t /* ops_size */) {}
-    void set_lanes(std::size_t num_lanes)
+    void set_lanes(std::size_t num_lanes) { this->buffer = buffer_t<double, Vectorised>{ num_lanes }; }
+    auto get_lanes() const -> std::size_t { return this->buffer.lanes(); }
+    void reserve_input(std::size_t count_registered) { this->buffer.reserve(this->buffer.size() + count_registered); }
+    void reserve_output(std::size_t count_registered) { this->buffer.reserve(this->buffer.size() + count_registered); }
+    void register_variable(std::size_t var_id)
     {
-        if constexpr (!Vectorised) {
-            if (num_lanes != 1) {
-                // This backpropagator is not designed for multiple lanes
-                throw;
-            }
+        this->node_location_on_buffer.resize(std::max(this->node_location_on_buffer.size(), var_id + 1));
+
+        auto& var_pos = this->node_location_on_buffer[var_id];
+        bool const has_id = var_pos.find(passive_id<std::size_t>) != var_pos.end();
+
+        if (!has_id) {
+            var_pos[passive_id<std::size_t>] = this->buffer.template get_new_loc<true>();
         }
-        else {
-            if (num_lanes != SIMD_WIDTH) {
-                throw;
-            }
-        }
-        this->m_num_lanes = num_lanes;
     }
-    auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
-    void reserve_input(std::size_t /* count_registered */) {}
-    void reserve_output(std::size_t /* count_registered */) {}
-    void register_variable(std::size_t /* var_id */) {}
-    void register_output_variable(std::size_t var_id, std::size_t ops_size)
+    void register_output_variable(std::size_t var_id, std::size_t /* ops_size */)
     {
-        this->use_op.resize(ops_size);
-        this->use_op[var_id] = true;
+        this->node_location_on_buffer.resize(std::max(this->node_location_on_buffer.size(), var_id + 1));
+
+        auto& ders_var = this->node_location_on_buffer[var_id];
+        bool const has_id = ders_var.find(passive_id<std::size_t>) != ders_var.end();
+
+        if (!has_id) {
+            ders_var[passive_id<std::size_t>] = this->buffer.template get_new_loc<true>();
+        }
     }
 
     void set_derivative(std::size_t var_id, double deriv, std::size_t ops_size, std::size_t lane = 0)
     {
-        if (lane < this->m_num_lanes) {
-            this->derivatives.resize(ops_size);
+        if (this->node_location_on_buffer.size() <= var_id) {
+            // this derivative is not on buffer.
+            // this is probably nor an input nor an output.
+            throw;
+        }
 
-            auto& derivatives_local = this->derivatives[var_id][passive_id<std::size_t>];
-            if constexpr (Vectorised) {
-                // is using vector this needs to be uncommented
-                // derivatives_local.resize(this->m_num_lanes, 0.0);
-                derivatives_local[lane] = deriv;
+        auto& ders_var = this->node_location_on_buffer[var_id];
+        bool const has_id = ders_var.find(passive_id<std::size_t>) != ders_var.end();
+        if (!has_id) {
+            // this derivative is not on buffer.
+            // this is probably nor an input nor an output.
+            throw;
+        }
+
+        std::size_t var_pos = ders_var[passive_id<std::size_t>];
+
+        if constexpr (Vectorised) {
+            auto val = this->buffer[var_pos];
+
+            if (lane >= val.size()) {
+                // lane value too large
+                throw;
             }
-            else {
-                derivatives_local = deriv;
-            }
+
+            val[lane] = deriv;
         }
         else {
-            throw;
+            if (lane != 0) {
+                // This backpropagator is not designed for multiple lanes
+                throw;
+            }
+            this->buffer[var_pos] = deriv;
         }
     }
 
-    void set_derivative(std::size_t var_id1, std::size_t var_id2, double deriv, std::size_t lane = 0)
+    void set_derivative(std::size_t /* var_id1 */,
+                        std::size_t /* var_id2 */,
+                        double /* deriv */,
+                        std::size_t /* lane */ = 0)
     {
-        if (lane < this->m_num_lanes) {
-            // this->derivatives.resize(ops_size);
-
-            if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
-                std::swap(var_id1, var_id2);
-            }
-
-            auto& derivatives_local = this->derivatives[var_id1][var_id2];
-            if constexpr (Vectorised) {
-                // is using vector this needs to be uncommented
-                // derivatives_local.resize(this->m_num_lanes, 0.0);
-                derivatives_local[lane] = deriv;
-            }
-            else {
-                derivatives_local = deriv;
-            }
-        }
-        else {
-            throw;
-        }
+        // TODO
+        throw;
     }
 
     auto get_derivative(std::size_t var_id, std::size_t lane) const -> double
     {
-        if (lane < this->m_num_lanes) {
-            auto const& idmap = this->derivatives[var_id];
-            auto const it = idmap.find(passive_id<std::size_t>);
-            if (it != idmap.end()) {
-                if constexpr (Vectorised) {
-                    return it->second[lane];
-                }
-                else {
-                    return it->second;
-                }
-            }
+        if (this->node_location_on_buffer.size() <= var_id) {
             return 0.;
         }
 
-        throw;
-        return 0.;
+        auto& ders_var = this->node_location_on_buffer[var_id];
+        bool const has_id = ders_var.find(passive_id<std::size_t>) != ders_var.end();
+        if (!has_id) {
+            return 0.;
+        }
+
+        std::size_t var_pos = ders_var.at(passive_id<std::size_t>);
+
+        if constexpr (Vectorised) {
+            auto const val = this->buffer[var_pos];
+
+            if (lane >= val.size()) {
+                // lane value too large
+                throw;
+            }
+
+            return val[lane];
+        }
+        else {
+            if (lane != 0) {
+                // This backpropagator is not designed for multiple lanes
+                throw;
+            }
+            return this->buffer[var_pos];
+        }
     }
 
     auto get_derivative(std::size_t var_id1, std::size_t var_id2, std::size_t lane) const -> double
     {
-        if (lane < this->m_num_lanes) {
-            if (var_id1 < var_id2) {
-                std::swap(var_id1, var_id2);
-            }
+        if (var_id1 < var_id2 && var_id2 != passive_id<std::size_t>) {
+            std::swap(var_id1, var_id2);
+        }
 
-            auto const& idmap = this->derivatives[var_id1];
-            auto const it = idmap.find(var_id2);
-            if (it != idmap.end()) {
-                if constexpr (Vectorised) {
-                    return it->second[lane];
-                }
-                else {
-                    return it->second;
-                }
-            }
-
+        if (this->node_location_on_buffer.size() <= var_id1) {
             return 0.;
         }
 
-        throw;
-        return 0.;
+        auto& ders_var = this->node_location_on_buffer[var_id1];
+        bool const has_id = ders_var.find(var_id2) != ders_var.end();
+        if (!has_id) {
+            return 0.;
+        }
+
+        std::size_t var_pos = ders_var.at(var_id2);
+
+        if constexpr (Vectorised) {
+            auto const val = this->buffer[var_pos];
+
+            if (lane >= val.size()) {
+                // lane value too large
+                throw;
+            }
+
+            return val[lane];
+        }
+        else {
+            if (lane != 0) {
+                // This backpropagator is not designed for multiple lanes
+                throw;
+            }
+            return this->buffer[var_pos];
+        }
     }
 
-    void clear()
+    void clear() { this->node_location_on_buffer.clear(); }
+
+    void zero_adjoints()
     {
-        this->derivatives.clear();
-        this->use_op.clear();
+        this->node_location_on_buffer.clear();
+        this->buffer.zero();
     }
 
-    void zero_adjoints() { this->derivatives.clear(); }
-
-    auto size_of(bool /* capacity */ = false) const -> std::size_t
+    auto size_of(bool capacity = false) const -> std::size_t
     {
         std::size_t size = 0;
-        // TODO
+        size += sizeof(std::size_t) * (capacity ? node_location_on_buffer.capacity() : node_location_on_buffer.size());
+        size += this->buffer.size_of(capacity);
         return size;
     }
 
@@ -196,99 +219,202 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
     const auto& vals = data.vals;
     const auto& ids = data.ids;
 
-    this->derivatives.resize(ops.size());
-    this->use_op.resize(ops.size());
+    this->node_location_on_buffer.resize(ops.size());
 
-    auto add_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
-        if (id1 < id2 && id2 != passive_id<std::size_t>) {
-            std::swap(id1, id2);
-        }
-
+    auto copy = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            auto& dest_vec = this->derivatives[id1][id2];
-
-            // is using vector this needs to be uncommented
-            // if (dest_vec.empty()) {
-            //     dest_vec.resize(this->m_num_lanes, 0.0);
-            // }
-
-            double* dest = dest_vec.data();
-            const double* src = value.data();
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
 #pragma omp simd
-            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] = src[i];
+            }
+        }
+        else {
+            this->buffer[in_pos] = this->buffer[out_pos];
+        }
+    };
+
+    auto copy_minus = [&](std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
+#pragma omp simd
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] = -src[i];
+            }
+        }
+        else {
+            this->buffer[in_pos] = -this->buffer[out_pos];
+        }
+    };
+
+    auto add = [&](std::size_t const out_pos, std::size_t const in_pos) {
+        if constexpr (Vectorised) {
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
+#pragma omp simd
+            for (std::size_t i = 0; i < dest.size(); ++i) {
                 dest[i] += src[i];
             }
         }
         else {
-            this->derivatives[id1][id2] += value;
+            this->buffer[in_pos] += this->buffer[out_pos];
         }
     };
 
-    auto sub_derivative = [&](std::size_t id1, std::size_t id2, auto const& value) {
-        if (id1 < id2 && id2 != passive_id<std::size_t>) {
-            std::swap(id1, id2);
-        }
-
+    auto sub = [&](std::size_t const out_pos, std::size_t const in_pos) {
         if constexpr (Vectorised) {
-            auto& dest_vec = this->derivatives[id1][id2];
-
-            // is using vector this needs to be uncommented
-            // if (dest_vec.empty()) {
-            //     dest_vec.resize(this->m_num_lanes, 0.0);
-            // }
-            double* dest = dest_vec.data();
-            const double* src = value.data();
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
 #pragma omp simd
-            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+            for (std::size_t i = 0; i < dest.size(); ++i) {
                 dest[i] -= src[i];
             }
         }
         else {
-            this->derivatives[id1][id2] -= value;
+            this->buffer[in_pos] -= this->buffer[out_pos];
         }
     };
 
-    auto mul_add_derivative = [&](std::size_t id1, std::size_t id2, auto const& value, double scale) {
-        if (id1 < id2 && id2 != passive_id<std::size_t>) {
-            std::swap(id1, id2);
-        }
+    auto minus_inplace = [&](std::size_t const pos) {
         if constexpr (Vectorised) {
-            auto& dest_vec = this->derivatives[id1][id2];
-
-            // is using vector this needs to be uncommented
-            // if (dest_vec.empty()) {
-            //     dest_vec.resize(this->m_num_lanes, 0.0);
-            // }
-            double* dest = dest_vec.data();
-            const double* src = value.data();
+            auto dest = this->buffer[pos];
 #pragma omp simd
-            for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
-                dest[i] += src[i] * scale;
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] = -dest[i];
             }
         }
         else {
-            this->derivatives[id1][id2] += value * scale;
+            this->buffer[pos] = -this->buffer[pos];
         }
     };
 
+    auto mul_inplace = [&](std::size_t const pos, double const multiplier) {
+        if constexpr (Vectorised) {
+            auto dest = this->buffer[pos];
+#pragma omp simd
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] *= multiplier;
+            }
+        }
+        else {
+            this->buffer[pos] *= multiplier;
+        }
+    };
+
+    auto mul_add = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+        if constexpr (Vectorised) {
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
+#pragma omp simd
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] += src[i] * multiplier;
+            }
+        }
+        else {
+            this->buffer[in_pos] += this->buffer[out_pos] * multiplier;
+        }
+    };
+
+    auto add_derivative = [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t& res_pos) {
+        if (id1 < id2 && id2 != passive_id<std::size_t>) {
+            std::swap(id1, id2);
+        }
+
+        auto& locations_id1 = this->node_location_on_buffer[id1];
+        auto it = locations_id1.find(id2);
+        bool const arg_is_new = (it == locations_id1.end());
+        std::size_t& arg_pos = locations_id1[id2];
+
+        if (arg_is_new) {
+            if constexpr (AllowOverride) {
+                arg_pos = passive_id<std::size_t>;
+                std::swap(arg_pos, res_pos);
+            }
+            else {
+                arg_pos = this->buffer.get_new_loc();
+                copy(res_pos, arg_pos);
+            }
+        }
+        else {
+            add(res_pos, arg_pos);
+        }
+    };
+
+    auto sub_derivative = [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t res_pos) {
+        if (id1 < id2 && id2 != passive_id<std::size_t>) {
+            std::swap(id1, id2);
+        }
+
+        auto& locations_id1 = this->node_location_on_buffer[id1];
+        auto it = locations_id1.find(id2);
+        bool const arg_is_new = (it == locations_id1.end());
+        std::size_t& arg_pos = locations_id1[id2];
+
+        if (arg_is_new) {
+            if constexpr (AllowOverride) {
+                arg_pos = passive_id<std::size_t>;
+                minus_inplace(res_pos);
+                std::swap(arg_pos, res_pos);
+            }
+            else {
+                arg_pos = this->buffer.get_new_loc();
+                copy_minus(res_pos, arg_pos);
+            }
+        }
+        else {
+            sub(res_pos, arg_pos);
+        }
+    };
+
+    auto mul_add_derivative =
+      [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t& res_pos, double scale) {
+          if (id1 < id2 && id2 != passive_id<std::size_t>) {
+              std::swap(id1, id2);
+          }
+
+          auto& locations_id1 = this->node_location_on_buffer[id1];
+          auto it = locations_id1.find(id2);
+          bool const arg_is_new = (it == locations_id1.end());
+          std::size_t& arg_pos = locations_id1[id2];
+          if (arg_is_new) {
+              arg_pos = this->buffer.get_new_loc();
+          }
+
+          if constexpr (AllowOverride) {
+              if (arg_is_new) {
+                  mul_inplace(res_pos, scale);
+                  // res id should now be arg id, avoiding a copy and a potential buffer increase
+                  std::swap(arg_pos, res_pos);
+              }
+              else {
+                  mul_add(res_pos, arg_pos, scale);
+              }
+          }
+          else {
+              mul_add(res_pos, arg_pos, scale);
+          }
+      };
+
     auto update_univariate = [&]<bool HasSecondDerivative = true>(
                                std::size_t arg_id, std::size_t res_id, double der_local_1, double der_local_2 = 0.) {
-        this->use_op[arg_id] = true;
-        auto const& der_list = this->derivatives[res_id];
-        for (auto const& der_pair : der_list) {
+        // this->use_op[arg_id] = true;
+        auto& der_list = this->node_location_on_buffer[res_id];
+        for (auto& der_pair : der_list) {
             std::size_t const der_id = der_pair.first;
-            auto const& der_value = der_pair.second;
+            std::size_t& der_pos = der_pair.second;
             if (der_id == passive_id<std::size_t>) {
-                mul_add_derivative(arg_id, der_id, der_value, der_local_1);
+                mul_add_derivative.template operator()<!HasSecondDerivative>(arg_id, der_id, der_pos, der_local_1);
                 if constexpr (HasSecondDerivative) {
-                    mul_add_derivative(arg_id, arg_id, der_value, der_local_2);
+                    mul_add_derivative(arg_id, arg_id, der_pos, der_local_2);
                 }
             }
             else if (der_id == res_id) {
-                mul_add_derivative(arg_id, arg_id, der_value, der_local_1 * der_local_1);
+                mul_add_derivative(arg_id, arg_id, der_pos, der_local_1 * der_local_1);
             }
             else {
-                mul_add_derivative(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
             }
         }
     };
@@ -297,7 +423,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
     std::size_t id_idx = ids.size();
     for (std::size_t op_idx = from; op_idx-- > to;) {
         OpCode const& op = ops[op_idx];
-        bool const use_this_op = this->use_op[op_idx];
+        bool const use_this_op = static_cast<bool>(this->node_location_on_buffer[op_idx].size());
 
         switch (op) {
             case OpCode::REG_INPUT: {
@@ -310,10 +436,8 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         add_derivative(arg_id, der_pair.first, der_pair.second);
                     }
                 }
@@ -326,26 +450,23 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    this->use_op[lhs_id] = true;
-                    this->use_op[rhs_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
+                        std::size_t& der_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(lhs_id, der_id, der_value);
-                            add_derivative(rhs_id, der_id, der_value);
+                            add_derivative(lhs_id, der_id, der_pos);
+                            add_derivative(rhs_id, der_id, der_pos);
                         }
                         else if (der_id == res_id) {
-                            add_derivative(lhs_id, rhs_id, der_value);
-                            add_derivative(lhs_id, lhs_id, der_value);
-                            add_derivative(rhs_id, rhs_id, der_value);
+                            add_derivative(lhs_id, rhs_id, der_pos);
+                            add_derivative(lhs_id, lhs_id, der_pos);
+                            add_derivative(rhs_id, rhs_id, der_pos);
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.));
-                            mul_add_derivative(rhs_id, der_id, der_value, (rhs_id == der_id ? 2. : 1.));
+                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.));
+                            mul_add_derivative(rhs_id, der_id, der_pos, (rhs_id == der_id ? 2. : 1.));
                         }
                     }
                 }
@@ -358,26 +479,23 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    this->use_op[lhs_id] = true;
-                    this->use_op[rhs_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
+                        std::size_t& der_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(lhs_id, der_id, der_value);
-                            sub_derivative(rhs_id, der_id, der_value);
+                            add_derivative(lhs_id, der_id, der_pos);
+                            sub_derivative(rhs_id, der_id, der_pos);
                         }
                         else if (der_id == res_id) {
-                            sub_derivative(lhs_id, rhs_id, der_value);
-                            add_derivative(lhs_id, lhs_id, der_value);
-                            add_derivative(rhs_id, rhs_id, der_value);
+                            sub_derivative(lhs_id, rhs_id, der_pos);
+                            add_derivative(lhs_id, lhs_id, der_pos);
+                            add_derivative(rhs_id, rhs_id, der_pos);
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.));
-                            mul_add_derivative(rhs_id, der_id, der_value, -(rhs_id == der_id ? 2. : 1.));
+                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.));
+                            mul_add_derivative(rhs_id, der_id, der_pos, -(rhs_id == der_id ? 2. : 1.));
                         }
                     }
                 }
@@ -393,27 +511,24 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const rhs_id = ids[id_idx + 1];
                     std::size_t const res_id = ids[id_idx + 2];
 
-                    this->use_op[lhs_id] = true;
-                    this->use_op[rhs_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
+                        std::size_t& der_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            mul_add_derivative(lhs_id, der_id, der_value, rhs_val);
-                            mul_add_derivative(rhs_id, der_id, der_value, lhs_val);
-                            add_derivative(rhs_id, lhs_id, der_value);
+                            mul_add_derivative(lhs_id, der_id, der_pos, rhs_val);
+                            mul_add_derivative(rhs_id, der_id, der_pos, lhs_val);
+                            add_derivative(rhs_id, lhs_id, der_pos);
                         }
                         else if (der_id == res_id) {
-                            mul_add_derivative(rhs_id, lhs_id, der_value, rhs_val * lhs_val);
-                            mul_add_derivative(lhs_id, lhs_id, der_value, rhs_val * rhs_val);
-                            mul_add_derivative(rhs_id, rhs_id, der_value, lhs_val * lhs_val);
+                            mul_add_derivative(rhs_id, lhs_id, der_pos, rhs_val * lhs_val);
+                            mul_add_derivative(lhs_id, lhs_id, der_pos, rhs_val * rhs_val);
+                            mul_add_derivative(rhs_id, rhs_id, der_pos, lhs_val * lhs_val);
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_value, (lhs_id == der_id ? 2. : 1.) * rhs_val);
-                            mul_add_derivative(rhs_id, der_id, der_value, (rhs_id == der_id ? 2. : 1.) * lhs_val);
+                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.) * rhs_val);
+                            mul_add_derivative(rhs_id, der_id, der_pos, (rhs_id == der_id ? 2. : 1.) * lhs_val);
                         }
                     }
                 }
@@ -425,20 +540,18 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
+                        std::size_t& der_pos = der_pair.second;
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(arg_id, der_id, der_value);
+                            add_derivative(arg_id, der_id, der_pos);
                         }
                         else if (der_id == res_id) {
-                            add_derivative(arg_id, arg_id, der_value);
+                            add_derivative(arg_id, arg_id, der_pos);
                         }
                         else {
-                            mul_add_derivative(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.));
+                            mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.));
                         }
                     }
                 }
@@ -450,20 +563,18 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
 
-                    this->use_op[arg_id] = true;
-
-                    auto const& der_list = this->derivatives[res_id];
-                    for (auto const& der_pair : der_list) {
+                    auto& der_list = this->node_location_on_buffer[res_id];
+                    for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        auto const& der_value = der_pair.second;
+                        std::size_t& der_pos = der_pair.second;
                         if (der_id == passive_id<std::size_t>) {
-                            sub_derivative(arg_id, der_id, der_value);
+                            sub_derivative(arg_id, der_id, der_pos);
                         }
                         else if (der_id == res_id) {
-                            add_derivative(arg_id, arg_id, der_value);
+                            add_derivative(arg_id, arg_id, der_pos);
                         }
                         else {
-                            mul_add_derivative(arg_id, der_id, der_value, (arg_id == der_id ? 2. : 1.) * -1.0);
+                            mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.) * -1.0);
                         }
                     }
                 }
@@ -608,14 +719,12 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
             }
         }
         if constexpr (Reset && ResetInPlace) {
-            this->derivatives.resize(this->derivatives.size() - 1);
-            this->use_op.resize(this->use_op.size() - 1);
+            this->node_location_on_buffer.resize(this->node_location_on_buffer.size() - 1);
         }
     }
 
     if constexpr (Reset && !ResetInPlace) {
-        this->derivatives.resize(to);
-        this->use_op.resize(to);
+        this->node_location_on_buffer.resize(to);
     }
 
     if constexpr (Reset) {
