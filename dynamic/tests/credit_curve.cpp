@@ -1,4 +1,4 @@
-#include "../../test_simple/test_simple_include.hpp"
+#include <test_simple_include.hpp>
 
 #include "credit/dates.hpp"
 #include "credit/fi_instruments.hpp"
