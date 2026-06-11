@@ -554,8 +554,8 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                         std::size_t& res_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
-                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, passive_id<std::size_t>);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, passive_id<std::size_t>);
 
                             bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
                             bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
@@ -654,54 +654,63 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                             }
                         }
                         else {
-                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
-                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+                            std::size_t const id1 = lhs_id < der_id ? lhs_id : der_id;
+                            auto& map_id1 = lhs_id < der_id ? this->node_location_on_buffer[der_id]
+                                                            : this->node_location_on_buffer[lhs_id];
+                            auto const it1 = map_id1.find(id1);
+                            bool const id1_is_new = (it1 == map_id1.end());
 
-                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
-                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
-                            bool const id2_inplace = !id1_inplace && id2_is_new;
+                            std::size_t const id2 = rhs_id < der_id ? rhs_id : der_id;
+                            auto& map_id2 = rhs_id < der_id ? this->node_location_on_buffer[der_id]
+                                                            : this->node_location_on_buffer[rhs_id];
+                            auto const it2 = map_id2.find(id2);
+                            bool const id2_is_new = (it2 == map_id2.end());
 
-                            if (!id1_inplace) {
+                            if (!id1_is_new) {
+                                std::size_t const d1_pos = it1->second;
                                 if (lhs_id == der_id) {
-                                    mul_add(res_pos, id1_pos, 2.);
+                                    mul_add(res_pos, d1_pos, 2.);
                                 }
                                 else {
-                                    add(res_pos, id1_pos);
+                                    add(res_pos, d1_pos);
                                 }
                             }
 
-                            if (!id2_inplace) {
+                            if (!id2_is_new) {
+                                std::size_t const d2_pos = it2->second;
+                                if (rhs_id == der_id) {
+                                    mul_add(res_pos, d2_pos, 2.);
+                                }
+                                else {
+                                    add(res_pos, d2_pos);
+                                }
+                            }
+
+                            if (id1_is_new) {
                                 if (id2_is_new) {
-                                    id2_pos = this->buffer.get_new_loc();
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    map_id2[id2] = new_pos;
 
                                     if (rhs_id == der_id) {
-                                        mul_set(res_pos, id2_pos, 2.);
+                                        mul_set(res_pos, new_pos, 2.);
                                     }
                                     else {
-                                        copy(res_pos, id2_pos);
+                                        copy(res_pos, new_pos);
                                     }
                                 }
-                                else {
-                                    if (rhs_id == der_id) {
-                                        mul_add(res_pos, id2_pos, 2.);
-                                    }
-                                    else {
-                                        add(res_pos, id2_pos);
-                                    }
-                                }
-                            }
 
-                            if (id1_inplace) {
                                 if (lhs_id == der_id) {
                                     mul_inplace(res_pos, 2.);
                                 }
-                                std::swap(id1_pos, res_pos);
+                                map_id1[id1] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
-                            else if (id2_inplace) {
+                            else if (id2_is_new) {
                                 if (rhs_id == der_id) {
                                     mul_inplace(res_pos, 2.);
                                 }
-                                std::swap(id2_pos, res_pos);
+                                map_id2[id2] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
                             else {
                                 // don't forget to free res_id from the buffer!
@@ -726,8 +735,8 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                         std::size_t& res_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
-                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, passive_id<std::size_t>);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, passive_id<std::size_t>);
 
                             bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
                             bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
