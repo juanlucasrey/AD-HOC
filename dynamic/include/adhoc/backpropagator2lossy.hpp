@@ -956,51 +956,66 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                             }
                         }
                         else if (der_id == res_id) {
-                            std::size_t& id1_pos = get_buffer_idx(rhs_id, lhs_id);
-                            std::size_t& id2_pos = get_buffer_idx(lhs_id, lhs_id);
-                            std::size_t& id3_pos = get_buffer_idx(rhs_id, rhs_id);
+                            auto& locations_lhs_id = this->node_location_on_buffer[lhs_id];
+                            auto& locations_rhs_id = this->node_location_on_buffer[rhs_id];
+                            auto& locations_large_id = (lhs_id < rhs_id) ? locations_rhs_id : locations_lhs_id;
+                            std::size_t const small_id = (lhs_id < rhs_id) ? lhs_id : rhs_id;
 
-                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
-                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
-                            bool const id2_inplace = !id1_inplace && id2_is_new;
-                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
-                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+                            auto const it1 = locations_large_id.find(small_id);
+                            auto const it2 = locations_lhs_id.find(lhs_id);
+                            auto const it3 = locations_rhs_id.find(rhs_id);
 
-                            if (!id1_inplace) {
-                                mul_add(res_pos, id1_pos, rhs_val * lhs_val);
+                            bool const id1_is_new = (it1 == locations_large_id.end());
+                            bool const id2_is_new = (it2 == locations_lhs_id.end());
+                            bool const id3_is_new = (it3 == locations_rhs_id.end());
+
+                            if (!id1_is_new) {
+                                std::size_t const d1_pos = it1->second;
+                                mul_add(res_pos, d1_pos, rhs_val * lhs_val);
                             }
 
-                            if (!id2_inplace) {
+                            if (!id2_is_new) {
+                                std::size_t const d2_pos = it2->second;
+                                mul_add(res_pos, d2_pos, rhs_val * rhs_val);
+                            }
+
+                            if (!id3_is_new) {
+                                std::size_t const d3_pos = it3->second;
+                                mul_add(res_pos, d3_pos, lhs_val * lhs_val);
+                            }
+
+                            if (id1_is_new) {
                                 if (id2_is_new) {
-                                    id2_pos = this->buffer.get_new_loc();
-                                    mul_set(res_pos, id2_pos, rhs_val * rhs_val);
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_lhs_id[lhs_id] = new_pos;
+                                    mul_set(res_pos, new_pos, rhs_val * rhs_val);
                                 }
-                                else {
-                                    mul_add(res_pos, id2_pos, rhs_val * rhs_val);
-                                }
-                            }
 
-                            if (!id3_inplace) {
                                 if (id3_is_new) {
-                                    id3_pos = this->buffer.get_new_loc();
-                                    mul_set(res_pos, id3_pos, lhs_val * lhs_val);
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_rhs_id[rhs_id] = new_pos;
+                                    mul_set(res_pos, new_pos, lhs_val * lhs_val);
                                 }
-                                else {
-                                    mul_add(res_pos, id3_pos, lhs_val * lhs_val);
-                                }
-                            }
 
-                            if (id1_inplace) {
                                 mul_inplace(res_pos, rhs_val * lhs_val);
-                                std::swap(id1_pos, res_pos);
+                                locations_large_id[small_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
-                            else if (id2_inplace) {
+                            else if (id2_is_new) {
+                                if (id3_is_new) {
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_rhs_id[rhs_id] = new_pos;
+                                    mul_set(res_pos, new_pos, lhs_val * lhs_val);
+                                }
+
                                 mul_inplace(res_pos, rhs_val * rhs_val);
-                                std::swap(id2_pos, res_pos);
+                                locations_lhs_id[lhs_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
-                            else if (id3_inplace) {
+                            else if (id3_is_new) {
                                 mul_inplace(res_pos, lhs_val * lhs_val);
-                                std::swap(id3_pos, res_pos);
+                                locations_rhs_id[rhs_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
                             else {
                                 // don't forget to free res_id from the buffer!
