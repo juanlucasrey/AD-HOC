@@ -317,104 +317,162 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
         }
     };
 
-    auto add_derivative = [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t& res_pos) {
+    auto mul_set = [&](std::size_t const out_pos, std::size_t const in_pos, double const multiplier) {
+        if constexpr (Vectorised) {
+            auto const src = this->buffer[out_pos];
+            auto dest = this->buffer[in_pos];
+#pragma omp simd
+            for (std::size_t i = 0; i < dest.size(); ++i) {
+                dest[i] = src[i] * multiplier;
+            }
+        }
+        else {
+            this->buffer[in_pos] = this->buffer[out_pos] * multiplier;
+        }
+    };
+
+    auto get_buffer_idx = [&](std::size_t id1, std::size_t id2) -> std::size_t& {
         if (id1 < id2 && id2 != passive_id<std::size_t>) {
             std::swap(id1, id2);
         }
-
         auto& locations_id1 = this->node_location_on_buffer[id1];
         auto it = locations_id1.find(id2);
         bool const arg_is_new = (it == locations_id1.end());
         std::size_t& arg_pos = locations_id1[id2];
-
         if (arg_is_new) {
-            if constexpr (AllowOverride) {
-                arg_pos = passive_id<std::size_t>;
-                std::swap(arg_pos, res_pos);
-            }
-            else {
-                arg_pos = this->buffer.get_new_loc();
-                copy(res_pos, arg_pos);
-            }
+            arg_pos = passive_id<std::size_t>;
         }
-        else {
-            add(res_pos, arg_pos);
-        }
+        return arg_pos;
     };
 
-    auto sub_derivative = [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t res_pos) {
-        if (id1 < id2 && id2 != passive_id<std::size_t>) {
-            std::swap(id1, id2);
-        }
-
-        auto& locations_id1 = this->node_location_on_buffer[id1];
-        auto it = locations_id1.find(id2);
-        bool const arg_is_new = (it == locations_id1.end());
-        std::size_t& arg_pos = locations_id1[id2];
-
-        if (arg_is_new) {
-            if constexpr (AllowOverride) {
-                arg_pos = passive_id<std::size_t>;
-                minus_inplace(res_pos);
-                std::swap(arg_pos, res_pos);
-            }
-            else {
-                arg_pos = this->buffer.get_new_loc();
-                copy_minus(res_pos, arg_pos);
-            }
-        }
-        else {
-            sub(res_pos, arg_pos);
-        }
-    };
-
-    auto mul_add_derivative =
-      [&]<bool AllowOverride = true>(std::size_t id1, std::size_t id2, std::size_t& res_pos, double scale) {
-          if (id1 < id2 && id2 != passive_id<std::size_t>) {
-              std::swap(id1, id2);
-          }
-
-          auto& locations_id1 = this->node_location_on_buffer[id1];
-          auto it = locations_id1.find(id2);
-          bool const arg_is_new = (it == locations_id1.end());
-          std::size_t& arg_pos = locations_id1[id2];
-          if (arg_is_new) {
-              arg_pos = this->buffer.get_new_loc();
-          }
-
-          if constexpr (AllowOverride) {
-              if (arg_is_new) {
-                  mul_inplace(res_pos, scale);
-                  // res id should now be arg id, avoiding a copy and a potential buffer increase
-                  std::swap(arg_pos, res_pos);
-              }
-              else {
-                  mul_add(res_pos, arg_pos, scale);
-              }
-          }
-          else {
-              mul_add(res_pos, arg_pos, scale);
-          }
-      };
-
-    auto update_univariate = [&]<bool HasSecondDerivative = true>(
-                               std::size_t arg_id, std::size_t res_id, double der_local_1, double der_local_2 = 0.) {
-        // this->use_op[arg_id] = true;
+    auto update_univariate1 = [&](std::size_t arg_id, std::size_t res_id, double der_local_1) {
         auto& der_list = this->node_location_on_buffer[res_id];
         for (auto& der_pair : der_list) {
             std::size_t const der_id = der_pair.first;
-            std::size_t& der_pos = der_pair.second;
+            std::size_t& res_pos = der_pair.second;
             if (der_id == passive_id<std::size_t>) {
-                mul_add_derivative.template operator()<!HasSecondDerivative>(arg_id, der_id, der_pos, der_local_1);
-                if constexpr (HasSecondDerivative) {
-                    mul_add_derivative(arg_id, arg_id, der_pos, der_local_2);
+                std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                if (id_inplace) {
+                    mul_inplace(res_pos, der_local_1);
+                    std::swap(id_pos, res_pos);
+                }
+                else {
+                    mul_add(res_pos, id_pos, der_local_1);
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
                 }
             }
             else if (der_id == res_id) {
-                mul_add_derivative(arg_id, arg_id, der_pos, der_local_1 * der_local_1);
+                std::size_t& id_pos = get_buffer_idx(arg_id, arg_id);
+
+                bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                if (id_inplace) {
+                    mul_inplace(res_pos, der_local_1 * der_local_1);
+                    std::swap(id_pos, res_pos);
+                }
+                else {
+                    mul_add(res_pos, id_pos, der_local_1 * der_local_1);
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
+                }
             }
             else {
-                mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                if (id_inplace) {
+                    mul_inplace(res_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                    std::swap(id_pos, res_pos);
+                }
+                else {
+                    mul_add(res_pos, id_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
+                }
+            }
+        }
+    };
+
+    auto update_univariate2 = [&](std::size_t arg_id, std::size_t res_id, double der_local_1, double der_local_2) {
+        auto& der_list = this->node_location_on_buffer[res_id];
+        for (auto& der_pair : der_list) {
+            std::size_t const der_id = der_pair.first;
+            std::size_t& res_pos = der_pair.second;
+            if (der_id == passive_id<std::size_t>) {
+                std::size_t& id1_pos = get_buffer_idx(arg_id, der_id);
+                std::size_t& id2_pos = get_buffer_idx(arg_id, arg_id);
+
+                bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                if (!id1_inplace) {
+                    mul_add(res_pos, id1_pos, der_local_1);
+                }
+
+                if (!id2_inplace) {
+                    if (id2_is_new) {
+                        id2_pos = this->buffer.get_new_loc();
+                        mul_set(res_pos, id2_pos, der_local_2);
+                    }
+                    else {
+                        mul_add(res_pos, id2_pos, der_local_2);
+                    }
+                }
+
+                if (id1_inplace) {
+                    mul_inplace(res_pos, der_local_1);
+                    std::swap(id1_pos, res_pos);
+                }
+                else if (id2_inplace) {
+                    mul_inplace(res_pos, der_local_2);
+                    std::swap(id2_pos, res_pos);
+                }
+                else {
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
+                }
+            }
+            else if (der_id == res_id) {
+                std::size_t& id_pos = get_buffer_idx(arg_id, arg_id);
+
+                bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                if (id_inplace) {
+                    mul_inplace(res_pos, der_local_1 * der_local_1);
+                    std::swap(id_pos, res_pos);
+                }
+                else {
+                    mul_add(res_pos, id_pos, der_local_1 * der_local_1);
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
+                }
+            }
+            else {
+                std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                if (id_inplace) {
+                    mul_inplace(res_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                    std::swap(id_pos, res_pos);
+                }
+                else {
+                    mul_add(res_pos, id_pos, (arg_id == der_id ? 2. : 1.) * der_local_1);
+                    // don't forget to free res_id from the buffer!
+                    this->buffer.free_loc(res_pos);
+                    res_pos = passive_id<std::size_t>;
+                }
             }
         }
     };
@@ -428,6 +486,16 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
         switch (op) {
             case OpCode::REG_INPUT: {
                 id_idx -= 1;
+                if constexpr (Reset) {
+                    std::size_t const id = ids[id_idx];
+
+                    auto& der_list = this->node_location_on_buffer[id];
+                    for (auto& der_pair : der_list) {
+                        std::size_t& pos = der_pair.second;
+                        this->buffer.free_loc(pos);
+                        pos = passive_id<std::size_t>;
+                    }
+                }
                 break;
             }
             case OpCode::REG_OUTPUT: {
@@ -438,7 +506,31 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
-                        add_derivative(arg_id, der_pair.first, der_pair.second);
+                        std::size_t const der_id = der_pair.first;
+                        std::size_t& res_pos = der_pair.second;
+                        std::size_t& arg_pos = get_buffer_idx(arg_id, der_id);
+
+                        bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
+
+                        if constexpr (Reset) {
+                            if (arg_inplace) {
+                                std::swap(arg_pos, res_pos);
+                            }
+                            else {
+                                add(res_pos, arg_pos);
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
+                        }
+                        else {
+                            if (arg_inplace) {
+                                arg_pos = this->buffer.get_new_loc();
+                                copy(res_pos, arg_pos);
+                            }
+                            else {
+                                add(res_pos, arg_pos);
+                            }
+                        }
                     }
                 }
                 break;
@@ -453,20 +545,147 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        std::size_t& der_pos = der_pair.second;
+                        std::size_t& res_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(lhs_id, der_id, der_pos);
-                            add_derivative(rhs_id, der_id, der_pos);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                            if (!id1_inplace) {
+                                add(res_pos, id1_pos);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    copy(res_pos, id2_pos);
+                                }
+                                else {
+                                    add(res_pos, id2_pos);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else if (der_id == res_id) {
-                            add_derivative(lhs_id, rhs_id, der_pos);
-                            add_derivative(lhs_id, lhs_id, der_pos);
-                            add_derivative(rhs_id, rhs_id, der_pos);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, rhs_id);
+                            std::size_t& id2_pos = get_buffer_idx(lhs_id, lhs_id);
+                            std::size_t& id3_pos = get_buffer_idx(rhs_id, rhs_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
+                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+
+                            if (!id1_inplace) {
+                                add(res_pos, id1_pos);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    copy(res_pos, id2_pos);
+                                }
+                                else {
+                                    add(res_pos, id2_pos);
+                                }
+                            }
+
+                            if (!id3_inplace) {
+                                if (id3_is_new) {
+                                    id3_pos = this->buffer.get_new_loc();
+                                    copy(res_pos, id3_pos);
+                                }
+                                else {
+                                    add(res_pos, id3_pos);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else if (id3_inplace) {
+                                std::swap(id3_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.));
-                            mul_add_derivative(rhs_id, der_id, der_pos, (rhs_id == der_id ? 2. : 1.));
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                            if (!id1_inplace) {
+                                if (lhs_id == der_id) {
+                                    mul_add(res_pos, id1_pos, 2.);
+                                }
+                                else {
+                                    add(res_pos, id1_pos);
+                                }
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+
+                                    if (rhs_id == der_id) {
+                                        mul_set(res_pos, id2_pos, 2.);
+                                    }
+                                    else {
+                                        copy(res_pos, id2_pos);
+                                    }
+                                }
+                                else {
+                                    if (rhs_id == der_id) {
+                                        mul_add(res_pos, id2_pos, 2.);
+                                    }
+                                    else {
+                                        add(res_pos, id2_pos);
+                                    }
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                if (lhs_id == der_id) {
+                                    mul_inplace(res_pos, 2.);
+                                }
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                if (rhs_id == der_id) {
+                                    mul_inplace(res_pos, 2.);
+                                }
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                     }
                 }
@@ -482,20 +701,150 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        std::size_t& der_pos = der_pair.second;
+                        std::size_t& res_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(lhs_id, der_id, der_pos);
-                            sub_derivative(rhs_id, der_id, der_pos);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                            if (!id1_inplace) {
+                                add(res_pos, id1_pos);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    copy_minus(res_pos, id2_pos);
+                                }
+                                else {
+                                    sub(res_pos, id2_pos);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                minus_inplace(res_pos);
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else if (der_id == res_id) {
-                            sub_derivative(lhs_id, rhs_id, der_pos);
-                            add_derivative(lhs_id, lhs_id, der_pos);
-                            add_derivative(rhs_id, rhs_id, der_pos);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, lhs_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, rhs_id);
+                            // mixed derivative comes last because it implies a minus
+                            std::size_t& id3_pos = get_buffer_idx(lhs_id, rhs_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
+                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+
+                            if (!id1_inplace) {
+                                add(res_pos, id1_pos);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    copy(res_pos, id2_pos);
+                                }
+                                else {
+                                    add(res_pos, id2_pos);
+                                }
+                            }
+
+                            if (!id3_inplace) {
+                                if (id3_is_new) {
+                                    id3_pos = this->buffer.get_new_loc();
+                                    copy_minus(res_pos, id3_pos);
+                                }
+                                else {
+                                    sub(res_pos, id3_pos);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else if (id3_inplace) {
+                                minus_inplace(res_pos);
+                                std::swap(id3_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.));
-                            mul_add_derivative(rhs_id, der_id, der_pos, -(rhs_id == der_id ? 2. : 1.));
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                            if (!id1_inplace) {
+                                if (lhs_id == der_id) {
+                                    mul_add(res_pos, id1_pos, 2.);
+                                }
+                                else {
+                                    add(res_pos, id1_pos);
+                                }
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+
+                                    if (rhs_id == der_id) {
+                                        mul_set(res_pos, id2_pos, -2.);
+                                    }
+                                    else {
+                                        copy_minus(res_pos, id2_pos);
+                                    }
+                                }
+                                else {
+                                    if (rhs_id == der_id) {
+                                        mul_add(res_pos, id2_pos, -2.);
+                                    }
+                                    else {
+                                        sub(res_pos, id2_pos);
+                                    }
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                if (lhs_id == der_id) {
+                                    mul_inplace(res_pos, 2.);
+                                }
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                if (rhs_id == der_id) {
+                                    mul_inplace(res_pos, -2.);
+                                }
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                     }
                 }
@@ -514,21 +863,149 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        std::size_t& der_pos = der_pair.second;
+                        std::size_t& res_pos = der_pair.second;
 
                         if (der_id == passive_id<std::size_t>) {
-                            mul_add_derivative(lhs_id, der_id, der_pos, rhs_val);
-                            mul_add_derivative(rhs_id, der_id, der_pos, lhs_val);
-                            add_derivative(rhs_id, lhs_id, der_pos);
+                            // mixed derivative comes first because it implies a copy
+                            std::size_t& id1_pos = get_buffer_idx(rhs_id, lhs_id);
+                            std::size_t& id2_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id3_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
+                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+
+                            if (!id1_inplace) {
+                                add(res_pos, id1_pos);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    mul_set(res_pos, id2_pos, rhs_val);
+                                }
+                                else {
+                                    mul_add(res_pos, id2_pos, rhs_val);
+                                }
+                            }
+
+                            if (!id3_inplace) {
+                                if (id3_is_new) {
+                                    id3_pos = this->buffer.get_new_loc();
+                                    mul_set(res_pos, id3_pos, lhs_val);
+                                }
+                                else {
+                                    mul_add(res_pos, id3_pos, lhs_val);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                mul_inplace(res_pos, rhs_val);
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else if (id3_inplace) {
+                                mul_inplace(res_pos, lhs_val);
+                                std::swap(id3_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else if (der_id == res_id) {
-                            mul_add_derivative(rhs_id, lhs_id, der_pos, rhs_val * lhs_val);
-                            mul_add_derivative(lhs_id, lhs_id, der_pos, rhs_val * rhs_val);
-                            mul_add_derivative(rhs_id, rhs_id, der_pos, lhs_val * lhs_val);
+                            std::size_t& id1_pos = get_buffer_idx(rhs_id, lhs_id);
+                            std::size_t& id2_pos = get_buffer_idx(lhs_id, lhs_id);
+                            std::size_t& id3_pos = get_buffer_idx(rhs_id, rhs_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
+                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+
+                            if (!id1_inplace) {
+                                mul_add(res_pos, id1_pos, rhs_val * lhs_val);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    mul_set(res_pos, id2_pos, rhs_val * rhs_val);
+                                }
+                                else {
+                                    mul_add(res_pos, id2_pos, rhs_val * rhs_val);
+                                }
+                            }
+
+                            if (!id3_inplace) {
+                                if (id3_is_new) {
+                                    id3_pos = this->buffer.get_new_loc();
+                                    mul_set(res_pos, id3_pos, lhs_val * lhs_val);
+                                }
+                                else {
+                                    mul_add(res_pos, id3_pos, lhs_val * lhs_val);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                mul_inplace(res_pos, rhs_val * lhs_val);
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                mul_inplace(res_pos, rhs_val * rhs_val);
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else if (id3_inplace) {
+                                mul_inplace(res_pos, lhs_val * lhs_val);
+                                std::swap(id3_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else {
-                            mul_add_derivative(lhs_id, der_id, der_pos, (lhs_id == der_id ? 2. : 1.) * rhs_val);
-                            mul_add_derivative(rhs_id, der_id, der_pos, (rhs_id == der_id ? 2. : 1.) * lhs_val);
+                            std::size_t& id1_pos = get_buffer_idx(lhs_id, der_id);
+                            std::size_t& id2_pos = get_buffer_idx(rhs_id, der_id);
+
+                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
+                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
+                            bool const id2_inplace = !id1_inplace && id2_is_new;
+
+                            if (!id1_inplace) {
+                                mul_add(res_pos, id1_pos, (lhs_id == der_id ? 2. : 1.) * rhs_val);
+                            }
+
+                            if (!id2_inplace) {
+                                if (id2_is_new) {
+                                    id2_pos = this->buffer.get_new_loc();
+                                    mul_set(res_pos, id2_pos, (rhs_id == der_id ? 2. : 1.) * lhs_val);
+                                }
+                                else {
+                                    mul_add(res_pos, id2_pos, (rhs_id == der_id ? 2. : 1.) * lhs_val);
+                                }
+                            }
+
+                            if (id1_inplace) {
+                                mul_inplace(res_pos, (lhs_id == der_id ? 2. : 1.) * rhs_val);
+                                std::swap(id1_pos, res_pos);
+                            }
+                            else if (id2_inplace) {
+                                mul_inplace(res_pos, (rhs_id == der_id ? 2. : 1.) * lhs_val);
+                                std::swap(id2_pos, res_pos);
+                            }
+                            else {
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                     }
                 }
@@ -543,15 +1020,59 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        std::size_t& der_pos = der_pair.second;
+                        std::size_t& res_pos = der_pair.second;
                         if (der_id == passive_id<std::size_t>) {
-                            add_derivative(arg_id, der_id, der_pos);
+                            std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                            if (id_inplace) {
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                add(res_pos, id_pos);
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else if (der_id == res_id) {
-                            add_derivative(arg_id, arg_id, der_pos);
+                            std::size_t& id_pos = get_buffer_idx(arg_id, arg_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                            if (id_inplace) {
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                add(res_pos, id_pos);
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else {
-                            mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.));
+                            std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                            if (id_inplace) {
+                                if (arg_id == der_id) {
+                                    mul_inplace(res_pos, 2.);
+                                }
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                if (arg_id == der_id) {
+                                    mul_add(res_pos, id_pos, 2.);
+                                }
+                                else {
+                                    add(res_pos, id_pos);
+                                }
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                     }
                 }
@@ -566,15 +1087,63 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     auto& der_list = this->node_location_on_buffer[res_id];
                     for (auto& der_pair : der_list) {
                         std::size_t const der_id = der_pair.first;
-                        std::size_t& der_pos = der_pair.second;
+                        std::size_t& res_pos = der_pair.second;
                         if (der_id == passive_id<std::size_t>) {
-                            sub_derivative(arg_id, der_id, der_pos);
+                            std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                            if (id_inplace) {
+                                minus_inplace(res_pos);
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                sub(res_pos, id_pos);
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else if (der_id == res_id) {
-                            add_derivative(arg_id, arg_id, der_pos);
+                            std::size_t& id_pos = get_buffer_idx(arg_id, arg_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+                            if (id_inplace) {
+                                minus_inplace(res_pos);
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                sub(res_pos, id_pos);
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                         else {
-                            mul_add_derivative(arg_id, der_id, der_pos, (arg_id == der_id ? 2. : 1.) * -1.0);
+                            std::size_t& id_pos = get_buffer_idx(arg_id, der_id);
+
+                            bool const id_inplace = (id_pos == passive_id<std::size_t>);
+
+                            if (id_inplace) {
+                                if (arg_id == der_id) {
+                                    mul_inplace(res_pos, -2.);
+                                }
+                                else {
+                                    minus_inplace(res_pos);
+                                }
+                                std::swap(id_pos, res_pos);
+                            }
+                            else {
+                                if (arg_id == der_id) {
+                                    mul_add(res_pos, id_pos, -2.);
+                                }
+                                else {
+                                    sub(res_pos, id_pos);
+                                }
+                                // don't forget to free res_id from the buffer!
+                                this->buffer.free_loc(res_pos);
+                                res_pos = passive_id<std::size_t>;
+                            }
                         }
                     }
                 }
@@ -587,7 +1156,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = vals[val_idx];
-                    update_univariate.template operator()<false>(arg_id, res_id, der_local_1);
+                    update_univariate1(arg_id, res_id, der_local_1);
                 }
                 break;
             }
@@ -599,7 +1168,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = 2.0 * vals[val_idx];
                     double const der_local_2 = 2.0;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -611,7 +1180,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = -vals[val_idx] * vals[val_idx];
                     double const der_local_2 = -2.0 * der_local_1 * vals[val_idx];
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -622,7 +1191,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = std::copysign(1.0, vals[val_idx]);
-                    update_univariate.template operator()<false>(arg_id, res_id, der_local_1);
+                    update_univariate1(arg_id, res_id, der_local_1);
                 }
                 break;
             }
@@ -634,7 +1203,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = vals[val_idx];
                     double const der_local_2 = der_local_1;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -646,7 +1215,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = 1.0 / vals[val_idx];
                     double const der_local_2 = -der_local_1 * der_local_1;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -659,7 +1228,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
                     double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
                     double const der_local_2 = -2. * vals[val_idx] * der_local_1;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -672,7 +1241,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
                     double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
                     double const der_local_2 = -2. * vals[val_idx] * der_local_1;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -684,7 +1253,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     std::size_t const res_id = ids[id_idx + 1];
                     double const der_local_1 = -std::sin(vals[val_idx]);
                     double const der_local_2 = -vals[val_idx + 1];
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -697,7 +1266,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     double const one_over_in = 1. / vals[val_idx];
                     double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
                     double const der_local_2 = -0.5 * der_local_1 * one_over_in;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
@@ -713,7 +1282,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                     double const der_local_2 = rhs_arg != 0.0 && rhs_arg != 1.0
                                                  ? rhs_arg * (rhs_arg - 1.0) * std::pow(lhs_arg, rhs_arg - 2.)
                                                  : 0.0;
-                    update_univariate(arg_id, res_id, der_local_1, der_local_2);
+                    update_univariate2(arg_id, res_id, der_local_1, der_local_2);
                 }
                 break;
             }
