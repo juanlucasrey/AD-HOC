@@ -761,50 +761,65 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
                             }
                         }
                         else if (der_id == res_id) {
-                            std::size_t& id1_pos = get_buffer_idx(lhs_id, lhs_id);
-                            std::size_t& id2_pos = get_buffer_idx(rhs_id, rhs_id);
-                            // mixed derivative comes last because it implies a minus
-                            std::size_t& id3_pos = get_buffer_idx(lhs_id, rhs_id);
+                            bool const lhs_is_smaller = (lhs_id < rhs_id);
+                            std::size_t const small_id = lhs_is_smaller ? lhs_id : rhs_id;
+                            std::size_t const large_id = lhs_is_smaller ? rhs_id : lhs_id;
+                            auto& locations_small_id = this->node_location_on_buffer[small_id];
+                            auto& locations_large_id = this->node_location_on_buffer[large_id];
 
-                            bool const id1_inplace = (id1_pos == passive_id<std::size_t>);
-                            bool const id2_is_new = (id2_pos == passive_id<std::size_t>);
-                            bool const id2_inplace = !id1_inplace && id2_is_new;
-                            bool const id3_is_new = (id3_pos == passive_id<std::size_t>);
-                            bool const id3_inplace = !id1_inplace && !id2_inplace && id3_is_new;
+                            auto const it1 = locations_small_id.find(small_id);
+                            auto const it2 = locations_large_id.find(large_id);
+                            auto const it3 = locations_large_id.find(small_id);
 
-                            if (!id1_inplace) {
-                                add(res_pos, id1_pos);
+                            bool const id1_is_new = (it1 == locations_small_id.end());
+                            bool const id2_is_new = (it2 == locations_large_id.end());
+                            bool const id3_is_new = (it3 == locations_large_id.end());
+
+                            if (!id1_is_new) {
+                                std::size_t const d1_pos = it1->second;
+                                add(res_pos, d1_pos);
                             }
 
-                            if (!id2_inplace) {
+                            if (!id2_is_new) {
+                                std::size_t const d2_pos = it2->second;
+                                add(res_pos, d2_pos);
+                            }
+
+                            if (!id3_is_new) {
+                                std::size_t const d3_pos = it3->second;
+                                sub(res_pos, d3_pos);
+                            }
+
+                            if (id1_is_new) {
                                 if (id2_is_new) {
-                                    id2_pos = this->buffer.get_new_loc();
-                                    copy(res_pos, id2_pos);
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_large_id[large_id] = new_pos;
+                                    copy(res_pos, new_pos);
                                 }
-                                else {
-                                    add(res_pos, id2_pos);
-                                }
-                            }
 
-                            if (!id3_inplace) {
                                 if (id3_is_new) {
-                                    id3_pos = this->buffer.get_new_loc();
-                                    copy_minus(res_pos, id3_pos);
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_large_id[small_id] = new_pos;
+                                    copy_minus(res_pos, new_pos);
                                 }
-                                else {
-                                    sub(res_pos, id3_pos);
-                                }
-                            }
 
-                            if (id1_inplace) {
-                                std::swap(id1_pos, res_pos);
+                                locations_small_id[small_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
-                            else if (id2_inplace) {
-                                std::swap(id2_pos, res_pos);
+                            else if (id2_is_new) {
+                                if (id3_is_new) {
+                                    std::size_t const new_pos = this->buffer.get_new_loc();
+                                    locations_large_id[small_id] = new_pos;
+                                    copy_minus(res_pos, new_pos);
+                                }
+
+                                locations_large_id[large_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
-                            else if (id3_inplace) {
+                            else if (id3_is_new) {
                                 minus_inplace(res_pos);
-                                std::swap(id3_pos, res_pos);
+                                locations_large_id[large_id] = res_pos;
+                                res_pos = passive_id<std::size_t>;
                             }
                             else {
                                 // don't forget to free res_id from the buffer!
