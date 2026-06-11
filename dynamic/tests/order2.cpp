@@ -49,15 +49,9 @@ order2_simple()
         double z1 = 0.8;
         double z2 = 0.2;
 
-        // auto y_init = x1 * x2;
-        // auto y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
-        // auto y = exp(y_path + x3 * z1 * z2);
-
-        // auto y_init = x1 * x2;
-        // auto y_path = y_init * z1 + x1 * z2 + (x2 * z1 * 0.1);
-        // auto y = y_path + x3 * z1 * z2;
-
-        auto y = exp(x1 + x2);
+        auto y_init = x1 * x2;
+        auto y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
+        auto y = exp(y_path + x3 * z1 * z2);
 
         tape.register_output_variable(y);
         tape.set_derivative(y, 1.0);

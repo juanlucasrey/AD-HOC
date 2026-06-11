@@ -27,7 +27,6 @@
 #include "position_impl.hpp"
 #include "tape_data.hpp"
 
-#include <array>
 #include <cmath>
 #include <numbers>
 #include <vector>
@@ -37,6 +36,9 @@ namespace adhoc {
 template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Lossy {
   private:
+    // for now
+    static_assert(has_stable_references<maptype>(), "BackPropagator2Lossy requires a map type with stable references.");
+
     std::vector<map_t<maptype, std::size_t> > node_location_on_buffer;
     buffer_t<double, Vectorised> buffer;
 
@@ -71,7 +73,7 @@ class BackPropagator2Lossy {
         }
     }
 
-    void set_derivative(std::size_t var_id, double deriv, std::size_t ops_size, std::size_t lane = 0)
+    void set_derivative(std::size_t var_id, double deriv, std::size_t /* ops_size */, std::size_t lane = 0)
     {
         if (this->node_location_on_buffer.size() <= var_id) {
             // this derivative is not on buffer.
@@ -1109,11 +1111,10 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
 
                             bool const id_inplace = (id_pos == passive_id<std::size_t>);
                             if (id_inplace) {
-                                minus_inplace(res_pos);
                                 std::swap(id_pos, res_pos);
                             }
                             else {
-                                sub(res_pos, id_pos);
+                                add(res_pos, id_pos);
                                 // don't forget to free res_id from the buffer!
                                 this->buffer.free_loc(res_pos);
                                 res_pos = passive_id<std::size_t>;
