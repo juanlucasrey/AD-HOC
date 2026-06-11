@@ -44,6 +44,24 @@ using map_t = std::conditional_t<maptype == MapType::STD_MAP,
                                                                        ankerl::unordered_dense::map<std::size_t, T>,
                                                                        boost::unordered_flat_map<std::size_t, T> > > >;
 
+template<MapType maptype>
+consteval auto
+has_stable_references() -> bool
+{
+    if constexpr (maptype == MapType::STD_MAP) {
+        return true;
+    }
+    else if constexpr (maptype == MapType::STD_UNORDERED_MAP) {
+        return true;
+    }
+    else if constexpr (maptype == MapType::ANKERL_UNORDERED_DENSE) {
+        return false;
+    }
+    else if constexpr (maptype == MapType::BOOST_UNORDERED_MAP) {
+        return false;
+    }
+}
+
 } // namespace adhoc
 
-#endif // ADHOC_BACKPROPAGATOR2LOSSY_HPP
+#endif // ADHOC_MAPS_HPP

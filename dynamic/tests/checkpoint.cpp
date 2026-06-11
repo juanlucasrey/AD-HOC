@@ -1,6 +1,5 @@
-#include "../../test_simple/test_simple_include.hpp"
-
 #include <tape.hpp>
+#include <test_simple_include.hpp>
 
 #include <array>
 #include <cmath>

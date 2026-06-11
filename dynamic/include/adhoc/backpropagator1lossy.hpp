@@ -21,11 +21,10 @@
 #ifndef ADHOC_BACKPROPAGATOR1LOSSY_HPP
 #define ADHOC_BACKPROPAGATOR1LOSSY_HPP
 
+#include "buffer_t.hpp"
 #include "passive_id.hpp"
 #include "position_impl.hpp"
 #include "tape_data.hpp"
-
-#include "buffer_t.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -281,50 +280,6 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
         }
     };
 
-    auto update_loc = [&](std::size_t& arg_pos) {
-        if (arg_pos == passive_id<std::size_t>) {
-            arg_pos = this->buffer.get_new_loc();
-        }
-    };
-
-    auto copy_add = [copy, add, update_loc](std::size_t res_pos, std::size_t& arg_pos) {
-        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-        update_loc(arg_pos);
-
-        if (arg_is_new) {
-            copy(res_pos, arg_pos);
-        }
-        else {
-            add(res_pos, arg_pos);
-        }
-    };
-
-    auto copy_sub = [copy_minus, sub, update_loc](std::size_t res_pos, std::size_t& arg_pos) {
-        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-        update_loc(arg_pos);
-
-        if (arg_is_new) {
-            // this is a new value, we NEED to override
-            copy_minus(res_pos, arg_pos);
-        }
-        else {
-            sub(res_pos, arg_pos);
-        }
-    };
-
-    auto copy_mul = [mul_set, mul_add, update_loc](std::size_t res_pos, std::size_t& arg_pos, double multiplier) {
-        bool arg_is_new = (arg_pos == passive_id<std::size_t>);
-        update_loc(arg_pos);
-
-        if (arg_is_new) {
-            // this is a new value, we NEED to override
-            mul_set(res_pos, arg_pos, multiplier);
-        }
-        else {
-            mul_add(res_pos, arg_pos, multiplier);
-        }
-    };
-
     auto update_univariate = [&](std::size_t const arg_id, std::size_t const res_id, double const der_local_1) {
         std::size_t& res_pos = node_location_on_buffer[res_id];
         std::size_t& arg_pos = node_location_on_buffer[arg_id];
@@ -337,7 +292,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
             std::swap(arg_pos, res_pos);
         }
         else {
-            copy_mul(res_pos, arg_pos, der_local_1);
+            mul_add(res_pos, arg_pos, der_local_1);
             this->buffer.free_loc(res_pos);
             res_pos = passive_id<std::size_t>;
         }
@@ -367,20 +322,26 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     std::size_t& res_pos = node_location_on_buffer[res_id];
                     std::size_t& arg_pos = node_location_on_buffer[arg_id];
 
+                    bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
                     if constexpr (Reset) {
-                        bool const arg_inplace = (arg_pos == passive_id<std::size_t>);
                         if (arg_inplace) {
                             // res id should now be lhs id, avoiding a copy and a potential buffer increase
                             std::swap(arg_pos, res_pos);
                         }
                         else {
-                            copy_add(res_pos, arg_pos);
+                            add(res_pos, arg_pos);
                             this->buffer.free_loc(res_pos);
                             res_pos = passive_id<std::size_t>;
                         }
                     }
                     else {
-                        copy_add(res_pos, arg_pos);
+                        if (arg_inplace) {
+                            arg_pos = this->buffer.get_new_loc();
+                            copy(res_pos, arg_pos);
+                        }
+                        else {
+                            add(res_pos, arg_pos);
+                        }
                         // we don't reset so we don't free res_pos,
                         // it will be potentially used in the next operations as an active node location
                     }
@@ -399,14 +360,21 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
                     bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
-                    bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_inplace = !lhs_inplace && rhs_is_new;
 
                     if (!lhs_inplace) {
-                        copy_add(res_pos, lhs_pos);
+                        add(res_pos, lhs_pos);
                     }
 
                     if (!rhs_inplace) {
-                        copy_add(res_pos, rhs_pos);
+                        if (rhs_is_new) {
+                            rhs_pos = this->buffer.get_new_loc();
+                            copy(res_pos, rhs_pos);
+                        }
+                        else {
+                            add(res_pos, rhs_pos);
+                        }
                     }
 
                     if (lhs_inplace) {
@@ -437,14 +405,21 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
                     bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
-                    bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_inplace = !lhs_inplace && rhs_is_new;
 
                     if (!lhs_inplace) {
-                        copy_add(res_pos, lhs_pos);
+                        add(res_pos, lhs_pos);
                     }
 
                     if (!rhs_inplace) {
-                        copy_sub(res_pos, rhs_pos);
+                        if (rhs_is_new) {
+                            rhs_pos = this->buffer.get_new_loc();
+                            copy_minus(res_pos, rhs_pos);
+                        }
+                        else {
+                            sub(res_pos, rhs_pos);
+                        }
                     }
 
                     if (lhs_inplace) {
@@ -480,14 +455,22 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                     std::size_t& rhs_pos = node_location_on_buffer[rhs_id];
 
                     bool const lhs_inplace = (lhs_pos == passive_id<std::size_t>);
-                    bool const rhs_inplace = !lhs_inplace && (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_is_new = (rhs_pos == passive_id<std::size_t>);
+                    bool const rhs_inplace = !lhs_inplace && rhs_is_new;
 
                     if (!lhs_inplace) {
-                        copy_mul(res_pos, lhs_pos, rhs_val);
+                        mul_add(res_pos, lhs_pos, rhs_val);
                     }
 
                     if (!rhs_inplace) {
-                        copy_mul(res_pos, rhs_pos, lhs_val);
+                        if (rhs_is_new) {
+                            // this is a new value, we NEED to override
+                            rhs_pos = this->buffer.get_new_loc();
+                            mul_set(res_pos, rhs_pos, lhs_val);
+                        }
+                        else {
+                            mul_add(res_pos, rhs_pos, lhs_val);
+                        }
                     }
 
                     if (lhs_inplace) {
@@ -524,7 +507,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         std::swap(arg_pos, res_pos);
                     }
                     else {
-                        copy_add(res_pos, arg_pos);
+                        add(res_pos, arg_pos);
                         this->buffer.free_loc(res_pos);
                         res_pos = passive_id<std::size_t>;
                     }
@@ -549,7 +532,7 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                         std::swap(arg_pos, res_pos);
                     }
                     else {
-                        copy_sub(res_pos, arg_pos);
+                        sub(res_pos, arg_pos);
                         this->buffer.free_loc(res_pos);
                         res_pos = passive_id<std::size_t>;
                     }

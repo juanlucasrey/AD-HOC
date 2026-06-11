@@ -27,6 +27,7 @@
 #include "adhoc/backpropagator1lossycompressedpathreusev.hpp"
 #include "adhoc/backpropagator1lossypathreuse.hpp"
 #include "adhoc/backpropagator2.hpp"
+#include "adhoc/backpropagator2lossy.hpp"
 #include "adhoc/position_impl.hpp"
 
 #include <cstddef>
@@ -85,7 +86,9 @@ struct Tape<Float>::Impl {
                  BackPropagatorLossyCompressedPathReuse<Float>,
                  BackPropagatorLossyCompressedPathReuse<Float, true>,
                  BackPropagatorLossyCompressedPathReuseV<Float>,
-                 BackPropagatorLossyCompressedPathReuseV<Float, true> >
+                 BackPropagatorLossyCompressedPathReuseV<Float, true>,
+                 BackPropagator2Lossy<double, MapType::STD_MAP>,
+                 BackPropagator2Lossy<double, MapType::STD_MAP, true> >
       bp = BackPropagator<Float>();
 };
 
@@ -234,6 +237,12 @@ Tape<Float>::set_method(Method m)
     else if (m == Method::FirstOrderVLossyCompressedPathReuseV) {
         this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double, true> >();
     }
+    else if (m == Method::SecondOrderLossy) {
+        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::STD_MAP> >();
+    }
+    else if (m == Method::SecondOrderVLossy) {
+        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::STD_MAP, true> >();
+    }
 }
 
 template<class Float>
@@ -306,6 +315,14 @@ Tape<Float>::get_method() const -> Method
 
     if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressedPathReuseV;
+    }
+
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP> >(this->impl->bp)) {
+        return Method::SecondOrderLossy;
+    }
+
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP, true> >(this->impl->bp)) {
+        return Method::SecondOrderVLossy;
     }
 
     throw std::runtime_error("Invalid backpropagator type");
@@ -381,6 +398,14 @@ Tape<Float>::get_order() const -> std::size_t
 
     if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float, true> >(this->impl->bp)) {
         return 1;
+    }
+
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP> >(this->impl->bp)) {
+        return 2;
+    }
+
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP, true> >(this->impl->bp)) {
+        return 2;
     }
 
     throw std::runtime_error("Invalid backpropagator type");

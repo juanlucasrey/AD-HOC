@@ -1,7 +1,7 @@
-#include "../../test_simple/test_simple_include.hpp"
+#include <tape.hpp>
+#include <test_simple_include.hpp>
 
 #include <cmath>
-#include <tape.hpp>
 
 using adhoc_mode = adhoc::opcode<double>;
 using adhoc_t = adhoc_mode::type;
