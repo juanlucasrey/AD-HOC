@@ -87,8 +87,8 @@ struct Tape<Float>::Impl {
                  BackPropagatorLossyCompressedPathReuse<Float, true>,
                  BackPropagatorLossyCompressedPathReuseV<Float>,
                  BackPropagatorLossyCompressedPathReuseV<Float, true>,
-                 BackPropagator2Lossy<double, MapType::STD_MAP>,
-                 BackPropagator2Lossy<double, MapType::STD_MAP, true> >
+                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE>,
+                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >
       bp = BackPropagator<Float>();
 };
 
@@ -238,10 +238,10 @@ Tape<Float>::set_method(Method m)
         this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double, true> >();
     }
     else if (m == Method::SecondOrderLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::STD_MAP> >();
+        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >();
     }
     else if (m == Method::SecondOrderVLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::STD_MAP, true> >();
+        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
     }
 }
 
@@ -317,11 +317,11 @@ Tape<Float>::get_method() const -> Method
         return Method::FirstOrderVLossyCompressedPathReuseV;
     }
 
-    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return Method::SecondOrderLossy;
     }
 
-    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return Method::SecondOrderVLossy;
     }
 
@@ -400,11 +400,11 @@ Tape<Float>::get_order() const -> std::size_t
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return 2;
     }
 
