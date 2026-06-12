@@ -35,14 +35,14 @@ enum class MapType {
     BOOST_UNORDERED_MAP,
 };
 
-template<MapType maptype, class T>
+template<MapType maptype, class Key, class T>
 using map_t = std::conditional_t<maptype == MapType::STD_MAP,
-                                 std::map<std::size_t, T>,
+                                 std::map<Key, T>,
                                  std::conditional_t<maptype == MapType::STD_UNORDERED_MAP,
-                                                    std::unordered_map<std::size_t, T>,
+                                                    std::unordered_map<Key, T>,
                                                     std::conditional_t<maptype == MapType::ANKERL_UNORDERED_DENSE,
-                                                                       ankerl::unordered_dense::map<std::size_t, T>,
-                                                                       boost::unordered_flat_map<std::size_t, T> > > >;
+                                                                       ankerl::unordered_dense::map<Key, T>,
+                                                                       boost::unordered_flat_map<Key, T> > > >;
 
 template<MapType maptype>
 consteval auto
