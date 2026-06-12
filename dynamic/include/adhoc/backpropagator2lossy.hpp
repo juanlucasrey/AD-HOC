@@ -36,9 +36,6 @@ namespace adhoc {
 template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Lossy {
   private:
-    // for now
-    static_assert(has_stable_references<maptype>(), "BackPropagator2Lossy requires a map type with stable references.");
-
     std::vector<map_t<maptype, std::size_t> > node_location_on_buffer;
     buffer_t<double, Vectorised> buffer;
 
