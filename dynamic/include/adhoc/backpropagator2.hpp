@@ -44,7 +44,7 @@ class BackPropagator2 {
     using der_container_t = std::conditional_t<Vectorised, std::array<double, 8>, double>;
 
     std::size_t m_num_lanes{ 1 };
-    std::vector<map_t<maptype, der_container_t> > derivatives;
+    std::vector<map_t<maptype, std::size_t, der_container_t> > derivatives;
     std::vector<char> use_op;
 
   public:

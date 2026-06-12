@@ -36,7 +36,7 @@ namespace adhoc {
 template<class Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Lossy {
   private:
-    std::vector<map_t<maptype, std::size_t> > node_location_on_buffer;
+    std::vector<map_t<maptype, std::size_t, std::size_t> > node_location_on_buffer;
     buffer_t<double, Vectorised> buffer;
 
   public:
