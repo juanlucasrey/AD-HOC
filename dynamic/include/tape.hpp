@@ -51,22 +51,22 @@ enum class Method {
 
 struct PositionImpl;
 
-template<class Float>
+template<class Float, class TapeDataType>
 class Tape {
   private:
     struct Impl;
 
     std::unique_ptr<Impl> impl;
-    TapeData& data;
+    TapeDataType& data;
 
     void reserve_input(std::size_t n_registered);
     void reserve_output(std::size_t n_registered);
 
   public:
-    void register_variable(adhoc_type<Float> const& var);
-    void register_variable(adhoc_type<Float>& var);
+    void register_variable(adhoc_type<Float, TapeDataType> const& var);
+    void register_variable(adhoc_type<Float, TapeDataType>& var);
 
-    template<typename Container>
+    template<class Container>
     void register_variable(Container&& vars)
     {
         std::size_t const count = std::distance(std::begin(vars), std::end(vars));
@@ -76,10 +76,10 @@ class Tape {
         }
     }
 
-    void register_output_variable(adhoc_type<Float> const& var);
-    void register_output_variable(adhoc_type<Float>& var);
+    void register_output_variable(adhoc_type<Float, TapeDataType> const& var);
+    void register_output_variable(adhoc_type<Float, TapeDataType>& var);
 
-    template<typename Container>
+    template<class Container>
     void register_output_variable(Container&& vars)
     {
         std::size_t const count = std::distance(std::begin(vars), std::end(vars));
@@ -113,7 +113,7 @@ class Tape {
 
     // void end_implicit_function() { ops.push_back(OpCode::IFT_END); }
 
-    Tape(TapeData& tape_data);
+    Tape(TapeDataType& tape_data);
     ~Tape();
 
     // only for lossy tapes for now
@@ -147,11 +147,12 @@ class Tape {
 
     template<bool ResetInPlace = false, bool Log = false>
     void backpropagate_and_reset_to(position_t const& to);
-    void set_derivative(adhoc_type<Float> const& var, double deriv, std::size_t lane = 0);
-    auto get_derivative(adhoc_type<Float> const& var, std::size_t lane = 0) const -> double;
+    void set_derivative(adhoc_type<Float, TapeDataType> const& var, double deriv, std::size_t lane = 0);
+    auto get_derivative(adhoc_type<Float, TapeDataType> const& var, std::size_t lane = 0) const -> double;
 
-    auto get_derivative(adhoc_type<Float> const& var1, adhoc_type<Float> const& var2, std::size_t lane = 0) const
-      -> double;
+    auto get_derivative(adhoc_type<Float, TapeDataType> const& var1,
+                        adhoc_type<Float, TapeDataType> const& var2,
+                        std::size_t lane = 0) const -> double;
     void zero_adjoints();
 
     auto get_position() const -> position_t;
@@ -164,7 +165,7 @@ class Tape {
 // smart pointer that manages the lifetime of the static tape. It has an internal counter to track how many instances
 // are using the tape, and only deletes the tape when the last instance is destroyed. This allows for multiple instances
 // of adhoc to share the same tape without worrying about ownership issues.
-template<typename mode_t>
+template<class mode_t>
 class smart_tape_ptr_t {
   private:
     using tape_t = typename mode_t::tape_t;
@@ -174,7 +175,7 @@ class smart_tape_ptr_t {
     smart_tape_ptr_t()
     {
         if (ref_count == 0) {
-            mode_t::global_tape_data = new TapeData;
+            mode_t::global_tape_data = new typename mode_t::tape_data_t;
             mode_t::global_tape = new tape_t(*mode_t::global_tape_data);
         }
         ++ref_count;
@@ -220,21 +221,21 @@ class smart_tape_ptr_t {
     static auto use_count() -> std::size_t { return ref_count; }
 };
 
-template<typename T>
+template<class Float, class TapeDataType>
 auto
-size_of(const Tape<T>& arg, bool capacity = false) -> std::size_t
+size_of(const Tape<Float, TapeDataType>& arg, bool capacity = false) -> std::size_t
 {
     return arg.size_of(capacity);
 }
 
-template<typename T>
+template<class Float, class TapeDataType>
 auto
-size_of(const Tape<T>* arg, bool capacity = false) -> std::size_t
+size_of(const Tape<Float, TapeDataType>* arg, bool capacity = false) -> std::size_t
 {
     return arg->size_of(capacity);
 }
 
-template<typename T>
+template<class T>
 auto
 size_of(const adhoc::smart_tape_ptr_t<adhoc::opcode<T> >& arg, bool capacity = false) -> std::size_t
 {

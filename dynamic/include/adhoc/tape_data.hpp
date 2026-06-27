@@ -26,6 +26,10 @@
 
 namespace adhoc {
 
+// Every time a new type of operation is added, the NumValuesOpcode must be updated to reflect the new number of
+// operations. This is used for the vector_enum2 type to determine how many bits are needed to store the operation codes
+// efficiently.
+static constexpr std::size_t NumValuesOpcode = 18;
 enum class OpCode : std::uint8_t {
     ADD,
     SUB,
@@ -52,10 +56,13 @@ enum class OpCode : std::uint8_t {
     // REG_OUTPUT_IFT,
 };
 
+enum class EnumVectorType { Simple, BitCompression, Valuecompression };
+
+template<EnumVectorType enumvectype>
 struct TapeData {
     std::vector<OpCode> ops;
-    std::vector<double> vals;
     std::vector<std::size_t> ids;
+    std::vector<double> vals;
     std::size_t next_id{ 0 };
 
     void record_unary(OpCode op, std::size_t arg_id, std::size_t res_id)

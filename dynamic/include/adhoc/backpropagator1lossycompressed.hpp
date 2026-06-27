@@ -181,15 +181,15 @@ class BackPropagatorLossyCompressed {
         return size;
     }
 
-    template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(PositionImpl const& pos, TapeData& data);
+    template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<class Float, bool Vectorised, bool ConsolidateLargeUnivariate>
-template<bool Reset, bool ResetInPlace, bool Log>
+template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(PositionImpl const& pos,
-                                                                                               TapeData& data)
+                                                                                               TapeDataType& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
