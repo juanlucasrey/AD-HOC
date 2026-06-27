@@ -18,37 +18,23 @@
  * limitations under the License.
  */
 
-#ifndef ADHOC_HASH_HPP
-#define ADHOC_HASH_HPP
+#ifndef ADHOC_VECTOR_SIZE_OF_HPP
+#define ADHOC_VECTOR_SIZE_OF_HPP
 
-#include "position_impl.hpp"
-
-#include <functional>
+#include <cstddef>
+#include <vector>
 
 namespace adhoc {
 
-template<typename T>
+template<class T>
 auto
-hash_span(T const& v, std::size_t start, std::size_t end) -> std::size_t
+vector_size_of(std::vector<T> const& vec, bool capacity = false) -> std::size_t
 {
-    std::hash<typename T::value_type> hasher;
-    std::size_t seed = 0;
-    for (std::size_t i = start; i < end; ++i) {
-        seed ^= hasher(v[i]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-    return seed;
-}
-
-template<class TapeDataType>
-inline auto
-hash(PositionImpl const& pos, TapeDataType const& data) -> std::size_t
-{
-    auto const h1 = hash_span(data.ids, pos.id_position, data.ids.size());
-    auto const h2 = hash_span(data.ops, pos.op_position, data.ops.size());
-    auto const h = h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
-    return h;
+    std::size_t size = 0;
+    size += sizeof(T) * (capacity ? vec.capacity() : vec.size());
+    return size;
 }
 
 } // namespace adhoc
 
-#endif // ADHOC_HASH_HPP
+#endif // ADHOC_VECTOR_SIZE_OF_HPP

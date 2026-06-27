@@ -21,8 +21,6 @@
 #ifndef ADHOC_POSITION_IMPL_HPP
 #define ADHOC_POSITION_IMPL_HPP
 
-#include "tape_data.hpp"
-
 #include <cstddef>
 
 namespace adhoc {
@@ -33,8 +31,9 @@ struct PositionImpl {
     std::size_t val_position{ 0 };
 };
 
+template<class TapeDataType>
 inline void
-reset(PositionImpl const& pos, TapeData& data)
+reset(PositionImpl const& pos, TapeDataType& data)
 {
     data.ops.resize(pos.op_position);
     data.vals.resize(pos.val_position);

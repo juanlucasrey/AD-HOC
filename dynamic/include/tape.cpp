@@ -29,6 +29,7 @@
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2lossy.hpp"
 #include "adhoc/position_impl.hpp"
+#include "adhoc/vector_size_of.hpp"
 
 #include <cstddef>
 #include <iostream>
@@ -38,8 +39,9 @@ namespace adhoc {
 
 namespace {
 
+template<class ContainerOps, class ContainerIds>
 void
-record_register(std::vector<OpCode>& ops, std::vector<std::size_t>& ids, OpCode op, std::size_t arg_id)
+record_register(ContainerOps& ops, ContainerIds& ids, OpCode op, std::size_t arg_id)
 {
     ops.push_back(op);
     ids.push_back(arg_id);
@@ -47,29 +49,29 @@ record_register(std::vector<OpCode>& ops, std::vector<std::size_t>& ids, OpCode 
 
 } // namespace
 
-template<class Float>
-Tape<Float>::position_t::position_t()
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::position_t::position_t()
   : impl(std::make_unique<PositionImpl>()){};
 
-template<class Float>
-Tape<Float>::position_t::~position_t() = default;
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::position_t::~position_t() = default;
 
-template<class Float>
-Tape<Float>::position_t&
-Tape<Float>::position_t::operator=(position_t other)
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::position_t&
+Tape<Float, TapeDataType>::position_t::operator=(position_t other)
 {
     std::swap(this->impl, other.impl);
     return *this;
 }
 
-template<class Float>
-Tape<Float>::position_t::position_t(const position_t& other)
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::position_t::position_t(const position_t& other)
   : impl(std::make_unique<PositionImpl>(*other.impl))
 {
 }
 
-template<class Float>
-struct Tape<Float>::Impl {
+template<class Float, class TapeDataType>
+struct Tape<Float, TapeDataType>::Impl {
     std::variant<BackPropagator<Float>,
                  BackPropagator<Float, true>,
                  BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE>,
@@ -92,33 +94,33 @@ struct Tape<Float>::Impl {
       bp = BackPropagator<Float>();
 };
 
-template<class Float>
-Tape<Float>::Tape(TapeData& tape_data)
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::Tape(TapeDataType& tape_data)
   : impl(std::make_unique<Impl>())
   , data(tape_data)
 {
 }
 
-template<class Float>
-Tape<Float>::~Tape() = default;
+template<class Float, class TapeDataType>
+Tape<Float, TapeDataType>::~Tape() = default;
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::reserve_input(std::size_t count_registered)
+Tape<Float, TapeDataType>::reserve_input(std::size_t count_registered)
 {
     std::visit([count_registered](auto& arg) { arg.reserve_input(count_registered); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::reserve_output(std::size_t count_registered)
+Tape<Float, TapeDataType>::reserve_output(std::size_t count_registered)
 {
     std::visit([count_registered](auto& arg) { arg.reserve_output(count_registered); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::register_variable(adhoc_type<Float> const& var)
+Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType> const& var)
 {
     if (var.is_passive()) {
         std::size_t const new_id = this->data.generate_id();
@@ -128,9 +130,9 @@ Tape<Float>::register_variable(adhoc_type<Float> const& var)
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::register_variable(adhoc_type<Float>& var)
+Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType>& var)
 {
     if (var.is_passive()) {
         std::size_t const new_id = this->data.generate_id();
@@ -140,9 +142,9 @@ Tape<Float>::register_variable(adhoc_type<Float>& var)
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::register_output_variable(adhoc_type<Float> const& var)
+Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataType> const& var)
 {
     if (var.is_active()) {
         std::size_t const new_id = this->data.generate_id();
@@ -154,9 +156,9 @@ Tape<Float>::register_output_variable(adhoc_type<Float> const& var)
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::register_output_variable(adhoc_type<Float>& var)
+Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataType>& var)
 {
     if (var.is_active()) {
         std::size_t const new_id = this->data.generate_id();
@@ -168,23 +170,23 @@ Tape<Float>::register_output_variable(adhoc_type<Float>& var)
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::set_lanes(std::size_t num_lanes)
+Tape<Float, TapeDataType>::set_lanes(std::size_t num_lanes)
 {
     std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_lanes() const -> std::size_t
+Tape<Float, TapeDataType>::get_lanes() const -> std::size_t
 {
     return std::visit([](auto& arg) { return arg.get_lanes(); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::set_method(Method m)
+Tape<Float, TapeDataType>::set_method(Method m)
 {
     if (m == Method::FirstOrderSimple) {
         this->impl->bp.template emplace<BackPropagator<double> >();
@@ -245,9 +247,9 @@ Tape<Float>::set_method(Method m)
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_method() const -> Method
+Tape<Float, TapeDataType>::get_method() const -> Method
 {
     if (std::holds_alternative<BackPropagator<Float> >(this->impl->bp)) {
         return Method::FirstOrderSimple;
@@ -328,9 +330,9 @@ Tape<Float>::get_method() const -> Method
     throw std::runtime_error("Invalid backpropagator type");
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_order() const -> std::size_t
+Tape<Float, TapeDataType>::get_order() const -> std::size_t
 {
     if (std::holds_alternative<BackPropagator<Float> >(this->impl->bp)) {
         return 1;
@@ -412,45 +414,47 @@ Tape<Float>::get_order() const -> std::size_t
     return 0;
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::set_checkpoint()
+Tape<Float, TapeDataType>::set_checkpoint()
 {
     std::visit([ops_size = data.ops.size()](auto& arg) { arg.set_checkpoint(ops_size); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::backpropagate()
+Tape<Float, TapeDataType>::backpropagate()
 {
     std::visit(
       [&data = this->data](auto& arg) {
           PositionImpl pos0;
-          arg.backpropagate_to(pos0, data);
+          arg.template backpropagate_to<false, false, false>(pos0, data);
       },
       this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::backpropagate_to(position_t const& pos)
+Tape<Float, TapeDataType>::backpropagate_to(position_t const& pos)
 {
-    std::visit([pos, &data = this->data](auto& arg) { arg.backpropagate_to(*pos.impl, data); }, this->impl->bp);
+    std::visit(
+      [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<false, false, false>(*pos.impl, data); },
+      this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 template<bool ResetInPlace, bool Log>
 void
-Tape<Float>::backpropagate_and_reset_to(position_t const& pos)
+Tape<Float, TapeDataType>::backpropagate_and_reset_to(position_t const& pos)
 {
     std::visit(
       [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(*pos.impl, data); },
       this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::set_derivative(adhoc_type<Float> const& var, double deriv, std::size_t lane)
+Tape<Float, TapeDataType>::set_derivative(adhoc_type<Float, TapeDataType> const& var, double deriv, std::size_t lane)
 {
     if (var.is_active()) {
         std::visit([var_id = var.id, deriv, lane, ops_size = data.ops.size()](
@@ -459,9 +463,9 @@ Tape<Float>::set_derivative(adhoc_type<Float> const& var, double deriv, std::siz
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_derivative(adhoc_type<Float> const& var, std::size_t lane) const -> double
+Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const& var, std::size_t lane) const -> double
 {
     if (var.is_active()) {
         return std::visit([var_id = var.id, lane](auto& arg) { return arg.get_derivative(var_id, lane); },
@@ -470,10 +474,11 @@ Tape<Float>::get_derivative(adhoc_type<Float> const& var, std::size_t lane) cons
     return 0.;
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_derivative(adhoc_type<Float> const& var1, adhoc_type<Float> const& var2, std::size_t lane) const
-  -> double
+Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const& var1,
+                                          adhoc_type<Float, TapeDataType> const& var2,
+                                          std::size_t lane) const -> double
 {
     if (var1.is_active() && var2.is_active()) {
         return std::visit([var_id1 = var1.id, var_id2 = var2.id, lane](
@@ -483,25 +488,25 @@ Tape<Float>::get_derivative(adhoc_type<Float> const& var1, adhoc_type<Float> con
     return 0;
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::zero_adjoints()
+Tape<Float, TapeDataType>::zero_adjoints()
 {
     std::visit([](auto& arg) { arg.zero_adjoints(); }, this->impl->bp);
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::get_position() const -> position_t
+Tape<Float, TapeDataType>::get_position() const -> position_t
 {
     position_t result;
     result.impl = std::make_unique<PositionImpl>(data.ops.size(), data.ids.size(), data.vals.size());
     return result;
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 void
-Tape<Float>::print() const
+Tape<Float, TapeDataType>::print() const
 {
     std::cout << "Tape contains " << data.ops.size() << " operations:" << std::endl;
 
@@ -591,15 +596,15 @@ Tape<Float>::print() const
     }
 }
 
-template<class Float>
+template<class Float, class TapeDataType>
 auto
-Tape<Float>::size_of(bool capacity) const -> std::size_t
+Tape<Float, TapeDataType>::size_of(bool capacity) const -> std::size_t
 {
     std::size_t size = 0;
     size += sizeof(*impl);
-    size += sizeof(data.ops) + sizeof(OpCode) * (capacity ? data.ops.capacity() : data.ops.size());
-    size += sizeof(data.ids) + sizeof(std::size_t) * (capacity ? data.ids.capacity() : data.ids.size());
-    size += sizeof(data.vals) + sizeof(double) * (capacity ? data.vals.capacity() : data.vals.size());
+    size += sizeof(data.ops) + vector_size_of(data.ops, capacity);
+    size += sizeof(data.ids) + vector_size_of(data.ids, capacity);
+    size += sizeof(data.vals) + vector_size_of(data.vals, capacity);
     size += std::visit([capacity](auto& arg) { return arg.size_of(capacity); }, this->impl->bp);
     return size;
 }
@@ -607,15 +612,15 @@ Tape<Float>::size_of(bool capacity) const -> std::size_t
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
 template void
-Tape<double>::backpropagate_and_reset_to<true, true>(position_t const& to);
+Tape<double, TapeData<EnumVectorType::Simple> >::backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<true, false>(position_t const& to);
+Tape<double, TapeData<EnumVectorType::Simple> >::backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<false, true>(position_t const& to);
+Tape<double, TapeData<EnumVectorType::Simple> >::backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double>::backpropagate_and_reset_to<false, false>(position_t const& to);
+Tape<double, TapeData<EnumVectorType::Simple> >::backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double>;
+template class Tape<double, TapeData<EnumVectorType::Simple> >;
 #endif
 
 } // namespace adhoc

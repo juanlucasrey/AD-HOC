@@ -221,18 +221,18 @@ class BackPropagatorLossyCompressedPathReuse {
         return size;
     }
 
-    template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(PositionImpl const& pos, TapeData& data);
+    template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<class Float, bool Vectorised>
-template<bool Reset, bool ResetInPlace, bool Log>
+template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
-BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
     class ValueFetcher {
       public:
-        explicit ValueFetcher(TapeData const& data_in, LossyTape const& lossy_tape_in, PositionImpl const& pos)
+        explicit ValueFetcher(TapeDataType const& data_in, LossyTape const& lossy_tape_in, PositionImpl const& pos)
           : data(data_in)
           , lossy_tape(lossy_tape_in)
           , op_idx(pos.op_position)
@@ -392,7 +392,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
         }
 
       private:
-        TapeData const& data;
+        TapeDataType const& data;
         LossyTape const& lossy_tape;
 
         std::size_t op_idx{ 0 };
@@ -405,7 +405,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
         double cached_value{ 0. };
     };
 
-    auto convert_to_lossy_tape = [&](PositionImpl const& pos, TapeData const& data) -> LossyTape {
+    auto convert_to_lossy_tape = [&](PositionImpl const& pos, TapeDataType const& data) -> LossyTape {
         std::size_t const to = pos.op_position;
         LossyTape result;
 

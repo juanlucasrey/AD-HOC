@@ -215,20 +215,20 @@ test_expm1()
 
     // second order
     auto check2d = [](double input, double expected_derivative1, double expected_derivative2) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = expm1(x_adhoc);
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative1, 3e-8);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_derivative2, 3e-8);
@@ -302,20 +302,20 @@ test_pow_c()
     check1d(2.0, -1.0, -0.25); // d/dx x^(-1) = -x^(-2) = -1/4 = -0.25
 
     auto check2d = [](double input, double exponent, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = pow(cos(x_adhoc) + 2.0, exponent);
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
@@ -355,19 +355,19 @@ test_pow_c_0()
     check1d(0.0, 0.99, std::numeric_limits<double>::infinity());
 
     auto check2d = [](double input, double exponent, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto res_adhoc = pow(x_adhoc, exponent);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         if (expected_derivative == std::numeric_limits<double>::infinity()) {
             EXPECT_TRUE(dy_dx_adhoc == std::numeric_limits<double>::infinity());
@@ -413,20 +413,20 @@ test_sqrt()
     check1d(9.0, 1.0 / 6.0); // d/dx sqrt(x) = 1/(2*sqrt(9)) = 1/6
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = sqrt(cos(x_adhoc) + 2.0);
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
@@ -469,20 +469,20 @@ test_erf()
     check1d(2.5, 0.0021782842303527099);
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = erf(cos(x_adhoc));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
@@ -521,20 +521,20 @@ test_erfc()
     check1d(2.5, -0.0021782842303527099);
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = erfc(cos(x_adhoc));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
@@ -573,19 +573,19 @@ test_abs()
     check1d(5.0, 1.0);
 
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
         auto y_adhoc = abs(cos(x_adhoc));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
-        double d2y_dx2_adhoc = tape2.get_derivative(x_adhoc, x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
+        double d2y_dx2_adhoc = tape.get_derivative(x_adhoc, x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
         EXPECT_NEAR_ABS(d2y_dx2_adhoc, expected_second_derivative, 1e-10);
@@ -631,25 +631,25 @@ test_max()
                       double expected_derivative5) {
         double dy_dx_res1, dy_dx_res2, d2y_dx2_res11, d2y_dx2_res12, d2y_dx2_res22;
 
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
-        tape2.register_variable(x_adhoc1);
-        tape2.register_variable(x_adhoc2);
+        tape.register_variable(x_adhoc1);
+        tape.register_variable(x_adhoc2);
 
         auto y_adhoc = max(cos(x_adhoc1), cos(x_adhoc2));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc1 = tape2.get_derivative(x_adhoc1);
-        double dy_dx_adhoc2 = tape2.get_derivative(x_adhoc2);
-        double d2y_dx2_adhoc11 = tape2.get_derivative(x_adhoc1, x_adhoc1);
-        double d2y_dx2_adhoc12 = tape2.get_derivative(x_adhoc1, x_adhoc2);
-        double d2y_dx2_adhoc22 = tape2.get_derivative(x_adhoc2, x_adhoc2);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc1 = tape.get_derivative(x_adhoc1);
+        double dy_dx_adhoc2 = tape.get_derivative(x_adhoc2);
+        double d2y_dx2_adhoc11 = tape.get_derivative(x_adhoc1, x_adhoc1);
+        double d2y_dx2_adhoc12 = tape.get_derivative(x_adhoc1, x_adhoc2);
+        double d2y_dx2_adhoc22 = tape.get_derivative(x_adhoc2, x_adhoc2);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc1, expected_derivative1, 1e-10);
         EXPECT_NEAR_ABS(dy_dx_adhoc2, expected_derivative2, 1e-10);
@@ -698,25 +698,25 @@ test_min()
                       double expected_derivative5) {
         double dy_dx_res1, dy_dx_res2, d2y_dx2_res11, d2y_dx2_res12, d2y_dx2_res22;
 
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
-        tape2.register_variable(x_adhoc1);
-        tape2.register_variable(x_adhoc2);
+        tape.register_variable(x_adhoc1);
+        tape.register_variable(x_adhoc2);
 
         auto y_adhoc = min(cos(x_adhoc1), cos(x_adhoc2));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc1 = tape2.get_derivative(x_adhoc1);
-        double dy_dx_adhoc2 = tape2.get_derivative(x_adhoc2);
-        double d2y_dx2_adhoc11 = tape2.get_derivative(x_adhoc1, x_adhoc1);
-        double d2y_dx2_adhoc12 = tape2.get_derivative(x_adhoc1, x_adhoc2);
-        double d2y_dx2_adhoc22 = tape2.get_derivative(x_adhoc2, x_adhoc2);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc1 = tape.get_derivative(x_adhoc1);
+        double dy_dx_adhoc2 = tape.get_derivative(x_adhoc2);
+        double d2y_dx2_adhoc11 = tape.get_derivative(x_adhoc1, x_adhoc1);
+        double d2y_dx2_adhoc12 = tape.get_derivative(x_adhoc1, x_adhoc2);
+        double d2y_dx2_adhoc22 = tape.get_derivative(x_adhoc2, x_adhoc2);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc1, expected_derivative1, 1e-10);
         EXPECT_NEAR_ABS(dy_dx_adhoc2, expected_derivative2, 1e-10);
@@ -965,20 +965,20 @@ void
 test_skip_unregistered_outputs()
 {
     auto check2d = [](double input, double expected_derivative) {
-        adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-        auto& tape2 = *tape2ptr;
-        tape2.set_method(adhoc::Method::SecondOrderSimple);
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+        auto& tape = *tapeptr;
+        tape.set_method(adhoc::Method::SecondOrderSimple);
         adhoc_t x_adhoc = input;
-        tape2.register_variable(x_adhoc);
+        tape.register_variable(x_adhoc);
 
         auto y_adhoc = erf(cos(x_adhoc));
         auto res_adhoc = y_adhoc * exp(y_adhoc);
         auto skip_adhoc = y_adhoc * exp(res_adhoc);
 
-        tape2.register_output_variable(res_adhoc);
-        tape2.set_derivative(res_adhoc, 1.0);
-        tape2.backpropagate();
-        double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
+        tape.register_output_variable(res_adhoc);
+        tape.set_derivative(res_adhoc, 1.0);
+        tape.backpropagate();
+        double dy_dx_adhoc = tape.get_derivative(x_adhoc);
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
     };
@@ -999,24 +999,25 @@ test_backprop_stages()
         {
             using mode = adhoc::opcode<double>;
             using D = mode::type;
-            adhoc::smart_tape_ptr_t<mode> tape;
+            adhoc::smart_tape_ptr_t<mode> tape2ptr;
+            auto& tape = *tape2ptr;
 
             D x_adhoc = input;
-            tape->register_variable(x_adhoc);
+            tape.register_variable(x_adhoc);
 
             // Save tape position after registering x_adhoc
-            auto pos = tape->get_position();
+            auto pos = tape.get_position();
 
             auto y_adhoc = erf(cos(x_adhoc));
             auto res_adhoc = y_adhoc * exp(y_adhoc);
             auto skip_adhoc = y_adhoc * exp(res_adhoc);
 
-            tape->register_output_variable(res_adhoc);
-            tape->set_derivative(res_adhoc, 1.0);
-            tape->backpropagate_and_reset_to<true>(pos);
-            tape->backpropagate();
+            tape.register_output_variable(res_adhoc);
+            tape.set_derivative(res_adhoc, 1.0);
+            tape.backpropagate_and_reset_to<true>(pos);
+            tape.backpropagate();
 
-            dy_dx_adhoc = tape->get_derivative(x_adhoc);
+            dy_dx_adhoc = tape.get_derivative(x_adhoc);
         }
 
         EXPECT_NEAR_ABS(dy_dx_adhoc, expected_derivative, 1e-10);
@@ -1033,17 +1034,17 @@ test_backprop_stages()
 void
 test_induced_path()
 {
-    adhoc::smart_tape_ptr_t<adhoc_mode> tape2ptr;
-    auto& tape2 = *tape2ptr;
-    tape2.set_method(adhoc::Method::FirstOrderLossyCompressed);
+    adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
+    auto& tape = *tapeptr;
+    tape.set_method(adhoc::Method::FirstOrderLossyCompressed);
 
     adhoc::opcode<double>::type x_adhoc = 0.5;
-    tape2.register_variable(x_adhoc);
+    tape.register_variable(x_adhoc);
     auto res = exp(erf(erfc(cos(x_adhoc))));
-    tape2.register_output_variable(res);
-    tape2.set_derivative(res, 1.0);
-    tape2.backpropagate();
-    double dy_dx_adhoc = tape2.get_derivative(x_adhoc);
+    tape.register_output_variable(res);
+    tape.set_derivative(res, 1.0);
+    tape.backpropagate();
+    double dy_dx_adhoc = tape.get_derivative(x_adhoc);
     EXPECT_NEAR_ABS(dy_dx_adhoc, 0.34254904163922512, 1e-13);
 }
 

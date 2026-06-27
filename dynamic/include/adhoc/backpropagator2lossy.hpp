@@ -202,14 +202,14 @@ class BackPropagator2Lossy {
         return size;
     }
 
-    template<bool Reset = false, bool ResetInPlace = false, bool Log = false>
-    void backpropagate_to(PositionImpl const& pos, TapeData& data);
+    template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<class Float, MapType maptype, bool Vectorised>
-template<bool Reset, bool ResetInPlace, bool Log>
+template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
-BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeData& data)
+BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
