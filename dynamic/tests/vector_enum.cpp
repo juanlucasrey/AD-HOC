@@ -45,7 +45,7 @@ enum_tests()
 
     // generator of integer values between 0 and 6
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 6);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 6);
 
     std::vector<OpCode> v0;
     adhoc::vector_enum<OpCode, 7> v1;
@@ -72,7 +72,7 @@ void
 resize_tests()
 {
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 14);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 14);
 
     enum class OpCode8 : std::uint8_t {
         ADD,
@@ -124,7 +124,7 @@ void
 iterator_tests_even()
 {
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 14);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 14);
 
     enum class OpCode8 : std::uint8_t {
         ADD,
@@ -195,7 +195,7 @@ void
 iterator_tests_odd()
 {
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 6);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 6);
 
     enum class OpCode8 : std::uint8_t {
         ADD,
@@ -258,7 +258,7 @@ void
 timing_tests()
 {
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 15);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 15);
 
     enum class OpCode8 : std::uint8_t {
         ADD,
@@ -464,7 +464,7 @@ void
 timing_tests2()
 {
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 17);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 17);
 
     enum class OpCode8 : std::uint8_t {
         ADD,
