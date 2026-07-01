@@ -10,12 +10,12 @@ simple_tests()
 {
     // generator of integer values between 0 and 7
     std::mt19937 gen(1234);
-    std::uniform_int_distribution<std::uint8_t> dis(0, 7);
+    std::uniform_int_distribution<std::uint64_t> dis(0, 7);
 
     std::size_t iters = 10000;
 
-    std::vector<std::uint8_t> v0;
-    adhoc::vector_enum<std::uint8_t, 8> v1;
+    std::vector<std::uint64_t> v0;
+    adhoc::vector_enum<std::uint64_t, 8> v1;
 
     for (std::size_t i = 0; i < iters; ++i) {
         auto const value = dis(gen);
