@@ -40,10 +40,12 @@ class adhoc_type;
 template<class mode_t>
 class smart_tape_ptr_t;
 
-template<class Float, EnumVectorType enumvectype = EnumVectorType::Simple>
+template<class Float,
+         EnumVectorType enumvectype = EnumVectorType::Simple,
+         IdxVectorType idxvectype = IdxVectorType::Simple>
 class opcode {
   public:
-    using tape_data_t = TapeData<enumvectype>;
+    using tape_data_t = TapeData<enumvectype, idxvectype>;
     using tape_t = Tape<Float, tape_data_t>;
     using type = adhoc_type<Float, tape_data_t>;
     inline static thread_local tape_t* global_tape = nullptr;
@@ -61,7 +63,7 @@ template<class Float, class TapeDataType>
 class adhoc_type {
   private:
     friend Tape<Float, TapeDataType>;
-    using mode_t = opcode<Float, TapeDataType::tape_enumvector_t>;
+    using mode_t = opcode<Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
 
     double value{ 0. };
     mutable std::size_t id{ passive_id<std::size_t> };
