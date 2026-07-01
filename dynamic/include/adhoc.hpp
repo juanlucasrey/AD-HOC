@@ -40,12 +40,12 @@ class adhoc_type;
 template<class mode_t>
 class smart_tape_ptr_t;
 
-template<class T, EnumVectorType enumvectype = EnumVectorType::Simple>
+template<class Float, EnumVectorType enumvectype = EnumVectorType::Simple>
 class opcode {
   public:
     using tape_data_t = TapeData<enumvectype>;
-    using tape_t = Tape<T, tape_data_t>;
-    using type = adhoc_type<T, tape_data_t>;
+    using tape_t = Tape<Float, tape_data_t>;
+    using type = adhoc_type<Float, tape_data_t>;
     inline static thread_local tape_t* global_tape = nullptr;
 
     // windows doesn't like it when these are private, even though they are only used in the friend classes
@@ -53,7 +53,7 @@ class opcode {
   private:
 #endif
     friend type;
-    friend class smart_tape_ptr_t<opcode<T, enumvectype> >;
+    friend class smart_tape_ptr_t<opcode>;
     inline static thread_local tape_data_t* global_tape_data = nullptr;
 };
 
@@ -61,24 +61,26 @@ template<class Float, class TapeDataType>
 class adhoc_type {
   private:
     friend Tape<Float, TapeDataType>;
+    using mode_t = opcode<Float, TapeDataType::tape_enumvector_t>;
 
     double value{ 0. };
     mutable std::size_t id{ passive_id<std::size_t> };
 
-    auto sub_c(double lhs) const -> adhoc_type;
-    auto div_c(double lhs) const -> adhoc_type;
-
   public:
-    using mode_t = opcode<Float>;
-
     adhoc_type() = default;
 
     adhoc_type(Float val)
       : value(val)
     {
     }
-    adhoc_type(const adhoc_type& other);
-    adhoc_type(const adhoc_type&& other) noexcept;
+
+    adhoc_type(const adhoc_type& other)
+      : value(other.value)
+      , id(other.id)
+    {
+    }
+
+    adhoc_type(const adhoc_type&& other) noexcept { *this = other; }
 
     // Get value
     auto get_value() const -> double { return value; }
@@ -86,146 +88,305 @@ class adhoc_type {
     auto is_passive() const -> bool { return id == passive_id<std::size_t>; }
     auto is_active() const -> bool { return id != passive_id<std::size_t>; }
 
-    // Declare operators - implementations come after Tape definition
-    auto operator-() const -> adhoc_type;
+    auto operator-() const -> adhoc_type { return 0.0 - *this; }
 
-    auto operator+(const adhoc_type& other) const -> adhoc_type;
-    auto operator-(const adhoc_type& other) const -> adhoc_type;
-    auto operator*(const adhoc_type& other) const -> adhoc_type;
-    auto operator/(const adhoc_type& other) const -> adhoc_type;
-
-    auto operator+(double other) const -> adhoc_type;
-    auto operator-(double other) const -> adhoc_type;
-    auto operator*(double other) const -> adhoc_type;
-    auto operator/(double other) const -> adhoc_type;
-
-    auto operator=(const adhoc_type& other) -> adhoc_type&;
-
-    auto operator+=(const adhoc_type& other) -> adhoc_type&;
-    auto operator-=(const adhoc_type& other) -> adhoc_type&;
-    auto operator*=(const adhoc_type& other) -> adhoc_type&;
-    auto operator/=(const adhoc_type& other) -> adhoc_type&;
-
-    auto operator+=(double other) -> adhoc_type&;
-    auto operator-=(double other) -> adhoc_type&;
-    auto operator*=(double other) -> adhoc_type&;
-    auto operator/=(double other) -> adhoc_type&;
-
-    // these functions need to be defined here, since they are templated
-    // (templated friend functions are a dark corner of the standard)
-    friend auto exp(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    auto operator+(const adhoc_type& other) const -> adhoc_type
     {
-        adhoc_type result(std::exp(arg.value));
-        if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::EXP, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(result.value);
+        if (this->is_passive() && other.is_active()) {
+            return other + this->value;
+        }
+
+        if (other.is_passive()) {
+            return (*this) + other.value;
+        }
+
+        adhoc_type result(this->value + other.value);
+        result.id = mode_t::global_tape_data->generate_id();
+        if (this->id == other.id) {
+            mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
+            mode_t::global_tape_data->record_value(2.0);
+        }
+        else {
+            mode_t::global_tape_data->record_binary(OpCode::ADD, this->id, other.id, result.id);
         }
         return result;
     }
 
-    friend auto expm1(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    auto operator-(const adhoc_type& other) const -> adhoc_type
+    {
+        if (this->is_passive() && other.is_active()) {
+            return this->value - other;
+        }
+
+        if (other.is_passive()) {
+            return (*this) - other.value;
+        }
+
+        adhoc_type result(this->value - other.value);
+        result.id = mode_t::global_tape_data->generate_id();
+        if (this->id == other.id) {
+            mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
+            mode_t::global_tape_data->record_value(0.0);
+        }
+        else {
+            mode_t::global_tape_data->record_binary(OpCode::SUB, this->id, other.id, result.id);
+        }
+        return result;
+    }
+
+    auto operator*(const adhoc_type& other) const -> adhoc_type
+    {
+        if (this->is_passive() && other.is_active()) {
+            return other * this->value;
+        }
+
+        if (other.is_passive()) {
+            return (*this) * other.value;
+        }
+
+        adhoc_type result(this->value * other.value);
+        result.id = mode_t::global_tape_data->generate_id();
+        if (this->id == other.id) {
+            mode_t::global_tape_data->record_unary(OpCode::NORM, this->id, result.id);
+            mode_t::global_tape_data->record_value(this->value);
+        }
+        else {
+            mode_t::global_tape_data->record_binary(OpCode::MUL, this->id, other.id, result.id);
+            mode_t::global_tape_data->record_value(this->value);
+            mode_t::global_tape_data->record_value(other.value);
+        }
+
+        return result;
+    }
+
+    auto operator/(const adhoc_type& other) const -> adhoc_type
+    {
+
+        if (this->is_passive()) {
+            return this->value / other;
+        }
+
+        if (other.is_passive()) {
+            return *this / other.value;
+        }
+
+        adhoc_type result(this->value / other.value);
+
+        adhoc_type intermediary_result(1.0 / other.value);
+        intermediary_result.id = mode_t::global_tape_data->generate_id();
+        result.id = mode_t::global_tape_data->generate_id();
+        mode_t::global_tape_data->record_unary(OpCode::INV, other.id, intermediary_result.id);
+        mode_t::global_tape_data->record_value(intermediary_result.value);
+        mode_t::global_tape_data->record_binary(OpCode::MUL, this->id, intermediary_result.id, result.id);
+        mode_t::global_tape_data->record_value(this->value);
+        mode_t::global_tape_data->record_value(intermediary_result.value);
+        return result;
+    }
+
+    auto operator+(double other) const -> adhoc_type
+    {
+        adhoc_type result(this->value + other);
+        if (this->is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
+        }
+        return result;
+    }
+
+    auto operator-(double other) const -> adhoc_type
+    {
+        adhoc_type result(this->value - other);
+        if (this->is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
+        }
+        return result;
+    }
+
+    auto operator*(double other) const -> adhoc_type
+    {
+        adhoc_type result(this->value * other);
+        if (this->is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
+            mode_t::global_tape_data->record_value(other);
+        }
+        return result;
+    }
+
+    auto operator/(double other) const -> adhoc_type
+    {
+        adhoc_type result(this->value / other);
+        if (this->is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
+            mode_t::global_tape_data->record_value(1.0 / other);
+        }
+        return result;
+    }
+
+    auto operator=(const adhoc_type& other) -> adhoc_type& = default;
+
+    auto operator+=(const adhoc_type& other) -> adhoc_type&
+    {
+        if (this->is_passive() && other.is_active()) {
+            return *this = other + this->value;
+        }
+
+        if (other.is_passive()) {
+            return *this += other.value;
+        }
+
+        return *this = *this + other;
+    }
+
+    auto operator-=(const adhoc_type& other) -> adhoc_type&
+    {
+        if (this->is_passive() && other.is_active()) {
+            return *this = this->value - other;
+        }
+
+        if (other.is_passive()) {
+            return (*this) -= other.value;
+        }
+
+        return *this = *this - other;
+    }
+
+    auto operator*=(const adhoc_type& other) -> adhoc_type&
+    {
+        if (this->is_passive() && other.is_active()) {
+            return *this = other * this->value;
+        }
+
+        if (other.is_passive()) {
+            return (*this) *= other.value;
+        }
+
+        return *this = *this * other;
+    }
+
+    auto operator/=(const adhoc_type& other) -> adhoc_type& { return *this = *this / other; }
+    auto operator+=(double other) -> adhoc_type& { return *this = *this + other; }
+    auto operator-=(double other) -> adhoc_type& { return *this = *this - other; }
+    auto operator*=(double other) -> adhoc_type& { return *this = *this * other; }
+    auto operator/=(double other) -> adhoc_type& { return *this = *this / other; }
+
+    // these functions need to be defined here, since they are templated
+    // (templated friend functions are a dark corner of the standard)
+    friend auto exp(const adhoc_type& arg) -> adhoc_type
+    {
+        adhoc_type result(std::exp(arg.value));
+        if (arg.is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::EXP, arg.id, result.id);
+            mode_t::global_tape_data->record_value(result.value);
+        }
+        return result;
+    }
+
+    friend auto expm1(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::expm1(arg.value));
 
         if (arg.is_active()) {
             adhoc_type intermediary_result(std::exp(arg.value));
-            intermediary_result.id = opcode<Float>::global_tape_data->generate_id();
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::EXP, arg.id, intermediary_result.id);
-            opcode<Float>::global_tape_data->record_value(intermediary_result.value);
-            opcode<Float>::global_tape_data->record_unary(OpCode::ADD_C, intermediary_result.id, result.id);
+            intermediary_result.id = mode_t::global_tape_data->generate_id();
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::EXP, arg.id, intermediary_result.id);
+            mode_t::global_tape_data->record_value(intermediary_result.value);
+            mode_t::global_tape_data->record_unary(OpCode::ADD_C, intermediary_result.id, result.id);
         }
 
         return result;
     }
 
-    friend auto log(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto log(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::log(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::LOG, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::LOG, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
         }
         return result;
     }
 
-    friend auto erf(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto erf(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::erf(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::ERF, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::ERF, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
         }
         return result;
     }
 
-    friend auto erfc(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto erfc(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::erfc(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::ERFC, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::ERFC, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
         }
         return result;
     }
 
-    friend auto cos(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto cos(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::cos(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::COS, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
-            opcode<Float>::global_tape_data->record_value(result.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::COS, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
+            mode_t::global_tape_data->record_value(result.value);
         }
         return result;
     }
 
-    friend auto norm(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto norm(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::norm(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::NORM, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::NORM, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
         }
         return result;
     }
 
-    friend auto inv(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-    {
-        adhoc_type result(1.0 / arg.value);
-        if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::INV, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(result.value);
-        }
-        return result;
-    }
+    // friend auto inv(const adhoc_type& arg) -> adhoc_type
+    // {
+    //     adhoc_type result(1.0 / arg.value);
+    //     if (arg.is_active()) {
+    //         result.id = mode_t::global_tape_data->generate_id();
+    //         mode_t::global_tape_data->record_unary(OpCode::INV, arg.id, result.id);
+    //         mode_t::global_tape_data->record_value(result.value);
+    //     }
+    //     return result;
+    // }
 
-    friend auto abs(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto abs(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::abs(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::ABS, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::ABS, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
         }
         return result;
     }
 
-    friend auto sqrt(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
+    friend auto sqrt(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::sqrt(arg.value));
         if (arg.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::SQRT, arg.id, result.id);
-            opcode<Float>::global_tape_data->record_value(arg.value);
-            opcode<Float>::global_tape_data->record_value(result.value);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::SQRT, arg.id, result.id);
+            mode_t::global_tape_data->record_value(arg.value);
+            mode_t::global_tape_data->record_value(result.value);
         }
         return result;
     }
@@ -235,317 +396,45 @@ class adhoc_type {
     // template<class T>
     // inline auto pow(T /* lhs */, const adhoc_type<Float>& /* rhs */) -> adhoc_type<Float>;
 
-    friend auto pow(const adhoc_type<Float, TapeDataType>& lhs, Float rhs) -> adhoc_type<Float, TapeDataType>
+    friend auto pow(const adhoc_type& lhs, Float rhs) -> adhoc_type
     {
         adhoc_type result(std::pow(lhs.get_value(), rhs));
         if (lhs.is_active()) {
-            result.id = opcode<Float>::global_tape_data->generate_id();
-            opcode<Float>::global_tape_data->record_unary(OpCode::POW_C, lhs.id, result.id);
-            opcode<Float>::global_tape_data->record_value(lhs.value);
-            opcode<Float>::global_tape_data->record_value(rhs);
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::POW_C, lhs.id, result.id);
+            mode_t::global_tape_data->record_value(lhs.value);
+            mode_t::global_tape_data->record_value(rhs);
         }
         return result;
     }
 
-    template<class Float2, class TapeDataType2>
-    friend auto operator-(double lhs, const adhoc_type<Float2, TapeDataType2>& rhs)
-      -> adhoc_type<Float2, TapeDataType2>;
+    friend auto operator-(double lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        adhoc_type result(lhs - rhs.value);
+        if (rhs.is_active()) {
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::SUB_C, rhs.id, result.id);
+        }
+        return result;
+    }
 
-    template<class Float2, class TapeDataType2>
-    friend auto operator/(double lhs, const adhoc_type<Float2, TapeDataType2>& rhs)
-      -> adhoc_type<Float2, TapeDataType2>;
+    friend auto operator/(double lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        adhoc_type result(lhs / rhs.value);
+
+        if (rhs.is_active()) {
+            adhoc_type intermediary_result(1.0 / rhs.value);
+            intermediary_result.id = mode_t::global_tape_data->generate_id();
+            result.id = mode_t::global_tape_data->generate_id();
+            mode_t::global_tape_data->record_unary(OpCode::INV, rhs.id, intermediary_result.id);
+            mode_t::global_tape_data->record_value(intermediary_result.value);
+            mode_t::global_tape_data->record_value(lhs);
+            mode_t::global_tape_data->record_unary(OpCode::MUL_C, intermediary_result.id, result.id);
+        }
+
+        return result;
+    }
 };
-
-template<class Float, class TapeDataType>
-inline adhoc_type<Float, TapeDataType>::adhoc_type(const adhoc_type& other)
-  : value(other.value)
-  , id(other.id)
-{
-}
-
-template<class Float, class TapeDataType>
-inline adhoc_type<Float, TapeDataType>::adhoc_type(const adhoc_type&& other) noexcept
-{
-    *this = other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator-() const -> adhoc_type
-{
-    adhoc_type result(-this->value);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::SUB_C, this->id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator+(const adhoc_type& other) const -> adhoc_type
-{
-    if (this->is_passive() && other.is_active()) {
-        return other + this->value;
-    }
-
-    if (other.is_passive()) {
-        return (*this) + other.value;
-    }
-
-    adhoc_type result(this->value + other.value);
-    result.id = opcode<Float>::global_tape_data->generate_id();
-    if (this->id == other.id) {
-        opcode<Float>::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-        opcode<Float>::global_tape_data->record_value(2.0);
-    }
-    else {
-        opcode<Float>::global_tape_data->record_binary(OpCode::ADD, this->id, other.id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator+(double other) const -> adhoc_type
-{
-    adhoc_type result(this->value + other);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator-(const adhoc_type& other) const -> adhoc_type
-{
-    if (this->is_passive() && other.is_active()) {
-        return this->value - other;
-    }
-
-    if (other.is_passive()) {
-        return (*this) - other.value;
-    }
-
-    adhoc_type result(this->value - other.value);
-    result.id = opcode<Float>::global_tape_data->generate_id();
-    if (this->id == other.id) {
-        opcode<Float>::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-        opcode<Float>::global_tape_data->record_value(0.0);
-    }
-    else {
-        opcode<Float>::global_tape_data->record_binary(OpCode::SUB, this->id, other.id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator-(double other) const -> adhoc_type
-{
-    adhoc_type result(this->value - other);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator*(const adhoc_type& other) const -> adhoc_type
-{
-    if (this->is_passive() && other.is_active()) {
-        return other * this->value;
-    }
-
-    if (other.is_passive()) {
-        return (*this) * other.value;
-    }
-
-    adhoc_type result(this->value * other.value);
-    result.id = opcode<Float>::global_tape_data->generate_id();
-    if (this->id == other.id) {
-        opcode<Float>::global_tape_data->record_unary(OpCode::NORM, this->id, result.id);
-        opcode<Float>::global_tape_data->record_value(this->value);
-    }
-    else {
-        opcode<Float>::global_tape_data->record_binary(OpCode::MUL, this->id, other.id, result.id);
-        opcode<Float>::global_tape_data->record_value(this->value);
-        opcode<Float>::global_tape_data->record_value(other.value);
-    }
-
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator*(double other) const -> adhoc_type
-{
-    adhoc_type result(this->value * other);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-        opcode<Float>::global_tape_data->record_value(other);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator/(const adhoc_type& other) const -> adhoc_type
-{
-
-    if (this->is_passive()) {
-        return other.div_c(this->value);
-    }
-
-    if (other.is_passive()) {
-        return *this / other.value;
-    }
-
-    adhoc_type result(this->value / other.value);
-
-    adhoc_type intermediary_result(1.0 / other.value);
-    intermediary_result.id = opcode<Float>::global_tape_data->generate_id();
-    result.id = opcode<Float>::global_tape_data->generate_id();
-    opcode<Float>::global_tape_data->record_unary(OpCode::INV, other.id, intermediary_result.id);
-    opcode<Float>::global_tape_data->record_value(intermediary_result.value);
-    opcode<Float>::global_tape_data->record_binary(OpCode::MUL, this->id, intermediary_result.id, result.id);
-    opcode<Float>::global_tape_data->record_value(this->value);
-    opcode<Float>::global_tape_data->record_value(intermediary_result.value);
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator/(double other) const -> adhoc_type
-{
-    adhoc_type result(this->value / other);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-        opcode<Float>::global_tape_data->record_value(1.0 / other);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator=(const adhoc_type& other) -> adhoc_type& = default;
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator+=(const adhoc_type& other) -> adhoc_type&
-{
-    if (this->is_passive() && other.is_active()) {
-        return *this = other + this->value;
-    }
-
-    if (other.is_passive()) {
-        return *this += other.value;
-    }
-
-    return *this = *this + other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator+=(double other) -> adhoc_type&
-{
-    return *this = *this + other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator-=(const adhoc_type& other) -> adhoc_type&
-{
-    if (this->is_passive() && other.is_active()) {
-        return *this = this->value - other;
-    }
-
-    if (other.is_passive()) {
-        return (*this) -= other.value;
-    }
-
-    return *this = *this - other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator-=(double other) -> adhoc_type&
-{
-    return *this = *this - other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator*=(const adhoc_type& other) -> adhoc_type&
-{
-    if (this->is_passive() && other.is_active()) {
-        return *this = other * this->value;
-    }
-
-    if (other.is_passive()) {
-        return (*this) *= other.value;
-    }
-
-    return *this = *this * other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator*=(double other) -> adhoc_type&
-{
-    return *this = *this * other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator/=(const adhoc_type& other) -> adhoc_type&
-{
-    return *this = *this / other;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-adhoc_type<Float, TapeDataType>::operator/=(double other) -> adhoc_type&
-{
-    return *this = *this / other;
-}
-
-template<class Float, class TapeDataType>
-auto
-adhoc_type<Float, TapeDataType>::sub_c(double other) const -> adhoc_type
-{
-    adhoc_type result(other - this->value);
-    if (this->is_active()) {
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::SUB_C, this->id, result.id);
-    }
-    return result;
-}
-
-template<class Float, class TapeDataType>
-auto
-adhoc_type<Float, TapeDataType>::div_c(double other) const -> adhoc_type
-{
-    adhoc_type result(other / this->value);
-
-    if (this->is_active()) {
-        adhoc_type intermediary_result(1.0 / this->value);
-        intermediary_result.id = opcode<Float>::global_tape_data->generate_id();
-        result.id = opcode<Float>::global_tape_data->generate_id();
-        opcode<Float>::global_tape_data->record_unary(OpCode::INV, this->id, intermediary_result.id);
-        opcode<Float>::global_tape_data->record_value(intermediary_result.value);
-        opcode<Float>::global_tape_data->record_value(other);
-        opcode<Float>::global_tape_data->record_unary(OpCode::MUL_C, intermediary_result.id, result.id);
-    }
-
-    return result;
-}
 
 template<class Float, class TapeDataType>
 inline auto
@@ -556,23 +445,9 @@ operator+(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<
 
 template<class Float, class TapeDataType>
 inline auto
-operator-(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    return rhs.sub_c(lhs);
-}
-
-template<class Float, class TapeDataType>
-inline auto
 operator*(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
 {
     return rhs * lhs;
-}
-
-template<class Float, class TapeDataType>
-inline auto
-operator/(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    return rhs.div_c(lhs);
 }
 
 template<class T, class Float, class TapeDataType>

@@ -235,9 +235,9 @@ size_of(const Tape<Float, TapeDataType>* arg, bool capacity = false) -> std::siz
     return arg->size_of(capacity);
 }
 
-template<class T>
+template<class mode_t>
 auto
-size_of(const adhoc::smart_tape_ptr_t<adhoc::opcode<T> >& arg, bool capacity = false) -> std::size_t
+size_of(const adhoc::smart_tape_ptr_t<mode_t>& arg, bool capacity = false) -> std::size_t
 {
     return arg->size_of(capacity);
 }
