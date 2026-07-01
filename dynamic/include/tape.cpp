@@ -627,6 +627,7 @@ Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >::backprop
 
 template class Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >;
 
+#ifndef _MSC_VER
 template void
 Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
   position_t const& to);
@@ -693,6 +694,7 @@ Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompress
   backpropagate_and_reset_to<false, false>(position_t const& to);
 
 template class Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >;
+#endif
 
 template void
 Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::

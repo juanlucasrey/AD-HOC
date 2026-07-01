@@ -1096,7 +1096,8 @@ test_first_cash_instrument()
 void
 test_tape_no_default()
 {
-    using adhoc_mode2 = adhoc::opcode<double, adhoc::EnumVectorType::Valuecompression>;
+    using adhoc_mode2 =
+      adhoc::opcode<double, adhoc::EnumVectorType::Valuecompression, adhoc::IdxVectorType::BitCompression>;
     using adhoc_t2 = adhoc_mode2::type;
 
     adhoc::smart_tape_ptr_t<adhoc_mode2> tapeptr;
