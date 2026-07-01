@@ -1,6 +1,7 @@
 #include <adhoc/vector_enum.hpp>
 #include <test_simple_include.hpp>
 
+#include <chrono>
 #include <random>
 
 namespace {
