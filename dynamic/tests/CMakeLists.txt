@@ -27,6 +27,18 @@ target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
 add_test(NAME ${test_name} COMMAND ${test_name})
 target_include_directories(${test_name} SYSTEM PUBLIC ../include ../../test_simple)
 
+set(test_name "dynamic.vector_idx")
+add_executable(${test_name} vector_idx.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include ../../test_simple)
+
+set(test_name "dynamic.vector_enum")
+add_executable(${test_name} vector_enum.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include ../../test_simple)
+
 # Create adhoc library from adhoc.cpp
 add_library(adhoc_lib STATIC ../include/tape.cpp)
 target_include_directories(adhoc_lib PUBLIC ../include)

@@ -21,6 +21,9 @@
 #ifndef ADHOC_VECTOR_SIZE_OF_HPP
 #define ADHOC_VECTOR_SIZE_OF_HPP
 
+#include "vector_enum.hpp"
+#include "vector_idx.hpp"
+
 #include <cstddef>
 #include <vector>
 
@@ -33,6 +36,27 @@ vector_size_of(std::vector<T> const& vec, bool capacity = false) -> std::size_t
     std::size_t size = 0;
     size += sizeof(T) * (capacity ? vec.capacity() : vec.size());
     return size;
+}
+
+template<class T>
+auto
+vector_size_of(vector_idx<T> const& vec, bool capacity) -> std::size_t
+{
+    return vec.size_of(capacity);
+}
+
+template<class T, std::size_t Bits, class StoringType>
+auto
+vector_size_of(vector_enum<T, Bits, StoringType> const& vec, bool capacity) -> std::size_t
+{
+    return vec.size_of(capacity);
+}
+
+template<class T, std::size_t NumValues, class StoringType>
+auto
+vector_size_of(vector_enum2<T, NumValues, StoringType> const& vec, bool capacity) -> std::size_t
+{
+    return vec.size_of(capacity);
 }
 
 } // namespace adhoc

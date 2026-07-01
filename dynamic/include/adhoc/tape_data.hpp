@@ -21,6 +21,9 @@
 #ifndef ADHOC_TAPE_DATA_HPP
 #define ADHOC_TAPE_DATA_HPP
 
+#include "vector_enum.hpp"
+#include "vector_idx.hpp"
+
 #include <cstdint>
 #include <vector>
 
@@ -57,14 +60,27 @@ enum class OpCode : std::uint8_t {
 };
 
 enum class EnumVectorType { Simple, BitCompression, Valuecompression };
+enum class IdxVectorType { Simple, BitCompression };
 
-template<EnumVectorType enumvectype>
+template<EnumVectorType enumvectype, IdxVectorType idxvectype>
 class TapeData {
+  private:
+    template<class T, std::size_t NumValues>
+    using enumvector_t = std::conditional_t<enumvectype == EnumVectorType::Simple,
+                                            std::vector<T>,
+                                            std::conditional_t<enumvectype == EnumVectorType::BitCompression,
+                                                               vector_enum<T, NumValues>,
+                                                               vector_enum2<T, NumValues> > >;
+
+    template<class T>
+    using idxvector_t = std::conditional_t<idxvectype == IdxVectorType::Simple, std::vector<T>, vector_idx<T> >;
+
   public:
     static constexpr EnumVectorType tape_enumvector_t = enumvectype;
+    static constexpr IdxVectorType tape_idxvector_t = idxvectype;
 
-    std::vector<OpCode> ops;
-    std::vector<std::size_t> ids;
+    enumvector_t<OpCode, NumValuesOpcode> ops;
+    idxvector_t<std::size_t> ids;
     std::vector<double> vals;
     std::size_t next_id{ 0 };
 
