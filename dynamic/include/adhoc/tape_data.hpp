@@ -59,7 +59,10 @@ enum class OpCode : std::uint8_t {
 enum class EnumVectorType { Simple, BitCompression, Valuecompression };
 
 template<EnumVectorType enumvectype>
-struct TapeData {
+class TapeData {
+  public:
+    static constexpr EnumVectorType tape_enumvector_t = enumvectype;
+
     std::vector<OpCode> ops;
     std::vector<std::size_t> ids;
     std::vector<double> vals;
