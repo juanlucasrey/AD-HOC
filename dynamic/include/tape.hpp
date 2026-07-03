@@ -51,20 +51,22 @@ enum class Method {
 
 struct PositionImpl;
 
-template<class Float, class TapeDataType>
+template<class type>
 class Tape {
   private:
     struct Impl;
 
+    using tape_data_t = typename type::tape_data_t;
+
     std::unique_ptr<Impl> impl;
-    TapeDataType& data;
+    tape_data_t& data;
 
     void reserve_input(std::size_t n_registered);
     void reserve_output(std::size_t n_registered);
 
   public:
-    void register_variable(adhoc_type<Float, TapeDataType> const& var);
-    void register_variable(adhoc_type<Float, TapeDataType>& var);
+    void register_variable(type const& var);
+    void register_variable(type& var);
 
     template<class Container>
     void register_variable(Container&& vars)
@@ -76,8 +78,8 @@ class Tape {
         }
     }
 
-    void register_output_variable(adhoc_type<Float, TapeDataType> const& var);
-    void register_output_variable(adhoc_type<Float, TapeDataType>& var);
+    void register_output_variable(type const& var);
+    void register_output_variable(type& var);
 
     template<class Container>
     void register_output_variable(Container&& vars)
@@ -113,7 +115,7 @@ class Tape {
 
     // void end_implicit_function() { ops.push_back(OpCode::IFT_END); }
 
-    Tape(TapeDataType& tape_data);
+    Tape(tape_data_t& tape_data);
     ~Tape();
 
     // only for lossy tapes for now
@@ -147,12 +149,10 @@ class Tape {
 
     template<bool ResetInPlace = false, bool Log = false>
     void backpropagate_and_reset_to(position_t const& to);
-    void set_derivative(adhoc_type<Float, TapeDataType> const& var, double deriv, std::size_t lane = 0);
-    auto get_derivative(adhoc_type<Float, TapeDataType> const& var, std::size_t lane = 0) const -> double;
+    void set_derivative(type const& var, double deriv, std::size_t lane = 0);
+    auto get_derivative(type const& var, std::size_t lane = 0) const -> double;
 
-    auto get_derivative(adhoc_type<Float, TapeDataType> const& var1,
-                        adhoc_type<Float, TapeDataType> const& var2,
-                        std::size_t lane = 0) const -> double;
+    auto get_derivative(type const& var1, type const& var2, std::size_t lane = 0) const -> double;
     void zero_adjoints();
 
     auto get_position() const -> position_t;
@@ -221,16 +221,16 @@ class smart_tape_ptr_t {
     static auto use_count() -> std::size_t { return ref_count; }
 };
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-size_of(const Tape<Float, TapeDataType>& arg, bool capacity = false) -> std::size_t
+size_of(const Tape<type>& arg, bool capacity = false) -> std::size_t
 {
     return arg.size_of(capacity);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-size_of(const Tape<Float, TapeDataType>* arg, bool capacity = false) -> std::size_t
+size_of(const Tape<type>* arg, bool capacity = false) -> std::size_t
 {
     return arg->size_of(capacity);
 }
