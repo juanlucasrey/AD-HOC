@@ -50,78 +50,78 @@ record_register(ContainerOps& ops, ContainerIds& ids, OpCode op, std::size_t arg
 
 } // namespace
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::position_t::position_t()
+template<class type>
+Tape<type>::position_t::position_t()
   : impl(std::make_unique<PositionImpl>()){};
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::position_t::~position_t() = default;
+template<class type>
+Tape<type>::position_t::~position_t() = default;
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::position_t&
-Tape<Float, TapeDataType>::position_t::operator=(position_t other)
+template<class type>
+Tape<type>::position_t&
+Tape<type>::position_t::operator=(position_t other)
 {
     std::swap(this->impl, other.impl);
     return *this;
 }
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::position_t::position_t(const position_t& other)
+template<class type>
+Tape<type>::position_t::position_t(const position_t& other)
   : impl(std::make_unique<PositionImpl>(*other.impl))
 {
 }
 
-template<class Float, class TapeDataType>
-struct Tape<Float, TapeDataType>::Impl {
-    std::variant<BackPropagator<Float>,
-                 BackPropagator<Float, true>,
-                 BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2<Float, MapType::STD_MAP, true>,
-                 BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true>,
-                 BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true>,
-                 BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true>,
-                 BackPropagatorLossy<Float>,
-                 BackPropagatorLossy<Float, true>,
-                 BackPropagatorLossyCompressed<Float>,
-                 BackPropagatorLossyCompressed<Float, true>,
-                 BackPropagatorLossyPathReuse<Float>,
-                 BackPropagatorLossyPathReuse<Float, true>,
-                 BackPropagatorLossyCompressedPathReuse<Float>,
-                 BackPropagatorLossyCompressedPathReuse<Float, true>,
-                 BackPropagatorLossyCompressedPathReuseV<Float>,
-                 BackPropagatorLossyCompressedPathReuseV<Float, true>,
+template<class type>
+struct Tape<type>::Impl {
+    std::variant<BackPropagator<double>,
+                 BackPropagator<double, true>,
+                 BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE>,
+                 BackPropagator2<double, MapType::STD_MAP, true>,
+                 BackPropagator2<double, MapType::STD_UNORDERED_MAP, true>,
+                 BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true>,
+                 BackPropagatorLossy<double>,
+                 BackPropagatorLossy<double, true>,
+                 BackPropagatorLossyCompressed<double>,
+                 BackPropagatorLossyCompressed<double, true>,
+                 BackPropagatorLossyPathReuse<double>,
+                 BackPropagatorLossyPathReuse<double, true>,
+                 BackPropagatorLossyCompressedPathReuse<double>,
+                 BackPropagatorLossyCompressedPathReuse<double, true>,
+                 BackPropagatorLossyCompressedPathReuseV<double>,
+                 BackPropagatorLossyCompressedPathReuseV<double, true>,
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE>,
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >
-      bp = BackPropagator<Float>();
+      bp = BackPropagator<double>();
 };
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::Tape(TapeDataType& tape_data)
+template<class type>
+Tape<type>::Tape(tape_data_t& tape_data)
   : impl(std::make_unique<Impl>())
   , data(tape_data)
 {
 }
 
-template<class Float, class TapeDataType>
-Tape<Float, TapeDataType>::~Tape() = default;
+template<class type>
+Tape<type>::~Tape() = default;
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::reserve_input(std::size_t count_registered)
+Tape<type>::reserve_input(std::size_t count_registered)
 {
     std::visit([count_registered](auto& arg) { arg.reserve_input(count_registered); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::reserve_output(std::size_t count_registered)
+Tape<type>::reserve_output(std::size_t count_registered)
 {
     std::visit([count_registered](auto& arg) { arg.reserve_output(count_registered); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType> const& var)
+Tape<type>::register_variable(type const& var)
 {
     if (var.is_passive()) {
         std::size_t const new_id = this->data.generate_id();
@@ -131,9 +131,9 @@ Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType> con
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType>& var)
+Tape<type>::register_variable(type& var)
 {
     if (var.is_passive()) {
         std::size_t const new_id = this->data.generate_id();
@@ -143,9 +143,9 @@ Tape<Float, TapeDataType>::register_variable(adhoc_type<Float, TapeDataType>& va
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataType> const& var)
+Tape<type>::register_output_variable(type const& var)
 {
     if (var.is_active()) {
         std::size_t const new_id = this->data.generate_id();
@@ -157,9 +157,9 @@ Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataTy
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataType>& var)
+Tape<type>::register_output_variable(type& var)
 {
     if (var.is_active()) {
         std::size_t const new_id = this->data.generate_id();
@@ -171,23 +171,23 @@ Tape<Float, TapeDataType>::register_output_variable(adhoc_type<Float, TapeDataTy
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::set_lanes(std::size_t num_lanes)
+Tape<type>::set_lanes(std::size_t num_lanes)
 {
     std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_lanes() const -> std::size_t
+Tape<type>::get_lanes() const -> std::size_t
 {
     return std::visit([](auto& arg) { return arg.get_lanes(); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::set_method(Method m)
+Tape<type>::set_method(Method m)
 {
     if (m == Method::FirstOrderSimple) {
         this->impl->bp.template emplace<BackPropagator<double> >();
@@ -248,75 +248,75 @@ Tape<Float, TapeDataType>::set_method(Method m)
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_method() const -> Method
+Tape<type>::get_method() const -> Method
 {
-    if (std::holds_alternative<BackPropagator<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator<double> >(this->impl->bp)) {
         return Method::FirstOrderSimple;
     }
 
-    if (std::holds_alternative<BackPropagator<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator<double, true> >(this->impl->bp)) {
         return Method::FirstOrderSimd8;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return Method::SecondOrderSimple;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_stdmap;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_stdunorderedmap;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_ankerl;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_boost;
     }
 
-    if (std::holds_alternative<BackPropagatorLossy<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossy<double> >(this->impl->bp)) {
         return Method::FirstOrderLossy;
     }
 
-    if (std::holds_alternative<BackPropagatorLossy<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossy<double, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossy;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressed<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double> >(this->impl->bp)) {
         return Method::FirstOrderLossyCompressed;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressed<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressed;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double> >(this->impl->bp)) {
         return Method::FirstOrderLossyPathReuse;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyPathReuse;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double> >(this->impl->bp)) {
         return Method::FirstOrderLossyCompressedPathReuse;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressedPathReuse;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double> >(this->impl->bp)) {
         return Method::FirstOrderLossyCompressedPathReuseV;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double, true> >(this->impl->bp)) {
         return Method::FirstOrderVLossyCompressedPathReuseV;
     }
 
@@ -331,75 +331,75 @@ Tape<Float, TapeDataType>::get_method() const -> Method
     throw std::runtime_error("Invalid backpropagator type");
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_order() const -> std::size_t
+Tape<type>::get_order() const -> std::size_t
 {
-    if (std::holds_alternative<BackPropagator<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagator<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator<double, true> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagator2<Float, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
         return 2;
     }
 
-    if (std::holds_alternative<BackPropagatorLossy<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossy<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossy<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossy<double, true> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressed<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressed<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double, true> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double, true> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double, true> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double> >(this->impl->bp)) {
         return 1;
     }
 
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<Float, true> >(this->impl->bp)) {
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double, true> >(this->impl->bp)) {
         return 1;
     }
 
@@ -415,16 +415,16 @@ Tape<Float, TapeDataType>::get_order() const -> std::size_t
     return 0;
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::set_checkpoint()
+Tape<type>::set_checkpoint()
 {
     std::visit([ops_size = data.ops.size()](auto& arg) { arg.set_checkpoint(ops_size); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::backpropagate()
+Tape<type>::backpropagate()
 {
     std::visit(
       [&data = this->data](auto& arg) {
@@ -434,28 +434,28 @@ Tape<Float, TapeDataType>::backpropagate()
       this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::backpropagate_to(position_t const& pos)
+Tape<type>::backpropagate_to(position_t const& pos)
 {
     std::visit(
       [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<false, false, false>(*pos.impl, data); },
       this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 template<bool ResetInPlace, bool Log>
 void
-Tape<Float, TapeDataType>::backpropagate_and_reset_to(position_t const& pos)
+Tape<type>::backpropagate_and_reset_to(position_t const& pos)
 {
     std::visit(
       [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(*pos.impl, data); },
       this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::set_derivative(adhoc_type<Float, TapeDataType> const& var, double deriv, std::size_t lane)
+Tape<type>::set_derivative(type const& var, double deriv, std::size_t lane)
 {
     if (var.is_active()) {
         std::visit([var_id = var.id, deriv, lane, ops_size = data.ops.size()](
@@ -464,9 +464,9 @@ Tape<Float, TapeDataType>::set_derivative(adhoc_type<Float, TapeDataType> const&
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const& var, std::size_t lane) const -> double
+Tape<type>::get_derivative(type const& var, std::size_t lane) const -> double
 {
     if (var.is_active()) {
         return std::visit([var_id = var.id, lane](auto& arg) { return arg.get_derivative(var_id, lane); },
@@ -475,11 +475,9 @@ Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const&
     return 0.;
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const& var1,
-                                          adhoc_type<Float, TapeDataType> const& var2,
-                                          std::size_t lane) const -> double
+Tape<type>::get_derivative(type const& var1, type const& var2, std::size_t lane) const -> double
 {
     if (var1.is_active() && var2.is_active()) {
         return std::visit([var_id1 = var1.id, var_id2 = var2.id, lane](
@@ -489,25 +487,25 @@ Tape<Float, TapeDataType>::get_derivative(adhoc_type<Float, TapeDataType> const&
     return 0;
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::zero_adjoints()
+Tape<type>::zero_adjoints()
 {
     std::visit([](auto& arg) { arg.zero_adjoints(); }, this->impl->bp);
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::get_position() const -> position_t
+Tape<type>::get_position() const -> position_t
 {
     position_t result;
     result.impl = std::make_unique<PositionImpl>(data.ops.size(), data.ids.size(), data.vals.size());
     return result;
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 void
-Tape<Float, TapeDataType>::print() const
+Tape<type>::print() const
 {
     std::cout << "Tape contains " << data.ops.size() << " operations:" << std::endl;
 
@@ -597,9 +595,9 @@ Tape<Float, TapeDataType>::print() const
     }
 }
 
-template<class Float, class TapeDataType>
+template<class type>
 auto
-Tape<Float, TapeDataType>::size_of(bool capacity) const -> std::size_t
+Tape<type>::size_of(bool capacity) const -> std::size_t
 {
     std::size_t size = 0;
     size += sizeof(*impl);
@@ -613,36 +611,35 @@ Tape<Float, TapeDataType>::size_of(bool capacity) const -> std::size_t
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
 template void
-Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false,
-                                                                                                           false>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >;
+template class Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
 
 #ifndef _MSC_VER
 template void
-Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, false>(
-  position_t const& to);
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >;
+template class Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >;
 
 // template void
 // Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
@@ -706,36 +703,38 @@ template class Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorTyp
 // template class Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >;
 
 template void
-Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >;
+template class Tape<
+  adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >;
 
 #endif
 
 template void
-Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<adhoc_type<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >;
+template class Tape<
+  adhoc_type<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >;
 
 #endif
 

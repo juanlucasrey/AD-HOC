@@ -31,7 +31,7 @@
 
 namespace adhoc {
 
-template<class Float, class TapeDataType>
+template<class type>
 class Tape;
 
 template<class Float, class TapeDataType>
@@ -47,8 +47,8 @@ template<class FloatPrimal,
 class opcode {
   public:
     using tape_data_t = TapeData<FloatTape, enumvectype, idxvectype>;
-    using tape_t = Tape<FloatPrimal, tape_data_t>;
     using type = adhoc_type<FloatPrimal, tape_data_t>;
+    using tape_t = Tape<type>;
     inline static thread_local tape_t* global_tape = nullptr;
 
     // windows doesn't like it when these are private, even though they are only used in the friend classes
@@ -63,7 +63,7 @@ class opcode {
 template<class Float, class TapeDataType>
 class adhoc_type {
   private:
-    friend Tape<Float, TapeDataType>;
+    friend Tape<adhoc_type<Float, TapeDataType> >;
     using mode_t =
       opcode<Float, typename TapeDataType::Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
 
@@ -71,6 +71,7 @@ class adhoc_type {
     mutable std::size_t id{ passive_id<std::size_t> };
 
   public:
+    using tape_data_t = TapeDataType;
     adhoc_type() = default;
 
     adhoc_type(Float val)
