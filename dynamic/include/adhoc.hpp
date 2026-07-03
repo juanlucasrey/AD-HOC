@@ -40,14 +40,15 @@ class adhoc_type;
 template<class mode_t>
 class smart_tape_ptr_t;
 
-template<class Float,
+template<class FloatPrimal,
+         class FloatTape = FloatPrimal,
          EnumVectorType enumvectype = EnumVectorType::Simple,
          IdxVectorType idxvectype = IdxVectorType::Simple>
 class opcode {
   public:
-    using tape_data_t = TapeData<enumvectype, idxvectype>;
-    using tape_t = Tape<Float, tape_data_t>;
-    using type = adhoc_type<Float, tape_data_t>;
+    using tape_data_t = TapeData<FloatTape, enumvectype, idxvectype>;
+    using tape_t = Tape<FloatPrimal, tape_data_t>;
+    using type = adhoc_type<FloatPrimal, tape_data_t>;
     inline static thread_local tape_t* global_tape = nullptr;
 
     // windows doesn't like it when these are private, even though they are only used in the friend classes
@@ -63,7 +64,8 @@ template<class Float, class TapeDataType>
 class adhoc_type {
   private:
     friend Tape<Float, TapeDataType>;
-    using mode_t = opcode<Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
+    using mode_t =
+      opcode<Float, typename TapeDataType::Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
 
     double value{ 0. };
     mutable std::size_t id{ passive_id<std::size_t> };

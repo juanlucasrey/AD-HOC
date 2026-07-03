@@ -613,103 +613,129 @@ Tape<Float, TapeDataType>::size_of(bool capacity) const -> std::size_t
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
 template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
+Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
   position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
+Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
   position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
+Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
   position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, false>(
+Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false,
+                                                                                                           false>(
   position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::Simple> >;
+template class Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> >;
+
+template void
+Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
+  position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
+  position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
+  position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, false>(
+  position_t const& to);
+
+template class Tape<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> >;
 
 #ifndef _MSC_VER
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<true, false>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<false, true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<false,
-                                                                                                           false>(
-  position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::Simple> >;
+// template class Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >;
 
-template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<true,
-                                                                                                             true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<true,
-                                                                                                             false>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<false,
-                                                                                                             true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::Simple> >::backpropagate_and_reset_to<false,
-                                                                                                             false>(
-  position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::Simple> >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::Simple> >;
+// template class Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::Simple> >;
 
-//
-template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::BitCompression> >::backpropagate_and_reset_to<true, true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::BitCompression> >::backpropagate_and_reset_to<true, false>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::BitCompression> >::backpropagate_and_reset_to<false, true>(
-  position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::BitCompression> >::backpropagate_and_reset_to<false,
-                                                                                                           false>(
-  position_t const& to);
+// //
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::Simple, IdxVectorType::BitCompression> >;
+// template class Tape<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::BitCompression> >;
 
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
-  backpropagate_and_reset_to<true, true>(position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
-  backpropagate_and_reset_to<true, false>(position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
-  backpropagate_and_reset_to<false, true>(position_t const& to);
-template void
-Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
-  backpropagate_and_reset_to<false, false>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::BitCompression, IdxVectorType::BitCompression> >;
+// template class Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >;
 #endif
 
 template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
   backpropagate_and_reset_to<true, true>(position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
   backpropagate_and_reset_to<true, false>(position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
   backpropagate_and_reset_to<false, true>(position_t const& to);
 template void
-Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<double, TapeData<EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >;
+template class Tape<double, TapeData<double, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >;
+
+template void
+Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+  backpropagate_and_reset_to<true, true>(position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+  backpropagate_and_reset_to<true, false>(position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+  backpropagate_and_reset_to<false, true>(position_t const& to);
+template void
+Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >::
+  backpropagate_and_reset_to<false, false>(position_t const& to);
+
+template class Tape<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> >;
+
 #endif
 
 } // namespace adhoc
