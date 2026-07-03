@@ -256,7 +256,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const der_local_1 = 2.0 * vals[val_idx];
+                    double const val = vals[val_idx];
+                    double const der_local_1 = 2.0 * val;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -267,7 +268,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const der_local_1 = -vals[val_idx] * vals[val_idx];
+                    double const val = vals[val_idx];
+                    double const der_local_1 = -val * val;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -278,7 +280,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const der_local_1 = std::copysign(1.0, vals[val_idx]);
+                    double const val = vals[val_idx];
+                    double const der_local_1 = std::copysign(1.0, val);
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -300,7 +303,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const der_local_1 = 1.0 / vals[val_idx];
+                    double const val = vals[val_idx];
+                    double const der_local_1 = 1.0 / val;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -312,7 +316,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
                     constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
+                    double const val = vals[val_idx];
+                    double const der_local_1 = std::exp(-val * val) * two_over_root_pi;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -324,7 +329,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
                     constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                    double const der_local_1 = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
+                    double const val = vals[val_idx];
+                    double const der_local_1 = std::exp(-val * val) * minus_two_over_root_pi;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -335,7 +341,8 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const der_local_1 = -std::sin(vals[val_idx]);
+                    double const val = vals[val_idx];
+                    double const der_local_1 = -std::sin(val);
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;
@@ -346,8 +353,10 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 if (use_this_op) {
                     std::size_t const arg_id = ids[id_idx];
                     std::size_t const res_id = ids[id_idx + 1];
-                    double const one_over_in = 1. / vals[val_idx];
-                    double const der_local_1 = 0.5 * vals[val_idx + 1] * one_over_in;
+                    double const val1 = vals[val_idx];
+                    double const val2 = vals[val_idx + 1];
+                    double const one_over_in = 1.0 / val1;
+                    double const der_local_1 = 0.5 * val2 * one_over_in;
                     mul_add_derivative(arg_id, res_id, der_local_1);
                 }
                 break;

@@ -287,7 +287,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::NORM: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = 2.0 * data.vals[val_idx];
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = 2.0 * val;
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -296,7 +297,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::INV: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = -data.vals[val_idx] * data.vals[val_idx];
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = -val * val;
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -305,7 +307,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::ABS: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = std::copysign(1.0, data.vals[val_idx]);
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = std::copysign(1.0, val);
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -323,7 +326,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::LOG: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = 1.0 / data.vals[val_idx];
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = 1.0 / val;
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -333,8 +337,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
                             constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                            double const der_local_1 =
-                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * two_over_root_pi;
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = std::exp(-val * val) * two_over_root_pi;
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -344,8 +348,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
                             constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                            double const der_local_1 =
-                              std::exp(-data.vals[val_idx] * data.vals[val_idx]) * minus_two_over_root_pi;
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = std::exp(-val * val) * minus_two_over_root_pi;
                             result = der_local_1;
                         }
                         val_idx += 1;
@@ -354,7 +358,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::COS: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const der_local_1 = -std::sin(data.vals[val_idx]);
+                            double const val = data.vals[val_idx];
+                            double const der_local_1 = -std::sin(val);
                             result = der_local_1;
                         }
                         val_idx += 2;
@@ -363,8 +368,10 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     case OpCode::SQRT: {
                         bool const use_this_op = lossy_tape.use_op[use_op_idx++];
                         if (use_this_op) {
-                            double const one_over_in = 1. / data.vals[val_idx];
-                            double const der_local_1 = 0.5 * data.vals[val_idx + 1] * one_over_in;
+                            double const val1 = data.vals[val_idx];
+                            double const val2 = data.vals[val_idx + 1];
+                            double const one_over_in = 1. / val1;
+                            double const der_local_1 = 0.5 * val2 * one_over_in;
                             result = der_local_1;
                         }
                         val_idx += 2;
@@ -1824,7 +1831,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const multiplier = 2.0 * vals[val_idx];
+                        double const val = vals[val_idx];
+                        double const multiplier = 2.0 * val;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1835,7 +1843,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const multiplier = -vals[val_idx] * vals[val_idx];
+                        double const val = vals[val_idx];
+                        double const multiplier = -val * val;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1846,7 +1855,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const multiplier = std::copysign(1.0, vals[val_idx]);
+                        double const val = vals[val_idx];
+                        double const multiplier = std::copysign(1.0, val);
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1868,7 +1878,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const multiplier = 1.0 / vals[val_idx];
+                        double const val = vals[val_idx];
+                        double const multiplier = 1.0 / val;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1880,7 +1891,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
                         constexpr double two_over_root_pi = 2. * std::numbers::inv_sqrtpi_v<double>;
-                        double const multiplier = std::exp(-vals[val_idx] * vals[val_idx]) * two_over_root_pi;
+                        double const val = vals[val_idx];
+                        double const multiplier = std::exp(-val * val) * two_over_root_pi;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1892,7 +1904,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
                         constexpr double minus_two_over_root_pi = -2. * std::numbers::inv_sqrtpi_v<double>;
-                        double const multiplier = std::exp(-vals[val_idx] * vals[val_idx]) * minus_two_over_root_pi;
+                        double const val = vals[val_idx];
+                        double const multiplier = std::exp(-val * val) * minus_two_over_root_pi;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 1;
@@ -1903,7 +1916,8 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const multiplier = -std::sin(vals[val_idx]);
+                        double const val = vals[val_idx];
+                        double const multiplier = -std::sin(val);
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 2;
@@ -1914,8 +1928,10 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
                     if (use_this_op) {
                         std::size_t const arg_id = ids[id_idx];
                         std::size_t const res_id = ids[id_idx + 1];
-                        double const one_over_in = 1. / vals[val_idx];
-                        double const multiplier = 0.5 * vals[val_idx + 1] * one_over_in;
+                        double const val1 = vals[val_idx];
+                        double const val2 = vals[val_idx + 1];
+                        double const one_over_in = 1. / val1;
+                        double const multiplier = 0.5 * val2 * one_over_in;
                         update_univariate.template operator()<mul_type::ANY>(arg_id, res_id, multiplier);
                     }
                     val_idx += 2;

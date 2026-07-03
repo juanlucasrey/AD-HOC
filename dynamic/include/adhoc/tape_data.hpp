@@ -62,7 +62,7 @@ enum class OpCode : std::uint8_t {
 enum class EnumVectorType { Simple, BitCompression, Valuecompression };
 enum class IdxVectorType { Simple, BitCompression };
 
-template<EnumVectorType enumvectype, IdxVectorType idxvectype>
+template<class FloatTape, EnumVectorType enumvectype, IdxVectorType idxvectype>
 class TapeData {
   private:
     template<class T, std::size_t NumValues>
@@ -76,12 +76,13 @@ class TapeData {
     using idxvector_t = std::conditional_t<idxvectype == IdxVectorType::Simple, std::vector<T>, vector_idx<T> >;
 
   public:
+    using Float = FloatTape;
     static constexpr EnumVectorType tape_enumvector_t = enumvectype;
     static constexpr IdxVectorType tape_idxvector_t = idxvectype;
 
     enumvector_t<OpCode, NumValuesOpcode> ops;
     idxvector_t<std::size_t> ids;
-    std::vector<double> vals;
+    std::vector<Float> vals;
     std::size_t next_id{ 0 };
 
     void record_unary(OpCode op, std::size_t arg_id, std::size_t res_id)
@@ -101,7 +102,11 @@ class TapeData {
 
     auto generate_id() -> std::size_t { return this->next_id++; }
 
-    void record_value(double const value) { this->vals.push_back(value); }
+    template<class FloatInput>
+    void record_value(FloatInput const value)
+    {
+        this->vals.push_back(static_cast<Float>(value));
+    }
 };
 
 } // namespace adhoc
