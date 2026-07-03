@@ -21,6 +21,8 @@
 #ifndef ADHOC_BUFFER_T_HPP
 #define ADHOC_BUFFER_T_HPP
 
+#include "vector_size_of.hpp"
+
 #include <optional>
 #include <span>
 #include <type_traits>
@@ -28,7 +30,7 @@
 
 namespace adhoc {
 
-template<class T = std::nullopt_t, bool Vectorised = false>
+template<class Float = std::nullopt_t, bool Vectorised = false>
 class buffer_t {
   private:
     std::size_t m_size{ 0 };
@@ -37,7 +39,7 @@ class buffer_t {
     std::vector<std::size_t> free_positions;
 
     struct empty_t {};
-    std::conditional_t<std::is_same_v<T, std::nullopt_t>, empty_t, std::vector<T> > m_data;
+    std::conditional_t<std::is_same_v<Float, std::nullopt_t>, empty_t, std::vector<Float> > m_data;
 
   public:
     buffer_t() = default;
@@ -59,7 +61,7 @@ class buffer_t {
         if (this->free_positions.empty()) {
             std::size_t pos = this->m_size;
             ++this->m_size;
-            if constexpr (!std::is_same_v<T, std::nullopt_t> && Allocate) {
+            if constexpr (!std::is_same_v<Float, std::nullopt_t> && Allocate) {
                 this->m_data.resize(this->m_size * this->m_num_lanes);
                 this->m_allocated_size = this->m_size;
             }
@@ -71,9 +73,9 @@ class buffer_t {
 
         if constexpr (Reset) {
             if constexpr (Vectorised) {
-                double* dest = &this->m_data[pos * this->m_num_lanes];
+                auto dest = this->operator[](pos);
 #pragma omp simd
-                for (std::size_t i = 0; i < this->m_num_lanes; ++i) {
+                for (std::size_t i = 0; i < dest.size(); ++i) {
                     dest[i] = 0.;
                 }
             }
@@ -86,27 +88,27 @@ class buffer_t {
 
     auto free_loc(std::size_t pos) -> void { this->free_positions.push_back(pos); }
 
-    using buffer_result_t = std::conditional_t<Vectorised, std::span<T>, T&>;
+    using buffer_result_t = std::conditional_t<Vectorised, std::span<Float>, Float&>;
 
     auto operator[](std::size_t pos) -> buffer_result_t
     {
         if constexpr (Vectorised) {
-            return std::span<double>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);
+            return std::span<Float>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);
         }
         else {
-            return this->m_data[pos * this->m_num_lanes];
+            return this->m_data[pos];
         }
     }
 
-    using buffer_result_const_t = std::conditional_t<Vectorised, std::span<T const>, T>;
+    using buffer_result_const_t = std::conditional_t<Vectorised, std::span<Float const>, Float>;
 
-    auto operator[](std::size_t pos) const -> const buffer_result_const_t
+    auto operator[](std::size_t pos) const -> buffer_result_const_t
     {
         if constexpr (Vectorised) {
-            return std::span<double const>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);
+            return std::span<Float const>(&this->m_data[pos * this->m_num_lanes], this->m_num_lanes);
         }
         else {
-            return this->m_data[pos * this->m_num_lanes];
+            return this->m_data[pos];
         }
     }
 
@@ -114,16 +116,16 @@ class buffer_t {
     {
         std::size_t size = 0;
         size += 2 * sizeof(std::size_t); // m_num_lanes, size
-        size += sizeof(std::size_t) * (capacity ? this->free_positions.capacity() : this->free_positions.size());
-        if constexpr (!std::is_same_v<T, empty_t>) {
-            size += sizeof(T) * (capacity ? this->m_data.capacity() : this->m_data.size());
+        size += vector_size_of(this->free_positions, capacity);
+        if constexpr (!std::is_same_v<Float, empty_t>) {
+            size += vector_size_of(this->m_data, capacity);
         }
         return size;
     }
 
     auto resize(std::size_t new_size) -> void
     {
-        if constexpr (!std::is_same_v<T, empty_t>) {
+        if constexpr (!std::is_same_v<Float, empty_t>) {
             this->m_data.resize(new_size * this->m_num_lanes);
             this->m_allocated_size = new_size;
         }
@@ -134,7 +136,7 @@ class buffer_t {
 
     auto allocate()
     {
-        if constexpr (!std::is_same_v<T, std::nullopt_t>) {
+        if constexpr (!std::is_same_v<Float, std::nullopt_t>) {
             this->m_data.resize(this->m_size * this->m_num_lanes);
             this->m_allocated_size = this->m_size;
         }
