@@ -24,6 +24,7 @@
 #include "mask.hpp"
 
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -31,7 +32,7 @@
 
 namespace adhoc {
 
-template<class T, std::size_t NumValues, class StoringType = std::uint64_t>
+template<class T, std::size_t NumValues, std::unsigned_integral StoringType = std::uint64_t>
 class vector_enum {
   private:
     static constexpr bool use_branching = false;
@@ -201,7 +202,7 @@ class vector_enum {
     }
 };
 
-template<class T, std::size_t NumValues, class StoringType = std::uint64_t>
+template<class T, std::size_t NumValues, std::unsigned_integral StoringType = std::uint64_t>
 class vector_enum2 {
   private:
     static constexpr bool use_branching = false;

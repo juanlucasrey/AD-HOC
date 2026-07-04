@@ -28,12 +28,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <numbers>
 #include <vector>
 
 namespace adhoc {
 
-template<class Float, bool Vectorised = false>
+template<std::floating_point Float, bool Vectorised = false>
 class BackPropagatorLossy {
   private:
     std::vector<std::size_t> node_location_on_buffer;
@@ -153,7 +154,7 @@ class BackPropagatorLossy {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, bool Vectorised>
+template<std::floating_point Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)

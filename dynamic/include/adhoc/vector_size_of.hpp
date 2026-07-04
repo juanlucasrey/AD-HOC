@@ -38,21 +38,21 @@ vector_size_of(std::vector<T> const& vec, bool capacity = false) -> std::size_t
     return size;
 }
 
-template<class T>
+template<std::unsigned_integral T>
 auto
 vector_size_of(vector_idx<T> const& vec, bool capacity) -> std::size_t
 {
     return vec.size_of(capacity);
 }
 
-template<class T, std::size_t Bits, class StoringType>
+template<class T, std::size_t Bits, std::unsigned_integral StoringType>
 auto
 vector_size_of(vector_enum<T, Bits, StoringType> const& vec, bool capacity) -> std::size_t
 {
     return vec.size_of(capacity);
 }
 
-template<class T, std::size_t NumValues, class StoringType>
+template<class T, std::size_t NumValues, std::unsigned_integral StoringType>
 auto
 vector_size_of(vector_enum2<T, NumValues, StoringType> const& vec, bool capacity) -> std::size_t
 {

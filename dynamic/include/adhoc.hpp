@@ -23,10 +23,9 @@
 
 #include <cmath>
 #include <complex>
+#include <concepts>
 #include <cstddef>
 #include <vector>
-
-#include <concepts>
 
 #include "adhoc/passive_id.hpp"
 #include "adhoc/tape_data.hpp"
@@ -36,14 +35,14 @@ namespace adhoc {
 template<class type>
 class Tape;
 
-template<class Float, class TapeDataType>
+template<std::floating_point Float, class TapeDataType>
 class adhoc_type;
 
 template<class mode_t>
 class smart_tape_ptr_t;
 
-template<class FloatPrimal,
-         class FloatTape = FloatPrimal,
+template<std::floating_point FloatPrimal,
+         std::floating_point FloatTape = FloatPrimal,
          EnumVectorType enumvectype = EnumVectorType::Simple,
          IdxVectorType idxvectype = IdxVectorType::Simple>
 class opcode {
@@ -62,10 +61,7 @@ class opcode {
     inline static thread_local tape_data_t* global_tape_data = nullptr;
 };
 
-template<class T>
-concept scalar_number = std::integral<T> || std::unsigned_integral<T> || std::floating_point<T>;
-
-template<class Float, class TapeDataType>
+template<std::floating_point Float, class TapeDataType>
 class adhoc_type {
   private:
     friend Tape<adhoc_type<Float, TapeDataType> >;
@@ -185,7 +181,7 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator+(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value + rhs);
@@ -196,7 +192,7 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator-(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value - rhs);
@@ -207,7 +203,7 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator*(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value * rhs);
@@ -219,7 +215,7 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator/(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value / rhs);
@@ -271,22 +267,22 @@ class adhoc_type {
     }
 
     auto operator/=(const adhoc_type& arg) -> adhoc_type& { return *this = *this / arg; }
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator+=(T arg) -> adhoc_type&
     {
         return *this = *this + arg;
     }
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator-=(T arg) -> adhoc_type&
     {
         return *this = *this - arg;
     }
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator*=(T arg) -> adhoc_type&
     {
         return *this = *this * arg;
     }
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     auto operator/=(T arg) -> adhoc_type&
     {
         return *this = *this / arg;
@@ -412,13 +408,13 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator+(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         return rhs + lhs;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator-(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs - rhs.value);
@@ -429,13 +425,13 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator*(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         return rhs * lhs;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator/(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs / rhs.value);
@@ -453,13 +449,13 @@ class adhoc_type {
         return result;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator<(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs < rhs.value;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator<(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value < rhs;
@@ -467,13 +463,13 @@ class adhoc_type {
 
     friend auto operator<(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value < rhs.value; }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator>(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs > rhs.value;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator>(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value > rhs;
@@ -481,13 +477,13 @@ class adhoc_type {
 
     friend auto operator>(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value > rhs.value; }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator<=(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs <= rhs.value;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator<=(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value <= rhs;
@@ -495,13 +491,13 @@ class adhoc_type {
 
     friend auto operator<=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value <= rhs.value; }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator>=(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs >= rhs.value;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator>=(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value >= rhs;
@@ -509,13 +505,13 @@ class adhoc_type {
 
     friend auto operator>=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value >= rhs.value; }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator==(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs == rhs.value;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto operator==(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value == rhs;
@@ -544,7 +540,7 @@ class adhoc_type {
         return adhoc_type{ std::pow(lhs.value, rhs.value) };
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto pow(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -559,7 +555,7 @@ class adhoc_type {
         return adhoc_type{ std::atan2(lhs.value, rhs.value) };
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto atan2(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -567,7 +563,7 @@ class adhoc_type {
         return adhoc_type{ std::atan2(lhs, rhs.value) };
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto atan2(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -584,7 +580,7 @@ class adhoc_type {
         return rhs;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto max(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -592,7 +588,7 @@ class adhoc_type {
         return adhoc_type{ std::max(lhs, rhs.value) };
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto max(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -609,7 +605,7 @@ class adhoc_type {
         return rhs;
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto min(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -617,7 +613,7 @@ class adhoc_type {
         return adhoc_type{ std::min(lhs, rhs.value) };
     }
 
-    template<scalar_number T>
+    template<std::convertible_to<Float> T>
     friend auto min(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative

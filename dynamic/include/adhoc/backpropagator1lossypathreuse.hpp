@@ -28,13 +28,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <map>
 #include <numbers>
 #include <vector>
 
 namespace adhoc {
 
-template<class Float, bool Vectorised = false>
+template<std::floating_point Float, bool Vectorised = false>
 class BackPropagatorLossyPathReuse {
   private:
     std::size_t m_num_lanes{ 1 };
@@ -241,7 +242,7 @@ class BackPropagatorLossyPathReuse {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, bool Vectorised>
+template<std::floating_point Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)

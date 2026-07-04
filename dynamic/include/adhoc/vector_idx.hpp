@@ -21,13 +21,14 @@
 #ifndef ADHOC_VECTOR_IDX_HPP
 #define ADHOC_VECTOR_IDX_HPP
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
 namespace adhoc {
 
-template<class T = std::size_t>
+template<std::unsigned_integral T = std::size_t>
 class vector_idx {
   private:
     std::vector<std::uint8_t> m_vec8;
@@ -287,7 +288,7 @@ class vector_idx {
     }
 };
 
-// template<class T = std::size_t>
+// template<std::unsigned_integral T = std::size_t>
 // class vector_idx2 {
 //   private:
 //     static constexpr bool use_branching = false;
@@ -663,7 +664,7 @@ class vector_idx {
 //     }
 // };
 
-// template<class T = std::size_t>
+// template<std::unsigned_integral T = std::size_t>
 // class vector_idx3 {
 //   private:
 //     std::vector<std::uint8_t> m_vec8;

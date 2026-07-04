@@ -24,6 +24,7 @@
 #include "vector_enum.hpp"
 #include "vector_idx.hpp"
 
+#include <concepts>
 #include <cstdint>
 #include <vector>
 
@@ -62,7 +63,7 @@ enum class OpCode : std::uint8_t {
 enum class EnumVectorType { Simple, BitCompression, Valuecompression };
 enum class IdxVectorType { Simple, BitCompression };
 
-template<class FloatTape, EnumVectorType enumvectype, IdxVectorType idxvectype>
+template<std::floating_point FloatTape, EnumVectorType enumvectype, IdxVectorType idxvectype>
 class TapeData {
   private:
     template<class T, std::size_t NumValues>
@@ -72,7 +73,7 @@ class TapeData {
                                                                vector_enum<T, NumValues>,
                                                                vector_enum2<T, NumValues> > >;
 
-    template<class T>
+    template<std::unsigned_integral T>
     using idxvector_t = std::conditional_t<idxvectype == IdxVectorType::Simple, std::vector<T>, vector_idx<T> >;
 
   public:
