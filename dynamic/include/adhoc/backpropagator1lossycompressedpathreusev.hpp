@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <cstddef>
 #include <iterator>
 #include <map>
@@ -37,7 +38,7 @@
 
 namespace adhoc {
 
-template<class Float, bool Vectorised = false>
+template<std::floating_point Float, bool Vectorised = false>
 class BackPropagatorLossyCompressedPathReuseV {
   private:
     // for now
@@ -244,7 +245,7 @@ class BackPropagatorLossyCompressedPathReuseV {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, bool Vectorised>
+template<std::floating_point Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(PositionImpl const& pos,

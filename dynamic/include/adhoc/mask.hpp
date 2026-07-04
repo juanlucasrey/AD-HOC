@@ -21,13 +21,14 @@
 #ifndef ADHOC_MASK_HPP
 #define ADHOC_MASK_HPP
 
+#include <concepts>
 #include <cstddef>
 #include <limits>
 #include <type_traits>
 
 namespace adhoc {
 
-template<class UIntType>
+template<std::unsigned_integral UIntType>
 constexpr auto
 mask(std::size_t Size, std::size_t Start = 0) -> UIntType
 {

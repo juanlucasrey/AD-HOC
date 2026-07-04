@@ -28,12 +28,13 @@
 #include "tape_data.hpp"
 
 #include <cmath>
+#include <concepts>
 #include <numbers>
 #include <vector>
 
 namespace adhoc {
 
-template<class Float, MapType maptype, bool Vectorised = false>
+template<std::floating_point Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2Lossy {
   private:
     std::vector<map_t<maptype, std::size_t, std::size_t> > node_location_on_buffer;
@@ -206,7 +207,7 @@ class BackPropagator2Lossy {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, MapType maptype, bool Vectorised>
+template<std::floating_point Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)

@@ -21,12 +21,13 @@
 #ifndef ADHOC_PASSIVE_ID_HPP
 #define ADHOC_PASSIVE_ID_HPP
 
+#include <concepts>
 #include <cstddef>
 #include <limits>
 
 namespace adhoc {
 
-template<class CounterType>
+template<std::unsigned_integral CounterType>
 static constexpr std::size_t passive_id = std::numeric_limits<CounterType>::max();
 
 } // namespace adhoc

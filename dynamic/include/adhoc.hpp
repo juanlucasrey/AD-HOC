@@ -23,6 +23,7 @@
 
 #include <cmath>
 #include <complex>
+#include <concepts>
 #include <cstddef>
 #include <vector>
 
@@ -34,14 +35,14 @@ namespace adhoc {
 template<class type>
 class Tape;
 
-template<class Float, class TapeDataType>
+template<std::floating_point Float, class TapeDataType>
 class adhoc_type;
 
 template<class mode_t>
 class smart_tape_ptr_t;
 
-template<class FloatPrimal,
-         class FloatTape = FloatPrimal,
+template<std::floating_point FloatPrimal,
+         std::floating_point FloatTape = FloatPrimal,
          EnumVectorType enumvectype = EnumVectorType::Simple,
          IdxVectorType idxvectype = IdxVectorType::Simple>
 class opcode {
@@ -60,14 +61,14 @@ class opcode {
     inline static thread_local tape_data_t* global_tape_data = nullptr;
 };
 
-template<class Float, class TapeDataType>
+template<std::floating_point Float, class TapeDataType>
 class adhoc_type {
   private:
     friend Tape<adhoc_type<Float, TapeDataType> >;
     using mode_t =
       opcode<Float, typename TapeDataType::Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
 
-    double value{ 0. };
+    Float value{ 0. };
     mutable std::size_t id{ passive_id<std::size_t> };
 
   public:
@@ -79,108 +80,100 @@ class adhoc_type {
     {
     }
 
-    adhoc_type(const adhoc_type& other)
-      : value(other.value)
-      , id(other.id)
-    {
-    }
-
-    adhoc_type(const adhoc_type&& other) noexcept { *this = other; }
-
     // Get value
-    auto get_value() const -> double { return value; }
-    auto get_value() -> double& { return value; }
+    auto get_value() const -> Float { return value; }
+    auto get_value() -> Float& { return value; }
     auto is_passive() const -> bool { return id == passive_id<std::size_t>; }
     auto is_active() const -> bool { return id != passive_id<std::size_t>; }
 
     auto operator-() const -> adhoc_type { return 0.0 - *this; }
 
-    auto operator+(const adhoc_type& other) const -> adhoc_type
+    auto operator+(const adhoc_type& rhs) const -> adhoc_type
     {
-        if (this->is_passive() && other.is_active()) {
-            return other + this->value;
+        if (this->is_passive() && rhs.is_active()) {
+            return rhs + this->value;
         }
 
-        if (other.is_passive()) {
-            return (*this) + other.value;
+        if (rhs.is_passive()) {
+            return (*this) + rhs.value;
         }
 
-        adhoc_type result(this->value + other.value);
+        adhoc_type result(this->value + rhs.value);
         result.id = mode_t::global_tape_data->generate_id();
-        if (this->id == other.id) {
+        if (this->id == rhs.id) {
             mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
             mode_t::global_tape_data->record_value(2.0);
         }
         else {
-            mode_t::global_tape_data->record_binary(OpCode::ADD, this->id, other.id, result.id);
+            mode_t::global_tape_data->record_binary(OpCode::ADD, this->id, rhs.id, result.id);
         }
         return result;
     }
 
-    auto operator-(const adhoc_type& other) const -> adhoc_type
+    auto operator-(const adhoc_type& rhs) const -> adhoc_type
     {
-        if (this->is_passive() && other.is_active()) {
-            return this->value - other;
+        if (this->is_passive() && rhs.is_active()) {
+            return this->value - rhs;
         }
 
-        if (other.is_passive()) {
-            return (*this) - other.value;
+        if (rhs.is_passive()) {
+            return (*this) - rhs.value;
         }
 
-        adhoc_type result(this->value - other.value);
+        adhoc_type result(this->value - rhs.value);
         result.id = mode_t::global_tape_data->generate_id();
-        if (this->id == other.id) {
+        if (this->id == rhs.id) {
             mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
             mode_t::global_tape_data->record_value(0.0);
         }
         else {
-            mode_t::global_tape_data->record_binary(OpCode::SUB, this->id, other.id, result.id);
+            mode_t::global_tape_data->record_binary(OpCode::SUB, this->id, rhs.id, result.id);
         }
         return result;
     }
 
-    auto operator*(const adhoc_type& other) const -> adhoc_type
+    auto operator*(const adhoc_type& rhs) const -> adhoc_type
     {
-        if (this->is_passive() && other.is_active()) {
-            return other * this->value;
+        if (this->is_passive() && rhs.is_active()) {
+            return rhs * this->value;
         }
 
-        if (other.is_passive()) {
-            return (*this) * other.value;
+        if (rhs.is_passive()) {
+            return (*this) * rhs.value;
         }
 
-        adhoc_type result(this->value * other.value);
+        adhoc_type result(this->value * rhs.value);
         result.id = mode_t::global_tape_data->generate_id();
-        if (this->id == other.id) {
+        if (this->id == rhs.id) {
             mode_t::global_tape_data->record_unary(OpCode::NORM, this->id, result.id);
             mode_t::global_tape_data->record_value(this->value);
         }
         else {
-            mode_t::global_tape_data->record_binary(OpCode::MUL, this->id, other.id, result.id);
+            mode_t::global_tape_data->record_binary(OpCode::MUL, this->id, rhs.id, result.id);
             mode_t::global_tape_data->record_value(this->value);
-            mode_t::global_tape_data->record_value(other.value);
+            mode_t::global_tape_data->record_value(rhs.value);
         }
 
         return result;
     }
 
-    auto operator/(const adhoc_type& other) const -> adhoc_type
+    auto operator/(const adhoc_type& rhs) const -> adhoc_type
     {
 
         if (this->is_passive()) {
-            return this->value / other;
+            return this->value / rhs;
         }
 
-        if (other.is_passive()) {
-            return *this / other.value;
+        if (rhs.is_passive()) {
+            return *this / rhs.value;
         }
 
-        adhoc_type result(this->value / other.value);
+        adhoc_type result(this->value / rhs.value);
 
-        adhoc_type intermediary_result(1.0 / other.value);
+        adhoc_type intermediary_result(1.0 / rhs.value);
         intermediary_result.id = mode_t::global_tape_data->generate_id();
         result.id = mode_t::global_tape_data->generate_id();
-        mode_t::global_tape_data->record_unary(OpCode::INV, other.id, intermediary_result.id);
+        mode_t::global_tape_data->record_unary(OpCode::INV, rhs.id, intermediary_result.id);
         mode_t::global_tape_data->record_value(intermediary_result.value);
         mode_t::global_tape_data->record_binary(OpCode::MUL, this->id, intermediary_result.id, result.id);
         mode_t::global_tape_data->record_value(this->value);
@@ -188,9 +181,10 @@ class adhoc_type {
         return result;
     }
 
-    auto operator+(double other) const -> adhoc_type
+    template<std::convertible_to<Float> T>
+    auto operator+(T rhs) const -> adhoc_type
     {
-        adhoc_type result(this->value + other);
+        adhoc_type result(this->value + rhs);
         if (this->is_active()) {
             result.id = mode_t::global_tape_data->generate_id();
             mode_t::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
@@ -198,9 +192,10 @@ class adhoc_type {
         return result;
     }
 
-    auto operator-(double other) const -> adhoc_type
+    template<std::convertible_to<Float> T>
+    auto operator-(T rhs) const -> adhoc_type
     {
-        adhoc_type result(this->value - other);
+        adhoc_type result(this->value - rhs);
         if (this->is_active()) {
             result.id = mode_t::global_tape_data->generate_id();
             mode_t::global_tape_data->record_unary(OpCode::ADD_C, this->id, result.id);
@@ -208,74 +203,90 @@ class adhoc_type {
         return result;
     }
 
-    auto operator*(double other) const -> adhoc_type
+    template<std::convertible_to<Float> T>
+    auto operator*(T rhs) const -> adhoc_type
     {
-        adhoc_type result(this->value * other);
+        adhoc_type result(this->value * rhs);
         if (this->is_active()) {
             result.id = mode_t::global_tape_data->generate_id();
             mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-            mode_t::global_tape_data->record_value(other);
+            mode_t::global_tape_data->record_value(rhs);
         }
         return result;
     }
 
-    auto operator/(double other) const -> adhoc_type
+    template<std::convertible_to<Float> T>
+    auto operator/(T rhs) const -> adhoc_type
     {
-        adhoc_type result(this->value / other);
+        adhoc_type result(this->value / rhs);
         if (this->is_active()) {
             result.id = mode_t::global_tape_data->generate_id();
             mode_t::global_tape_data->record_unary(OpCode::MUL_C, this->id, result.id);
-            mode_t::global_tape_data->record_value(1.0 / other);
+            mode_t::global_tape_data->record_value(1.0 / rhs);
         }
         return result;
     }
 
-    auto operator=(const adhoc_type& other) -> adhoc_type& = default;
-
-    auto operator+=(const adhoc_type& other) -> adhoc_type&
+    auto operator+=(const adhoc_type& arg) -> adhoc_type&
     {
-        if (this->is_passive() && other.is_active()) {
-            return *this = other + this->value;
+        if (this->is_passive() && arg.is_active()) {
+            return *this = arg + this->value;
         }
 
-        if (other.is_passive()) {
-            return *this += other.value;
+        if (arg.is_passive()) {
+            return *this += arg.value;
         }
 
-        return *this = *this + other;
+        return *this = *this + arg;
     }
 
-    auto operator-=(const adhoc_type& other) -> adhoc_type&
+    auto operator-=(const adhoc_type& arg) -> adhoc_type&
     {
-        if (this->is_passive() && other.is_active()) {
-            return *this = this->value - other;
+        if (this->is_passive() && arg.is_active()) {
+            return *this = this->value - arg;
         }
 
-        if (other.is_passive()) {
-            return (*this) -= other.value;
+        if (arg.is_passive()) {
+            return (*this) -= arg.value;
         }
 
-        return *this = *this - other;
+        return *this = *this - arg;
     }
 
-    auto operator*=(const adhoc_type& other) -> adhoc_type&
+    auto operator*=(const adhoc_type& arg) -> adhoc_type&
     {
-        if (this->is_passive() && other.is_active()) {
-            return *this = other * this->value;
+        if (this->is_passive() && arg.is_active()) {
+            return *this = arg * this->value;
         }
 
-        if (other.is_passive()) {
-            return (*this) *= other.value;
+        if (arg.is_passive()) {
+            return (*this) *= arg.value;
         }
 
-        return *this = *this * other;
+        return *this = *this * arg;
     }
 
-    auto operator/=(const adhoc_type& other) -> adhoc_type& { return *this = *this / other; }
-    auto operator+=(double other) -> adhoc_type& { return *this = *this + other; }
-    auto operator-=(double other) -> adhoc_type& { return *this = *this - other; }
-    auto operator*=(double other) -> adhoc_type& { return *this = *this * other; }
-    auto operator/=(double other) -> adhoc_type& { return *this = *this / other; }
+    auto operator/=(const adhoc_type& arg) -> adhoc_type& { return *this = *this / arg; }
+    template<std::convertible_to<Float> T>
+    auto operator+=(T arg) -> adhoc_type&
+    {
+        return *this = *this + arg;
+    }
+    template<std::convertible_to<Float> T>
+    auto operator-=(T arg) -> adhoc_type&
+    {
+        return *this = *this - arg;
+    }
+    template<std::convertible_to<Float> T>
+    auto operator*=(T arg) -> adhoc_type&
+    {
+        return *this = *this * arg;
+    }
+    template<std::convertible_to<Float> T>
+    auto operator/=(T arg) -> adhoc_type&
+    {
+        return *this = *this / arg;
+    }
 
     // these functions need to be defined here, since they are templated
     // (templated friend functions are a dark corner of the standard)
@@ -362,17 +373,6 @@ class adhoc_type {
         return result;
     }
 
-    // friend auto inv(const adhoc_type& arg) -> adhoc_type
-    // {
-    //     adhoc_type result(1.0 / arg.value);
-    //     if (arg.is_active()) {
-    //         result.id = mode_t::global_tape_data->generate_id();
-    //         mode_t::global_tape_data->record_unary(OpCode::INV, arg.id, result.id);
-    //         mode_t::global_tape_data->record_value(result.value);
-    //     }
-    //     return result;
-    // }
-
     friend auto abs(const adhoc_type& arg) -> adhoc_type
     {
         adhoc_type result(std::abs(arg.value));
@@ -396,14 +396,9 @@ class adhoc_type {
         return result;
     }
 
-    // friend auto pow(const adhoc_type<Float>& lhs, const adhoc_type<Float>& rhs) -> adhoc_type<Float>;
-
-    // template<class T>
-    // inline auto pow(T /* lhs */, const adhoc_type<Float>& /* rhs */) -> adhoc_type<Float>;
-
     friend auto pow(const adhoc_type& lhs, Float rhs) -> adhoc_type
     {
-        adhoc_type result(std::pow(lhs.get_value(), rhs));
+        adhoc_type result(std::pow(lhs.value, rhs));
         if (lhs.is_active()) {
             result.id = mode_t::global_tape_data->generate_id();
             mode_t::global_tape_data->record_unary(OpCode::POW_C, lhs.id, result.id);
@@ -413,7 +408,14 @@ class adhoc_type {
         return result;
     }
 
-    friend auto operator-(double lhs, const adhoc_type& rhs) -> adhoc_type
+    template<std::convertible_to<Float> T>
+    friend auto operator+(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        return rhs + lhs;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator-(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs - rhs.value);
         if (rhs.is_active()) {
@@ -423,7 +425,14 @@ class adhoc_type {
         return result;
     }
 
-    friend auto operator/(double lhs, const adhoc_type& rhs) -> adhoc_type
+    template<std::convertible_to<Float> T>
+    friend auto operator*(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        return rhs * lhs;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator/(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs / rhs.value);
 
@@ -439,184 +448,249 @@ class adhoc_type {
 
         return result;
     }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator<(T lhs, const adhoc_type& rhs) -> bool
+    {
+        return lhs < rhs.value;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator<(const adhoc_type& lhs, T rhs) -> bool
+    {
+        return lhs.value < rhs;
+    }
+
+    friend auto operator<(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value < rhs.value; }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator>(T lhs, const adhoc_type& rhs) -> bool
+    {
+        return lhs > rhs.value;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator>(const adhoc_type& lhs, T rhs) -> bool
+    {
+        return lhs.value > rhs;
+    }
+
+    friend auto operator>(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value > rhs.value; }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator<=(T lhs, const adhoc_type& rhs) -> bool
+    {
+        return lhs <= rhs.value;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator<=(const adhoc_type& lhs, T rhs) -> bool
+    {
+        return lhs.value <= rhs;
+    }
+
+    friend auto operator<=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value <= rhs.value; }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator>=(T lhs, const adhoc_type& rhs) -> bool
+    {
+        return lhs >= rhs.value;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator>=(const adhoc_type& lhs, T rhs) -> bool
+    {
+        return lhs.value >= rhs;
+    }
+
+    friend auto operator>=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value >= rhs.value; }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator==(T lhs, const adhoc_type& rhs) -> bool
+    {
+        return lhs == rhs.value;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto operator==(const adhoc_type& lhs, T rhs) -> bool
+    {
+        return lhs.value == rhs;
+    }
+
+    friend auto operator==(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value == rhs.value; }
+
+    friend auto operator<<(std::ostream& out, const adhoc_type& arg) -> std::ostream&
+    {
+        out << arg.value;
+        return out;
+    }
+
+    friend auto isfinite(const adhoc_type& arg) -> bool { return std::isfinite(arg.value); }
+    friend auto isnan(adhoc_type const& arg) -> bool { return std::isnan(arg.value); }
+    friend auto lround(adhoc_type const& arg) -> long { return std::lround(arg.value); }
+
+    // unimplemented functions
+    friend auto pow(const adhoc_type& lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        if (lhs.is_passive() && rhs.is_passive()) {
+            return adhoc_type{ std::pow(lhs.value, rhs.value) };
+        }
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::pow(lhs.value, rhs.value) };
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto pow(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::pow(lhs, rhs.value) };
+    }
+
+    friend auto atan2(const adhoc_type& lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::atan2(lhs.value, rhs.value) };
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto atan2(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::atan2(lhs, rhs.value) };
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto atan2(const adhoc_type& lhs, T rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::atan2(lhs.value, rhs) };
+    }
+
+    friend auto max(const adhoc_type& lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        if (lhs.value >= rhs.value) {
+            return lhs;
+        }
+
+        return rhs;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto max(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::max(lhs, rhs.value) };
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto max(const adhoc_type& lhs, T rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::max(lhs.value, rhs) };
+    }
+
+    friend auto min(const adhoc_type& lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        if (lhs.value <= rhs.value) {
+            return lhs;
+        }
+
+        return rhs;
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto min(T lhs, const adhoc_type& rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::min(lhs, rhs.value) };
+    }
+
+    template<std::convertible_to<Float> T>
+    friend auto min(const adhoc_type& lhs, T rhs) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::min(lhs.value, rhs) };
+    }
+
+    friend auto fabs(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::abs(arg.value) };
+    }
+
+    friend auto floor(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        return adhoc_type{ std::floor(arg.value) };
+    }
+
+    friend auto sin(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::sin(arg.value) };
+    }
+
+    friend auto cosh(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::cosh(arg.value) };
+    }
+
+    friend auto sinh(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::sinh(arg.value) };
+    }
+
+    friend auto asin(const adhoc_type& arg) -> adhoc_type
+    {
+        // TODO: derivative
+        throw;
+        return adhoc_type{ std::asin(arg.value) };
+    }
 };
 
 template<class Float, class TapeDataType>
 inline auto
-operator+(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
+passive_value(const adhoc_type<Float, TapeDataType>& arg) -> Float
 {
-    return rhs + lhs;
+    return arg.get_value();
 }
 
 template<class Float, class TapeDataType>
 inline auto
-operator*(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
+passive_value(adhoc_type<Float, TapeDataType>& arg) -> Float&
 {
-    return rhs * lhs;
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-operator<(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> bool
-{
-    return lhs < rhs.get_value();
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-operator<(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> bool
-{
-    return lhs.get_value() < rhs;
-}
-
-template<class Float1, class TapeDataType1, class Float2, class TapeDataType2>
-inline auto
-operator<(const adhoc_type<Float1, TapeDataType1>& lhs, const adhoc_type<Float2, TapeDataType2>& rhs) -> bool
-{
-    return lhs.get_value() < rhs.get_value();
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-operator>(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> bool
-{
-    return lhs > rhs.get_value();
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-operator>(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> bool
-{
-    return lhs.get_value() > rhs;
-}
-
-template<class Float1, class TapeDataType1, class Float2, class TapeDataType2>
-inline auto
-operator>(const adhoc_type<Float1, TapeDataType1>& lhs, const adhoc_type<Float2, TapeDataType2>& rhs) -> bool
-{
-    return lhs.get_value() > rhs.get_value();
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-operator<=(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> bool
-{
-    return lhs <= rhs.get_value();
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-operator<=(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> bool
-{
-    return lhs.get_value() <= rhs;
-}
-
-template<class Float1, class TapeDataType1, class Float2, class TapeDataType2>
-inline auto
-operator<=(const adhoc_type<Float1, TapeDataType1>& lhs, const adhoc_type<Float2, TapeDataType2>& rhs) -> bool
-{
-    return lhs.get_value() <= rhs.get_value();
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-operator>=(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> bool
-{
-    return lhs >= rhs.get_value();
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-operator>=(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> bool
-{
-    return lhs.get_value() >= rhs;
-}
-
-template<class Float1, class TapeDataType1, class Float2, class TapeDataType2>
-inline auto
-operator>=(const adhoc_type<Float1, TapeDataType1>& lhs, const adhoc_type<Float2, TapeDataType2>& rhs) -> bool
-{
-    return lhs.get_value() >= rhs.get_value();
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-operator==(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> bool
-{
-    return lhs == rhs.get_value();
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-operator==(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> bool
-{
-    return lhs.get_value() == rhs;
-}
-
-template<class Float1, class TapeDataType1, class Float2, class TapeDataType2>
-inline auto
-operator==(const adhoc_type<Float1, TapeDataType1>& lhs, const adhoc_type<Float2, TapeDataType2>& rhs) -> bool
-{
-    return lhs.get_value() == rhs.get_value();
-}
-
-template<class Float, class TapeDataType>
-static inline auto
-operator<<(std::ostream& out, const adhoc_type<Float, TapeDataType>& x) -> std::ostream&
-{
-    out << x.get_value();
-    return out;
+    return arg.get_value();
 }
 
 template<class Float, class TapeDataType>
 inline auto
-isfinite(const adhoc_type<Float, TapeDataType>& arg) -> bool
+passive_value(adhoc_type<Float, TapeDataType>&& arg) -> Float
 {
-    return std::isfinite(arg.get_value());
+    return arg.get_value();
 }
 
 template<class Float, class TapeDataType>
 inline auto
-isnan(adhoc::adhoc_type<Float, TapeDataType> const& x) -> bool
-{
-    return std::isnan(x.get_value());
-}
-
-template<class Float, class TapeDataType>
-inline auto
-lround(adhoc::adhoc_type<Float, TapeDataType> const& x) -> long
-{
-    return std::lround(x.get_value());
-}
-
-template<class Float, class TapeDataType>
-inline auto
-passive_value(const adhoc::adhoc_type<Float, TapeDataType>& x) -> double
-{
-    return x.get_value();
-}
-
-template<class Float, class TapeDataType>
-inline auto
-passive_value(adhoc::adhoc_type<Float, TapeDataType>& x) -> double&
-{
-    return x.get_value();
-}
-
-template<class Float, class TapeDataType>
-inline auto
-passive_value(adhoc::adhoc_type<Float, TapeDataType>&& x) -> double
-{
-    return x.get_value();
-}
-
-template<class Float, class TapeDataType>
-inline auto
-passive_value(std::vector<adhoc::adhoc_type<Float, TapeDataType> >& x) -> std::vector<Float>
+passive_value(std::vector<adhoc_type<Float, TapeDataType> >& arg) -> std::vector<Float>
 {
     std::vector<Float> result;
-    result.reserve(x.size());
-    for (auto const& item : x) {
+    result.reserve(arg.size());
+    for (auto const& item : arg) {
         result.push_back(item.get_value());
     }
     return result;
@@ -624,178 +698,14 @@ passive_value(std::vector<adhoc::adhoc_type<Float, TapeDataType> >& x) -> std::v
 
 template<class Float, class TapeDataType>
 inline auto
-passive_value(std::vector<adhoc::adhoc_type<Float, TapeDataType> > const& x) -> std::vector<Float>
+passive_value(std::vector<adhoc_type<Float, TapeDataType> > const& arg) -> std::vector<Float>
 {
     std::vector<Float> result;
-    result.reserve(x.size());
-    for (auto const& item : x) {
+    result.reserve(arg.size());
+    for (auto const& item : arg) {
         result.push_back(item.get_value());
     }
     return result;
-}
-
-// unimplemented functions
-template<class Float, class TapeDataType>
-inline auto
-pow(const adhoc_type<Float, TapeDataType>& lhs, const adhoc_type<Float, TapeDataType>& rhs)
-  -> adhoc_type<Float, TapeDataType>
-{
-    if (lhs.is_passive() && rhs.is_passive()) {
-        return adhoc_type<Float, TapeDataType>{ std::pow(lhs.get_value(), rhs.get_value()) };
-    }
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::pow(lhs.get_value(), rhs.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-pow(double lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::pow(lhs, rhs.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-atan2(const adhoc_type<Float, TapeDataType>& lhs, const adhoc_type<Float, TapeDataType>& rhs)
-  -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::atan2(lhs.get_value(), rhs.get_value()) };
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-atan2(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::atan2(lhs, rhs.get_value()) };
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-atan2(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::atan2(lhs.get_value(), rhs) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-max(const adhoc_type<Float, TapeDataType>& lhs, const adhoc_type<Float, TapeDataType>& rhs)
-  -> adhoc_type<Float, TapeDataType>
-{
-    if (lhs.get_value() >= rhs.get_value()) {
-        return lhs;
-    }
-
-    return rhs;
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-max(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::max(lhs, rhs.get_value()) };
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-max(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::max(lhs.get_value(), rhs) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-min(const adhoc_type<Float, TapeDataType>& lhs, const adhoc_type<Float, TapeDataType>& rhs)
-  -> adhoc_type<Float, TapeDataType>
-{
-    if (lhs.get_value() <= rhs.get_value()) {
-        return lhs;
-    }
-
-    return rhs;
-}
-
-template<class T, class Float, class TapeDataType>
-inline auto
-min(T lhs, const adhoc_type<Float, TapeDataType>& rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::min(lhs, rhs.get_value()) };
-}
-
-template<class Float, class TapeDataType, class T>
-inline auto
-min(const adhoc_type<Float, TapeDataType>& lhs, T rhs) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::min(lhs.get_value(), rhs) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-fabs(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::abs(arg.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-floor(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    return adhoc_type<Float, TapeDataType>{ std::floor(arg.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-sin(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::sin(arg.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-cosh(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::cosh(arg.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-sinh(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::sinh(arg.get_value()) };
-}
-
-template<class Float, class TapeDataType>
-inline auto
-asin(const adhoc_type<Float, TapeDataType>& arg) -> adhoc_type<Float, TapeDataType>
-{
-    // TODO: derivative
-    throw;
-    return adhoc_type<Float, TapeDataType>{ std::asin(arg.get_value()) };
 }
 
 } // namespace adhoc

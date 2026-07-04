@@ -26,6 +26,7 @@
 #include "vector_size_of.hpp"
 
 #include <cmath>
+#include <concepts>
 #include <iostream>
 #include <numbers>
 #include <span>
@@ -33,7 +34,7 @@
 
 namespace adhoc {
 
-template<class Float, bool Vectorised = false>
+template<std::floating_point Float, bool Vectorised = false>
 class BackPropagator {
   private:
     std::size_t m_num_lanes{ 1 };
@@ -109,7 +110,7 @@ class BackPropagator {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, bool Vectorised>
+template<std::floating_point Float, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)

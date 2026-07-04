@@ -28,12 +28,13 @@
 
 #include <array>
 #include <cmath>
+#include <concepts>
 #include <numbers>
 #include <vector>
 
 namespace adhoc {
 
-template<class Float, MapType maptype, bool Vectorised = false>
+template<std::floating_point Float, MapType maptype, bool Vectorised = false>
 class BackPropagator2 {
     static constexpr std::size_t SIMD_WIDTH = 8;
 
@@ -180,7 +181,7 @@ class BackPropagator2 {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, MapType maptype, bool Vectorised>
+template<std::floating_point Float, MapType maptype, bool Vectorised>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)

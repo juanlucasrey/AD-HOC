@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <map>
 #include <numbers>
 #include <optional>
@@ -35,7 +36,7 @@
 
 namespace adhoc {
 
-template<class Float, bool Vectorised = false, bool ConsolidateLargeUnivariate = false>
+template<std::floating_point Float, bool Vectorised = false, bool ConsolidateLargeUnivariate = false>
 class BackPropagatorLossyCompressed {
   private:
     std::vector<std::size_t> node_location_on_buffer;
@@ -185,7 +186,7 @@ class BackPropagatorLossyCompressed {
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
-template<class Float, bool Vectorised, bool ConsolidateLargeUnivariate>
+template<std::floating_point Float, bool Vectorised, bool ConsolidateLargeUnivariate>
 template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
 void
 BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::backpropagate_to(PositionImpl const& pos,
