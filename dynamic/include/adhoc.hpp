@@ -62,6 +62,9 @@ class opcode {
     inline static thread_local tape_data_t* global_tape_data = nullptr;
 };
 
+template<class T>
+concept scalar_number = std::integral<T> || std::unsigned_integral<T> || std::floating_point<T>;
+
 template<class Float, class TapeDataType>
 class adhoc_type {
   private:
@@ -182,7 +185,7 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     auto operator+(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value + rhs);
@@ -193,7 +196,7 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     auto operator-(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value - rhs);
@@ -204,7 +207,7 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     auto operator*(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value * rhs);
@@ -216,7 +219,7 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     auto operator/(T rhs) const -> adhoc_type
     {
         adhoc_type result(this->value / rhs);
@@ -268,22 +271,22 @@ class adhoc_type {
     }
 
     auto operator/=(const adhoc_type& arg) -> adhoc_type& { return *this = *this / arg; }
-    template<class T>
+    template<scalar_number T>
     auto operator+=(T arg) -> adhoc_type&
     {
         return *this = *this + arg;
     }
-    template<class T>
+    template<scalar_number T>
     auto operator-=(T arg) -> adhoc_type&
     {
         return *this = *this - arg;
     }
-    template<class T>
+    template<scalar_number T>
     auto operator*=(T arg) -> adhoc_type&
     {
         return *this = *this * arg;
     }
-    template<class T>
+    template<scalar_number T>
     auto operator/=(T arg) -> adhoc_type&
     {
         return *this = *this / arg;
@@ -409,13 +412,13 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator+(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         return rhs + lhs;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator-(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs - rhs.value);
@@ -426,13 +429,13 @@ class adhoc_type {
         return result;
     }
 
-    template<std::floating_point T>
+    template<scalar_number T>
     friend auto operator*(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         return rhs * lhs;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator/(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         adhoc_type result(lhs / rhs.value);
@@ -450,13 +453,13 @@ class adhoc_type {
         return result;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator<(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs < rhs.value;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator<(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value < rhs;
@@ -464,13 +467,13 @@ class adhoc_type {
 
     friend auto operator<(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value < rhs.value; }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator>(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs > rhs.value;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator>(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value > rhs;
@@ -478,13 +481,13 @@ class adhoc_type {
 
     friend auto operator>(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value > rhs.value; }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator<=(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs <= rhs.value;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator<=(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value <= rhs;
@@ -492,13 +495,13 @@ class adhoc_type {
 
     friend auto operator<=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value <= rhs.value; }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator>=(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs >= rhs.value;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator>=(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value >= rhs;
@@ -506,13 +509,13 @@ class adhoc_type {
 
     friend auto operator>=(const adhoc_type& lhs, const adhoc_type& rhs) -> bool { return lhs.value >= rhs.value; }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator==(T lhs, const adhoc_type& rhs) -> bool
     {
         return lhs == rhs.value;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto operator==(const adhoc_type& lhs, T rhs) -> bool
     {
         return lhs.value == rhs;
@@ -541,7 +544,7 @@ class adhoc_type {
         return adhoc_type{ std::pow(lhs.value, rhs.value) };
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto pow(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -556,7 +559,7 @@ class adhoc_type {
         return adhoc_type{ std::atan2(lhs.value, rhs.value) };
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto atan2(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -564,7 +567,7 @@ class adhoc_type {
         return adhoc_type{ std::atan2(lhs, rhs.value) };
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto atan2(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -581,7 +584,7 @@ class adhoc_type {
         return rhs;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto max(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -589,7 +592,7 @@ class adhoc_type {
         return adhoc_type{ std::max(lhs, rhs.value) };
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto max(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -606,7 +609,7 @@ class adhoc_type {
         return rhs;
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto min(T lhs, const adhoc_type& rhs) -> adhoc_type
     {
         // TODO: derivative
@@ -614,7 +617,7 @@ class adhoc_type {
         return adhoc_type{ std::min(lhs, rhs.value) };
     }
 
-    template<class T>
+    template<scalar_number T>
     friend auto min(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
         // TODO: derivative
