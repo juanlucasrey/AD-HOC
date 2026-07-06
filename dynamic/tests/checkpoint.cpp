@@ -1,6 +1,8 @@
 #include <tape.hpp>
 #include <test_simple_include.hpp>
 
+#include "mini_mc.hpp"
+
 #include <array>
 #include <cmath>
 #include <random>
@@ -8,93 +10,6 @@
 
 using adhoc_mode = adhoc::opcode<double>;
 using adhoc_t = adhoc_mode::type;
-
-// Templated compute_result with if constexpr for tape handling
-template<typename T>
-auto
-compute_result(T x1, T x2, T x3, std::size_t num_paths) -> double
-{
-    std::mt19937 generator(42); // same seed for reproducibility
-    std::normal_distribution<double> normal_dist(0.0, 1.0);
-
-    // Initial calculations (before the loop)
-    T y_init = x1 * x2 + cos(x3);
-
-    // For AD types, get the tape and save position after initial calcs
-    double one_over_paths = 1.0 / static_cast<double>(num_paths);
-
-    double result = 0.0;
-    for (std::size_t path = 0; path < num_paths; ++path) {
-        double z1 = normal_dist(generator);
-        double z2 = normal_dist(generator);
-
-        T y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
-
-        // add some path dependent logic to make the tapes different between
-        // paths
-        if (z1 > 0.) {
-            y_path += x3 * z1 * z2;
-        }
-
-        result += y_path * one_over_paths;
-    }
-
-    return result;
-}
-
-// Templated compute_result with if constexpr for tape handling
-template<typename T>
-auto
-compute_result_branch(T x1, T x2, T x3, std::size_t num_paths) -> double
-{
-    std::mt19937 generator(42); // same seed for reproducibility
-    std::uniform_real_distribution<double> normal_dist(0.0, 1.0);
-
-    // Initial calculations (before the loop)
-    T y_init = x1 * x2;
-
-    // For AD types, get the tape and save position after initial calcs
-    [[maybe_unused]] adhoc_mode::tape_t::position_t pos2{};
-    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-    auto& tape = *tapeptr;
-
-    double one_over_paths = 1.0 / static_cast<double>(num_paths);
-    if constexpr (std::is_same_v<T, adhoc_t>) {
-        pos2 = tape.get_position();
-        tape.set_checkpoint();
-    }
-
-    double result = 0.0;
-    for (std::size_t path = 0; path < num_paths; ++path) {
-        double z1 = normal_dist(generator);
-        double z2 = normal_dist(generator);
-
-        T y_path = y_init * z1 + x1 * z2 + exp(x2 * z1 * 0.1);
-
-        // add some path dependent logic to make the tapes different between
-        // paths
-        if (path % 2 == 0) {
-            y_path += x3 * z1 * z2;
-        }
-
-        T res = y_path * one_over_paths;
-
-        if constexpr (std::is_same_v<T, adhoc_t>) {
-            result += adhoc::passive_value(res);
-        }
-        else {
-            result += res;
-        }
-
-        if constexpr (std::is_same_v<T, adhoc_t>) {
-            tape.register_output_variable(res);
-            tape.set_derivative(res, 1.0);
-            tape.backpropagate_and_reset_to(pos2);
-        }
-    }
-
-    return result;
-}
 
 void
 test_checkpoint_fd_vs_ad()
@@ -256,8 +171,7 @@ test_simd8_backpropagation()
         auto& tape = *tapeptr;
 
         // Set method to SIMD8
-        tape.set_method(adhoc::Method::FirstOrderSimd8);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::FirstOrderSimd8, 3, num_lanes);
 
         // Input variables
         adhoc_t x1 = x1_val;
@@ -313,7 +227,7 @@ test_simd8_backpropagation()
         auto& tape = *tapeptr;
 
         // Use standard first-order method
-        tape.set_method(adhoc::Method::FirstOrderSimple);
+        tape.configure(adhoc::Method::FirstOrderSimple, 3, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -369,8 +283,7 @@ test_simd8_monte_carlo()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(adhoc::Method::FirstOrderSimd8);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::FirstOrderSimd8, 3, num_lanes);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -436,7 +349,7 @@ test_simd8_monte_carlo()
         using adhoc_t = adhoc_t;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::FirstOrderSimple);
+        tape.configure(adhoc::Method::FirstOrderSimple, 3, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -516,8 +429,7 @@ test_simd8_second_order_backpropagation()
         auto& tape = *tapeptr;
 
         // Set method to SecondOrderSimd8
-        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::SecondOrderSimd8_ankerl, 3, num_lanes);
 
         // Input variables
         adhoc_t x1 = x1_val;
@@ -570,7 +482,7 @@ test_simd8_second_order_backpropagation()
         auto& tape = *tapeptr;
 
         // Use standard second-order method
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 3, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -635,8 +547,7 @@ test_simd8_second_order_with_transcendentals()
         using adhoc_t = adhoc_t;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::SecondOrderSimd8_ankerl, 2, num_lanes);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -671,7 +582,7 @@ test_simd8_second_order_with_transcendentals()
         using adhoc_t = adhoc_t;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 2, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -742,8 +653,7 @@ test_simd8_second_order_monte_carlo()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::SecondOrderSimd8_ankerl, 2, num_lanes);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -801,7 +711,7 @@ test_simd8_second_order_monte_carlo()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 2, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -865,8 +775,7 @@ test_simd8_second_order_different_seeds_per_lane()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(adhoc::Method::SecondOrderSimd8_ankerl);
-        tape.set_lanes(8);
+        tape.configure(adhoc::Method::SecondOrderSimd8_ankerl, 1, num_lanes);
 
         adhoc_t x = x_val;
         tape.register_variable(x);
@@ -899,7 +808,7 @@ test_simd8_second_order_different_seeds_per_lane()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1, 1);
 
         adhoc_t x = x_val;
         tape.register_variable(x);
@@ -935,7 +844,7 @@ test_lossy_compressed_1in1out()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         adhoc_t x = 2.3;
         tape.register_variable(x);
         auto y = log(erfc(exp(x)));
@@ -961,7 +870,7 @@ test_lossy_compressed_2in1out()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 2, 1);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1.1;
         tape.register_variable(x1);
@@ -993,7 +902,7 @@ test_lossy_compressed_1in1out2paths()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         adhoc_t x1 = 2.3;
         tape.register_variable(x1);
 
@@ -1021,7 +930,7 @@ test_lossy_compressed_1in1out2paths2()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 2, 1);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1;
         tape.register_variable(x1);
@@ -1054,7 +963,7 @@ test_lossy_compressed_2in1out2()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 2, 1);
         adhoc_t x1 = 2.3;
         adhoc_t x2 = 1.1;
         tape.register_variable(x1);
@@ -1091,7 +1000,7 @@ test_lossy_compressed_1in2out()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 2);
         adhoc_t x1 = 2.3;
         tape.register_variable(x1);
 
@@ -1145,7 +1054,7 @@ test_lossy_compressed_complex1_pre()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1206,7 +1115,7 @@ test_lossy_compressed_complex1_pre2()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1277,7 +1186,7 @@ test_lossy_compressed_complex1()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -1322,7 +1231,7 @@ test_lossy_compressed_complex2()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto const scEnd = inputD * 1.2;
@@ -1365,7 +1274,7 @@ test_lossy_compressed_complex3()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto const scEnd = inputD * 1.2;
@@ -1409,7 +1318,7 @@ test_lossy_compressed_double_triangle_simple()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto x1 = inputD * 1.2;
@@ -1453,7 +1362,7 @@ test_lossy_compressed_double_triangle()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1500,7 +1409,7 @@ test_lossy_compressed_double_triangle_checkpoint()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto x0 = cos(inputD);
@@ -1549,7 +1458,7 @@ test_lossy_compressed_double_triangle_checkpoint2()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
         auto pos = tape.get_position();
 
@@ -1593,7 +1502,7 @@ test_lossy_compressed_double_triangle_twice()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1641,7 +1550,7 @@ test_lossy_compressed_univariate_non_reduced()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto const scStart = exp(inputD);
@@ -1695,7 +1604,7 @@ test_lossy_compressed_complex1_double_minus()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 2, 1);
 
         // Initial input variables
         adhoc_t x1, x2;
@@ -1750,7 +1659,7 @@ test_lossy_compressed_reset_registration()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 2, 1);
         tape.register_variable(inputD1);
 
         auto const scEnd = inputD1 * 1.2;
@@ -1804,7 +1713,7 @@ test_lossy_multiple_checkpoints()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
 
         auto x1 = exp(inputD);
@@ -1857,7 +1766,7 @@ test_lossy_multiple_checkpoints_reset()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 1, 1);
         tape.register_variable(inputD);
         auto pos = tape.get_position();
 
@@ -1960,7 +1869,7 @@ test_lossy_path_reuse()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -2080,7 +1989,7 @@ test_lossy_path_reuse_unusedops()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -2193,7 +2102,7 @@ test_lossy_path_reuse_invertedmult()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -2253,7 +2162,7 @@ test_simd_across_paths()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;

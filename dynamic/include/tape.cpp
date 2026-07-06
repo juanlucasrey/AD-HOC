@@ -28,6 +28,7 @@
 #include "adhoc/backpropagator1lossypathreuse.hpp"
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2lossy.hpp"
+#include "adhoc/fwdpropagator1.hpp"
 #include "adhoc/position_impl.hpp"
 #include "adhoc/tape_data.hpp"
 #include "adhoc/vector_size_of.hpp"
@@ -76,9 +77,12 @@ struct Tape<type>::Impl {
     std::variant<BackPropagator<double>,
                  BackPropagator<double, true>,
                  BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2<double, MapType::STD_MAP, true>,
-                 BackPropagator2<double, MapType::STD_UNORDERED_MAP, true>,
                  BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 BackPropagator2<double, MapType::STD_MAP>,
+                 BackPropagator2<double, MapType::STD_MAP, true>,
+                 BackPropagator2<double, MapType::STD_UNORDERED_MAP>,
+                 BackPropagator2<double, MapType::STD_UNORDERED_MAP, true>,
+                 BackPropagator2<double, MapType::BOOST_UNORDERED_MAP>,
                  BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true>,
                  BackPropagatorLossy<double>,
                  BackPropagatorLossy<double, true>,
@@ -91,7 +95,9 @@ struct Tape<type>::Impl {
                  BackPropagatorLossyCompressedPathReuseV<double>,
                  BackPropagatorLossyCompressedPathReuseV<double, true>,
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >
+                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 FwdPropagator<double>,
+                 FwdPropagator<double, true> >
       bp = BackPropagator<double>();
 };
 
@@ -172,13 +178,6 @@ Tape<type>::register_output_variable(type& var)
 }
 
 template<class type>
-void
-Tape<type>::set_lanes(std::size_t num_lanes)
-{
-    std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
-}
-
-template<class type>
 auto
 Tape<type>::get_lanes() const -> std::size_t
 {
@@ -187,64 +186,115 @@ Tape<type>::get_lanes() const -> std::size_t
 
 template<class type>
 void
-Tape<type>::set_method(Method m)
+Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std::size_t num_lanes)
 {
-    if (m == Method::FirstOrderSimple) {
-        this->impl->bp.template emplace<BackPropagator<double> >();
+    bool const is_fwd = (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd);
+    std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
+    if (num_lanes == 0) {
+        num_lanes = max_lanes;
     }
-    else if (m == Method::FirstOrderSimd8) {
-        this->impl->bp.template emplace<BackPropagator<double, true> >();
+    else if (num_lanes > max_lanes) {
+        throw std::runtime_error("Number of lanes exceeds maximum allowed for the given method");
     }
-    else if (m == Method::SecondOrderSimple) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >();
+
+    if (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<FwdPropagator<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<FwdPropagator<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderSimple || m == Method::FirstOrderSimd8) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossy || m == Method::FirstOrderVLossy) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossy<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossy<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyCompressed || m == Method::FirstOrderVLossyCompressed) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyPathReuse || m == Method::FirstOrderVLossyPathReuse) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyCompressedPathReuse || m == Method::FirstOrderVLossyCompressedPathReuse) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::SecondOrderSimple || m == Method::SecondOrderSimd8_ankerl) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::SecondOrderLossy || m == Method::SecondOrderVLossy) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_stdmap) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_stdunorderedmap) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >();
-    }
-    else if (m == Method::SecondOrderSimd8_ankerl) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_boost) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >();
-    }
-    else if (m == Method::FirstOrderLossy) {
-        this->impl->bp.template emplace<BackPropagatorLossy<double> >();
-    }
-    else if (m == Method::FirstOrderVLossy) {
-        this->impl->bp.template emplace<BackPropagatorLossy<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressed) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressed) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressedPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressedPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressedPathReuseV) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressedPathReuseV) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double, true> >();
-    }
-    else if (m == Method::SecondOrderLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >();
-    }
-    else if (m == Method::SecondOrderVLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
     }
 }
 
@@ -328,6 +378,14 @@ Tape<type>::get_method() const -> Method
         return Method::SecondOrderVLossy;
     }
 
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        return Method::FirstOrderSimpleFwd;
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        return Method::FirstOrderVSimpleFwd;
+    }
+
     throw std::runtime_error("Invalid backpropagator type");
 }
 
@@ -409,6 +467,14 @@ Tape<type>::get_order() const -> std::size_t
 
     if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
         return 2;
+    }
+
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        return 1;
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        return 1;
     }
 
     throw std::runtime_error("Invalid backpropagator type");
@@ -626,20 +692,20 @@ Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::
 template class Tape<adhoc_type<double, TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
 
 #ifndef _MSC_VER
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, false>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, false>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >;
+// template class Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, IdxVectorType::Simple> > >;
 
 // template void
 // Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::Simple> >::
@@ -702,21 +768,21 @@ template class Tape<adhoc_type<double, TapeData<float, EnumVectorType::Simple, I
 
 // template class Tape<double, TapeData<double, EnumVectorType::BitCompression, IdxVectorType::BitCompression> >;
 
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
-  backpropagate_and_reset_to<true, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
-  backpropagate_and_reset_to<true, false>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
-  backpropagate_and_reset_to<false, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
-  backpropagate_and_reset_to<false, false>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
+//   backpropagate_and_reset_to<true, true>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
+//   backpropagate_and_reset_to<true, false>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
+//   backpropagate_and_reset_to<false, true>(position_t const& to);
+// template void
+// Tape<adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >::
+//   backpropagate_and_reset_to<false, false>(position_t const& to);
 
-template class Tape<
-  adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >;
+// template class Tape<
+//   adhoc_type<double, TapeData<float, EnumVectorType::Valuecompression, IdxVectorType::BitCompression> > >;
 
 #endif
 
