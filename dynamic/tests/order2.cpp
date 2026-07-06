@@ -31,7 +31,7 @@ order2_simple()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.set_method(m);
+        tape.configure(m, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;

@@ -76,9 +76,12 @@ struct Tape<type>::Impl {
     std::variant<BackPropagator<double>,
                  BackPropagator<double, true>,
                  BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2<double, MapType::STD_MAP, true>,
-                 BackPropagator2<double, MapType::STD_UNORDERED_MAP, true>,
                  BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 BackPropagator2<double, MapType::STD_MAP>,
+                 BackPropagator2<double, MapType::STD_MAP, true>,
+                 BackPropagator2<double, MapType::STD_UNORDERED_MAP>,
+                 BackPropagator2<double, MapType::STD_UNORDERED_MAP, true>,
+                 BackPropagator2<double, MapType::BOOST_UNORDERED_MAP>,
                  BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true>,
                  BackPropagatorLossy<double>,
                  BackPropagatorLossy<double, true>,
@@ -172,13 +175,6 @@ Tape<type>::register_output_variable(type& var)
 }
 
 template<class type>
-void
-Tape<type>::set_lanes(std::size_t num_lanes)
-{
-    std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
-}
-
-template<class type>
 auto
 Tape<type>::get_lanes() const -> std::size_t
 {
@@ -187,64 +183,120 @@ Tape<type>::get_lanes() const -> std::size_t
 
 template<class type>
 void
-Tape<type>::set_method(Method m)
+Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std::size_t num_lanes)
 {
-    if (m == Method::FirstOrderSimple) {
-        this->impl->bp.template emplace<BackPropagator<double> >();
+    bool const is_fwd = false;
+    std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
+    if (num_lanes == 0) {
+        num_lanes = max_lanes;
     }
-    else if (m == Method::FirstOrderSimd8) {
-        this->impl->bp.template emplace<BackPropagator<double, true> >();
+    else if (num_lanes > max_lanes) {
+        throw std::runtime_error("Number of lanes exceeds maximum allowed for the given method");
     }
-    else if (m == Method::SecondOrderSimple) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >();
+
+    if (m == Method::FirstOrderSimple || m == Method::FirstOrderSimd8) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossy || m == Method::FirstOrderVLossy) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossy<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossy<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyCompressed || m == Method::FirstOrderVLossyCompressed) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyPathReuse || m == Method::FirstOrderVLossyPathReuse) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyCompressedPathReuse || m == Method::FirstOrderVLossyCompressedPathReuse) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+    else if (m == Method::FirstOrderLossyCompressedPathReuseV || m == Method::FirstOrderVLossyCompressedPathReuseV) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
+    }
+
+    else if (m == Method::SecondOrderSimple || m == Method::SecondOrderSimd8_ankerl) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+            // only allows 8 lanes for now, but could be extended to allow more
+            std::visit([](auto& arg) { arg.set_lanes(8); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_stdmap) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_MAP, true> >();
+            // only allows 8 lanes for now, but could be extended to allow more
+            std::visit([](auto& arg) { arg.set_lanes(8); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_stdunorderedmap) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >();
-    }
-    else if (m == Method::SecondOrderSimd8_ankerl) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >();
+            // only allows 8 lanes for now, but could be extended to allow more
+            std::visit([](auto& arg) { arg.set_lanes(8); }, this->impl->bp);
+        }
     }
     else if (m == Method::SecondOrderSimd8_boost) {
-        this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >();
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >();
+            // only allows 8 lanes for now, but could be extended to allow more
+            std::visit([](auto& arg) { arg.set_lanes(8); }, this->impl->bp);
+        }
     }
-    else if (m == Method::FirstOrderLossy) {
-        this->impl->bp.template emplace<BackPropagatorLossy<double> >();
-    }
-    else if (m == Method::FirstOrderVLossy) {
-        this->impl->bp.template emplace<BackPropagatorLossy<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressed) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressed) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressed<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressedPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressedPathReuse) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double, true> >();
-    }
-    else if (m == Method::FirstOrderLossyCompressedPathReuseV) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double> >();
-    }
-    else if (m == Method::FirstOrderVLossyCompressedPathReuseV) {
-        this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double, true> >();
-    }
-    else if (m == Method::SecondOrderLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >();
-    }
-    else if (m == Method::SecondOrderVLossy) {
-        this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+    else if (m == Method::SecondOrderLossy || m == Method::SecondOrderVLossy) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >();
+        }
+        else {
+            this->impl->bp.template emplace<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >();
+            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+        }
     }
 }
 
