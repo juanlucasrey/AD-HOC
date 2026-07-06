@@ -79,7 +79,7 @@ test_division_second_order()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.set_method(adhoc::Method::SecondOrderSimple);
+    tape.configure(adhoc::Method::SecondOrderSimple, 2, 1);
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -175,7 +175,7 @@ test_exp_second_order()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.set_method(adhoc::Method::SecondOrderSimple);
+    tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
     adhoc_t x_adhoc = 2.0;
     tape.register_variable(x_adhoc);
     adhoc_t y_adhoc{ exp(x_adhoc) };
@@ -217,7 +217,7 @@ test_expm1()
     auto check2d = [](double input, double expected_derivative1, double expected_derivative2) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -263,7 +263,7 @@ test_log_second_order()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.set_method(adhoc::Method::SecondOrderSimple);
+    tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
     adhoc_t x_adhoc = 2.0;
     tape.register_variable(x_adhoc);
     adhoc_t y_adhoc{ log(x_adhoc) };
@@ -304,7 +304,7 @@ test_pow_c()
     auto check2d = [](double input, double exponent, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -357,7 +357,7 @@ test_pow_c_0()
     auto check2d = [](double input, double exponent, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -415,7 +415,7 @@ test_sqrt()
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -471,7 +471,7 @@ test_erf()
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -523,7 +523,7 @@ test_erfc()
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -575,7 +575,7 @@ test_abs()
     auto check2d = [](double input, double expected_derivative, double expected_second_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
         auto y_adhoc = abs(cos(x_adhoc));
@@ -633,7 +633,7 @@ test_max()
 
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 2, 1);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
         tape.register_variable(x_adhoc1);
@@ -700,7 +700,7 @@ test_min()
 
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 2, 1);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
         tape.register_variable(x_adhoc1);
@@ -967,7 +967,7 @@ test_skip_unregistered_outputs()
     auto check2d = [](double input, double expected_derivative) {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
         adhoc_t x_adhoc = input;
         tape.register_variable(x_adhoc);
 
@@ -1036,7 +1036,7 @@ test_induced_path()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.set_method(adhoc::Method::FirstOrderLossyCompressed);
+    tape.configure(adhoc::Method::FirstOrderLossyCompressed, 1, 1);
 
     adhoc::opcode<double>::type x_adhoc = 0.5;
     tape.register_variable(x_adhoc);

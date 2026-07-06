@@ -119,9 +119,8 @@ class Tape {
     ~Tape();
 
     // only for lossy tapes for now
-    void set_lanes(std::size_t num_lanes = 1);
+    void configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std::size_t num_lanes = 0);
     auto get_lanes() const -> std::size_t;
-    void set_method(Method m);
     auto get_method() const -> Method;
     auto get_order() const -> std::size_t;
 

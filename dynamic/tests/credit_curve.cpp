@@ -2247,7 +2247,7 @@ pureNewtonSolve(credit_curve<D>& sc,
 
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
 
         tape.register_variable(inputD);
 
@@ -2450,7 +2450,7 @@ bwd_adhoc2()
     using D = adhoc_mode::type;
     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
     auto& tape = *tapeptr;
-    tape.set_method(adhoc::Method::SecondOrderSimple);
+    tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
 
     std::vector<CDS> cdsInstruments = get_cds();
     const auto yc = get_yc();
@@ -2526,7 +2526,7 @@ bwd_adhoc2_payoff()
         using D = adhoc_mode::type;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.set_method(adhoc::Method::SecondOrderSimple);
+        tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
 
         std::vector<D> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
         tape.register_variable(cdsSpreads);
@@ -2607,7 +2607,7 @@ compressed_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderLossy);
+        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2628,7 +2628,7 @@ compressed_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderLossyCompressed);
+        tapeptr->configure(adhoc::Method::FirstOrderLossyCompressed, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2679,7 +2679,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderSimple);
+        tapeptr->configure(adhoc::Method::FirstOrderSimple, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2713,7 +2713,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderLossy);
+        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2774,7 +2774,7 @@ lossy_reuse_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderLossy);
+        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2795,7 +2795,7 @@ lossy_reuse_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->set_method(adhoc::Method::FirstOrderLossyPathReuse);
+        tapeptr->configure(adhoc::Method::FirstOrderLossyPathReuse, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
