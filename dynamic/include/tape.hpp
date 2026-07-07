@@ -152,6 +152,7 @@ class Tape {
     void backpropagate_and_reset_to(position_t const& to);
     void set_derivative(type const& var, double deriv, std::size_t lane = 0);
     auto get_derivative(type const& var, std::size_t lane = 0) const -> double;
+    auto get_derivative(std::size_t idx_input, std::size_t idx_output) const -> double;
 
     auto get_derivative(type const& var1, type const& var2, std::size_t lane = 0) const -> double;
     void zero_adjoints();

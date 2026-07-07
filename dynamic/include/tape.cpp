@@ -199,11 +199,10 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
 
     if (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd) {
         if (num_lanes == 1) {
-            this->impl->bp.template emplace<FwdPropagator<double> >();
+            this->impl->bp.template emplace<FwdPropagator<double> >(n_inputs, n_outputs, num_lanes);
         }
         else {
-            this->impl->bp.template emplace<FwdPropagator<double, true> >();
-            std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
+            this->impl->bp.template emplace<FwdPropagator<double, true> >(n_inputs, n_outputs, num_lanes);
         }
     }
     else if (m == Method::FirstOrderSimple || m == Method::FirstOrderSimd8) {
@@ -553,6 +552,23 @@ Tape<type>::get_derivative(type const& var, std::size_t lane) const -> double
                           this->impl->bp);
     }
     return 0.;
+}
+
+template<class type>
+auto
+Tape<type>::get_derivative(std::size_t idx_input, std::size_t idx_output) const -> double
+{
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        auto const& arg = std::get<FwdPropagator<double> >(this->impl->bp);
+        return arg.get_derivative2(idx_input, idx_output);
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        auto const& arg = std::get<FwdPropagator<double, true> >(this->impl->bp);
+        return arg.get_derivative2(idx_input, idx_output);
+    }
+
+    return 0;
 }
 
 template<class type>
