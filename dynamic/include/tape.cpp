@@ -96,6 +96,9 @@ struct Tape<type>::Impl {
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE>,
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >
       bp = BackPropagator<double>();
+
+    std::size_t m_n_inputs;
+    std::size_t m_n_outputs;
 };
 
 template<class type>
@@ -182,19 +185,27 @@ Tape<type>::get_lanes() const -> std::size_t
 }
 
 template<class type>
+auto
+Tape<type>::get_size() const -> std::size_t
+{
+    return this->impl->m_n_outputs;
+}
+
+template<class type>
 void
 Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std::size_t num_lanes)
 {
+    this->impl->m_n_inputs = n_inputs;
+    this->impl->m_n_outputs = n_outputs;
     bool const is_fwd = false;
     std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
     if (num_lanes == 0) {
         num_lanes = max_lanes;
     }
-    else if (num_lanes > max_lanes) {
-        throw std::runtime_error("Number of lanes exceeds maximum allowed for the given method");
-    }
 
-    if (m == Method::FirstOrderSimple || m == Method::FirstOrderSimd8) {
+    num_lanes = std::min(num_lanes, max_lanes);
+
+    if (m == Method::Bwd) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagator<double> >();
         }
@@ -203,7 +214,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
         }
     }
-    else if (m == Method::FirstOrderLossy || m == Method::FirstOrderVLossy) {
+    else if (m == Method::BwdBuffer) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagatorLossy<double> >();
         }
@@ -212,7 +223,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
         }
     }
-    else if (m == Method::FirstOrderLossyCompressed || m == Method::FirstOrderVLossyCompressed) {
+    else if (m == Method::BwdBufferCompressed) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagatorLossyCompressed<double> >();
         }
@@ -221,7 +232,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
         }
     }
-    else if (m == Method::FirstOrderLossyPathReuse || m == Method::FirstOrderVLossyPathReuse) {
+    else if (m == Method::BwdBufferPathReuse) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagatorLossyPathReuse<double> >();
         }
@@ -230,7 +241,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
         }
     }
-    else if (m == Method::FirstOrderLossyCompressedPathReuse || m == Method::FirstOrderVLossyCompressedPathReuse) {
+    else if (m == Method::BwdBufferCompressedPathReuse) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuse<double> >();
         }
@@ -239,7 +250,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             std::visit([num_lanes](auto& arg) { arg.set_lanes(num_lanes); }, this->impl->bp);
         }
     }
-    else if (m == Method::FirstOrderLossyCompressedPathReuseV || m == Method::FirstOrderVLossyCompressedPathReuseV) {
+    else if (m == Method::BwdBufferCompressedPathReuseV) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagatorLossyCompressedPathReuseV<double> >();
         }
@@ -305,11 +316,51 @@ auto
 Tape<type>::get_method() const -> Method
 {
     if (std::holds_alternative<BackPropagator<double> >(this->impl->bp)) {
-        return Method::FirstOrderSimple;
+        return Method::Bwd;
     }
 
     if (std::holds_alternative<BackPropagator<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderSimd8;
+        return Method::Bwd;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossy<double> >(this->impl->bp)) {
+        return Method::BwdBuffer;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossy<double, true> >(this->impl->bp)) {
+        return Method::BwdBuffer;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double> >(this->impl->bp)) {
+        return Method::BwdBufferCompressed;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressed<double, true> >(this->impl->bp)) {
+        return Method::BwdBufferCompressed;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double> >(this->impl->bp)) {
+        return Method::BwdBufferPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyPathReuse<double, true> >(this->impl->bp)) {
+        return Method::BwdBufferPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double> >(this->impl->bp)) {
+        return Method::BwdBufferCompressedPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double, true> >(this->impl->bp)) {
+        return Method::BwdBufferCompressedPathReuse;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double> >(this->impl->bp)) {
+        return Method::BwdBufferCompressedPathReuseV;
+    }
+
+    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double, true> >(this->impl->bp)) {
+        return Method::BwdBufferCompressedPathReuseV;
     }
 
     if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
@@ -330,46 +381,6 @@ Tape<type>::get_method() const -> Method
 
     if (std::holds_alternative<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
         return Method::SecondOrderSimd8_boost;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossy<double> >(this->impl->bp)) {
-        return Method::FirstOrderLossy;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossy<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVLossy;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressed<double> >(this->impl->bp)) {
-        return Method::FirstOrderLossyCompressed;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressed<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVLossyCompressed;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<double> >(this->impl->bp)) {
-        return Method::FirstOrderLossyPathReuse;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyPathReuse<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVLossyPathReuse;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double> >(this->impl->bp)) {
-        return Method::FirstOrderLossyCompressedPathReuse;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuse<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVLossyCompressedPathReuse;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double> >(this->impl->bp)) {
-        return Method::FirstOrderLossyCompressedPathReuseV;
-    }
-
-    if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVLossyCompressedPathReuseV;
     }
 
     if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {

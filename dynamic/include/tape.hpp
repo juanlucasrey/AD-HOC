@@ -28,23 +28,17 @@
 namespace adhoc {
 
 enum class Method {
-    FirstOrderSimple,
-    FirstOrderSimd8,
+    Bwd,
+    BwdBuffer,
+    BwdBufferCompressed,
+    BwdBufferPathReuse,
+    BwdBufferCompressedPathReuse,
+    BwdBufferCompressedPathReuseV,
     SecondOrderSimple,
     SecondOrderSimd8_stdmap,
     SecondOrderSimd8_stdunorderedmap,
     SecondOrderSimd8_ankerl,
     SecondOrderSimd8_boost,
-    FirstOrderLossy,
-    FirstOrderVLossy,
-    FirstOrderLossyCompressed,
-    FirstOrderVLossyCompressed,
-    FirstOrderLossyPathReuse,
-    FirstOrderVLossyPathReuse,
-    FirstOrderLossyCompressedPathReuse,
-    FirstOrderVLossyCompressedPathReuse,
-    FirstOrderLossyCompressedPathReuseV,
-    FirstOrderVLossyCompressedPathReuseV,
     SecondOrderLossy,
     SecondOrderVLossy,
 };
@@ -123,6 +117,7 @@ class Tape {
     auto get_lanes() const -> std::size_t;
     auto get_method() const -> Method;
     auto get_order() const -> std::size_t;
+    auto get_size() const -> std::size_t;
 
     void clear()
     {
@@ -159,6 +154,102 @@ class Tape {
     void print() const;
 
     auto size_of(bool capacity = false) const -> std::size_t;
+
+    class subrange_t {
+      public:
+        subrange_t(std::size_t size, std::size_t lanes)
+          : m_size(size)
+          , m_lanes(lanes)
+        {
+        }
+
+        class range_t {
+          private:
+            std::size_t m_index;
+
+            std::size_t m_size;
+            std::size_t m_lanes;
+
+          public:
+            std::size_t global_index;
+
+            range_t(subrange_t const& s, bool set_end = false)
+              : m_index(0)
+              , global_index(0)
+            {
+                m_size = s.m_size;
+                m_lanes = s.m_lanes;
+                if (set_end) {
+                    global_index = this->m_size;
+                    m_index = static_cast<std::size_t>(
+                      std::ceil(static_cast<double>(this->m_size) / static_cast<double>(this->m_lanes)));
+                }
+            }
+
+            auto operator++() -> range_t&
+            {
+                global_index += this->m_lanes;
+                ++m_index;
+                return *this;
+            }
+
+            auto operator!=(range_t const& rhs) const -> bool { return rhs.m_index != m_index; }
+            auto operator*() -> range_t& { return *this; }
+            auto operator*() const -> range_t const& { return *this; }
+
+            class inner_range_t {
+              private:
+                std::size_t m_index;
+
+                std::size_t m_size;
+                std::size_t m_lanes;
+
+              public:
+                std::size_t global_index, sub_index;
+
+                inner_range_t(range_t const& r, bool set_end = false)
+                  : global_index(r.global_index)
+                  , sub_index(0)
+                {
+                    m_index = r.m_index;
+                    m_size = r.m_size;
+                    m_lanes = r.m_lanes;
+                    if (set_end) {
+                        if ((this->m_index + 1) * this->m_lanes > this->m_size) {
+                            sub_index = this->m_size % this->m_lanes;
+                        }
+                        else {
+                            sub_index = this->m_lanes;
+                        }
+                    }
+                }
+
+                auto operator++() -> inner_range_t&
+                {
+                    ++sub_index;
+                    ++global_index;
+                    return *this;
+                }
+
+                auto operator!=(inner_range_t const& rhs) const -> bool { return rhs.sub_index != sub_index; }
+
+                auto operator*() -> inner_range_t& { return *this; }
+                auto operator*() const -> inner_range_t const& { return *this; }
+            };
+
+            auto begin() const -> inner_range_t { return { *this }; }
+            auto end() const -> range_t::inner_range_t { return { *this, true }; }
+        };
+
+        auto begin() const -> subrange_t::range_t { return { *this }; }
+        auto end() const -> subrange_t::range_t { return { *this, true }; }
+
+      private:
+        std::size_t m_size;
+        std::size_t m_lanes;
+    };
+
+    auto subranges() -> subrange_t { return { this->get_size(), this->get_lanes() }; }
 };
 
 // smart pointer that manages the lifetime of the static tape. It has an internal counter to track how many instances
