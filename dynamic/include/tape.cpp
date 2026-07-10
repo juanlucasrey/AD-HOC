@@ -202,9 +202,8 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
     if (num_lanes == 0) {
         num_lanes = max_lanes;
     }
-    else if (num_lanes > max_lanes) {
-        throw std::runtime_error("Number of lanes exceeds maximum allowed for the given method");
-    }
+
+    num_lanes = std::min(num_lanes, max_lanes);
 
     if (m == Method::Bwd) {
         if (num_lanes == 1) {
@@ -324,26 +323,6 @@ Tape<type>::get_method() const -> Method
         return Method::Bwd;
     }
 
-    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
-        return Method::SecondOrderSimple;
-    }
-
-    if (std::holds_alternative<BackPropagator2<double, MapType::STD_MAP, true> >(this->impl->bp)) {
-        return Method::SecondOrderSimd8_stdmap;
-    }
-
-    if (std::holds_alternative<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
-        return Method::SecondOrderSimd8_stdunorderedmap;
-    }
-
-    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
-        return Method::SecondOrderSimd8_ankerl;
-    }
-
-    if (std::holds_alternative<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
-        return Method::SecondOrderSimd8_boost;
-    }
-
     if (std::holds_alternative<BackPropagatorLossy<double> >(this->impl->bp)) {
         return Method::BwdBuffer;
     }
@@ -382,6 +361,26 @@ Tape<type>::get_method() const -> Method
 
     if (std::holds_alternative<BackPropagatorLossyCompressedPathReuseV<double, true> >(this->impl->bp)) {
         return Method::BwdBufferCompressedPathReuseV;
+    }
+
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {
+        return Method::SecondOrderSimple;
+    }
+
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_MAP, true> >(this->impl->bp)) {
+        return Method::SecondOrderSimd8_stdmap;
+    }
+
+    if (std::holds_alternative<BackPropagator2<double, MapType::STD_UNORDERED_MAP, true> >(this->impl->bp)) {
+        return Method::SecondOrderSimd8_stdunorderedmap;
+    }
+
+    if (std::holds_alternative<BackPropagator2<double, MapType::ANKERL_UNORDERED_DENSE, true> >(this->impl->bp)) {
+        return Method::SecondOrderSimd8_ankerl;
+    }
+
+    if (std::holds_alternative<BackPropagator2<double, MapType::BOOST_UNORDERED_MAP, true> >(this->impl->bp)) {
+        return Method::SecondOrderSimd8_boost;
     }
 
     if (std::holds_alternative<BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE> >(this->impl->bp)) {

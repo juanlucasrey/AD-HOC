@@ -174,14 +174,15 @@ class Tape {
             std::size_t global_index;
 
             range_t(subrange_t const& s, bool set_end = false)
-              : global_index(0)
-              , m_index(0)
+              : m_index(0)
+              , global_index(0)
             {
                 m_size = s.m_size;
                 m_lanes = s.m_lanes;
                 if (set_end) {
                     global_index = this->m_size;
-                    m_index = static_cast<std::size_t>(std::ceil(static_cast<double>(this->m_size) / this->m_lanes));
+                    m_index = static_cast<std::size_t>(
+                      std::ceil(static_cast<double>(this->m_size) / static_cast<double>(this->m_lanes)));
                 }
             }
 
@@ -192,7 +193,7 @@ class Tape {
                 return *this;
             }
 
-            auto operator!=(range_t const& rhs) const -> bool { return static_cast<bool>(rhs.m_index != m_index); }
+            auto operator!=(range_t const& rhs) const -> bool { return rhs.m_index != m_index; }
             auto operator*() -> range_t& { return *this; }
             auto operator*() const -> range_t const& { return *this; }
 
@@ -230,10 +231,7 @@ class Tape {
                     return *this;
                 }
 
-                auto operator!=(inner_range_t const& rhs) const -> bool
-                {
-                    return static_cast<bool>(rhs.sub_index != sub_index);
-                }
+                auto operator!=(inner_range_t const& rhs) const -> bool { return rhs.sub_index != sub_index; }
 
                 auto operator*() -> inner_range_t& { return *this; }
                 auto operator*() const -> inner_range_t const& { return *this; }
