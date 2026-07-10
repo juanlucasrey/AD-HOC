@@ -88,11 +88,11 @@ test_checkpoint_fd_vs_ad()
 void
 test_checkpoint_branch_lossy()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     constexpr std::size_t num_paths = 1000;
@@ -171,7 +171,7 @@ test_simd8_backpropagation()
         auto& tape = *tapeptr;
 
         // Set method to SIMD8
-        tape.configure(adhoc::Method::FirstOrderSimd8, 3, num_lanes);
+        tape.configure(adhoc::Method::Bwd, 3, num_lanes);
 
         // Input variables
         adhoc_t x1 = x1_val;
@@ -227,7 +227,7 @@ test_simd8_backpropagation()
         auto& tape = *tapeptr;
 
         // Use standard first-order method
-        tape.configure(adhoc::Method::FirstOrderSimple, 3, 1, 1);
+        tape.configure(adhoc::Method::Bwd, 3, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -283,7 +283,7 @@ test_simd8_monte_carlo()
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
 
-        tape.configure(adhoc::Method::FirstOrderSimd8, 3, num_lanes);
+        tape.configure(adhoc::Method::Bwd, 3, num_lanes);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -349,7 +349,7 @@ test_simd8_monte_carlo()
         using adhoc_t = adhoc_t;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.configure(adhoc::Method::FirstOrderSimple, 3, 1, 1);
+        tape.configure(adhoc::Method::Bwd, 3, 1, 1);
 
         adhoc_t x1 = x1_val;
         adhoc_t x2 = x2_val;
@@ -833,11 +833,11 @@ test_simd8_second_order_different_seeds_per_lane()
 void
 test_lossy_compressed_1in1out()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     double deriv_val = -199.95882307798402;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
@@ -858,11 +858,11 @@ test_lossy_compressed_1in1out()
 void
 test_lossy_compressed_2in1out()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     double deriv_val1 = 518.81914462776513;
     double deriv_val2 = -269.97895210733441;
     for (auto m : methods) {
@@ -891,11 +891,11 @@ test_lossy_compressed_2in1out()
 void
 test_lossy_compressed_1in1out2paths()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     double deriv_val1 = -2.381398009286281;
     for (auto m : methods) {
         using adhoc_t = adhoc_t;
@@ -918,11 +918,11 @@ test_lossy_compressed_1in1out2paths()
 void
 test_lossy_compressed_1in1out2paths2()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     double deriv_val1 = -2.381398009286281;
     double deriv_val2 = -5.4772154213584461;
     for (auto m : methods) {
@@ -951,11 +951,11 @@ test_lossy_compressed_1in1out2paths2()
 void
 test_lossy_compressed_2in1out2()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     double deriv_val1 = 42.516292658681806;
     double deriv_val2 = -22.124287930267304;
     for (auto m : methods) {
@@ -986,11 +986,11 @@ test_lossy_compressed_2in1out2()
 void
 test_lossy_compressed_1in2out()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
 
     double deriv_val1 = 752.01628170139816;
     double deriv_val2 = -0.0027146390620349445;
@@ -1035,11 +1035,11 @@ test_lossy_compressed_1in2out()
 void
 test_lossy_compressed_complex1_pre()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
@@ -1095,11 +1095,11 @@ test_lossy_compressed_complex1_pre()
 void
 test_lossy_compressed_complex1_pre2()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
@@ -1166,11 +1166,11 @@ test_lossy_compressed_complex1_pre2()
 void
 test_lossy_compressed_complex1()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
 
     constexpr std::size_t num_paths = 1000;
     double x1_val = 1.5, x2_val = 2.0, x3_val = 0.5;
@@ -1213,11 +1213,11 @@ test_lossy_compressed_complex1()
 void
 test_lossy_compressed_complex2()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1256,11 +1256,11 @@ test_lossy_compressed_complex2()
 void
 test_lossy_compressed_complex3()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1300,11 +1300,11 @@ test_lossy_compressed_complex3()
 void
 test_lossy_compressed_double_triangle_simple()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1344,11 +1344,11 @@ test_lossy_compressed_double_triangle_simple()
 void
 test_lossy_compressed_double_triangle()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1391,11 +1391,11 @@ test_lossy_compressed_double_triangle()
 void
 test_lossy_compressed_double_triangle_checkpoint()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1440,11 +1440,11 @@ test_lossy_compressed_double_triangle_checkpoint()
 void
 test_lossy_compressed_double_triangle_checkpoint2()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1485,10 +1485,10 @@ test_lossy_compressed_double_triangle_checkpoint2()
 void
 test_lossy_compressed_double_triangle_twice()
 {
-    std::vector<adhoc::Method> methods = { adhoc::Method::FirstOrderLossy,
-                                           adhoc::Method::FirstOrderLossyCompressed,
-                                           adhoc::Method::FirstOrderLossyPathReuse,
-                                           adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> methods = { adhoc::Method::BwdBuffer,
+                                           adhoc::Method::BwdBufferCompressed,
+                                           adhoc::Method::BwdBufferPathReuse,
+                                           adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1532,11 +1532,11 @@ test_lossy_compressed_double_triangle_twice()
 void
 test_lossy_compressed_univariate_non_reduced()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1585,11 +1585,11 @@ test_lossy_compressed_univariate_non_reduced()
 void
 test_lossy_compressed_complex1_double_minus()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double x1_val = 1.5, x2_val = 2.0;
@@ -1640,11 +1640,11 @@ test_lossy_compressed_complex1_double_minus()
 void
 test_lossy_compressed_reset_registration()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1694,8 +1694,8 @@ void
 test_lossy_multiple_checkpoints()
 {
     std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy/* ,
+        adhoc::Method::Bwd,
+        adhoc::Method::BwdBuffer/* ,
         adhoc::Method::FirstOrderLossyCompressed *//* ,
         adhoc::Method::FirstOrderLossyPathReuse */ /* ,
          adhoc::Method::FirstOrderLossyCompressedPathReuse */
@@ -1747,8 +1747,8 @@ void
 test_lossy_multiple_checkpoints_reset()
 {
     std::vector<adhoc::Method> const methods = {
-        adhoc::Method::FirstOrderSimple,
-        adhoc::Method::FirstOrderLossy/* ,
+        adhoc::Method::Bwd,
+        adhoc::Method::BwdBuffer/* ,
         adhoc::Method::FirstOrderLossyCompressed *//* ,
         adhoc::Method::FirstOrderLossyPathReuse */ /* ,
          adhoc::Method::FirstOrderLossyCompressedPathReuse */
@@ -1845,11 +1845,11 @@ test_lossy_multiple_checkpoints_reset()
 void
 test_lossy_path_reuse()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -1965,11 +1965,11 @@ compute_result_branch_unused_ops(T x1, T x2, T x3, std::size_t num_paths) -> dou
 void
 test_lossy_path_reuse_unusedops()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -2078,11 +2078,11 @@ compute_result_branch_invertedmult(T x1, T x2, T x3, std::size_t num_paths) -> d
 void
 test_lossy_path_reuse_invertedmult()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderSimple,
-                                                 adhoc::Method::FirstOrderLossy,
-                                                 adhoc::Method::FirstOrderLossyCompressed,
-                                                 adhoc::Method::FirstOrderLossyPathReuse,
-                                                 adhoc::Method::FirstOrderLossyCompressedPathReuse };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::Bwd,
+                                                 adhoc::Method::BwdBuffer,
+                                                 adhoc::Method::BwdBufferCompressed,
+                                                 adhoc::Method::BwdBufferPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuse };
     auto const safe_method = methods[0];
 
     double df = 0;
@@ -2141,8 +2141,8 @@ test_lossy_path_reuse_invertedmult()
 void
 test_simd_across_paths()
 {
-    std::vector<adhoc::Method> const methods = { adhoc::Method::FirstOrderVLossyCompressedPathReuse,
-                                                 adhoc::Method::FirstOrderVLossyCompressedPathReuseV };
+    std::vector<adhoc::Method> const methods = { adhoc::Method::BwdBufferCompressedPathReuse,
+                                                 adhoc::Method::BwdBufferCompressedPathReuseV };
     auto const safe_method = methods[0];
 
     double df = 0;

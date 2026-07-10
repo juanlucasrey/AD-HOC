@@ -1036,7 +1036,7 @@ test_induced_path()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::FirstOrderLossyCompressed, 1, 1);
+    tape.configure(adhoc::Method::BwdBufferCompressed, 1, 1);
 
     adhoc::opcode<double>::type x_adhoc = 0.5;
     tape.register_variable(x_adhoc);
