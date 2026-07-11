@@ -23,6 +23,7 @@
 
 #include "adhoc.hpp"
 
+#include <iterator>
 #include <memory>
 
 namespace adhoc {
@@ -157,50 +158,78 @@ class Tape {
 
   private:
     class subrange_t {
-      public:
-        explicit subrange_t(std::size_t size, std::size_t lanes);
 
+      private:
         class range_t {
           private:
             std::size_t m_size;
             std::size_t m_lanes;
+            std::size_t m_global_index;
 
           public:
-            std::size_t global_index;
+            class range_info_t {
+              private:
+                class inner_range_t {
+                  private:
+                    struct inner_range_info_t {
+                        std::size_t sub_index;
+                        std::size_t global_index;
+                    };
 
-            template<bool IsEnd>
-            explicit range_t(subrange_t const& subrange, std::bool_constant<IsEnd> isend);
+                    std::size_t m_sub_index;
+                    std::size_t m_global_index;
 
-            auto operator++() -> range_t&;
-            auto operator==(range_t const& rhs) const -> bool;
-            auto operator!=(range_t const& rhs) const -> bool;
-            auto operator*() -> range_t&;
-            auto operator*() const -> range_t const&;
+                  public:
+                    using difference_type = std::ptrdiff_t;
+                    using value_type = inner_range_info_t;
+                    inner_range_t();
+                    template<bool IsEnd>
+                    explicit inner_range_t(range_info_t const& range, std::bool_constant<IsEnd> isend);
+                    auto operator++() -> inner_range_t&;
+                    auto operator++(int) -> inner_range_t;
+                    auto operator==(inner_range_t const& rhs) const -> bool;
+                    auto operator!=(inner_range_t const& rhs) const -> bool;
+                    auto operator*() const -> inner_range_info_t;
+                };
+                static_assert(std::forward_iterator<inner_range_t>);
 
-            class inner_range_t {
+                std::size_t m_size;
+                std::size_t m_lanes;
+
               public:
-                std::size_t sub_index;
+                range_info_t(std::size_t size, std::size_t lanes, std::size_t global_index)
+                  : m_size(size)
+                  , m_lanes(lanes)
+                  , global_index(global_index)
+                {
+                }
+
                 std::size_t global_index;
 
-                template<bool IsEnd>
-                explicit inner_range_t(range_t const& range, std::bool_constant<IsEnd> isend);
-                auto operator++() -> inner_range_t&;
-                auto operator==(inner_range_t const& rhs) const -> bool;
-                auto operator!=(inner_range_t const& rhs) const -> bool;
-                auto operator*() -> inner_range_t&;
-                auto operator*() const -> inner_range_t const&;
+                auto begin() const -> inner_range_t;
+                auto end() const -> inner_range_t;
             };
 
-            auto begin() const -> inner_range_t;
-            auto end() const -> inner_range_t;
+            using difference_type = std::ptrdiff_t;
+            using value_type = range_info_t;
+            range_t();
+            template<bool IsEnd>
+            explicit range_t(subrange_t const& subrange, std::bool_constant<IsEnd> isend);
+            auto operator++() -> range_t&;
+            auto operator++(int) -> range_t;
+            auto operator==(range_t const& rhs) const -> bool;
+            auto operator!=(range_t const& rhs) const -> bool;
+            auto operator*() const -> range_info_t;
         };
+        static_assert(std::forward_iterator<range_t>);
 
-        auto begin() const -> range_t;
-        auto end() const -> range_t;
-
-      private:
         std::size_t m_size;
         std::size_t m_lanes;
+
+      public:
+        explicit subrange_t(std::size_t size, std::size_t lanes);
+        auto begin() const -> range_t;
+        auto end() const -> range_t;
     };
 
   public:
