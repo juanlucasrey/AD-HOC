@@ -671,6 +671,133 @@ Tape<type>::size_of(bool capacity) const -> std::size_t
     return size;
 }
 
+template<class type>
+Tape<type>::subrange_t::subrange_t(std::size_t size, std::size_t lanes)
+  : m_size(size)
+  , m_lanes(lanes)
+{
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::begin() const -> range_t
+{
+    return range_t{ *this, std::false_type{} };
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::end() const -> range_t
+{
+    return range_t{ *this, std::true_type{} };
+}
+
+template<class type>
+template<bool IsEnd>
+Tape<type>::subrange_t::range_t::range_t(subrange_t const& subrange, std::bool_constant<IsEnd> /* isend */)
+  : m_size(subrange.m_size)
+  , m_lanes(subrange.m_lanes)
+  , global_index(IsEnd ? subrange.m_size : 0)
+{
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::operator++() -> range_t&
+{
+    this->global_index = std::min(this->global_index + this->m_lanes, this->m_size);
+    return *this;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::operator==(range_t const& rhs) const -> bool
+{
+    // m_size and m_lanes never change
+    return rhs.global_index == this->global_index /* && rhs.m_size == this->m_size && rhs.m_lanes == this->m_lanes */;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::operator!=(range_t const& rhs) const -> bool
+{
+    return !(this->operator==(rhs));
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::operator*() -> range_t&
+{
+    return *this;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::operator*() const -> range_t const&
+{
+    return *this;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::begin() const -> inner_range_t
+{
+    return inner_range_t{ *this, std::false_type{} };
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::end() const -> inner_range_t
+{
+    return inner_range_t{ *this, std::true_type{} };
+}
+
+template<class type>
+template<bool IsEnd>
+Tape<type>::subrange_t::range_t::inner_range_t::inner_range_t(range_t const& range,
+                                                              std::bool_constant<IsEnd> /* isend */)
+  : sub_index(IsEnd ? std::min(range.global_index + range.m_lanes, range.m_size) - range.global_index : 0)
+  , global_index(range.global_index + sub_index)
+{
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::inner_range_t::operator++() -> inner_range_t&
+{
+    ++sub_index;
+    ++global_index;
+    return *this;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::inner_range_t::operator==(inner_range_t const& rhs) const -> bool
+{
+    return rhs.sub_index == this->sub_index && rhs.global_index == this->global_index;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::inner_range_t::operator!=(inner_range_t const& rhs) const -> bool
+{
+    return !(this->operator==(rhs));
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::inner_range_t::operator*() -> inner_range_t&
+{
+    return *this;
+}
+
+template<class type>
+auto
+Tape<type>::subrange_t::range_t::inner_range_t::operator*() const -> inner_range_t const&
+{
+    return *this;
+}
+
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
 template void
