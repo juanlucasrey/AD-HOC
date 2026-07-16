@@ -21,6 +21,7 @@
 #ifndef ADHOC_HPP
 #define ADHOC_HPP
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <concepts>
@@ -32,23 +33,34 @@
 
 namespace adhoc {
 
+namespace detail {
+template<size_t N>
+struct StringLiteral {
+    constexpr StringLiteral(const char (&str)[N]) { std::copy_n(str, N, value); }
+
+    char value[N]{};
+};
+
+} // namespace detail
+
 template<class type>
 class Tape;
 
-template<std::floating_point Float, class TapeDataType>
+template<std::floating_point Float, detail::StringLiteral literal, class TapeDataType>
 class adhoc_type;
 
 template<class mode_t>
 class smart_tape_ptr_t;
 
 template<std::floating_point FloatPrimal,
+         detail::StringLiteral literal = "main",
          std::floating_point FloatTape = FloatPrimal,
          EnumVectorType enumvectype = EnumVectorType::Simple,
          IdxVectorType idxvectype = IdxVectorType::Simple>
 class opcode {
   public:
     using tape_data_t = TapeData<FloatTape, enumvectype, idxvectype>;
-    using type = adhoc_type<FloatPrimal, tape_data_t>;
+    using type = adhoc_type<FloatPrimal, literal, tape_data_t>;
     using tape_t = Tape<type>;
     inline static thread_local tape_t* global_tape = nullptr;
 
@@ -61,12 +73,15 @@ class opcode {
     inline static thread_local tape_data_t* global_tape_data = nullptr;
 };
 
-template<std::floating_point Float, class TapeDataType>
+template<std::floating_point Float, detail::StringLiteral literal, class TapeDataType>
 class adhoc_type {
   private:
-    friend Tape<adhoc_type<Float, TapeDataType> >;
-    using mode_t =
-      opcode<Float, typename TapeDataType::Float, TapeDataType::tape_enumvector_t, TapeDataType::tape_idxvector_t>;
+    friend Tape<adhoc_type<Float, literal, TapeDataType> >;
+    using mode_t = opcode<Float,
+                          literal,
+                          typename TapeDataType::Float,
+                          TapeDataType::tape_enumvector_t,
+                          TapeDataType::tape_idxvector_t>;
 
     Float value{ 0. };
     mutable std::size_t id{ passive_id<std::size_t> };
@@ -664,30 +679,30 @@ class adhoc_type {
     }
 };
 
-template<class Float, class TapeDataType>
+template<class Float, detail::StringLiteral literal, class TapeDataType>
 inline auto
-passive_value(const adhoc_type<Float, TapeDataType>& arg) -> Float
+passive_value(const adhoc_type<Float, literal, TapeDataType>& arg) -> Float
 {
     return arg.get_value();
 }
 
-template<class Float, class TapeDataType>
+template<class Float, detail::StringLiteral literal, class TapeDataType>
 inline auto
-passive_value(adhoc_type<Float, TapeDataType>& arg) -> Float&
+passive_value(adhoc_type<Float, literal, TapeDataType>& arg) -> Float&
 {
     return arg.get_value();
 }
 
-template<class Float, class TapeDataType>
+template<class Float, detail::StringLiteral literal, class TapeDataType>
 inline auto
-passive_value(adhoc_type<Float, TapeDataType>&& arg) -> Float
+passive_value(adhoc_type<Float, literal, TapeDataType>&& arg) -> Float
 {
     return arg.get_value();
 }
 
-template<class Float, class TapeDataType>
+template<class Float, detail::StringLiteral literal, class TapeDataType>
 inline auto
-passive_value(std::vector<adhoc_type<Float, TapeDataType> >& arg) -> std::vector<Float>
+passive_value(std::vector<adhoc_type<Float, literal, TapeDataType> >& arg) -> std::vector<Float>
 {
     std::vector<Float> result;
     result.reserve(arg.size());
@@ -697,9 +712,9 @@ passive_value(std::vector<adhoc_type<Float, TapeDataType> >& arg) -> std::vector
     return result;
 }
 
-template<class Float, class TapeDataType>
+template<class Float, detail::StringLiteral literal, class TapeDataType>
 inline auto
-passive_value(std::vector<adhoc_type<Float, TapeDataType> > const& arg) -> std::vector<Float>
+passive_value(std::vector<adhoc_type<Float, literal, TapeDataType> > const& arg) -> std::vector<Float>
 {
     std::vector<Float> result;
     result.reserve(arg.size());
