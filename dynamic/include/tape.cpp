@@ -200,7 +200,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
 {
     this->impl->m_n_inputs = n_inputs;
     this->impl->m_n_outputs = n_outputs;
-    bool const is_fwd = (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd);
+    bool const is_fwd = (m == Method::Fwd);
     std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
     if (num_lanes == 0) {
         num_lanes = max_lanes;
@@ -208,7 +208,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
 
     num_lanes = std::min(num_lanes, max_lanes);
 
-    if (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd) {
+    if (m == Method::Fwd) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<FwdPropagator<double> >(n_inputs, n_outputs, num_lanes);
         }
@@ -403,11 +403,11 @@ Tape<type>::get_method() const -> Method
     }
 
     if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
-        return Method::FirstOrderSimpleFwd;
+        return Method::Fwd;
     }
 
     if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
-        return Method::FirstOrderVSimpleFwd;
+        return Method::Fwd;
     }
 
     throw std::runtime_error("Invalid backpropagator type");

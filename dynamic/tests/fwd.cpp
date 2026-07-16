@@ -68,7 +68,7 @@ test_2to2()
     {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
-        tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 2, 2);
+        tape.configure(adhoc::Method::Fwd, 2, 2);
         adhoc_t x1_adhoc = 3.0;
         adhoc_t x2_adhoc = 5.0;
         tape.register_variable(x1_adhoc);
@@ -96,7 +96,7 @@ test_addition()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 2, 1);
+    tape.configure(adhoc::Method::Fwd, 2, 1);
     adhoc_t x1_adhoc = 3.0;
     adhoc_t x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
@@ -116,7 +116,7 @@ test_multiplication()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 2, 1);
+    tape.configure(adhoc::Method::Fwd, 2, 1);
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -135,7 +135,7 @@ test_division()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 2, 1);
+    tape.configure(adhoc::Method::Fwd, 2, 1);
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -155,7 +155,7 @@ test_first_cash_instrument()
     double coverage = 7.0 / 360.0;
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 3, 1);
+    tape.configure(adhoc::Method::Fwd, 3, 1);
     adhoc_t df0_adhoc = 1.0;
     adhoc_t df1_adhoc = 0.99867881881803577;
     adhoc_t rate_adhoc = 0.043285450935363769;
@@ -222,7 +222,7 @@ test_checkpoint_fd_vs_fwd()
         // Create tape
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
-        tape.configure(adhoc::Method::FirstOrderVSimpleFwd, 3, 1);
+        tape.configure(adhoc::Method::Fwd, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;

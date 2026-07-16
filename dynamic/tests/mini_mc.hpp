@@ -88,7 +88,7 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths)
         }
 
         if constexpr (std::is_same_v<T, adhoc_t>) {
-            if (tape.get_method() == adhoc::Method::FirstOrderVSimpleFwd) {
+            if (tape.get_method() == adhoc::Method::Fwd) {
                 tape.register_output_variable(res);
                 tape.backpropagate_and_reset_to(pos2);
             }

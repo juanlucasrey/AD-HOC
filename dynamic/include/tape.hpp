@@ -42,8 +42,7 @@ enum class Method {
     SecondOrderSimd8_boost,
     SecondOrderLossy,
     SecondOrderVLossy,
-    FirstOrderSimpleFwd,
-    FirstOrderVSimpleFwd,
+    Fwd,
 };
 
 struct PositionImpl;
