@@ -2607,7 +2607,7 @@ compressed_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBuffer, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2628,7 +2628,7 @@ compressed_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderLossyCompressed, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBufferCompressed, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2679,7 +2679,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderSimple, 1, 1);
+        tapeptr->configure(adhoc::Method::Bwd, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2713,7 +2713,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBuffer, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2774,7 +2774,7 @@ lossy_reuse_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderLossy, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBuffer, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -2795,7 +2795,7 @@ lossy_reuse_test()
     {
         D inputD = x;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::FirstOrderLossyPathReuse, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBufferPathReuse, 1, 1);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;

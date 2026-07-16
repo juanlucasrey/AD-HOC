@@ -23,28 +23,23 @@
 
 #include "adhoc.hpp"
 
+#include <iterator>
 #include <memory>
 
 namespace adhoc {
 
 enum class Method {
-    FirstOrderSimple,
-    FirstOrderSimd8,
+    Bwd,
+    BwdBuffer,
+    BwdBufferCompressed,
+    BwdBufferPathReuse,
+    BwdBufferCompressedPathReuse,
+    BwdBufferCompressedPathReuseV,
     SecondOrderSimple,
     SecondOrderSimd8_stdmap,
     SecondOrderSimd8_stdunorderedmap,
     SecondOrderSimd8_ankerl,
     SecondOrderSimd8_boost,
-    FirstOrderLossy,
-    FirstOrderVLossy,
-    FirstOrderLossyCompressed,
-    FirstOrderVLossyCompressed,
-    FirstOrderLossyPathReuse,
-    FirstOrderVLossyPathReuse,
-    FirstOrderLossyCompressedPathReuse,
-    FirstOrderVLossyCompressedPathReuse,
-    FirstOrderLossyCompressedPathReuseV,
-    FirstOrderVLossyCompressedPathReuseV,
     SecondOrderLossy,
     SecondOrderVLossy,
     FirstOrderSimpleFwd,
@@ -125,6 +120,7 @@ class Tape {
     auto get_lanes() const -> std::size_t;
     auto get_method() const -> Method;
     auto get_order() const -> std::size_t;
+    auto get_size() const -> std::size_t;
 
     void clear()
     {
@@ -162,6 +158,85 @@ class Tape {
     void print() const;
 
     auto size_of(bool capacity = false) const -> std::size_t;
+
+  private:
+    class subrange_t {
+
+      private:
+        class range_t {
+          private:
+            std::size_t m_size;
+            std::size_t m_lanes;
+            std::size_t m_global_index;
+
+          public:
+            class range_info_t {
+              private:
+                class inner_range_t {
+                  private:
+                    struct inner_range_info_t {
+                        std::size_t sub_index;
+                        std::size_t global_index;
+                    };
+
+                    std::size_t m_sub_index;
+                    std::size_t m_global_index;
+
+                  public:
+                    using difference_type = std::ptrdiff_t;
+                    using value_type = inner_range_info_t;
+                    inner_range_t();
+                    template<bool IsEnd>
+                    explicit inner_range_t(range_info_t const& range, std::bool_constant<IsEnd> isend);
+                    auto operator++() -> inner_range_t&;
+                    auto operator++(int) -> inner_range_t;
+                    auto operator==(inner_range_t const& rhs) const -> bool;
+                    auto operator!=(inner_range_t const& rhs) const -> bool;
+                    auto operator*() const -> inner_range_info_t;
+                };
+                static_assert(std::forward_iterator<inner_range_t>);
+
+                std::size_t m_size;
+                std::size_t m_lanes;
+
+              public:
+                range_info_t(std::size_t size, std::size_t lanes, std::size_t global_index)
+                  : m_size(size)
+                  , m_lanes(lanes)
+                  , global_index(global_index)
+                {
+                }
+
+                std::size_t global_index;
+
+                auto begin() const -> inner_range_t;
+                auto end() const -> inner_range_t;
+            };
+
+            using difference_type = std::ptrdiff_t;
+            using value_type = range_info_t;
+            range_t();
+            template<bool IsEnd>
+            explicit range_t(subrange_t const& subrange, std::bool_constant<IsEnd> isend);
+            auto operator++() -> range_t&;
+            auto operator++(int) -> range_t;
+            auto operator==(range_t const& rhs) const -> bool;
+            auto operator!=(range_t const& rhs) const -> bool;
+            auto operator*() const -> range_info_t;
+        };
+        static_assert(std::forward_iterator<range_t>);
+
+        std::size_t m_size;
+        std::size_t m_lanes;
+
+      public:
+        explicit subrange_t(std::size_t size, std::size_t lanes);
+        auto begin() const -> range_t;
+        auto end() const -> range_t;
+    };
+
+  public:
+    auto subranges() -> subrange_t { return subrange_t{ this->get_size(), this->get_lanes() }; }
 };
 
 // smart pointer that manages the lifetime of the static tape. It has an internal counter to track how many instances

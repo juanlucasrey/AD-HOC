@@ -85,6 +85,7 @@ class adhoc_type {
     auto get_value() -> Float& { return value; }
     auto is_passive() const -> bool { return id == passive_id<std::size_t>; }
     auto is_active() const -> bool { return id != passive_id<std::size_t>; }
+    auto reset_id() -> void { id = passive_id<std::size_t>; }
 
     auto operator-() const -> adhoc_type { return 0.0 - *this; }
 
