@@ -198,11 +198,15 @@ template<class type>
 void
 Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std::size_t num_lanes)
 {
+    this->impl->m_n_inputs = n_inputs;
+    this->impl->m_n_outputs = n_outputs;
     bool const is_fwd = (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd);
     std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
     if (num_lanes == 0) {
         num_lanes = max_lanes;
     }
+
+    num_lanes = std::min(num_lanes, max_lanes);
 
     if (m == Method::FirstOrderSimpleFwd || m == Method::FirstOrderVSimpleFwd) {
         if (num_lanes == 1) {
@@ -212,7 +216,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
             this->impl->bp.template emplace<FwdPropagator<double, true> >(n_inputs, n_outputs, num_lanes);
         }
     }
-    else if (m == Method::FirstOrderSimple || m == Method::FirstOrderSimd8) {
+    else if (m == Method::Bwd) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagator<double> >();
         }
