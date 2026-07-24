@@ -607,9 +607,7 @@ class adhoc_type {
     template<std::convertible_to<Float> T>
     friend auto max(const adhoc_type& lhs, T rhs) -> adhoc_type
     {
-        // TODO: derivative
-        throw;
-        return adhoc_type{ std::max(lhs.value, rhs) };
+        return max(lhs, adhoc_type{ rhs });
     }
 
     friend auto min(const adhoc_type& lhs, const adhoc_type& rhs) -> adhoc_type
