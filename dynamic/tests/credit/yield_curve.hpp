@@ -80,6 +80,10 @@ class yield_curve final {
         return df1 * exp(log(df) * proportion);
     }
 
+    auto getAsOfDate() const -> std::chrono::year_month_day const& { return this->asofdate; }
+    auto getParams() const -> std::vector<Float> const& { return this->params; }
+    auto getDates() const -> std::vector<std::chrono::year_month_day> const& { return this->dates; }
+
   private:
     std::chrono::year_month_day asofdate;
     std::vector<Float> params;
