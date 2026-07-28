@@ -8,13 +8,48 @@
 
 #include <chrono>
 #include <cstddef>
+#include <filesystem>
+#include <fstream>
 #include <map>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 using namespace std::chrono;
 
-const std::vector<double> cdsSpreadVals{ 0.00255717, 0.00283704, 0.00538641, 0.00797198,
-                                         0.0109291,  0.0138021,  0.0187212,  0.0211093 };
+auto
+loadCdsSpreadVals() -> std::vector<double>
+{
+    const auto dataPath = std::filesystem::path(__FILE__).parent_path() / "data" / "cds_spread_vals.csv";
+    std::ifstream in(dataPath);
+    if (!in) {
+        throw std::runtime_error("Unable to open CDS spread data file: " + dataPath.string());
+    }
+
+    std::string contents;
+    std::getline(in, contents);
+    for (char& ch : contents) {
+        if (ch == ',') {
+            ch = ' ';
+        }
+    }
+
+    std::istringstream parser(contents);
+    std::vector<double> values;
+    double value = 0.0;
+    while (parser >> value) {
+        values.push_back(value);
+    }
+
+    if (values.empty()) {
+        throw std::runtime_error("No CDS spread values found in: " + dataPath.string());
+    }
+
+    return values;
+}
+
+std::vector<double> cdsSpreadVals;
 
 const std::vector<double> survivalProbVals{ 1,
                                             0.99859408552207418,
@@ -2820,6 +2855,9 @@ lossy_reuse_test()
 auto
 main() -> int
 {
+    // init vectors
+    cdsSpreadVals = loadCdsSpreadVals();
+
     lossy_reuse_test();
 
     lossy_test();
