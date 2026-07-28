@@ -4,133 +4,22 @@
 #include "credit/fi_instruments.hpp"
 #include "credit/mdspan.hpp"
 #include "credit/yield_curve.hpp"
+#include "data/load.hpp"
 #include <tape.hpp>
 
 #include <chrono>
 #include <cstddef>
-#include <filesystem>
-#include <fstream>
 #include <map>
-#include <sstream>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 using namespace std::chrono;
 
-auto
-loadCdsSpreadVals() -> std::vector<double>
-{
-    const auto dataPath = std::filesystem::path(__FILE__).parent_path() / "data" / "cds_spread_vals.csv";
-    std::ifstream in(dataPath);
-    if (!in) {
-        throw std::runtime_error("Unable to open CDS spread data file: " + dataPath.string());
-    }
-
-    std::string contents;
-    std::getline(in, contents);
-    for (char& ch : contents) {
-        if (ch == ',') {
-            ch = ' ';
-        }
-    }
-
-    std::istringstream parser(contents);
-    std::vector<double> values;
-    double value = 0.0;
-    while (parser >> value) {
-        values.push_back(value);
-    }
-
-    if (values.empty()) {
-        throw std::runtime_error("No CDS spread values found in: " + dataPath.string());
-    }
-
-    return values;
-}
-
 std::vector<double> cdsSpreadVals;
-
-const std::vector<double> survivalProbVals{ 1,
-                                            0.99859408552207418,
-                                            0.9960605594187264,
-                                            0.9834839302434244,
-                                            0.96237642057487005,
-                                            0.93053062312996293,
-                                            0.890780341895545,
-                                            0.79735494312904942,
-                                            0.69036392556095438 };
-
-const std::vector<double> expectedRates{ 0.0043152928704584311, 0.0050945916126982783, 0.012706760025760419,
-                                         0.02169563462890628,   0.033376351589582569,  0.043777055864863371,
-                                         0.055474962397418018,  0.047895792558084689 };
-
-const std::vector<double> expectedFirstDerivativesVals{ -0.54940325471866602,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0.004319964971690007,
-                                                        -1.3898226887342082,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0.0052542417459917543,
-                                                        0.021162561899984781,
-                                                        -3.0599616562124381,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0.0061585974722073123,
-                                                        0.02538409988680284,
-                                                        0.067667902690810966,
-                                                        -4.7108332094734786,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0.007146241013017615,
-                                                        0.030026237436117272,
-                                                        0.081658295580387175,
-                                                        0.16279837793288873,
-                                                        -6.369353271351379,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0.0080218906850524369,
-                                                        0.034177317793890265,
-                                                        0.094270350629445179,
-                                                        0.15612468688052727,
-                                                        0.24660092996295083,
-                                                        -7.9419840989020489,
-                                                        0,
-                                                        0,
-                                                        0.0092539781025316632,
-                                                        0.040133176880880125,
-                                                        0.1126515635980091,
-                                                        0.18409087265984739,
-                                                        0.26601445479296304,
-                                                        0.52702620892829943,
-                                                        -10.682727715567685,
-                                                        0,
-                                                        0.0090998350904326931,
-                                                        0.039752248036554569,
-                                                        0.11236333998515366,
-                                                        0.18261362478101506,
-                                                        0.26255640121128926,
-                                                        0.51817001944664232,
-                                                        1.3437484559528698,
-                                                        -14.462252105427869 };
-
-const adhoc::mdspan<const double, 2> expectedFirstDerivatives(expectedFirstDerivativesVals.data(), 8, 8);
+std::vector<double> survivalProbVals;
+std::vector<double> expectedRates;
+std::vector<double> expectedFirstDerivativesVals;
+adhoc::mdspan<const double, 2> expectedFirstDerivatives;
 
 const std::vector<double> expectedSecondDerivativesVals{
     0.30477509405102404,
@@ -2856,7 +2745,11 @@ auto
 main() -> int
 {
     // init vectors
-    cdsSpreadVals = loadCdsSpreadVals();
+    cdsSpreadVals = loadCSVToVector("cds_spread_vals.csv");
+    survivalProbVals = loadCSVToVector("survival_prob_vals.csv");
+    expectedRates = loadCSVToVector("expected_rates.csv");
+    expectedFirstDerivativesVals = loadCSVToVector("expected_first_derivatives_vals.csv");
+    expectedFirstDerivatives = adhoc::mdspan<const double, 2>(expectedFirstDerivativesVals.data(), 8, 8);
 
     lossy_reuse_test();
 
