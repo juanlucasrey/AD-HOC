@@ -29,10 +29,14 @@ std::chrono::year_month_day settleDate;
 std::vector<std::chrono::year_month_day> discountCurveDates;
 std::vector<double> discountCurveParams;
 
+std::vector<double> expectedFirstDerivativesDFsVals;
+adhoc::mdspan<const double, 2> expectedFirstDerivativesDFs;
+
+template<class Float = double>
 auto
-get_yc() -> adhoc::yield_curve<double>
+get_yc(std::vector<Float> discountCurveParams_in) -> adhoc::yield_curve<Float>
 {
-    return adhoc::yield_curve(pricingDate, discountCurveParams, discountCurveDates);
+    return adhoc::yield_curve<Float>(pricingDate, discountCurveParams_in, discountCurveDates);
 }
 
 struct CDS {
@@ -265,10 +269,10 @@ class credit_curve final {
     friend class credit_curve;
 };
 
-template<class D>
+template<class D, class D2>
 auto
 protectionPV(credit_curve<D> const& sc,
-             adhoc::yield_curve<double> const& dc,
+             adhoc::yield_curve<D2> const& dc,
              std::chrono::year_month_day const& periodStart,
              std::chrono::year_month_day const& periodEnd,
              std::chrono::year_month_day const& periodEndPaymentDate) -> D
@@ -283,10 +287,10 @@ protectionPV(credit_curve<D> const& sc,
     return (dfStart * scStart - dfEnd * scEnd) * ht / lt;
 }
 
-template<class D>
+template<class D, class D2>
 auto
 accruedPV(credit_curve<D> const& sc,
-          adhoc::yield_curve<double> const& dc,
+          adhoc::yield_curve<D2> const& dc,
           std::chrono::year_month_day const& periodStart,
           std::chrono::year_month_day const& periodEnd,
           std::chrono::year_month_day const& periodEndPaymentDate,
@@ -304,10 +308,10 @@ accruedPV(credit_curve<D> const& sc,
            (dfStart * scStart - dfEnd * scEnd) * accruedFraction * ht / lt;
 }
 
-template<class D>
+template<class D, class D2>
 auto
 PremiumLegPv01(credit_curve<D> const& sc,
-               adhoc::yield_curve<double> const& dc,
+               adhoc::yield_curve<D2> const& dc,
                adhoc::DayCountConvention const& dcc,
                std::chrono::year_month_day const& pricingDate,
                std::chrono::year_month_day const& maturityDate,
@@ -320,7 +324,7 @@ PremiumLegPv01(credit_curve<D> const& sc,
     double const daycount = GetCoverage(dcc, periodStart, plusOneIfMaturity);
 
     D sp = sc.getDiscountFactor(periodEnd);
-    double const df = dc.getDiscountFactor(periodEndPaymentDate);
+    auto const df = dc.getDiscountFactor(periodEndPaymentDate);
     D riskyCoupon = daycount * sp * df;
     pv += riskyCoupon;
 
@@ -336,10 +340,10 @@ PremiumLegPv01(credit_curve<D> const& sc,
     pv += acc_pv;
 }
 
-template<typename D>
+template<class D, class D2>
 void
 set_rate_and_price(credit_curve<D>& sc,
-                   adhoc::yield_curve<double> const& yc,
+                   adhoc::yield_curve<D2> const& yc,
                    CDS const& cds,
                    D const& cds_quote,
                    std::chrono::year_month_day const& pricingDate,
@@ -395,7 +399,7 @@ set_rate_and_price(credit_curve<D>& sc,
 
     auto premiumPV = -pv01 * cds_quote;
     auto dirtyPV = protectionPV_value + premiumPV;
-    double const dfFromSettle = yc.getDiscountFactor(settleDate);
+    auto const dfFromSettle = yc.getDiscountFactor(settleDate);
     auto cashOnSettle = dirtyPV / dfFromSettle;
     double accruedFraction = GetCoverage(cds.dcc, cds_schedule2.front(), pricingDate + 1);
     double accrued_pv01 = accruedFraction * notional;
@@ -559,10 +563,18 @@ createCDSCurve(std::vector<CDS> const& cds,
     return sc;
 }
 
-template<typename D, bool adhocOrder1 = true, bool Experimental = false>
+namespace {
+auto
+passive_value(double value) -> double
+{
+    return value;
+}
+} // namespace
+
+template<class D, class DYC, bool adhocOrder1 = true, bool Experimental = false>
 auto
 pureNewtonSolve(credit_curve<D>& sc,
-                adhoc::yield_curve<double> const& yc,
+                adhoc::yield_curve<DYC> const& yc,
                 CDS const& cds,
                 D cds_quote,
                 D& currentGuess,
@@ -581,6 +593,14 @@ pureNewtonSolve(credit_curve<D>& sc,
         auto& dates = sc.getDates();
         credit_curve<D2> sc2(pricingDate, clonedHazardRates, dates);
 
+        auto& paramsyc = yc.getParams();
+        std::vector<DYC> clonedParamsYC;
+        clonedParamsYC.reserve(paramsyc.size());
+        for (const auto& rate : paramsyc) {
+            clonedParamsYC.emplace_back(passive_value(rate));
+        }
+        adhoc::yield_curve<DYC> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
+
         D2 inputD = x;
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
@@ -589,7 +609,7 @@ pureNewtonSolve(credit_curve<D>& sc,
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
 
-        set_rate_and_price(sc2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
+        set_rate_and_price(sc2, yc2, cds, cds_quote_d2, pricingDate, inputD, outputD);
 
         tape.register_output_variable(outputD);
 
@@ -611,6 +631,14 @@ pureNewtonSolve(credit_curve<D>& sc,
         auto& dates = sc.getDates();
         credit_curve<D2> sc_d2(pricingDate, clonedHazardRates, dates);
 
+        auto& paramsyc = yc.getParams();
+        std::vector<DYC> clonedParamsYC;
+        clonedParamsYC.reserve(paramsyc.size());
+        for (const auto& rate : paramsyc) {
+            clonedParamsYC.emplace_back(passive_value(rate));
+        }
+        adhoc::yield_curve<DYC> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
+
         D2 inputD = x;
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
@@ -621,7 +649,7 @@ pureNewtonSolve(credit_curve<D>& sc,
 
         tape.register_variable(inputD);
 
-        set_rate_and_price(sc_d2, yc, cds, cds_quote_d2, pricingDate, inputD, outputD);
+        set_rate_and_price(sc_d2, yc2, cds, cds_quote_d2, pricingDate, inputD, outputD);
 
         tape.register_output_variable(outputD);
 
@@ -691,7 +719,8 @@ void
 normal_calib()
 {
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
+
     std::vector<double> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
     auto sc = createCDSCurve(cdsInstruments, yc, cdsSpreads, pricingDate);
@@ -711,7 +740,7 @@ fd1()
 {
     double epsilon = 1e-6;
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<double> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
     auto sc = createCDSCurve(cdsInstruments, yc, cdsSpreads, pricingDate);
@@ -744,7 +773,7 @@ create_curve_adhoc()
     auto& tape = *tapeptr;
 
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
     auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
@@ -761,6 +790,69 @@ create_curve_adhoc()
 }
 
 void
+bwd_adhoc_df()
+{
+    using adhoc_mode = adhoc::opcode<double>;
+    using D = adhoc_mode::type;
+    adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+    auto& tape = *tapeptr;
+
+    std::vector<CDS> cdsInstruments = get_cds();
+    std::vector<D> discountCurveParamsD{ discountCurveParams.begin(), discountCurveParams.end() };
+    tape.register_variable(discountCurveParamsD);
+
+    const auto yc = get_yc(discountCurveParams);
+    const auto ycD = get_yc(discountCurveParamsD);
+    std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
+
+    auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
+    auto const& calibratedRates = sc_double.getHazard();
+
+    std::vector<D> cdsSpreads(cdsSpreadVals.begin(), cdsSpreadVals.end());
+    // const auto initialTapePosition = tape.get_position();
+    tape.register_variable(cdsSpreads);
+
+    auto sc = credit_curve<D>(pricingDate);
+
+    for (std::size_t j = 0; j < cdsInstruments.size(); ++j) {
+        D calibratedRate = calibratedRates[j];
+        std::chrono::year_month_day newpoint = cdsInstruments[j].schedule.back();
+        auto it = cdsInstruments[j].paymentDateMapper.find(newpoint);
+        if (it != cdsInstruments[j].paymentDateMapper.end()) {
+            newpoint = it->second;
+        }
+        sc.addLastPoint(newpoint, 1.0);
+
+        pureNewtonSolve<D>(sc, ycD, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+    }
+
+    auto& y = sc.getParams();
+    tape.register_output_variable(y);
+
+    for (std::size_t j = 1; j < y.size(); ++j) {
+        EXPECT_NEAR_ABS(survivalProbVals[j], y[j].get_value(), 2e-15);
+
+        tape.set_derivative(y[j], 1.0);
+        tape.backpropagate();
+
+        for (std::size_t i = 0; i < cdsSpreads.size(); ++i) {
+            auto const der = tape.get_derivative(cdsSpreads[i]);
+            auto const expexted_der = expectedFirstDerivatives(j - 1, i);
+            EXPECT_NEAR_ABS(expexted_der, der, 1e-10);
+        }
+
+        for (std::size_t i = 0; i < discountCurveParamsD.size(); ++i) {
+            auto const der = tape.get_derivative(discountCurveParamsD[i]);
+            auto const expexted_der = expectedFirstDerivativesDFs(j - 1, i);
+            EXPECT_NEAR_ABS(expexted_der, der, 1e-10);
+        }
+
+        tape.set_derivative(y[j], 0.0);
+        tape.zero_adjoints();
+    }
+}
+
+void
 bwd_adhoc()
 {
     using adhoc_mode = adhoc::opcode<double>;
@@ -769,7 +861,7 @@ bwd_adhoc()
     auto& tape = *tapeptr;
 
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
     auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
@@ -823,7 +915,7 @@ bwd_adhoc2()
     tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
 
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<double> cdsSpreads_double(cdsSpreadVals.begin(), cdsSpreadVals.end());
 
     auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreads_double, pricingDate);
@@ -843,7 +935,7 @@ bwd_adhoc2()
         }
         sc.addLastPoint(newpoint, 1.0);
 
-        pureNewtonSolve<D, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+        pureNewtonSolve<D, double, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
     }
 
     auto& y = sc.getParams();
@@ -880,7 +972,7 @@ bwd_adhoc2_payoff()
 
     // common data
     std::vector<CDS> cdsInstruments = get_cds();
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
 
     auto sc_double = createCDSCurve(cdsInstruments, yc, cdsSpreadVals, pricingDate);
     auto const& calibratedRates = sc_double.getHazard();
@@ -912,7 +1004,7 @@ bwd_adhoc2_payoff()
             }
             sc.addLastPoint(newpoint, 1.0);
 
-            pureNewtonSolve<D, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
+            pureNewtonSolve<D, double, false>(sc, yc, cdsInstruments[j], cdsSpreads[j], calibratedRate, pricingDate);
         }
 
         // write a random payoff using sc's getDiscountFactor
@@ -962,7 +1054,7 @@ compressed_test()
     auto sc = credit_curve(pricingDate);
     sc.addLastPoint(2016y / 12 / 22, 1.0);
 
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<CDS> cdsInstruments = get_cds();
     auto& cds = cdsInstruments[0];
     double df1 = 0;
@@ -1030,7 +1122,7 @@ lossy_test()
     auto sc = credit_curve(pricingDate);
     sc.addLastPoint(2016y / 12 / 22, 1.0);
 
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<CDS> cdsInstruments = get_cds();
     auto& cds = cdsInstruments[0];
     double df11 = 0;
@@ -1129,7 +1221,7 @@ lossy_reuse_test()
     auto sc = credit_curve(pricingDate);
     sc.addLastPoint(2016y / 12 / 22, 1.0);
 
-    const auto yc = get_yc();
+    const auto yc = get_yc(discountCurveParams);
     std::vector<CDS> cdsInstruments = get_cds();
     auto& cds = cdsInstruments[0];
     double df1 = 0;
@@ -1212,10 +1304,18 @@ main() -> int
         expectedSecondDerivativesADHOC = span;
     }
 
+    {
+        auto [vals, span] = loadCSVToTensor("expected_first_derivatives_dfs_vals.csv", 8, 8);
+        expectedFirstDerivativesDFsVals = std::move(vals);
+        expectedFirstDerivativesDFs = span;
+    }
+
     pricingDate = loadCSVToVectorDate("pricing_date.csv").front();
     settleDate = loadCSVToVectorDate("settle_date.csv").front();
     discountCurveDates = loadCSVToVectorDate("discount_curve_dates.csv");
     discountCurveParams = loadCSVToVector("discount_curve_params.csv");
+
+    bwd_adhoc_df();
 
     lossy_reuse_test();
 
