@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../credit/mdspan.hpp"
+
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -40,4 +42,17 @@ loadCSVToVector(std::string const& filename) -> std::vector<T>
     }
 
     return values;
+}
+
+template<typename T = double>
+inline auto
+loadCSVToMatrix(std::string const& filename, std::size_t rows, std::size_t cols)
+  -> std::tuple<std::vector<T>, adhoc::mdspan<const T, 2> >
+{
+    auto vals = loadCSVToVector<T>(filename);
+    if (vals.size() != rows * cols) {
+        throw std::runtime_error("CSV data size does not match expected dimensions: " + filename);
+    }
+    auto mdspanView = adhoc::mdspan<const T, 2>(vals.data(), rows, cols);
+    return std::make_tuple(std::move(vals), mdspanView);
 }
