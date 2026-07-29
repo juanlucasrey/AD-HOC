@@ -545,6 +545,13 @@ Tape<type>::backpropagate_and_reset_to(position_t const& pos)
 
 template<class type>
 void
+Tape<type>::reset_to(position_t const& pos)
+{
+    reset(*pos.impl, this->data);
+}
+
+template<class type>
+void
 Tape<type>::set_derivative(type const& var, double deriv, std::size_t lane)
 {
     if (var.is_active()) {
