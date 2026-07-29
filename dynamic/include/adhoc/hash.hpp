@@ -27,7 +27,7 @@
 
 namespace adhoc {
 
-template<typename T>
+template<class T>
 auto
 hash_span(T const& v, std::size_t start, std::size_t end) -> std::size_t
 {

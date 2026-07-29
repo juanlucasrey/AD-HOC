@@ -55,7 +55,7 @@ loadCSVToVectorDate(std::string const& filename) -> std::vector<std::chrono::yea
     return values;
 }
 
-template<typename T = double>
+template<class T = double>
 inline auto
 loadCSVToVector(std::string const& filename) -> std::vector<T>
 {
@@ -89,7 +89,7 @@ loadCSVToVector(std::string const& filename) -> std::vector<T>
     return values;
 }
 
-template<typename T = double, typename... DimTs>
+template<class T = double, class... DimTs>
 inline auto
 loadCSVToTensor(std::string const& filename, DimTs... dims)
   -> std::tuple<std::vector<T>, adhoc::mdspan<const T, sizeof...(DimTs)> >

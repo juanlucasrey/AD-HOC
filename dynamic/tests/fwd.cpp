@@ -235,7 +235,8 @@ test_checkpoint_fd_vs_fwd()
         tape.register_variable(x2);
         tape.register_variable(x3);
 
-        res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
+        auto res_adhoc2 = compute_result_branch(x1, x2, x3, num_paths);
+        res_adhoc = res_adhoc2.get_value();
 
         // tape.backpropagate();
 
