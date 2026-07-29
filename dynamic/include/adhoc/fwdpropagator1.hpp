@@ -25,6 +25,7 @@
 #include "tape_data.hpp"
 #include "vector_size_of.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <concepts>
 #include <numbers>
@@ -65,7 +66,7 @@ class FwdPropagator {
     }
 
     void set_checkpoint(std::size_t /* ops_size */) {}
-    void set_lanes(std::size_t num_lanes) {}
+    void set_lanes(std::size_t /* num_lanes */) {}
     auto get_lanes() const -> std::size_t { return this->m_num_lanes; }
     void reserve_input(std::size_t /* count_registered */) {}
     void reserve_output(std::size_t /* count_registered */) {}
