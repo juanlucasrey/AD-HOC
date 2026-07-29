@@ -3,6 +3,12 @@
 # add_link_options(-fsanitize=address)
 
 # Header-only tests
+set(test_name "dynamic.header_only.fwd")
+add_executable(${test_name} fwd.cpp)
+target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)
+add_test(NAME ${test_name} COMMAND ${test_name})
+target_include_directories(${test_name} SYSTEM PUBLIC ../include ../../test_simple)
+
 set(test_name "dynamic.functions.header_only")
 add_executable(${test_name} functions.cpp)
 target_compile_definitions(${test_name} PRIVATE ADHOC_HEADER_ONLY)

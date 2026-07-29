@@ -64,45 +64,7 @@ test_checkpoint_fd_vs_ad()
         tape.register_variable(x2);
         tape.register_variable(x3);
 
-        auto res_adhoc2 = compute_result_branch2<false>(x1, x2, x3, num_paths);
-        res_adhoc = res_adhoc2.get_value();
-
-        tape.backpropagate();
-
-        dx1_adhoc = tape.get_derivative(x1);
-        dx2_adhoc = tape.get_derivative(x2);
-        dx3_adhoc = tape.get_derivative(x3);
-    }
-
-    // check that the values are close in between methods
-    EXPECT_NEAR_ABS(res_adhoc, res_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx1_adhoc, dx1_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx2_adhoc, dx2_fd, 1e-8);
-    EXPECT_NEAR_ABS(dx3_adhoc, dx3_fd, 1e-8);
-
-    EXPECT_NEAR_ABS(3.421138662549827, res_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(1.5027371453017027, dx1_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(0.80747795083939378, dx2_adhoc, 1e-12);
-    EXPECT_NEAR_ABS(0.11992672558600066, dx3_adhoc, 1e-12);
-
-    {
-        using adhoc_t = adhoc_t;
-        // Create tape
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        auto& tape = *tapeptr;
-
-        // Initial input variables
-        adhoc_t x1, x2, x3;
-        x1 = x1_val;
-        x2 = x2_val;
-        x3 = x3_val;
-
-        // Register inputs
-        tape.register_variable(x1);
-        tape.register_variable(x2);
-        tape.register_variable(x3);
-
-        auto res_adhoc2 = compute_result_branch2<true>(x1, x2, x3, num_paths);
+        auto res_adhoc2 = compute_result_branch(x1, x2, x3, num_paths);
         res_adhoc = res_adhoc2.get_value();
 
         tape.backpropagate();
@@ -158,7 +120,8 @@ test_checkpoint_branch_lossy()
         tape.register_variable(x2);
         tape.register_variable(x3);
 
-        double result = compute_result_branch(x1, x2, x3, num_paths);
+        auto res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
+        double result = res_adhoc.get_value();
         tape.backpropagate();
 
         if (m == safe_method) {
@@ -1238,7 +1201,8 @@ test_lossy_compressed_complex1()
         tape.register_variable(x2);
         tape.register_variable(x3);
 
-        double res_lossy = compute_result_branch(x1, x2, x3, num_paths);
+        auto res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
+        double res_lossy = res_adhoc.get_value();
 
         tape.backpropagate();
 
@@ -1922,10 +1886,13 @@ test_lossy_path_reuse()
         tape.register_variable(x3);
 
         if (m == safe_method) {
-            res_adhoc = compute_result_branch(x1, x2, x3, num_paths);
+            auto res_adhoc_active = compute_result_branch(x1, x2, x3, num_paths);
+            res_adhoc = res_adhoc_active.get_value();
         }
         else {
-            double res_adhoc2 = compute_result_branch(x1, x2, x3, num_paths);
+            auto res_adhoc_active = compute_result_branch(x1, x2, x3, num_paths);
+            double res_adhoc2 = res_adhoc_active.get_value();
+
             EXPECT_NEAR_ABS(res_adhoc, res_adhoc2, 1e-13);
         }
 
@@ -1947,7 +1914,7 @@ test_lossy_path_reuse()
     }
 }
 
-template<typename T>
+template<class T>
 auto
 compute_result_branch_unused_ops(T x1, T x2, T x3, std::size_t num_paths) -> double
 {
@@ -2067,7 +2034,7 @@ test_lossy_path_reuse_unusedops()
     }
 }
 
-template<typename T>
+template<class T>
 auto
 compute_result_branch_invertedmult(T x1, T x2, T x3, std::size_t num_paths) -> double
 {

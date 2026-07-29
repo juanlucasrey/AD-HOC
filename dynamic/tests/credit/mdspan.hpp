@@ -65,7 +65,7 @@ multicombination(std::size_t n, std::size_t k) noexcept -> std::size_t
 // Variadic version: convert sorted multi-index to linear index for symmetric
 // tensor Works for any number of dimensions Indices must be sorted: idx[0] <=
 // idx[1] <= ... <= idx[N-1]
-template<typename... Args>
+template<class... Args>
 auto
 multiindex_to_linear(std::size_t dim, Args... indices) -> std::size_t
 {
@@ -137,7 +137,7 @@ linear_to_multiindex(std::size_t dim, std::size_t linear_idx) -> std::array<std:
 template<class T, std::size_t S = 1>
 class mdspan {
   public:
-    template<typename... Args>
+    template<class... Args>
     explicit mdspan(T* data = nullptr, Args... dims)
       : m_data(data)
       , m_dims({ static_cast<std::size_t>(dims)... })
@@ -176,13 +176,13 @@ class mdspan {
     {
     }
 
-    template<typename... Args>
+    template<class... Args>
     inline auto operator()(Args... indices) const -> T& requires(sizeof...(Args) == S)
     {
         return this->m_data[this->index_calculator(static_cast<std::size_t>(indices)...)];
     }
 
-    template<typename... Args>
+    template<class... Args>
     inline auto operator()(Args... indices) const requires(sizeof...(Args) < S)
     {
         constexpr std::size_t new_dim = S - sizeof...(Args);
@@ -200,7 +200,7 @@ class mdspan {
     }
 
     // at() operator is same as operator() but with boundary checks.
-    template<typename... Args>
+    template<class... Args>
     auto at(Args... indices) const
     {
 
@@ -236,7 +236,7 @@ class mdspan {
         return this->m_dims[D];
     }
 
-    template<typename... Args>
+    template<class... Args>
     static auto storage_size(Args... dims) -> std::size_t
     {
         static_assert(sizeof...(Args) == S, "number of arguments has to be number of dimensions");
@@ -274,7 +274,7 @@ class mdspan {
         }
     }
 
-    template<unsigned int C = 0, typename... Args>
+    template<unsigned int C = 0, class... Args>
     inline auto index_calculator(std::size_t first, Args... args) const -> std::size_t
     {
         return (first * std::get<C + 1>(this->m_offsets)) + index_calculator<C + 1>(args...);
@@ -301,7 +301,7 @@ template<class T, std::size_t S = 2>
 class mdspan_sym {
   public:
     // Constructor with dimensions - all dimensions must be equal
-    template<typename... Args>
+    template<class... Args>
     explicit mdspan_sym(T* data = nullptr, std::size_t dim = 0)
       : m_data(data)
       , m_dim(dim)
@@ -310,7 +310,7 @@ class mdspan_sym {
     }
 
     // Access operator - automatically handles symmetry
-    template<typename... Args>
+    template<class... Args>
     auto operator()(Args... indices) const -> T& requires(sizeof...(Args) == S)
     {
         std::array<std::size_t, S> idx_array{ static_cast<std::size_t>(indices)... };

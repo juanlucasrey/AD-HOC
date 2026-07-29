@@ -28,6 +28,7 @@
 #include "adhoc/backpropagator1lossypathreuse.hpp"
 #include "adhoc/backpropagator2.hpp"
 #include "adhoc/backpropagator2lossy.hpp"
+#include "adhoc/fwdpropagator1.hpp"
 #include "adhoc/position_impl.hpp"
 #include "adhoc/tape_data.hpp"
 #include "adhoc/vector_size_of.hpp"
@@ -94,7 +95,9 @@ struct Tape<type>::Impl {
                  BackPropagatorLossyCompressedPathReuseV<double>,
                  BackPropagatorLossyCompressedPathReuseV<double, true>,
                  BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE>,
-                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true> >
+                 BackPropagator2Lossy<double, MapType::ANKERL_UNORDERED_DENSE, true>,
+                 FwdPropagator<double>,
+                 FwdPropagator<double, true> >
       bp = BackPropagator<double>();
 
     std::size_t m_n_inputs;
@@ -197,7 +200,7 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
 {
     this->impl->m_n_inputs = n_inputs;
     this->impl->m_n_outputs = n_outputs;
-    bool const is_fwd = false;
+    bool const is_fwd = (m == Method::Fwd);
     std::size_t const max_lanes = is_fwd ? n_inputs : n_outputs;
     if (num_lanes == 0) {
         num_lanes = max_lanes;
@@ -205,7 +208,15 @@ Tape<type>::configure(Method m, std::size_t n_inputs, std::size_t n_outputs, std
 
     num_lanes = std::min(num_lanes, max_lanes);
 
-    if (m == Method::Bwd) {
+    if (m == Method::Fwd) {
+        if (num_lanes == 1) {
+            this->impl->bp.template emplace<FwdPropagator<double> >(n_inputs, n_outputs, num_lanes);
+        }
+        else {
+            this->impl->bp.template emplace<FwdPropagator<double, true> >(n_inputs, n_outputs, num_lanes);
+        }
+    }
+    else if (m == Method::Bwd) {
         if (num_lanes == 1) {
             this->impl->bp.template emplace<BackPropagator<double> >();
         }
@@ -391,6 +402,14 @@ Tape<type>::get_method() const -> Method
         return Method::SecondOrderVLossy;
     }
 
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        return Method::Fwd;
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        return Method::Fwd;
+    }
+
     throw std::runtime_error("Invalid backpropagator type");
 }
 
@@ -474,6 +493,14 @@ Tape<type>::get_order() const -> std::size_t
         return 2;
     }
 
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        return 1;
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        return 1;
+    }
+
     throw std::runtime_error("Invalid backpropagator type");
     return 0;
 }
@@ -518,6 +545,13 @@ Tape<type>::backpropagate_and_reset_to(position_t const& pos)
 
 template<class type>
 void
+Tape<type>::reset_to(position_t const& pos)
+{
+    reset(*pos.impl, this->data);
+}
+
+template<class type>
+void
 Tape<type>::set_derivative(type const& var, double deriv, std::size_t lane)
 {
     if (var.is_active()) {
@@ -536,6 +570,23 @@ Tape<type>::get_derivative(type const& var, std::size_t lane) const -> double
                           this->impl->bp);
     }
     return 0.;
+}
+
+template<class type>
+auto
+Tape<type>::get_derivative(std::size_t idx_input, std::size_t idx_output) const -> double
+{
+    if (std::holds_alternative<FwdPropagator<double> >(this->impl->bp)) {
+        auto const& arg = std::get<FwdPropagator<double> >(this->impl->bp);
+        return arg.get_derivative2(idx_input, idx_output);
+    }
+
+    if (std::holds_alternative<FwdPropagator<double, true> >(this->impl->bp)) {
+        auto const& arg = std::get<FwdPropagator<double, true> >(this->impl->bp);
+        return arg.get_derivative2(idx_input, idx_output);
+    }
+
+    return 0;
 }
 
 template<class type>

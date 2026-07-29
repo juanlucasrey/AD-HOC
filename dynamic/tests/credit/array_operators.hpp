@@ -190,7 +190,7 @@ sum(std::array<Float, N> const& in) -> Float
     return res;
 }
 
-template<std::size_t M, typename T, std::size_t N>
+template<std::size_t M, class T, std::size_t N>
 auto
 tail(std::array<T, N> const& arr) noexcept -> std::array<T, M>
 {
