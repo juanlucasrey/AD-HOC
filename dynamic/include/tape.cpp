@@ -191,7 +191,9 @@ template<class type>
 auto
 Tape<type>::get_size() const -> std::size_t
 {
-    return this->impl->m_n_outputs;
+    auto const method = this->get_method();
+    bool const is_fwd = (method == Method::Fwd);
+    return is_fwd ? this->impl->m_n_inputs : this->impl->m_n_outputs;
 }
 
 template<class type>

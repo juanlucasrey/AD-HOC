@@ -2,19 +2,22 @@
 
 #include <test_simple_include.hpp>
 
-#include <iostream>
-#include <iterator>
 #include <tuple>
 
 namespace {
 
+template<bool IsFwd>
 auto
-generate_indices(std::size_t n_output, std::size_t lanes)
+generate_indices(std::size_t n_vars, std::size_t lanes)
 {
 
     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-    tapeptr->configure(adhoc::Method::Bwd, 1, n_output, lanes);
-    auto temp = tapeptr->subranges();
+    if constexpr (IsFwd) {
+        tapeptr->configure(adhoc::Method::Fwd, n_vars, 1, lanes);
+    }
+    else {
+        tapeptr->configure(adhoc::Method::Bwd, 1, n_vars, lanes);
+    }
 
     std::vector<std::vector<std::size_t> > result;
     std::vector<std::size_t> result2;
@@ -31,12 +34,13 @@ generate_indices(std::size_t n_output, std::size_t lanes)
     return std::make_tuple(std::move(result), std::move(result2), std::move(result3));
 }
 
+template<bool IsFwd>
 void
 index_tests()
 {
 
     {
-        auto [result, result2, result3] = generate_indices(10, 3);
+        auto [result, result2, result3] = generate_indices<IsFwd>(10, 3);
         std::vector<std::vector<std::size_t> > expected = { { 0, 1, 2 }, { 0, 1, 2 }, { 0, 1, 2 }, { 0 } };
         std::vector<std::size_t> expected2 = { 0, 3, 6, 9 };
         std::vector<std::vector<std::size_t> > expected3 = { { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 }, { 9 } };
@@ -46,7 +50,7 @@ index_tests()
     }
 
     {
-        auto [result, result2, result3] = generate_indices(10, 4);
+        auto [result, result2, result3] = generate_indices<IsFwd>(10, 4);
         std::vector<std::vector<std::size_t> > expected = { { 0, 1, 2, 3 }, { 0, 1, 2, 3 }, { 0, 1 } };
         std::vector<std::size_t> expected2 = { 0, 4, 8 };
         std::vector<std::vector<std::size_t> > expected3 = { { 0, 1, 2, 3 }, { 4, 5, 6, 7 }, { 8, 9 } };
@@ -56,7 +60,7 @@ index_tests()
     }
 
     {
-        auto [result, result2, result3] = generate_indices(10, 5);
+        auto [result, result2, result3] = generate_indices<IsFwd>(10, 5);
         std::vector<std::vector<std::size_t> > expected = { { 0, 1, 2, 3, 4 }, { 0, 1, 2, 3, 4 } };
         std::vector<std::size_t> expected2 = { 0, 5 };
         std::vector<std::vector<std::size_t> > expected3 = { { 0, 1, 2, 3, 4 }, { 5, 6, 7, 8, 9 } };
@@ -71,7 +75,8 @@ index_tests()
 auto
 main() -> int
 {
-    index_tests();
+    index_tests<true>();
+    index_tests<false>();
 
     TEST_END;
 }

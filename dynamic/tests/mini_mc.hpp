@@ -82,16 +82,19 @@ compute_result_branch(T x1, T x2, T x3, std::size_t num_paths)
         result += res;
 
         if constexpr (std::is_same_v<T, adhoc_t>) {
+            tape.register_output_variable(result);
+
             if (tape.get_method() == adhoc::Method::Fwd) {
-                tape.register_output_variable(res);
-                tape.backpropagate_and_reset_to(pos2);
+                tape.set_derivative(x1, 1.0, 0);
+                tape.set_derivative(x2, 1.0, 1);
+                tape.set_derivative(x3, 1.0, 2);
             }
             else {
-                tape.register_output_variable(result);
                 tape.set_derivative(result, 1.0);
-                result.reset_id();
-                tape.backpropagate_and_reset_to(pos2);
             }
+
+            result.reset_id();
+            tape.backpropagate_and_reset_to(pos2);
         }
     }
 
