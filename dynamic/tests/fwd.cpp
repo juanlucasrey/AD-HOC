@@ -79,6 +79,8 @@ test_2to2()
         adhoc_t y2_adhoc = v1 * v2;
         tape.register_output_variable(y1_adhoc);
         tape.register_output_variable(y2_adhoc);
+        tape.set_derivative(x1_adhoc, 1.0, 0);
+        tape.set_derivative(x2_adhoc, 1.0, 1);
         tape.backpropagate();
         double dy1_dx1_adhoc = tape.get_derivative(0, 0);
         double dy1_dx2_adhoc = tape.get_derivative(1, 0);
@@ -103,7 +105,11 @@ test_addition()
     tape.register_variable(x2_adhoc);
     adhoc_t y_adhoc = x1_adhoc + x2_adhoc;
     tape.register_output_variable(y_adhoc);
+
+    tape.set_derivative(x1_adhoc, 1.0, 0);
+    tape.set_derivative(x2_adhoc, 1.0, 1);
     tape.backpropagate();
+
     double dy_dx1_adhoc = tape.get_derivative(y_adhoc, 0);
     double dy_dx2_adhoc = tape.get_derivative(y_adhoc, 1);
 
@@ -122,7 +128,11 @@ test_multiplication()
     tape.register_variable(x2_adhoc);
     adhoc_t y_adhoc = x1_adhoc * x2_adhoc;
     tape.register_output_variable(y_adhoc);
+
+    tape.set_derivative(x1_adhoc, 1.0, 0);
+    tape.set_derivative(x2_adhoc, 1.0, 1);
     tape.backpropagate();
+
     double dy_dx1_adhoc = tape.get_derivative(y_adhoc, 0);
     double dy_dx2_adhoc = tape.get_derivative(y_adhoc, 1);
 
@@ -141,7 +151,11 @@ test_division()
     tape.register_variable(x2_adhoc);
     adhoc_t y_adhoc = x1_adhoc / x2_adhoc;
     tape.register_output_variable(y_adhoc);
+
+    tape.set_derivative(x1_adhoc, 1.0, 0);
+    tape.set_derivative(x2_adhoc, 1.0, 1);
     tape.backpropagate();
+
     double dy_dx1_adhoc = tape.get_derivative(y_adhoc, 0);
     double dy_dx2_adhoc = tape.get_derivative(y_adhoc, 1);
 
@@ -171,7 +185,11 @@ test_first_cash_instrument()
     adhoc_t pv_adhoc = float_leg_pv_adhoc + fixed_leg_pv_adhoc;
     tape.register_output_variable(pv_adhoc);
 
+    tape.set_derivative(df0_adhoc, 1.0, 0);
+    tape.set_derivative(df1_adhoc, 1.0, 1);
+    tape.set_derivative(rate_adhoc, 1.0, 2);
     tape.backpropagate();
+
     double dpv_ddf0_adhoc = tape.get_derivative(pv_adhoc, 0);
     double dpv_ddf1_adhoc = tape.get_derivative(pv_adhoc, 1);
     double dpv_drate_adhoc = tape.get_derivative(pv_adhoc, 2);

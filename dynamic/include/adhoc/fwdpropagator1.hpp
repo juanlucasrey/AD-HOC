@@ -45,7 +45,7 @@ class FwdPropagator {
     PositionImpl pos_local;
 
     std::vector<std::size_t> input_ids;
-    std::vector<Float> input_derivatives;
+    // std::vector<Float> input_derivatives;
 
     std::vector<std::size_t> output_ids;
     std::vector<Float> output_derivatives;
@@ -56,11 +56,11 @@ class FwdPropagator {
       , m_num_inputs(n_inputs)
       , m_num_outputs(n_outputs)
     {
-        input_derivatives.resize(n_inputs * num_lanes, 0.0);
-        // fill with one seed per input
-        for (std::size_t i = 0; i < n_inputs; ++i) {
-            input_derivatives[(i * num_lanes) + i] = 1.0;
-        }
+        // input_derivatives.resize(n_inputs * num_lanes, 0.0);
+        // // fill with one seed per input
+        // for (std::size_t i = 0; i < n_inputs; ++i) {
+        //     input_derivatives[(i * num_lanes) + i] = 1.0;
+        // }
 
         output_derivatives.resize(n_outputs * num_lanes, 0.0);
     }
@@ -179,19 +179,20 @@ FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tape
         }
     };
 
-    auto add_derivative_input = [&](std::size_t src_id, std::size_t dest_id) {
-        if constexpr (Vectorised) {
-            auto const src = std::span<Float const>(&input_derivatives[src_id * this->m_num_lanes], this->m_num_lanes);
-            auto dest = std::span<Float>(&this->derivatives[dest_id * this->m_num_lanes], this->m_num_lanes);
-#pragma omp simd
-            for (std::size_t i = 0; i < dest.size(); ++i) {
-                dest[i] += src[i];
-            }
-        }
-        else {
-            this->derivatives[dest_id] += input_derivatives[src_id];
-        }
-    };
+    //     auto add_derivative_input = [&](std::size_t src_id, std::size_t dest_id) {
+    //         if constexpr (Vectorised) {
+    //             auto const src = std::span<Float const>(&input_derivatives[src_id * this->m_num_lanes],
+    //             this->m_num_lanes); auto dest = std::span<Float>(&this->derivatives[dest_id * this->m_num_lanes],
+    //             this->m_num_lanes);
+    // #pragma omp simd
+    //             for (std::size_t i = 0; i < dest.size(); ++i) {
+    //                 dest[i] += src[i];
+    //             }
+    //         }
+    //         else {
+    //             this->derivatives[dest_id] += input_derivatives[src_id];
+    //         }
+    //     };
 
     auto sub_derivative = [&](std::size_t arg_id, std::size_t res_id) {
         if constexpr (Vectorised) {
@@ -232,9 +233,9 @@ FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tape
                 if (it == input_ids.end()) {
                     throw;
                 }
-                auto const distance = static_cast<std::size_t>(std::distance(input_ids.begin(), it));
+                // auto const distance = static_cast<std::size_t>(std::distance(input_ids.begin(), it));
 
-                add_derivative_input(distance, arg_id);
+                // add_derivative_input(distance, arg_id);
                 pos_local.id_position += 1;
                 break;
             }
