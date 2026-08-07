@@ -11,6 +11,7 @@ test_float()
 
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 3.0;
     adhoc_t x2_adhoc = 5.0;
 

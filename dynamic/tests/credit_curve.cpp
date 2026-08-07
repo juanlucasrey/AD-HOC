@@ -460,11 +460,11 @@ calibrateQuote(credit_curve<double>& sc,
     }
 
     auto func_d = [&](double x, double& f, double& df) {
-        using adhoc_mode = adhoc::opcode<double>;
+        using adhoc_mode = adhoc::opcode<double, "driver">;
         using D = adhoc_mode::type;
         D inputD = x;
 
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -582,7 +582,9 @@ pureNewtonSolve(credit_curve<D>& sc,
 {
 
     auto func_d2 = [&](double x, double& df) {
-        using D2 = adhoc::opcode<double>::type;
+        using adhoc_mode = adhoc::opcode<double, "driver">;
+        using D2 = adhoc_mode::type;
+        using DYC2 = std::conditional<std::is_same<DYC, double>::value, double, D2>::type;
 
         auto& hazard = sc.getHazard();
         std::vector<D2> clonedHazardRates;
@@ -594,18 +596,18 @@ pureNewtonSolve(credit_curve<D>& sc,
         credit_curve<D2> sc2(pricingDate, clonedHazardRates, dates);
 
         auto& paramsyc = yc.getParams();
-        std::vector<DYC> clonedParamsYC;
+        std::vector<DYC2> clonedParamsYC;
         clonedParamsYC.reserve(paramsyc.size());
         for (const auto& rate : paramsyc) {
             clonedParamsYC.emplace_back(passive_value(rate));
         }
-        adhoc::yield_curve<DYC> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
+        adhoc::yield_curve<DYC2> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
 
         D2 inputD = x;
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
 
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
 
@@ -620,7 +622,9 @@ pureNewtonSolve(credit_curve<D>& sc,
     };
 
     auto func_d3 = [&](double x, double& df, double& df2) {
-        using D2 = adhoc::opcode<double>::type;
+        using adhoc_mode = adhoc::opcode<double, "driver">;
+        using D2 = adhoc_mode::type;
+        using DYC2 = std::conditional<std::is_same<DYC, double>::value, double, D2>::type;
 
         auto& hazard = sc.getHazard();
         std::vector<D2> clonedHazardRates;
@@ -632,18 +636,18 @@ pureNewtonSolve(credit_curve<D>& sc,
         credit_curve<D2> sc_d2(pricingDate, clonedHazardRates, dates);
 
         auto& paramsyc = yc.getParams();
-        std::vector<DYC> clonedParamsYC;
+        std::vector<DYC2> clonedParamsYC;
         clonedParamsYC.reserve(paramsyc.size());
         for (const auto& rate : paramsyc) {
             clonedParamsYC.emplace_back(passive_value(rate));
         }
-        adhoc::yield_curve<DYC> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
+        adhoc::yield_curve<DYC2> yc2(yc.getAsOfDate(), clonedParamsYC, yc.getDates());
 
         D2 inputD = x;
         D2 outputD = 0.0;
         D2 cds_quote_d2 = passive_value(cds_quote);
 
-        adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
+        adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
         tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
 
@@ -796,6 +800,7 @@ bwd_adhoc_df()
     using D = adhoc_mode::type;
     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 16, 9);
 
     std::vector<CDS> cdsInstruments = get_cds();
     std::vector<D> discountCurveParamsD{ discountCurveParams.begin(), discountCurveParams.end() };
@@ -859,6 +864,7 @@ bwd_adhoc()
     using D = adhoc_mode::type;
     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 8, 9);
 
     std::vector<CDS> cdsInstruments = get_cds();
     const auto yc = get_yc(discountCurveParams);
@@ -912,7 +918,7 @@ bwd_adhoc2()
     using D = adhoc_mode::type;
     adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
     auto& tape = *tapeptr;
-    tape.configure(adhoc::Method::SecondOrderSimple, 1, 1);
+    tape.configure(adhoc::Method::SecondOrderSimple, 8, 9);
 
     std::vector<CDS> cdsInstruments = get_cds();
     const auto yc = get_yc(discountCurveParams);
@@ -1141,7 +1147,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::Bwd, 1, 1);
+        tapeptr->configure(adhoc::Method::Bwd, 2, 2);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;
@@ -1175,7 +1181,7 @@ lossy_test()
     {
         D inputD = x1;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
-        tapeptr->configure(adhoc::Method::BwdBuffer, 1, 1);
+        tapeptr->configure(adhoc::Method::BwdBuffer, 2, 2);
         auto& tape = *tapeptr;
         tape.register_variable(inputD);
         D outputD = 0.0;

@@ -17,6 +17,7 @@ test_addition()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 3.0;
     adhoc_t x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
@@ -39,6 +40,7 @@ test_multiplication()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -60,6 +62,7 @@ test_division_first_order()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -603,6 +606,7 @@ test_max()
     auto check1d = [](double input1, double input2, double expected_derivative1, double expected_derivative2) -> void {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
+        tape.configure(adhoc::Method::Bwd, 2, 1);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
         tape.register_variable(x_adhoc1);
@@ -670,6 +674,7 @@ test_min()
     auto check1d = [](double input1, double input2, double expected_derivative1, double expected_derivative2) -> void {
         adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
         auto& tape = *tapeptr;
+        tape.configure(adhoc::Method::Bwd, 2, 1);
         adhoc_t x_adhoc1 = input1;
         adhoc_t x_adhoc2 = input2;
         tape.register_variable(x_adhoc1);
@@ -740,6 +745,7 @@ test_compound_expression()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 4, 1);
     adhoc_t x1_adhoc = 2.0, x2_adhoc = 3.0, x3_adhoc = 7.0, x4_adhoc = 4.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -767,6 +773,7 @@ test_compound_assignment_add()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0, x3_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -795,6 +802,7 @@ test_compound_assignment_sub()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t x1_adhoc = 10.0, x2_adhoc = 3.0, x3_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -821,6 +829,7 @@ test_compound_assignment_mul()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t x1_adhoc = 4.0, x2_adhoc = 3.0, x3_adhoc = 2.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -847,6 +856,7 @@ test_compound_assignment_div()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t x1_adhoc = 12.0, x2_adhoc = 4.0, x3_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -873,6 +883,7 @@ test_multiple_compound_assignments()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t x1_adhoc = 2.0, x2_adhoc = 3.0, x3_adhoc = 4.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -904,6 +915,7 @@ test_copy_assignment()
 {
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 3.0, x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);
     tape.register_variable(x2_adhoc);
@@ -931,6 +943,7 @@ test_delayed_registration()
 
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t x1_adhoc = 3.0;
     tape.register_variable(x1_adhoc);
 
@@ -1067,6 +1080,7 @@ test_first_cash_instrument()
     double coverage = 7.0 / 360.0;
     adhoc::smart_tape_ptr_t<adhoc_mode> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 3, 1);
     adhoc_t df0_adhoc = 1.0;
     adhoc_t df1_adhoc = 0.99867881881803577;
     adhoc_t rate_adhoc = 0.043285450935363769;
