@@ -100,8 +100,8 @@ struct Tape<type>::Impl {
                  FwdPropagator<double, true> >
       bp = BackPropagator<double>();
 
-    std::size_t m_n_inputs;
-    std::size_t m_n_outputs;
+    std::size_t m_n_inputs{ 1 };
+    std::size_t m_n_outputs{ 1 };
 };
 
 template<class type>
@@ -878,6 +878,21 @@ Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVect
   backpropagate_and_reset_to<false, false>(position_t const& to);
 
 template class Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
+
+template void
+Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, true>(position_t const& to);
+template void
+Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<true, false>(position_t const& to);
+template void
+Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, true>(position_t const& to);
+template void
+Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
+  backpropagate_and_reset_to<false, false>(position_t const& to);
+
+template class Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
 
 #endif
 

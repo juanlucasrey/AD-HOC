@@ -10,6 +10,7 @@ test_tape_no_default()
 
     adhoc::smart_tape_ptr_t<adhoc_mode2> tapeptr;
     auto& tape = *tapeptr;
+    tape.configure(adhoc::Method::Bwd, 2, 1);
     adhoc_t2 x1_adhoc = 3.0;
     adhoc_t2 x2_adhoc = 5.0;
     tape.register_variable(x1_adhoc);

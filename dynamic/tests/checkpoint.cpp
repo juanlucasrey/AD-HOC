@@ -52,6 +52,7 @@ test_checkpoint_fd_vs_ad()
         // Create tape
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
+        tape.configure(adhoc::Method::Bwd, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
@@ -108,6 +109,7 @@ test_checkpoint_branch_lossy()
         using adhoc_t = adhoc_t;
         adhoc::smart_tape_ptr_t<adhoc::opcode<double> > tapeptr;
         auto& tape = *tapeptr;
+        tape.configure(adhoc::Method::Bwd, 3, 1);
 
         // Initial input variables
         adhoc_t x1, x2, x3;
