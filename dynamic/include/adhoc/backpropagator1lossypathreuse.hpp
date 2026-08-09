@@ -244,13 +244,13 @@ class BackPropagatorLossyPathReuse {
     }
 
     template<bool Reset, class TapeDataType>
-    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
+    void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
-BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
+BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType const& data)
 {
     auto convert_to_lossy_tape = [](PositionImpl const& pos,
                                     TapeDataType const& data,
@@ -1684,8 +1684,6 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
         if (to == this->checkpoints.back()) {
             this->buffers.back() = {};
         }
-
-        data.reset(pos.op_position, pos.val_position, pos.id_position);
         this->node_location_on_buffer.resize(pos.op_position);
     }
 }

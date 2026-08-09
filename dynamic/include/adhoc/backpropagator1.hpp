@@ -106,19 +106,21 @@ class BackPropagator {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
+    void reset(PositionImpl const& pos)
     {
-        // empty for now
+        std::size_t to = pos.op_position;
+        this->derivatives.resize(to * this->m_num_lanes);
+        this->use_op.resize(to);
     }
 
     template<bool Reset, class TapeDataType>
-    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
+    void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
-BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
+BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType const& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -398,15 +400,6 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
         double percentage = static_cast<double>(avoided_ops) / static_cast<double>(this->use_op.size());
         std::cout.precision(std::numeric_limits<double>::max_digits10);
         std::cout << "backpropagation saved operations: " << percentage << std::endl;
-    }
-
-    if constexpr (Reset) {
-        this->derivatives.resize(to * this->m_num_lanes);
-        this->use_op.resize(to);
-    }
-
-    if constexpr (Reset) {
-        data.reset(pos.op_position, pos.val_position, pos.id_position);
     }
 }
 

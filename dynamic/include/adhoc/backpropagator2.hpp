@@ -183,13 +183,13 @@ class BackPropagator2 {
     }
 
     template<bool Reset, class TapeDataType>
-    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
+    void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
 };
 
 template<std::floating_point Float, MapType maptype, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
-BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
+BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType const& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -622,10 +622,6 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
     if constexpr (Reset) {
         this->derivatives.resize(to);
         this->use_op.resize(to);
-    }
-
-    if constexpr (Reset) {
-        data.reset(pos.op_position, pos.val_position, pos.id_position);
     }
 }
 
