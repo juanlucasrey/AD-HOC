@@ -222,12 +222,17 @@ class BackPropagatorLossyCompressedPathReuse {
         return size;
     }
 
-    template<bool Reset, bool ResetInPlace, class TapeDataType>
+    void reset(PositionImpl const& /* pos */)
+    {
+        // empty for now
+    }
+
+    template<bool Reset, class TapeDataType>
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
-template<bool Reset, bool ResetInPlace, class TapeDataType>
+template<bool Reset, class TapeDataType>
 void
 BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
@@ -2224,7 +2229,7 @@ BackPropagatorLossyCompressedPathReuse<Float, Vectorised>::backpropagate_to(Posi
             this->buffers.back() = buffer_t<double, Vectorised>{ this->get_lanes() };
         }
 
-        reset(pos, data);
+        data.reset(pos.op_position, pos.val_position, pos.id_position);
         this->node_location_on_buffer.resize(pos.op_position);
     }
 }

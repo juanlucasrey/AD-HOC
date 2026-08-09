@@ -31,16 +31,6 @@ struct PositionImpl {
     std::size_t val_position{ 0 };
 };
 
-template<class TapeDataType>
-inline void
-reset(PositionImpl const& pos, TapeDataType& data)
-{
-    data.ops.resize(pos.op_position);
-    data.vals.resize(pos.val_position);
-    data.ids.resize(pos.id_position);
-    data.next_id = pos.op_position;
-}
-
 } // namespace adhoc
 
 #endif // ADHOC_POSITION_IMPL_HPP

@@ -108,6 +108,14 @@ class TapeData {
     {
         this->vals.push_back(static_cast<Float>(value));
     }
+
+    void reset(std::size_t op_position, std::size_t val_position, std::size_t id_position)
+    {
+        this->ops.resize(op_position);
+        this->vals.resize(val_position);
+        this->ids.resize(id_position);
+        this->next_id = op_position;
+    }
 };
 
 } // namespace adhoc
