@@ -203,8 +203,7 @@ class BackPropagator2Lossy {
         return size;
     }
 
-    template<class TapeDataType>
-    void reset(PositionImpl const& /* pos */, TapeDataType& /* data */)
+    void reset(PositionImpl const& /* pos */)
     {
         // empty for now
     }
@@ -1401,7 +1400,7 @@ BackPropagator2Lossy<Float, maptype, Vectorised>::backpropagate_to(PositionImpl 
     }
 
     if constexpr (Reset) {
-        reset(pos, data);
+        data.reset(pos.op_position, pos.val_position, pos.id_position);
     }
 }
 

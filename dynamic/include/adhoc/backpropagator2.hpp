@@ -177,8 +177,7 @@ class BackPropagator2 {
         return size;
     }
 
-    template<class TapeDataType>
-    void reset(PositionImpl const& /* pos */, TapeDataType& /* data */)
+    void reset(PositionImpl const& /* pos */)
     {
         // empty for now
     }
@@ -626,7 +625,7 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
     }
 
     if constexpr (Reset) {
-        reset(pos, data);
+        data.reset(pos.op_position, pos.val_position, pos.id_position);
     }
 }
 

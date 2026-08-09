@@ -133,8 +133,7 @@ class FwdPropagator {
         return size;
     }
 
-    template<class TapeDataType>
-    void reset(PositionImpl const& /* pos */, TapeDataType& /* data */)
+    void reset(PositionImpl const& /* pos */)
     {
         // empty for now
     }
@@ -424,7 +423,7 @@ FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tape
     if constexpr (Reset) {
         this->derivatives.resize(to * this->m_num_lanes);
         pos_local = pos;
-        reset(pos, data);
+        data.reset(pos.op_position, pos.val_position, pos.id_position);
         output_ids.clear();
     }
 }

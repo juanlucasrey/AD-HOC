@@ -241,8 +241,7 @@ class BackPropagatorLossyCompressedPathReuseV {
         return size;
     }
 
-    template<class TapeDataType>
-    void reset(PositionImpl const& /* pos */, TapeDataType& /* data */)
+    void reset(PositionImpl const& /* pos */)
     {
         // empty for now
     }
@@ -1605,7 +1604,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
         }
 
         if constexpr (Reset) {
-            reset(pos, data);
+            data.reset(pos.op_position, pos.val_position, pos.id_position);
         }
     }
     else {
@@ -2439,7 +2438,7 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
                 this->buffers.back() = buffer_t<double, Vectorised>{ this->m_num_lanes };
             }
 
-            reset(pos, data);
+            data.reset(pos.op_position, pos.val_position, pos.id_position);
             this->node_location_on_buffer.resize(pos.op_position);
         }
     }
