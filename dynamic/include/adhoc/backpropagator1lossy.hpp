@@ -156,13 +156,13 @@ class BackPropagatorLossy {
     }
 
     template<bool Reset, class TapeDataType>
-    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
+    void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
-BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
+BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType const& data)
 {
     std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
@@ -685,7 +685,6 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
     }
 
     if constexpr (Reset) {
-        data.reset(pos.op_position, pos.val_position, pos.id_position);
         this->node_location_on_buffer.resize(pos.op_position);
     }
 }

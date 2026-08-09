@@ -247,14 +247,14 @@ class BackPropagatorLossyCompressedPathReuseV {
     }
 
     template<bool Reset, class TapeDataType>
-    void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
+    void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
 BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(PositionImpl const& pos,
-                                                                             TapeDataType& data)
+                                                                             TapeDataType const& data)
 {
     class ValueFetcher {
       public:
@@ -1602,10 +1602,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
 
             lossy_tape.path_idx = 0;
         }
-
-        if constexpr (Reset) {
-            data.reset(pos.op_position, pos.val_position, pos.id_position);
-        }
     }
     else {
 
@@ -2437,8 +2433,6 @@ BackPropagatorLossyCompressedPathReuseV<Float, Vectorised>::backpropagate_to(Pos
             if (to == this->checkpoints.back()) {
                 this->buffers.back() = buffer_t<double, Vectorised>{ this->m_num_lanes };
             }
-
-            data.reset(pos.op_position, pos.val_position, pos.id_position);
             this->node_location_on_buffer.resize(pos.op_position);
         }
     }

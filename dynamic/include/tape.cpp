@@ -541,13 +541,14 @@ Tape<type>::backpropagate_and_reset_to(position_t const& pos)
     std::visit([pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true>(*pos.impl, data); },
                this->impl->bp);
 
-    std::visit([pos, &data = this->data](auto& arg) { arg.reset(*pos.impl); }, this->impl->bp);
+    this->reset_to(pos);
 }
 
 template<class type>
 void
 Tape<type>::reset_to(position_t const& pos)
 {
+    std::visit([pos, &data = this->data](auto& arg) { arg.reset(*pos.impl); }, this->impl->bp);
     this->data.reset(pos.impl->op_position, pos.impl->val_position, pos.impl->id_position);
 }
 
