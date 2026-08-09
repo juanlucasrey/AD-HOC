@@ -106,12 +106,12 @@ class BackPropagator {
         return size;
     }
 
-    template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+    template<bool Reset, bool ResetInPlace, class TapeDataType>
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
-template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+template<bool Reset, bool ResetInPlace, class TapeDataType>
 void
 BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
@@ -379,12 +379,10 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
                 break;
             }
         }
-        if constexpr (Reset && ResetInPlace) {
-            this->derivatives.resize(this->derivatives.size() - this->m_num_lanes);
-            this->use_op.resize(this->use_op.size() - 1);
-        }
     }
 
+    // we'll see later what system drives this boolean
+    constexpr bool Log = false;
     if constexpr (Log) {
         // calculate the percentage of operations saved using the vector use_op
         std::size_t avoided_ops = 0;
@@ -397,7 +395,7 @@ BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tap
         std::cout << "backpropagation saved operations: " << percentage << std::endl;
     }
 
-    if constexpr (Reset && !ResetInPlace) {
+    if constexpr (Reset) {
         this->derivatives.resize(to * this->m_num_lanes);
         this->use_op.resize(to);
     }

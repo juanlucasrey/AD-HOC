@@ -238,12 +238,12 @@ class BackPropagatorLossyPathReuse {
         return size;
     }
 
-    template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+    template<bool Reset, bool ResetInPlace, class TapeDataType>
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
-template<bool Reset, bool ResetInPlace, bool Log, class TapeDataType>
+template<bool Reset, bool ResetInPlace, class TapeDataType>
 void
 BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
