@@ -144,12 +144,7 @@ template<class type>
 void
 Tape<type>::register_variable(type& var)
 {
-    if (var.is_passive()) {
-        std::size_t const new_id = this->data.generate_id();
-        var.id = new_id;
-        record_register(data.ops, data.ids, OpCode::REG_INPUT, new_id);
-        std::visit([new_id](auto& arg) { arg.register_variable(new_id); }, this->impl->bp);
-    }
+    this->register_variable(static_cast<type const&>(var));
 }
 
 template<class type>
@@ -170,14 +165,7 @@ template<class type>
 void
 Tape<type>::register_output_variable(type& var)
 {
-    if (var.is_active()) {
-        std::size_t const new_id = this->data.generate_id();
-        data.ids.push_back(var.id);
-        var.id = new_id;
-        record_register(data.ops, data.ids, OpCode::REG_OUTPUT, new_id);
-        std::visit([new_id, ops_size = data.ops.size()](auto& arg) { arg.register_output_variable(new_id, ops_size); },
-                   this->impl->bp);
-    }
+    this->register_output_variable(static_cast<type const&>(var));
 }
 
 template<class type>
@@ -518,12 +506,8 @@ template<class type>
 void
 Tape<type>::backpropagate()
 {
-    std::visit(
-      [&data = this->data](auto& arg) {
-          PositionImpl pos0;
-          arg.template backpropagate_to<false>(pos0, data);
-      },
-      this->impl->bp);
+    position_t pos0;
+    this->backpropagate_to(pos0);
 }
 
 template<class type>
