@@ -238,9 +238,13 @@ class BackPropagatorLossyPathReuse {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
+    void reset(PositionImpl const& pos)
     {
-        // empty for now
+        std::size_t const to = pos.op_position;
+        if (to == this->checkpoints.back()) {
+            this->buffers.back() = {};
+        }
+        this->node_location_on_buffer.resize(pos.op_position);
     }
 
     template<bool Reset, class TapeDataType>
@@ -1678,13 +1682,6 @@ BackPropagatorLossyPathReuse<Float, Vectorised>::backpropagate_to(PositionImpl c
                 }
             }
         }
-    }
-
-    if constexpr (Reset) {
-        if (to == this->checkpoints.back()) {
-            this->buffers.back() = {};
-        }
-        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 

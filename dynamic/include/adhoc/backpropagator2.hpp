@@ -177,9 +177,11 @@ class BackPropagator2 {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
+    void reset(PositionImpl const& pos)
     {
-        // empty for now
+        std::size_t const to = pos.op_position;
+        this->derivatives.resize(to);
+        this->use_op.resize(to);
     }
 
     template<bool Reset, class TapeDataType>
@@ -617,11 +619,6 @@ BackPropagator2<Float, maptype, Vectorised>::backpropagate_to(PositionImpl const
                 break;
             }
         }
-    }
-
-    if constexpr (Reset) {
-        this->derivatives.resize(to);
-        this->use_op.resize(to);
     }
 }
 

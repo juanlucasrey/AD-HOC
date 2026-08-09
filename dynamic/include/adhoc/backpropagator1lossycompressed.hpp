@@ -182,9 +182,13 @@ class BackPropagatorLossyCompressed {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
+    void reset(PositionImpl const& pos)
     {
-        // empty for now
+        std::size_t to = pos.op_position;
+        if (!checkpoints.empty() && to == checkpoints.back()) {
+            this->buffers.back() = buffer_t<double, Vectorised>{ this->get_lanes() };
+        }
+        this->node_location_on_buffer.resize(pos.op_position);
     }
 
     template<bool Reset, class TapeDataType>
@@ -1221,13 +1225,6 @@ BackPropagatorLossyCompressed<Float, Vectorised, ConsolidateLargeUnivariate>::ba
                 res_pos = passive_id<std::size_t>;
             }
         }
-    }
-
-    if constexpr (Reset) {
-        if (!checkpoints.empty() && to == checkpoints.back()) {
-            this->buffers.back() = buffer_t<double, Vectorised>{ this->get_lanes() };
-        }
-        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 
