@@ -106,12 +106,18 @@ class BackPropagator {
         return size;
     }
 
-    template<bool Reset, bool ResetInPlace, class TapeDataType>
+    template<class TapeDataType>
+    void reset(PositionImpl const& /* pos */, TapeDataType& /* data */)
+    {
+        // empty for now
+    }
+
+    template<bool Reset, class TapeDataType>
     void backpropagate_to(PositionImpl const& pos, TapeDataType& data);
 };
 
 template<std::floating_point Float, bool Vectorised>
-template<bool Reset, bool ResetInPlace, class TapeDataType>
+template<bool Reset, class TapeDataType>
 void
 BackPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType& data)
 {
