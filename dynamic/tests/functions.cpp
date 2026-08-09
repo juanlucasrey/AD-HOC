@@ -1027,7 +1027,7 @@ test_backprop_stages()
 
             tape.register_output_variable(res_adhoc);
             tape.set_derivative(res_adhoc, 1.0);
-            tape.backpropagate_and_reset_to<true>(pos);
+            tape.backpropagate_and_reset_to(pos);
             tape.backpropagate();
 
             dy_dx_adhoc = tape.get_derivative(x_adhoc);

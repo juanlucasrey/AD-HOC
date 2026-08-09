@@ -536,12 +536,11 @@ Tape<type>::backpropagate_to(position_t const& pos)
 }
 
 template<class type>
-template<bool ResetInPlace, bool Log>
 void
 Tape<type>::backpropagate_and_reset_to(position_t const& pos)
 {
     std::visit(
-      [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true, ResetInPlace, Log>(*pos.impl, data); },
+      [pos, &data = this->data](auto& arg) { arg.template backpropagate_to<true, false, false>(*pos.impl, data); },
       this->impl->bp);
 }
 
@@ -864,36 +863,8 @@ Tape<type>::subrange_t::range_t::range_info_t::inner_range_t::operator*() const 
 
 // no need to instantiate in header only mode
 #ifndef ADHOC_HEADER_ONLY
-template void
-Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, false>(position_t const& to);
-template void
-Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, false>(position_t const& to);
-
 template class Tape<adhoc_type<double, "main", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
-
-template void
-Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<true, false>(position_t const& to);
-template void
-Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, true>(position_t const& to);
-template void
-Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >::
-  backpropagate_and_reset_to<false, false>(position_t const& to);
-
 template class Tape<adhoc_type<double, "driver", TapeData<double, EnumVectorType::Simple, IdxVectorType::Simple> > >;
-
 #endif
 
 } // namespace adhoc
