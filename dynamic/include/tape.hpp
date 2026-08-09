@@ -142,8 +142,6 @@ class Tape {
     void set_checkpoint();
     void backpropagate();
     void backpropagate_to(position_t const& to);
-
-    template<bool ResetInPlace = false, bool Log = false>
     void backpropagate_and_reset_to(position_t const& to);
     void reset_to(position_t const& to);
     void set_derivative(type const& var, double deriv, std::size_t lane = 0);
