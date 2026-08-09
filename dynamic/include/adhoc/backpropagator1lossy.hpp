@@ -150,10 +150,7 @@ class BackPropagatorLossy {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
-    {
-        // empty for now
-    }
+    void reset(PositionImpl const& pos) { this->node_location_on_buffer.resize(pos.op_position); }
 
     template<bool Reset, class TapeDataType>
     void backpropagate_to(PositionImpl const& pos, TapeDataType const& data);
@@ -682,10 +679,6 @@ BackPropagatorLossy<Float, Vectorised>::backpropagate_to(PositionImpl const& pos
                 break;
             }
         }
-    }
-
-    if constexpr (Reset) {
-        this->node_location_on_buffer.resize(pos.op_position);
     }
 }
 
