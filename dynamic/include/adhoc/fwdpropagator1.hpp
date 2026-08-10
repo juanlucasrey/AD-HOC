@@ -133,9 +133,15 @@ class FwdPropagator {
         return size;
     }
 
-    void reset(PositionImpl const& /* pos */)
+    void reset(PositionImpl const& pos)
     {
-        // empty for now
+        std::size_t to = pos.op_position;
+        this->derivatives.resize(to * this->m_num_lanes);
+        pos_local = pos;
+
+        // ids should be clear according to the reset point. There could be output_ids that should maybe stay alive.
+        // To be reworked.
+        output_ids.clear();
     }
 
     template<bool Reset, class TapeDataType>
@@ -418,15 +424,6 @@ FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, Tape
                 break;
             }
         }
-    }
-
-    if constexpr (Reset) {
-        this->derivatives.resize(to * this->m_num_lanes);
-        pos_local = pos;
-
-        // ids should be clear according to the reset point. There could be output_ids that should maybe stay alive.
-        // To be reworked.
-        output_ids.clear();
     }
 }
 
