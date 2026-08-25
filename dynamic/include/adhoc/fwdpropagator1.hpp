@@ -151,9 +151,9 @@ class FwdPropagator {
 template<std::floating_point Float, bool Vectorised>
 template<bool Reset, class TapeDataType>
 void
-FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& pos, TapeDataType const& data)
+FwdPropagator<Float, Vectorised>::backpropagate_to(PositionImpl const& /* pos */, TapeDataType const& data)
 {
-    std::size_t to = pos.op_position;
+    // std::size_t to = pos.op_position;
     std::size_t from = data.next_id;
 
     const auto& ops = data.ops;

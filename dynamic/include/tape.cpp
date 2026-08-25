@@ -102,6 +102,8 @@ struct Tape<type>::Impl {
 
     std::size_t m_n_inputs{ 1 };
     std::size_t m_n_outputs{ 1 };
+    std::vector<std::size_t> m_input_ids;
+    std::vector<std::size_t> m_output_ids;
 };
 
 template<class type>
@@ -138,6 +140,11 @@ Tape<type>::register_variable(type const& var)
         record_register(data.ops, data.ids, OpCode::REG_INPUT, new_id);
         std::visit([new_id](auto& arg) { arg.register_variable(new_id); }, this->impl->bp);
     }
+
+    if (this->impl->m_input_ids.size() >= this->impl->m_n_inputs) {
+        throw std::runtime_error("Too many input variables registered.");
+    }
+    this->impl->m_input_ids.push_back(var.id);
 }
 
 template<class type>
@@ -159,6 +166,11 @@ Tape<type>::register_output_variable(type const& var)
         std::visit([new_id, ops_size = data.ops.size()](auto& arg) { arg.register_output_variable(new_id, ops_size); },
                    this->impl->bp);
     }
+
+    if (this->impl->m_output_ids.size() >= this->impl->m_n_outputs) {
+        throw std::runtime_error("Too many output variables registered.");
+    }
+    this->impl->m_output_ids.push_back(var.id);
 }
 
 template<class type>
@@ -534,6 +546,12 @@ Tape<type>::reset_to(position_t const& pos)
 {
     std::visit([pos, &data = this->data](auto& arg) { arg.reset(*pos.impl); }, this->impl->bp);
     this->data.reset(pos.impl->op_position, pos.impl->val_position, pos.impl->id_position);
+
+    // clear all values of m_output_ids that are larger than pos.op_position
+    auto it = std::find_if(this->impl->m_output_ids.begin(), this->impl->m_output_ids.end(), [&pos](std::size_t id) {
+        return id > pos.impl->op_position;
+    });
+    this->impl->m_output_ids.erase(it, this->impl->m_output_ids.end());
 }
 
 template<class type>
